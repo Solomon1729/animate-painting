@@ -23,14 +23,28 @@ const mot=l=>{const r={x:0,y:0,r:0,s:0},f=editing||tool!=='move';
     else if(k==='m'){const d=c.d*Math.PI/180;r.x=v*Math.cos(d);r.y=-v*Math.sin(d)}else r[k]=v}
   return r};
 
-function fit(){const fs=document.body.classList.contains('fs'),r=$('wrap').getBoundingClientRect();dpr=hk||Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.round(r.width));H=fs?Math.max(1,Math.round(r.height)):W;cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';oc.width=cv.width;oc.height=cv.height;ob1.width=ob2.width=cv.width;ob1.height=ob2.height=cv.height;S0=Math.min(W,H)*.26}
+function fit(){const fs=document.body.classList.contains('fs')||document.body.classList.contains('big'),r=$('wrap').getBoundingClientRect();dpr=hk||Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.round(r.width));H=fs?Math.max(1,Math.round(r.height)):W;cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';oc.width=cv.width;oc.height=cv.height;ob1.width=ob2.width=cv.width;ob1.height=ob2.height=cv.height;S0=Math.min(W,H)*.26}
 
 const FILT='filter' in CanvasRenderingContext2D.prototype;
+/* ぼかし：そのままだと画像の外の透明へにじんで、フチが薄く消える。端の1画素を外へ延ばした画像をぼかし、元の矩形で切り抜く */
+let _bsc=null;
+function drawBlurred(im,dw,dh,b){
+  const t=ctx.getTransform(),sc=Math.hypot(t.a,t.b)||1,m=Math.ceil(b*3)+1,iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,pw=Math.max(1,Math.round(dw*sc)),ph=Math.max(1,Math.round(dh*sc)),W2=pw+2*m,H2=ph+2*m;
+  if(!iw||!ih||W2*H2>16e6){ctx.save();ctx.filter='blur('+b+'px)';ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.restore();return}
+  if(!_bsc)_bsc=document.createElement('canvas');
+  if(_bsc.width!==W2||_bsc.height!==H2){_bsc.width=W2;_bsc.height=H2}
+  const g=_bsc.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W2,H2);g.imageSmoothingEnabled=true;
+  g.drawImage(im,m,m,pw,ph);
+  g.drawImage(im,0,0,1,ih,0,m,m,ph);g.drawImage(im,iw-1,0,1,ih,m+pw,m,m,ph);g.drawImage(im,0,0,iw,1,m,0,pw,m);g.drawImage(im,0,ih-1,iw,1,m,m+ph,pw,m);
+  g.drawImage(im,0,0,1,1,0,0,m,m);g.drawImage(im,iw-1,0,1,1,m+pw,0,m,m);g.drawImage(im,0,ih-1,1,1,0,m+ph,m,m);g.drawImage(im,iw-1,ih-1,1,1,m+pw,m+ph,m,m);
+  ctx.save();ctx.beginPath();ctx.rect(-dw/2,-dh/2,dw,dh);ctx.clip();ctx.filter='blur('+b+'px)';
+  ctx.drawImage(_bsc,-dw/2-m/sc,-dh/2-m/sc,W2/sc,H2/sc);ctx.restore();
+}
 function img(l,S,b){
   if(b===undefined){if(l.hasBm&&l.blur>0&&l.bm&&!cmp)return blurRegion(l,S);b=0}
   const im=l.wo||adjSource(l);let dw,dh;
   if(l.wo){dw=dh=S*WX}else{const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,k=Math.min(S/iw,S/ih);dw=iw*k;dh=ih*k}
-  if(b>0&&FILT){ctx.save();ctx.filter='blur('+b+'px)';ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.restore()}
+  if(b>0&&FILT){if(l.wo){ctx.save();ctx.filter='blur('+b+'px)';ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.restore()}else drawBlurred(im,dw,dh,b)}
   else if(b>0){ctx.save();for(let i=0;i<9;i++){const a=i*.7854,r=i?b:0;ctx.globalAlpha=1/(i+1);ctx.drawImage(im,-dw/2+Math.cos(a)*r,-dh/2+Math.sin(a)*r,dw,dh)}ctx.restore()}
   else ctx.drawImage(im,-dw/2,-dh/2,dw,dh);
 }
@@ -72,7 +86,7 @@ function draw(l,x,y,m,kids){
     if(showBounds)drawBounds(l,S);
     if(paint&&l===pc()){ctx.globalAlpha=.55;ctx.drawImage(l.mask,-S/2,-S/2,S,S)}
     if(adjShow&&l===sel&&(rngT==='fx'?l.hasLFM&&l.lfm:l.hasAdjM&&l.adjm)){ctx.save();ctx.globalAlpha=.22;ctx.drawImage(rngT==='fx'?l.lfm:l.adjm,-S/2,-S/2,S,S);ctx.restore()}
-    if(l===sel){if(l.hasBm&&l.bm&&(bpn||showBm))ovl(l,S,'bm','bmv','#3b82f6');if((psn||pbox)&&l.hasSm&&l.sm)ovl(l,S,'sm','smv','#ff5d8f');if(pbox&&drawing&&boxStart&&boxEnd){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle='#ff5d8f';ctx.lineWidth=2;ctx.setLineDash([6,4]);const x=Math.min(boxStart.u,boxEnd.u)*S-.5*S,y=Math.min(boxStart.v,boxEnd.v)*S-.5*S,w=Math.abs(boxEnd.u-boxStart.u)*S,h=Math.abs(boxEnd.v-boxStart.v)*S;ctx.strokeRect(x,y,w,h);ctx.restore()}if(tool==='warp'&&(showPins||wg||performance.now()<flashUntil))drawPins(l,S)}
+    if(l===sel){if(l.hasBm&&l.bm&&(bpn||showBm))ovl(l,S,'bm','bmv','#3b82f6');if((psn||pbox)&&l.hasSm&&l.sm)ovl(l,S,'sm','smv','#ff5d8f');if(pbox&&drawing&&boxStart&&boxEnd){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle='#ff5d8f';ctx.lineWidth=2;ctx.setLineDash([6,4]);const x=Math.min(boxStart.u,boxEnd.u)*S-.5*S,y=Math.min(boxStart.v,boxEnd.v)*S-.5*S,w=Math.abs(boxEnd.u-boxStart.u)*S,h=Math.abs(boxEnd.v-boxStart.v)*S;ctx.strokeRect(x,y,w,h);ctx.restore()}if(tool==='warp'&&!hk&&!adjHQ&&l.pins.length&&(wmode!=='brush'||showPins||wg||performance.now()<flashUntil))drawPins(l,S)}
     ctx.restore()};
   kids?kids(self):self();
   ctx.restore();

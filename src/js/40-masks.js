@@ -24,7 +24,7 @@ function stroke(q){
 
 function paintFrame(){
   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);
-  drawBG();const _wt0=performance.now();wAct=false;warpMs=0;for(const l of AC){if(l.layerId==null||!LAYERS.some(y=>y.id===l.layerId))l.layerId=curLid;const e=l.wd||l.dirty||(l.pins.length&&!l.wo),t0=performance.now();warpFrame(l);if(!e)warpMs+=performance.now()-t0}
+  drawBG();const _wt0=performance.now();wAct=false;warpMs=0;for(const l of AC){if(l.layerId==null||!LAYERS.some(y=>y.id===l.layerId))l.layerId=curLid;const e=l.wd||l.dirty||(hasWarp(l)&&!l.wo)||!!l._mr,t0=performance.now();warpFrame(l);if(!e)warpMs+=performance.now()-t0}
   ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
   const P=(l,f)=>draw(l,l.fx*W,l.fy*H,mot(l),f);
   const objD=c=>o=>{ctx.save();ctx.translate(o.ox*S0*c.size*c.face,o.oy*S0*c.size);draw(o,0,0,mot(o));ctx.restore()};
@@ -32,6 +32,7 @@ function paintFrame(){
   roots.forEach(r=>{
     const ks=AC.filter(o=>o.att&&o.to===r.id),d=objD(r);
     P(r,ks.length?self=>{ks.filter(o=>!o.front).forEach(d);self();ks.filter(o=>o.front).forEach(d)}:undefined)});
+  drawBrushRing();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
   if(rulerPt){
     ctx.save();ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);

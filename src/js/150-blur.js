@@ -35,9 +35,17 @@ function outlineOf(l,key,vk,col){
 function ovl(l,S,key,vk,col){const c=l[key];ctx.save();ctx.globalAlpha=.16;ctx.drawImage(c,-S/2,-S/2,S,S);ctx.globalAlpha=1;ctx.drawImage(outlineOf(l,key,vk,col==='#3b82f6'?'#00c3ff':'#ff2d87'),-S/2,-S/2,S,S);ctx.restore()}
 let showPins=false,flashUntil=0;
 function drawPins(l,S){
-  const ci=curIdx(l);ctx.save();ctx.lineWidth=1;ctx.globalAlpha=.55;
-  l.pins.forEach((p,i)=>{const x=(p.x-.5)*S,y=(p.y-.5)*S;ctx.strokeStyle=ctx.fillStyle=i===ci?'#ff2d87':'#ffffff';ctx.setLineDash([4,4]);
-    ctx.beginPath();ctx.arc(x,y,p.r*S,0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(x,y,3,0,6.283);ctx.fill()});
+  const ci=curIdx(l),z=Z.s;ctx.save();
+  l.pins.forEach((p,i)=>{const x=(p.x-.5)*S,y=(p.y-.5)*S,on=i===ci,col=on?'#ff2d87':'#ffffff';
+    /* リング（範囲）。白い線の下に黒い影を引いて、白い背景でも見えるようにする */
+    ctx.setLineDash([5/z,4/z]);ctx.lineWidth=3/z;ctx.strokeStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.arc(x,y,p.r*S,0,6.283);ctx.stroke();
+    ctx.lineWidth=1.5/z;ctx.strokeStyle=col;ctx.globalAlpha=on?1:.8;ctx.beginPath();ctx.arc(x,y,p.r*S,0,6.283);ctx.stroke();ctx.setLineDash([]);
+    /* 中心（ドラッグで移動）と、右端の範囲つまみ（ドラッグで範囲を変える） */
+    ctx.beginPath();ctx.arc(x,y,5/z,0,6.283);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=1/z;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.stroke();
+    const hx=x+p.r*S;ctx.beginPath();ctx.rect(hx-4.5/z,y-4.5/z,9/z,9/z);ctx.fillStyle=col;ctx.fill();ctx.stroke();
+    ctx.globalAlpha=1;ctx.font='bold '+(11/z)+'px sans-serif';ctx.textAlign='left';ctx.textBaseline='bottom';ctx.lineWidth=3/z;ctx.strokeStyle='rgba(0,0,0,.55)';ctx.strokeText(String(i+1),x+7/z,y-4/z);ctx.fillStyle=col;ctx.fillText(String(i+1),x+7/z,y-4/z);
+    if(p.t==='p'&&(p.vx||p.vy)){ctx.lineWidth=2/z;ctx.strokeStyle=col;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+p.vx*S,y+p.vy*S);ctx.stroke()}
+  });
   ctx.restore();
 }
 function syncBm(){$('bshow').classList.toggle('on',showBm)}

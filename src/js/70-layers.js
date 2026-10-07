@@ -55,7 +55,7 @@ $('lyren').onclick=()=>{const y=LY(curLid),v=prompt('レイヤー名',y.name);if
 $('lydel').onclick=()=>{if(LAYERS.length<2){note('最後のレイヤーは削除できません');return}const i=LAYERS.findIndex(y=>y.id===curLid);if(i<0)return;pushUndo();const to=LAYERS[i?i-1:1];
   AC.forEach(a=>{if(a.layerId===curLid)a.layerId=to.id;if(a.toType==='layer'&&a.to===curLid){a.to=null;a.toType='actor';a.maskTo=false}});
   LAYERS.splice(i,1);curLid=to.id;dirtyProj=true;setSel(sel||AC[0])};
-$('oadd').onclick=()=>add();$('oadd2').onclick=()=>{addSpecial('d');setTab('dr')};$('odel').onclick=()=>del();
+$('oadd').onclick=()=>pickImages();$('oadd2').onclick=()=>{addSpecial('d');setTab('dr')};$('odel').onclick=()=>del();
 $('lyphx').onchange=e=>{physHideEx=e.target.checked;dirtyProj=true};
 $('lyx').onclick=()=>lyToggle(false);
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!lyPop.hidden)lyToggle(false)});

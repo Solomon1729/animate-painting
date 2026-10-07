@@ -2,6 +2,7 @@
 使い方:  python3 headless_regression.py <HTMLファイルのパス>
 前提:    pip install playwright pillow && playwright install chromium
 内容:    1) ペン線と調整の干渉  2) 質感マスク・パッド・Undo・保存/読込  3) 全体⇄範囲指定の切替
+         4) 調整後のペン・消しゴムの即時反映（台帳Z-65・小/大画像）  5) 歪みブラシ：Undo往復・保存読込・歪み越しのペン（台帳Z-67）
 注意:    値を出力して人が判定する形式。期待値は DOC_UPDATE_2026-10-01.md の E 章を参照。
          アプリ内部の名前（sel, AC, setTab, adjDirty 等）に依存するため、改名したらここも直す。
 """
@@ -107,8 +108,61 @@ def test_scope_switch(F):
         pg.evaluate("setTab('fx')");print('fx tab scope (independent):',pg.evaluate("[rngOn(sel,'lf'),rngOn(sel,'adj')]"),st())
         print('errs',errs);b.close()
 
+HLP="""window.vis=()=>{wHov=null;paintFrame();const g=cv.getContext('2d'),d=g.getImageData(0,0,cv.width,cv.height).data;let h=2166136261>>>0;for(let i=0;i<d.length;i+=4){const v=d[i]|(d[i+1]<<8)|(d[i+2]<<16);h=Math.imul(h^v,16777619)>>>0}return h};
+window.cen=()=>{paintFrame();const t=sel.M.transformPoint(new DOMPoint(0,0)),r=cv.getBoundingClientRect();return [r.left+t.x/dpr,r.top+t.y/dpr]};
+window.dmSum=()=>sel&&sel.dm?Array.from(sel.dm.d).reduce((a,v)=>a+Math.abs(v),0):0;
+window.mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#8a8a8a';g.fillRect(0,0,w,h);
+  for(let i=0;i<Math.min(6000,w*h/400);i++){const v=70+Math.random()*130|0;g.fillStyle='rgb('+v+','+(v^40)+','+(v^90)+')';g.fillRect(Math.random()*w,Math.random()*h,Math.max(3,w/150),Math.max(3,w/150))}
+  g.strokeStyle='#222';g.lineWidth=Math.max(1,w/400);for(let i=1;i<10;i++){g.beginPath();g.moveTo(w*i/10,0);g.lineTo(w*i/10,h);g.moveTo(0,h*i/10);g.lineTo(w,h*i/10);g.stroke()}return c};"""
+def _setup(pg,w,h):
+    pg.evaluate(HLP);pg.evaluate("([w,h])=>{setImg(sel,mk(w,h));sel.size=3;sel.fx=.5;sel.fy=.5;paintFrame();$('hint').hidden=true}",[w,h]);pg.wait_for_timeout(500)
+def _stroke(pg,c,pts):
+    pg.mouse.move(c[0]+pts[0][0],c[1]+pts[0][1]);pg.mouse.down()
+    for x,y in pts[1:]:pg.mouse.move(c[0]+x,c[1]+y,steps=4)
+    pg.mouse.up();pg.wait_for_timeout(900)
+def _verdict(label,ok):print('   ->',label,'OK' if ok else 'NG（要確認）');return ok
+
+def test_adjust_then_edit(F,w,h):
+    """色調整・質感調整のあとにペン／消しゴムを使うと、すぐ画面に出るか（Z-65：以前は元に戻す→やり直すまで反映されなかった）"""
+    with sync_playwright() as p:
+        b=p.chromium.launch();pg=b.new_page(viewport={'width':1000,'height':800})
+        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F);pg.wait_for_timeout(500)
+        _setup(pg,w,h)
+        pg.evaluate("(()=>{const a=ensureAdj(sel);a.brightness=25;a.contrast=20;const L=ensureLF(sel);L.clarity.amount=60;L.texture.amount=40;adjDirty(sel);paintFrame()})()");pg.wait_for_timeout(1500)
+        c=pg.evaluate("cen()");pg.evaluate("setTab('dr');setTool('pen')")
+        v0=pg.evaluate("vis()");_stroke(pg,c,[(-90,-30),(-30,10),(30,-10),(90,30)]);v1=pg.evaluate("vis()")
+        pg.evaluate("setTool('ieraser')");_stroke(pg,c,[(-90,10),(-30,50),(30,30),(90,70)]);v2=pg.evaluate("vis()")
+        pg.evaluate("setTool('eraser')");_stroke(pg,c,[(-90,-30),(-30,10),(30,-10),(90,30)]);v3=pg.evaluate("vis()")
+        print('adjust→pen/eraser %dx%d: pen changed %s / ieraser changed %s / eraser changed %s errs %s'%(w,h,v0!=v1,v1!=v2,v2!=v3,errs))
+        ok=_verdict('ペン・消しゴムが調整後に即反映',v0!=v1 and v1!=v2 and v2!=v3 and not errs);b.close();return ok
+
+def test_warp_brush(F):
+    """歪みブラシ：メッシュができる→Undo/Redoで厳密に戻る→保存読込でメッシュ保持→歪み越しのペンがストローク中に見える（warpInc）"""
+    with sync_playwright() as p:
+        b=p.chromium.launch();pg=b.new_page(viewport={'width':1000,'height':800})
+        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F);pg.wait_for_timeout(500)
+        _setup(pg,1200,800)
+        c=pg.evaluate("cen()");pg.evaluate("setTab('wp');wmode='brush';wmUi();bt='push';wbUi()")
+        v0=pg.evaluate("vis()");_stroke(pg,c,[(-80,0),(0,20),(80,0)]);v1=pg.evaluate("vis()");s1=pg.evaluate("dmSum()")
+        _stroke(pg,c,[(-80,50),(0,70),(80,50)]);v2=pg.evaluate("vis()")
+        pg.evaluate("undo()");pg.wait_for_timeout(900);v3=pg.evaluate("vis()");pg.evaluate("redo()");pg.wait_for_timeout(900);v4=pg.evaluate("vis()")
+        print('brush: mesh made %s / 2nd stroke changed %s / undo→前の見た目 %s / redo→戻る %s'%(s1>0,v1!=v2,v3==v1,v4==v2))
+        ok=_verdict('メッシュ・Undo/Redo',s1>0 and v0!=v1 and v1!=v2 and v3==v1 and v4==v2)
+        txt=pg.evaluate("ser()");a=pg.evaluate("dmSum()");pg.evaluate("t=>loadProj(t)",txt);pg.wait_for_timeout(1500);bb=pg.evaluate("dmSum()")
+        print('save→load: mesh sum %s → %s'%(a,bb));ok&=_verdict('保存読込でメッシュ保持',a>0 and a==bb)
+        c=pg.evaluate("cen()");pg.evaluate("setTab('dr');setTool('pen')")
+        # 歪み越しのペン：押している間に見た目が変わるか（warpIncの再発検知。以前はメッシュ越しだと指を離すまで見えなかった）
+        va=pg.evaluate("vis()");pg.mouse.move(c[0]-60,c[1]+70);pg.mouse.down();pg.mouse.move(c[0]+60,c[1]+90,steps=5);pg.wait_for_timeout(150);vb=pg.evaluate("vis()");pg.mouse.up();pg.wait_for_timeout(500)
+        print('pen on warped: visible during the stroke %s'%(va!=vb));ok&=_verdict('歪み越しペンがストローク中に見える',va!=vb and not errs)
+        pg.evaluate("setTab('wp');$('wbake').click()");pg.wait_for_timeout(1000)
+        print('bake: mesh cleared %s errs %s'%(pg.evaluate("!sel.dm"),errs));ok&=_verdict('焼き込み',pg.evaluate("!sel.dm") and not errs)
+        b.close();return ok
+
 if __name__=='__main__':
     F=sys.argv[1]
     print('== 1 ペン×調整 =='); print(test_pen(F,True))
     print('== 2 質感マスク/パッド/Undo/保存読込 =='); test_texture_mask(F)
     print('== 3 全体⇄範囲指定 =='); test_scope_switch(F)
+    print('== 4 調整後のペン・消しゴムの即時反映（Z-65）=='); r4=[test_adjust_then_edit(F,256,256),test_adjust_then_edit(F,4000,3000)]
+    print('== 5 歪みブラシ（Z-67）=='); r5=test_warp_brush(F)
+    print('== 4・5 の判定 ==', 'すべてOK' if all(r4+[r5]) else 'NGあり（上の「NG（要確認）」を見る）')

@@ -3,13 +3,31 @@
 <body>
 <h1>アクションメーカー</h1>
 <div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option></select></div>
-<div id="wrap"><canvas id="cv"></canvas><button id="pz" aria-label="止める／うごかす">⏸</button><button id="vlk" aria-label="ビューワーを固定（もう一度押すまで拡大・移動を一切しない）">🔒</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="un2" aria-label="元に戻す">↩</button><button id="zr" style="display:none" aria-label="拡大を1倍に戻す">1×</button><button id="hq" aria-label="使い方">？</button><button id="sn2" aria-label="静止画を保存">📷</button><button id="rc2" aria-label="録画">⏺</button><button id="fsb">⛶ 拡大</button><div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
+<div id="wrap"><canvas id="cv"></canvas>
+<div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button></div>
+<div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
+<div class="cmenu" id="mV" hidden>
+  <div class="cmh">枠の大きさ</div>
+  <div class="cseg" id="frSeg"><button data-fr="n" aria-label="通常の枠（正方形）">通常</button><button data-fr="b" aria-label="大きい枠（画面いっぱいに近い・操作窓は下）">大</button><button data-fr="f" aria-label="全画面">全画面</button></div>
+  <button id="vlk" aria-label="ビューワーを固定（もう一度押すまで拡大・移動を一切しない）">🔒 ビューワーを固定</button>
+  <button id="zr" disabled aria-label="拡大を1倍に戻す">1× 拡大を戻す</button>
+  <button id="tpfb" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟 操作窓を分離</button>
+</div>
+<div class="cmenu" id="mA" hidden>
+  <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
+  <div class="cseg"><button id="un2" aria-label="元に戻す">↩ 戻す</button><button id="rd2" aria-label="やり直す">↪ やり直す</button></div>
+  <button id="ad2" aria-label="画像を選んでオブジェクトを追加">🖼 画像を追加</button>
+  <button id="sn2" aria-label="静止画を保存">📷 静止画を保存</button>
+  <button id="rc2" aria-label="録画">⏺ 録画</button>
+  <button id="hq" aria-label="使い方">？ 使い方</button>
+</div>
+<div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
 
 <div class="pane" id="tp">
-  <div id="grip"></div>
+  <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）">⠿ 操作窓</span><button id="tpa" aria-label="操作窓の透け方を変える（分離中）">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
   <div class="row"><button id="physMode">⚙️ 物理モードに切り替え</button></div>
   <div class="row" id="ch1"></div>
-  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">パーツ</button><button data-t="bg">背景・出力</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
+  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">パーツ</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><button id="bnd">境界線を表示</button><button id="clrfx">エフェクトを全消去</button></div>
@@ -19,7 +37,7 @@
     <div class="row" id="fbRow" style="display:none"><span class="lab">重なり</span><button id="fbF">😀 手前</button><button id="fbB">🫥 奥</button></div>
     <div class="row"><button id="emTgl">🎨 サンプル絵文字を使う</button></div>
     <div class="row em" id="em" style="display:none"></div>
-    <div class="row"><label class="file">画像を選ぶ<input id="f" type="file" accept="image/*"></label><span id="ex" style="display:contents"></span></div>
+    <div class="row"><label class="file">この絵を別の画像に差し替える<input id="f" type="file" accept="image/*"></label><span id="ex" style="display:contents"></span></div>
     <div class="note">回転の半径・伸び縮みの支点は「動き」タブに移しました。</div>
   </div>
 
@@ -33,12 +51,23 @@
   </div>
 
   <div class="tab" data-tab="wp"><div id="wp">
-    <details id="whelp" open><summary>使い方（タップで開閉）</summary><div class="note">①歪みの種類を選ぶ　②オブジェクトをタップ（タッチはなぞる）で歪みを追加　③「範囲」「強さ」で調整。<br>「なだらかさ」＝遠くまで広がる度合い／「反復」＝強さが波打つ／「軌道」＝歪みの中心が動く。<br>番号ボタンで、追加した歪みを選んで調整・削除できます。「✋選んで動かす」で位置も動かせます。</div></details>
-    <div class="row"><button id="wm1" class="on">＋追加する</button><button id="wm2">✋ 選んで動かす</button><button id="wsh">◎ 範囲を表示</button></div>
+    <details id="whelp" open><summary>使い方（タップで開閉）</summary><div class="note"><b>🖌 ブラシ</b>：絵をなぞって、粘土のように動かします（Photoshop／Photopeaの「ゆがみ」と同じ考え方）。「押し出す」はなぞった方向へ、「膨らませる・縮める・ひねる」は押している間じっと効き、「戻す」で歪みを元へ、「なめらかに」で歪みをならします。サイズは画面上の大きさ（拡大すると細かく効きます）。ペンの筆圧にも対応。<br><b>📍 ピン</b>：置いた場所を中心に、あとから範囲や強さを調整でき、波打つ・往復する「動く歪み」にできます。リングの中心をドラッグで移動、右端の白いつまみをドラッグで範囲を変更。<br>ブラシとピンは同時に使えます（ブラシ→ピンの順で重なります）。</div></details>
+    <div class="row tools"><button id="wmB" class="on">🖌 ブラシで歪ませる</button><button id="wm1">📍 ピンを置く</button><button id="wm2">✋ ピンを選ぶ・動かす</button></div>
+    <div id="wbr">
+      <div class="row tools" id="wbt"></div>
+      <div class="row"><span class="lab">サイズ</span><input id="wbS" type="range" min="6" max="400" step="1" value="70" aria-label="ブラシのサイズ（画面上の直径px）"></div>
+      <div class="row"><span class="lab">硬さ</span><input id="wbH" type="range" min="0" max="100" step="1" value="40" aria-label="ブラシの硬さ（大きいほど縁までしっかり効く）"></div>
+      <div class="row"><span class="lab">強さ</span><input id="wbG" type="range" min="1" max="100" step="1" value="60" aria-label="ブラシの強さ"></div>
+      <div class="row" id="wbRr"><span class="lab">速さ</span><input id="wbR" type="range" min="1" max="100" step="1" value="50" aria-label="押している間の効く速さ"></div>
+      <div class="row"><label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="wbP" checked>ペンの筆圧で強さを変える</label></div>
+      <div class="row"><button id="wbRst">♻ ブラシの歪みを全部戻す</button></div>
+    </div>
+    <div id="wpn">
+    <div class="row"><button id="wsh">◎ ピンの範囲を表示</button></div>
     <div class="row" id="pinl"></div>
     <div class="row"><span class="lab">同期</span><select id="wsyncSel" aria-label="歪みを同期する相手"><option value="">同期しない</option></select></div>
     <div class="row"><button data-w="p">👆 タッチ</button><button data-w="bp">🫧 膨らみ</button><button data-w="bn">🕳 凹み</button><button data-w="b" class="on">⇅ 膨らみ↔凹み</button><button data-w="s">🌀 螺旋</button></div>
-    <div class="row"><span class="lab">範囲</span><input id="wr" type="range" min="0.05" max="0.7" step="0.01" value="0.25" aria-label="歪みの範囲"></div>
+    <div class="row"><span class="lab">範囲</span><input id="wr" type="range" min="0.03" max="0.7" step="0.01" value="0.25" aria-label="歪みの範囲"></div>
     <div class="row"><span class="lab">なだらかさ</span><input id="wf" type="range" min="0" max="1" step="0.05" value="0.5" aria-label="歪みのなだらかさ（大きいほど遠くまでゆるやかに波及）"></div>
     <div class="row" id="war"><span class="lab">強さ</span><input id="wa" type="range" min="-1" max="1" step="0.05" value="0.6" aria-label="歪みの強さ（マイナスで凹み）"></div>
     <div class="row"><span class="lab">反復</span><select id="ww" aria-label="反復の波形"></select></div>
@@ -47,15 +76,16 @@
     <div class="row"><span class="lab">軌道</span><select id="wm" aria-label="歪みの中心の軌道"><option value="sin">往復</option><option value="circle">円</option><option value="eight">8の字</option></select></div>
     <div class="row"><span class="lab">距離</span><input id="wd" type="range" min="0" max="0.5" step="0.01" value="0" aria-label="軌道の大きさ（0で動かさない）"></div>
     <div class="row"><span class="lab">方向</span><input id="wn" type="range" min="0" max="180" step="5" value="0" aria-label="往復の方向"></div>
-    <div class="row"><button id="wu">選んだ歪みを削除</button><button id="wc">全部消す</button></div>
-    <div class="row"><button id="wbake">🧊 歪みを画像に統合</button></div>
-    <div class="note">画面をなぞる／タップで歪みを追加します。「反復」で強さが波打ち、「軌道」で歪みの中心が往復・円運動します。</div>
+    <div class="row"><button id="wu">選んだピンを削除</button><button id="wc">ピンを全部消す</button></div>
+    <div class="note">ピンモード：画面をなぞる／タップでピンを置きます。「反復」で強さが波打ち、「軌道」で歪みの中心が往復・円運動します。</div>
+    </div>
+    <div class="row"><button id="wbake">🧊 歪みを画像に統合（ブラシ＋ピン）</button></div>
   </div></div>
 
   <div class="tab" data-tab="dr">
     <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button></div>
-    <div class="row" id="es2" style="display:none"><span class="lab">消し具合</span><input id="es" type="range" min="0.1" max="1" step="0.05" value="1" aria-label="消しゴムの強さ（弱いほど半透明に残る）"></div>
-    <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="2" max="40" value="10" aria-label="ペンの太さ"></div>
+    <div class="row" id="es2" style="display:none"><span class="lab">消し具合</span><input id="es" type="range" min="0.01" max="1" step="0.05" value="1" aria-label="消しゴムの強さ（弱いほど半透明に残る）"></div>
+    <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0.1" max="40" value="10" aria-label="ペンの太さ"></div>
     <div class="row"><span class="lab">文字</span><input id="tx" type="text" placeholder="文字を入力" aria-label="文字" style="flex:1;min-width:120px;font:inherit;padding:6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:inherit"><input id="tcl" type="color" value="#2b2140" aria-label="文字の色"><button class="pk" data-for="tcl" aria-label="スポイト">💧</button></div>
     <div class="row"><button id="addt">＋文字を置く</button><button id="addd">＋白紙レイヤー</button></div>
     <div class="note">ペンで描いた線は、通常の「消しゴム」で描いた分だけ消せます（元の絵は残ります）。元の絵そのものを消したいときは「消しゴム（画像ごと）」を使ってください。文字を選んでいる間は、入力欄の変更がその文字に反映されます。</div>
@@ -65,7 +95,7 @@
     <div class="grp alt" id="adjRange"><div class="gh">📍 適用範囲（開いているタブの調整だけに効く）</div>
     <div class="row tools"><button id="adjScAll">全体に効かせる</button><button id="adjScRng">範囲を指定する</button></div>
     <div class="row tools" id="adjRngRow"><button id="adjPaint">塗る</button><button id="adjErase">消す</button><button id="adjAll">全面を範囲に</button><button id="adjClear">範囲をクリア</button></div>
-    <div class="row" id="adjBsRow"><span class="lab">太さ</span><input id="adjBs" type="range" min="3" max="80" step="1" value="20" aria-label="範囲ブラシの太さ"></div>
+    <div class="row" id="adjBsRow"><span class="lab">太さ</span><input id="adjBs" type="range" min="1" max="80" step="1" value="20" aria-label="範囲ブラシの太さ"></div>
     <div class="row"><button id="adjShow">範囲を表示</button><span class="lab">なじみ</span><input id="adjFe" type="range" min="0" max="100" step="1" value="0" aria-label="範囲の境界のなじみ"><b class="v" id="adjFev">0</b></div>
     <div class="note">「全体に効かせる」は選んだオブジェクト全体に適用します。「範囲を指定する」に切り替えると、塗った所だけに効きます（塗った範囲は全体に戻しても残り、切り替えで再び使えます）。全体から一部だけ除きたいときは「全面を範囲に」→「消す」。範囲は色調整と質感・局所で別々に持ちます。調整値は元画像に焼き込まず保持します。</div></div>
     <div class="grp alt"><div class="gh">🎨 色調整</div>
@@ -94,6 +124,7 @@
     <div class="row"><span class="lab">エッジ選択</span><input id="fxEd" type="range" min="0" max="100" step="1" value="0"><b class="v" id="fxEdv">0</b></div>
     <div class="row"><span class="lab">階調バランス</span><input id="fxBa" type="range" min="-100" max="100" step="1" value="0"><b class="v" id="fxBav">0</b></div>
     <div class="row"><span class="lab">ノイズ抑制</span><input id="fxSo" type="range" min="0" max="100" step="1" value="0"><b class="v" id="fxSov">0</b></div>
+    <div class="row"><span class="lab">輪郭の保護</span><input id="fxPr" type="range" min="0" max="100" step="1" value="50"><b class="v" id="fxPrv">50</b></div>
     </details>
     <div class="row"><button id="fxReset">この項目をリセット</button><button id="fxResetAll">質感をすべてリセット</button></div></div>
   </div>
@@ -101,13 +132,13 @@
   <div class="tab" data-tab="mk">
     <div class="grp"><div class="gh">🖌 マスク（他のオブジェクトを隠して消す）</div>
     <div class="row tools"><button data-tool="mouth" class="on">🖌 マスク塗り</button><button data-tool="mouthx">マスクを消す</button></div>
-    <div class="row" id="tb"><span class="lab">太さ</span><input id="bs" type="range" min="3" max="40" step="1" value="14" aria-label="ブラシの太さ"><button id="ca">全部消す</button></div>
+    <div class="row" id="tb"><span class="lab">太さ</span><input id="bs" type="range" min="1" max="40" step="1" value="14" aria-label="ブラシの太さ"><button id="ca">全部消す</button></div>
     <div class="row" id="mv1"><span class="lab" style="min-width:0">マスク内の見え方</span><input id="kp" type="range" min="0" max="0.8" step="0.05" value="0" aria-label="マスク内の見え方（0で透明）"></div>
     <div class="row" id="mv2"><button id="eat">消えた部分を残す</button><button id="rst" style="display:none">もとにもどす</button></div>
     <div class="note">「マスク塗り」は、選んでいるオブジェクト自身に、隠す領域を描きます。他のオブジェクトを「配置」タブの「対象」でこのオブジェクトに向け、「対象のマスクで隠す」をオンにすると、ここに入った部分が消えます。</div></div>
     <div class="grp alt"><div class="gh">〰️ ぼかし（見た目をぼかす。マスクとは別物です）</div>
     <div class="row" id="bmr"><button data-tool="bpaint">🖌 ぼかす所を塗る</button><button data-tool="bpaintx">消す</button><button id="bfill">全体を塗る</button><button id="bmc">全部消す</button></div>
-    <div class="row"><span class="lab">塗る太さ</span><input id="bbs" type="range" min="3" max="40" step="1" value="14" aria-label="ぼかしを塗る太さ（マスクとは別設定）"></div>
+    <div class="row"><span class="lab">塗る太さ</span><input id="bbs" type="range" min="1" max="40" step="1" value="14" aria-label="ぼかしを塗る太さ（マスクとは別設定）"></div>
     <div class="row"><span class="lab">ぼかし</span><input id="bl" type="range" min="0" max="30" step="1" value="0" aria-label="ぼかし"><b class="v" id="blv"></b></div>
     <div class="row"><button id="bshow">範囲を表示</button><button id="bcmp">👁 ぼかし前を見る（押している間）</button></div>
     <div class="row"><button id="bbake">🧊 ぼかしを画像に統合</button></div>
@@ -116,7 +147,7 @@
 
   <div class="tab" data-tab="pt">
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
-    <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="3" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
+    <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
     <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
     <div class="row"><button id="pexp">📷 このオブジェクトだけ保存（元の解像度）</button></div>
     <div class="note">選んでいるオブジェクトの一部を囲んでコピー（または切り取り）すると、画面の左下に置かれます。サムネイルをタップすると、新しいオブジェクトとして貼り付けます。</div>
@@ -145,7 +176,7 @@
   </div>
 
   <div class="tab" data-tab="bg">
-    <div class="row"><span class="lab">背景</span><input id="bg1" type="color" value="#c9f0e4" aria-label="背景の上の色"><button class="pk" data-for="bg1" aria-label="スポイト">💧</button><input id="bg2" type="color" value="#f5cf7a" aria-label="背景の下の色"><button class="pk" data-for="bg2" aria-label="スポイト">💧</button><select id="bgm" aria-label="背景の種類"><option value="grad">2色</option><option value="solid">1色</option><option value="none">透明(PNGのみ)</option></select></div>
+    <div class="row"><span class="lab">背景</span><input id="bg1" type="color" value="#ffffff" aria-label="背景の上の色"><button class="pk" data-for="bg1" aria-label="スポイト">💧</button><input id="bg2" type="color" value="#ffffff" aria-label="背景の下の色"><button class="pk" data-for="bg2" aria-label="スポイト">💧</button><select id="bgm" aria-label="背景の種類"><option value="grad">2色</option><option value="solid" selected>1色</option><option value="none">透明(PNGのみ)</option></select></div>
     <div class="row"><label class="file">背景画像<input id="bgf" type="file" accept="image/*"></label><button id="bgr">画像を外す</button></div>
     <div class="row"><span class="lab">ぼかし</span><input id="bgb" type="range" min="0" max="30" value="0" aria-label="背景のぼかし"></div>
     <div class="row"><span class="lab">書き出し</span><button id="rec">⏺ 動画</button><button id="gif">🎞 GIF</button><span id="rtx" class="note" style="margin:0"></span></div>
@@ -155,11 +186,13 @@
     <div id="out"></div>
     <div class="note">動画は WebM（対応端末ではMP4）、GIFは最大10秒・幅360pxです。保存できない環境では、表示された動画・画像を長押しして保存してください。</div>
   </div>
+  <div id="tpr" aria-label="操作窓の大きさを変える"><i></i></div>
 </div>
 
+<input id="fadd" type="file" accept="image/*" multiple>
 <div id="lypop" class="lypop" hidden role="dialog" aria-label="レイヤーとオブジェクト">
   <div class="lyhd"><b>レイヤーとオブジェクト</b><button id="lyx" aria-label="閉じる">✕</button></div>
-  <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd">＋オブジェクト</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
+  <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><button id="oadd3" aria-label="サンプル絵文字のオブジェクトを追加">＋絵文字</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
   <div id="lyl"></div>
   <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="lyphx" checked>非表示レイヤーを物理の計算から除外する</label>
   <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。行は長押し（マウスはドラッグ）で並べ替え。オブジェクトを別レイヤーの行やオブジェクトの上へ落とすと所属が変わります。上ほど手前。</div>
