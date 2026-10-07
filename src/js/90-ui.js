@@ -46,7 +46,8 @@ function chips(){
   const box=$('ch1');box.innerHTML='';
   const b=document.createElement('button'),y=sel?layOf(sel):LY(curLid);b.id='lyopen';b.className='lyopen';b.setAttribute('aria-label','レイヤーとオブジェクトの一覧を開く');
   if(sel){const im=document.createElement('img');im.alt='';im.src=thumbURL(sel);b.append(im)}
-  b.append(document.createTextNode('🗂 '+y.name+(sel?' › '+sel.name:'')+' ▾'));b.onclick=()=>lyToggle();box.appendChild(b);layUi();
+  b.append(document.createTextNode('🗂 '+y.name+(sel?' › '+sel.name:'')+' ▾'));b.onclick=()=>lyToggle();box.appendChild(b);
+  const q=document.createElement('button');q.id='qadd';q.textContent='＋画像';q.setAttribute('aria-label','画像を選んで新しいオブジェクトを追加');armTip(q);q.onclick=()=>pickImages();box.appendChild(q);layUi();
 }
 function frame(l){
   if(!W||!l||vLock||noFrame)return;

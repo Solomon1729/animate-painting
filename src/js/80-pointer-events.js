@@ -1,3 +1,5 @@
+/* 1フレームに間引かれた入力点もすべて拾う（ペンの線がカクカクせず、細かい動きも拾える） */
+const evPts=(e,q)=>{if(e.getCoalescedEvents){const l=e.getCoalescedEvents();if(l&&l.length)return l.map(sp)}return[q]};
 function hit(p){
   if(sel&&isVisible(sel)){const ds=Math.hypot(p.x-sel.wx,p.y-sel.wy)/(S0*sel.size*.6);if(ds<1)return sel}
   let b=null,bd=1;for(const a of AC){if(!isVisible(a))continue;const d=Math.hypot(p.x-a.wx,p.y-a.wy)/(S0*a.size*.6);if(d<bd){bd=d;b=a}}return b;
@@ -14,7 +16,7 @@ function pdown(e){
   if(ptrs.size===1)firstDownTs=performance.now();
   if(ptrs.size>=2){
     const quick=performance.now()-firstDownTs<300;
-    if((tgt||drawing||wg)&&!quick)return;
+    if((tgt||drawing||wg||wbg)&&!quick)return;
     if(vLock)return;if(tgt&&tgtBak&&tgtBak.a===tgt&&quick){const b=tgtBak;tgt.fx=b.fx;tgt.fy=b.fy;tgt.ox=b.ox;tgt.oy=b.oy}up();const pts=[...ptrs.values()].slice(-2),[a,b]=pts;pz0={d:Math.hypot(a.x-b.x,a.y-b.y)||1,m:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},Z:{...Z}};return
   }
   if(pickFor){pickAt(q);return}
@@ -26,7 +28,7 @@ function pdown(e){
   if(pbox){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;boxStart=loc(pl,q);boxEnd={...boxStart};return}
   if(bpn||psn){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;strokeSel(q);return}
   if(tool==='pen'||tool==='eraser'||tool==='ieraser'){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;strokeActor=pl;penAt(q,pl);return}
-  if(tool==='warp'){const l=hit(p)||sel;if(blocked(l))return;if(l!==sel)setSel(l);if(wmode==='pick')pickPin(q,l);else startWarp(q,l);return}
+  if(tool==='warp'){const l=hit(p)||sel;if(blocked(l))return;if(l!==sel)setSel(l);if(wmode==='brush')wbDown(q,e,l);else if(wmode==='pick')pickPin(q,l);else startWarp(q,l);return}
   const h=hit(p);
   if(h){
     tgt=h;editing=true;setSel(h);dragOff=null;thist=[];tgtBak={a:h,fx:h.fx,fy:h.fy,ox:h.ox,oy:h.oy};
@@ -39,18 +41,19 @@ function pdown(e){
   else if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};
 }
 cv.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='touch'&&tool==='warp'&&wmode==='brush'){const h=sp(e);wHov={x:h.x,y:h.y,t:performance.now(),m:e.pointerType==='mouse'}}
   if(!ptrs.has(e.pointerId))return;const q=sp(e);ptrs.set(e.pointerId,q);
   if(pz0&&ptrs.size===2){
     const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},s=cl(pz0.Z.s*d/pz0.d,.5,6),w0={x:(pz0.m.x-pz0.Z.x)/pz0.Z.s,y:(pz0.m.y-pz0.Z.y)/pz0.Z.s};
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
   if(rulerOn&&rulerPt){const p=wp(q);rulerPt.x1=p.x;rulerPt.y1=p.y;return}
-  if(drawing)(paint?stroke(q):adjMode?adjBrushAt(q,pl):pbox?(boxEnd=loc(pl,q)):((bpn||psn)?strokeSel(q):penAt(q,pl)));else if(wg)wmove(q);else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
+  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
 });
 let thist=[],firstDownTs=0;
 const end=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pz0=null;
   if(!ptrs.size){
-    if(strokeActor){strokeActor.wd=true;strokeActor=null}
+    if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
     if(rulerOn&&rulerPt){
       const px=Math.hypot(rulerPt.x1-rulerPt.x0,rulerPt.y1-rulerPt.y0);
       if(px>4){pendingRulerPx=px;$('pRulerSet').style.display='flex'}
@@ -68,9 +71,10 @@ addEventListener('pointerup',end);addEventListener('pointercancel',end);
 addEventListener('blur',()=>{ptrs.clear();pz0=null;up()});
 cv.addEventListener('lostpointercapture',end);
 cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')wHov=null});
 cv.addEventListener('wheel',e=>{e.preventDefault();if(vLock)return;const q=sp(e),w=wp(q),s=cl(Z.s*(e.deltaY<0?1.1:1/1.1),.25,12);Z.s=s;Z.x=q.x-s*w.x;Z.y=q.y-s*w.y},{passive:false});
 $('zr').onclick=()=>{if(vLock)return;Z.s=1;Z.x=0;Z.y=0};
-let handMode=false,vLock=false;$('vlk').onclick=()=>{vLock=!vLock;$('vlk').classList.toggle('on',vLock)};
+let handMode=false,vLock=false;$('vlk').onclick=()=>{vLock=!vLock;$('vlk').classList.toggle('on',vLock);$('vlk').textContent=vLock?'🔒 固定中（押すと解除）':'🔒 ビューワーを固定';$('mnv').textContent=vLock?'🔒':'👁'};
 $('hand').onclick=()=>{handMode=!handMode;$('hand').classList.toggle('on',handMode)};
 function zoomBy(k){if(vLock)return;const cx=W/2,cy=H/2,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,12);Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
 $('zin').onclick=()=>zoomBy(1.35);$('zout').onclick=()=>zoomBy(1/1.35);

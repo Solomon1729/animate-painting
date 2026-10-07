@@ -48,7 +48,7 @@ function renderTray(){
 $('pcopy').onclick=()=>takePart(false);$('pcut').onclick=()=>takePart(true);$('pdup').onclick=()=>{fillSel('sm','#ff5d8f');takePart(false);pasteClip(0)};
 $('pexp').onclick=()=>{
   const l=sel;if(!l)return;
-  const oldLvl=lvl;lvl=0;if(l.pins.length){l.wo=null;l.sd=null;l.wd=true;warpFrame(l)}lvl=oldLvl;
+  const oldLvl=lvl;lvl=0;if(hasWarp(l)){l.wo=null;l.sd=null;l.wd=true;warpFrame(l)}lvl=oldLvl;
   const{c,W,H}=boxCv(l),g=c.getContext('2d'),d=g.getImageData(0,0,W,H).data;
   let x0=W,y0=H,x1=0,y1=0;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(d[(y*W+x)*4+3]>4){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
