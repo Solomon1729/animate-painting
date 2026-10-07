@@ -8,8 +8,14 @@ body{background:var(--bg);color:var(--ink);font-family:"Zen Maru Gothic","Hiragi
 h1{font-size:20px;font-weight:900;margin:4px 0 10px}
 #wrap{position:relative;border-radius:18px;overflow:hidden;background:var(--pane)}
 canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#fsb,#pz,#zr,#rc2,#un2,#sn2,#hq,#hand,#vlk,#zin,#zout{position:absolute;top:8px;z-index:5;padding:5px 8px;font-weight:900;background:var(--pane);opacity:.92}
-#fsb{right:8px}#rc2{right:88px}#pz{left:8px}#un2{left:46px}#hand,#vlk,#zin,#zout,#zr{top:46px}#hand{left:8px}#vlk{left:46px}#zin{left:84px}#zout{left:118px}#zr{left:152px}#sn2{right:124px}#hq{right:160px}
+/* キャンバス上のボタン：拡大縮小3つ（左上・常時）＋メニュー2つ（右上）。メニューは押した時だけ開く（ホバー演出なし） */
+.cbar{position:absolute;top:8px;z-index:5;display:flex;gap:6px}#cz{left:8px}#cm{right:8px}
+.cbar button{min-width:38px;height:38px;padding:0 8px;font-size:17px;font-weight:900;background:var(--pane);opacity:.86;border-radius:12px;line-height:1}
+.cbar button.on{opacity:1}#mna.rec{background:#ff2d87;color:#fff;animation:pulse 1s infinite}
+.cmenu{position:absolute;right:8px;top:52px;z-index:8;min-width:196px;max-width:calc(100% - 16px);max-height:calc(100% - 64px);overflow:auto;background:var(--pane);border:2px solid var(--line);border-radius:14px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:4px}.cmenu[hidden]{display:none}
+.cmenu>button{width:100%;text-align:left;padding:9px 10px;font-weight:700}.cmenu>button.on{background:var(--acc);color:#fff;border-color:var(--acc)}.cmh{font-size:11px;font-weight:900;opacity:.6;padding:2px 4px 0}
+.cseg{display:flex;gap:4px}.cseg button{flex:1;padding:9px 6px;font-weight:700;text-align:center}.cseg button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+#rc2.rec{background:#ff2d87;color:#fff}
 .hint{position:absolute;left:10px;bottom:8px;right:10px;font-size:12px;opacity:.75;pointer-events:none}
 .pane{background:var(--pane);border:2px solid var(--line);border-radius:14px;padding:10px;margin-top:10px}
 .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
@@ -18,10 +24,10 @@ canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-
 button,.file,select{font:inherit;font-size:13px;color:inherit;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:6px 10px;cursor:pointer;line-height:1.3}
 button.on{border-color:var(--acc);background:var(--acc);color:#fff}
 .tools button{flex:1 1 28%;font-weight:900;font-size:14px}
+#wbt button{flex:1 1 22%;padding:6px 4px;font-size:13px;white-space:nowrap}
 #physMode{width:100%;background:#3a2470;color:#fff;border-color:#3a2470}
 #tabs button{position:relative}
 #tabs button.flag::after{content:'';position:absolute;top:1px;right:4px;width:7px;height:7px;border-radius:50%;background:#ff2d87;box-shadow:0 0 0 2px var(--pane)}
-#rc2.rec{background:#ff2d87;color:#fff;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .em button{font-size:20px;padding:3px 8px}
 input[type=range]{flex:1;min-width:90px;accent-color:var(--acc)}
@@ -35,7 +41,6 @@ input[type=file]{display:none}
 #ch1 button img{vertical-align:middle}
 .ltip{position:fixed;z-index:99;background:#222;color:#fff;font-size:12px;padding:5px 9px;border-radius:8px;max-width:68vw;pointer-events:none;box-shadow:0 3px 10px rgba(0,0,0,.35)}
 .note{font-size:12px;opacity:.7;margin-top:6px}
-#tc{display:none}
 .lyopen{display:flex;align-items:center;gap:6px}.lyopen img{width:22px;height:22px;object-fit:contain;border-radius:5px;background:rgba(127,127,127,.15)}
 .lypop{position:fixed;z-index:300;width:min(94vw,440px);max-height:72vh;overflow:auto;background:var(--pane);color:var(--ink);border:2px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:10px;overscroll-behavior:contain}.lypop[hidden]{display:none}
 .lyhd{display:flex;justify-content:space-between;align-items:center}.lytb{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
@@ -44,21 +49,17 @@ input[type=file]{display:none}
 .trow img{width:28px;height:28px;object-fit:contain;border-radius:6px;background:rgba(127,127,127,.15);flex:none}.trow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.trow .br{opacity:.6;flex:none}.trow button{padding:2px 8px}
 body.fs{overflow:hidden}
 body.fs #wrap{position:fixed;left:0;top:0;right:0;bottom:0;height:100vh;height:100dvh;border-radius:0;z-index:50}
-body.fs #fsb,body.fs #pz,body.fs #zr,body.fs #rc2,body.fs #un2,body.fs #sn2,body.fs #hq,body.fs #zr{top:calc(8px + env(safe-area-inset-top,0px))}
-body.fs #hand,body.fs #vlk,body.fs #zin,body.fs #zout,body.fs #zr{top:calc(46px + env(safe-area-inset-top,0px))}
-body.fs .hint{bottom:auto;top:calc(52px + env(safe-area-inset-top,0px))}
+body.fs .cbar{top:calc(8px + env(safe-area-inset-top,0px))}body.fs .cmenu{top:calc(52px + env(safe-area-inset-top,0px))}
 body.fs #tp{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0;border-radius:14px 14px 0 0;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
 body.fs #tp .mv{display:none}
-body.fs #tc{display:inline-block;flex:0 0 auto}
-body.fs.tpc #tp .k1,body.fs.tpc #tp .k2,body.fs.tpc #tb{display:none}
-.pop{position:absolute;left:8px;right:8px;top:48px;z-index:7;background:var(--pane);border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;display:flex;gap:8px;align-items:flex-start;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.pop{position:absolute;left:8px;right:8px;top:54px;z-index:7;background:var(--pane);border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;display:flex;gap:8px;align-items:flex-start;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .pop[hidden]{display:none}
 .pop{pointer-events:none}
 #tray{position:absolute;left:8px;bottom:8px;display:flex;gap:6px;z-index:6;flex-wrap:wrap;max-width:70%}
 #tray:empty{display:none}
 #tray button{padding:2px;border-radius:10px;background:var(--pane);opacity:.95}
 #tray img{width:38px;height:38px;object-fit:contain;display:block}
-body.fs #tray{bottom:auto;top:calc(96px + env(safe-area-inset-top,0px));flex-direction:column}
+body.fs #tray{bottom:auto;top:calc(56px + env(safe-area-inset-top,0px));flex-direction:column}
 details summary{cursor:pointer;font-weight:900;font-size:13px}
 .pop.pop button{pointer-events:auto}
 body.fs .pop{top:calc(52px + env(safe-area-inset-top,0px))}
@@ -68,8 +69,30 @@ body.fs .pop{top:calc(52px + env(safe-area-inset-top,0px))}
 .tab{display:none;margin-top:8px}.tab.on{display:block}
 #tabs button{flex:1 1 auto;font-weight:900;font-size:13px;padding:6px 8px}
 #tp{max-height:46vh;overflow:auto;overscroll-behavior:contain}body.fs #tp{max-height:var(--tph,46vh)}#tp::after{content:"";display:block;height:34vh}
-#grip{display:none}
-body.fs #grip{display:block;position:sticky;top:0;z-index:5;height:28px;margin:0 0 4px;background:var(--pane);cursor:ns-resize;touch-action:none}
-body.fs #grip::before{content:"";position:absolute;left:50%;top:11px;width:56px;height:6px;margin-left:-28px;border-radius:3px;background:var(--line)}
-body.fs.tpc #tp .tab,body.fs.tpc #tp #tabs button[data-t]{display:none}
+/* 操作窓の持ち手（枠が「大」「全画面」の時、または分離中だけ出る） */
+#grip{display:none;align-items:center;gap:6px;position:sticky;top:0;z-index:5;margin:0 0 4px;padding:2px 0 4px;background:var(--pane)}
+body.fs #grip,body.big #grip,body.tpf #grip{display:flex}
+#gdrag{flex:1;font-size:12px;font-weight:900;opacity:.7;padding:7px 4px;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none;white-space:nowrap}
+body.tpf #gdrag{cursor:move}
+#grip button{padding:3px 9px;font-size:15px;line-height:1.2;flex:0 0 auto}
+#tpa{display:none}body.tpf #tpa{display:inline-block}
+body.tpf #tpd{background:var(--acc);border-color:var(--acc);color:#fff}
+/* 折りたたみ＝持ち手の行だけ残す */
+body.fs.tpc #tp>:not(#grip):not(#tpr),body.big.tpc #tp>:not(#grip):not(#tpr),body.tpf.tpc #tp>:not(#grip):not(#tpr){display:none}
+body.fs.tpc #tp::after,body.big.tpc #tp::after,body.tpf.tpc #tp::after{display:none}
+/* 枠「大」：作品を上に固定し、幅いっぱい・高さは--bighで可変。操作窓は下（持ち手を上下に動かすと作品と窓の割合が変わる） */
+body.big{max-width:none;padding:0}
+body.big h1,body.big #topbar{display:none}
+body.big #wrap{position:sticky;top:0;z-index:20;height:var(--bigh,62vh);height:var(--bigh,62dvh);border-radius:0 0 16px 16px}
+body.big #tp{margin:8px 8px 0;max-height:calc(100vh - var(--bigh,62vh) - 18px);max-height:calc(100dvh - var(--bigh,62dvh) - 18px)}
+body.big.tpc:not(.tpf) #wrap{height:calc(100vh - 56px);height:calc(100dvh - 56px)}
+/* 分離（浮かせる）：作品の上に半透明で重ねる。文字・ボタンは不透明のまま、背景だけ透ける */
+body.tpf #tp{position:fixed;right:auto;bottom:auto;left:var(--tpx,8px);top:var(--tpy,120px);width:var(--tpw,min(94vw,340px));max-height:var(--tpfh,min(60vh,560px));margin:0;z-index:60;border-radius:16px;padding-bottom:10px;box-shadow:0 10px 32px rgba(0,0,0,.4);background:var(--pane);background:color-mix(in srgb,var(--pane) var(--tpa,78%),transparent);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+body.tpf #tp::after{display:none}
+body.tpf #grip{background:color-mix(in srgb,var(--pane) 94%,transparent);border-radius:12px}
+body.big.tpf #wrap{height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border-radius:0}
+#tpr{display:none}
+body.tpf #tpr{display:block;position:sticky;bottom:0;height:0;touch-action:none}
+body.tpf.tpc #tpr{display:none}
+#tpr i{position:absolute;right:0;bottom:2px;width:30px;height:30px;cursor:nwse-resize;border-radius:0 0 12px 0;background:linear-gradient(135deg,transparent 52%,var(--line) 52%,var(--line) 62%,transparent 62%,transparent 72%,var(--line) 72%,var(--line) 82%,transparent 82%)}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
