@@ -16,8 +16,8 @@ $('bgr').onclick=()=>{BG.img=null};
 
 /* 書き出し: 録画(動画)・静止画 */
 function flagOutput(){const b=document.querySelector('#tabs [data-t="bg"]');if(b&&!document.querySelector('.tab[data-tab="bg"]').classList.contains('on'))b.classList.add('flag')}
-function showOut(url,kind,ext){
-  const o=$('out');o.innerHTML='';const el=document.createElement(kind);el.src=url;
+function showOut(url,kind,ext,prev){  /* prev＝画像として見せるURL（PDFのように<img>で開けない形式の時に、保存リンクとは別に渡す） */
+  const o=$('out');o.innerHTML='';const el=document.createElement(kind);el.src=prev||url;
   if(kind==='video'){el.controls=true;el.playsInline=true;el.muted=true}
   el.style.cssText='max-width:100%;border-radius:12px;margin-top:8px;display:block';
   const a=document.createElement('a');a.href=url;a.download='action-maker.'+ext;a.textContent='⬇ 保存（'+ext+'）';a.className='file';a.style.cssText='display:inline-block;margin-top:6px';
