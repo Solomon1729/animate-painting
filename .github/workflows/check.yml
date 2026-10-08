@@ -23,6 +23,6 @@ jobs:
 
       - name: JSの構文チェック
         run: |
-          node -e "const fs=require('fs');const s=fs.readFileSync(process.argv[1],'utf8');fs.writeFileSync('/tmp/_am.js',[...s.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).join('\n'))" action-maker-v19-layer-tree.html
+          node -e "const fs=require('fs');const s=fs.readFileSync(process.argv[1],'utf8');fs.writeFileSync('/tmp/_am.js',[...s.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).join('\n'))" index.html
           node --check /tmp/_am.js
           echo SYNTAX_OK

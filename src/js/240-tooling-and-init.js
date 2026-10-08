@@ -44,15 +44,13 @@ function loadImg(f){return new Promise(ok=>{const u=URL.createObjectURL(f),im=ne
 async function addImages(files){
   const fl=[...files].filter(f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(f.name||''));
   if(!fl.length){note('画像ファイルを選んでください');return}
-  let k=0,skip=0;
+  let k=0;
   for(const f of fl){
-    if(AC.length>=8){skip++;continue}
     const im=await loadImg(f);if(!im){note('「'+(f.name||'画像')+'」を読み込めませんでした');continue}
     pushUndo();
     /* 見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
     add(null,im,{name:(f.name||'').replace(/\.[^.]+$/,'').slice(0,16)||undefined,size:2,fx:cl((W/2-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((H/2-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
   }
-  if(skip)note('オブジェクトは最大8個までのため、'+skip+'枚は追加できませんでした');
   chips();
 }
 $('fadd').onchange=e=>{if(e.target.files&&e.target.files.length)addImages(e.target.files)};
@@ -87,42 +85,48 @@ document.querySelectorAll('#frSeg [data-fr]').forEach(b=>b.onclick=()=>setFrame(
 
 /* ===== 操作窓（#tp）：枠が大・全画面の時は下の窓、「分離」で作品の上に浮かせて半透明にできる =====
    UI一時状態（UIS）。作品データ・Undo・保存には入れない。次回起動への復元は未実装（roadmap F-2 B：要相談）。 */
-const UIS={tpf:false,a:1,x:null,y:null,w:null,h:null};
-const TPA=[100,82,62,42];
+const UIS={tpf:false,t:true,x:null,y:null,w:null,h:null};  /* t＝透け透け（既定ON。台帳Z-78） */
 const rootSet=(k,v)=>document.documentElement.style.setProperty(k,v);
+/* 窓は画面の外（上・左右・下）へ掃ける。ただし掴める部分が必ず残る範囲まで：左右はTPK分の幅（持ち手の両端につかみ領域がある）、
+   上は下の持ち手（TPG）、下は上の持ち手（TPG）が画面に残る。 */
+const TPK=48,TPG=36;
 function tpClamp(){
   if(!UIS.tpf)return;const tp=$('tp'),r=tp.getBoundingClientRect();
-  const w=UIS.w!=null?UIS.w:r.width,top0=0;
+  const w=UIS.w!=null?UIS.w:r.width,h=r.height||TPG*2,kx=Math.min(TPK,w);
   if(UIS.w!=null)UIS.w=cl(UIS.w,240,innerWidth-8);
   if(UIS.h!=null)UIS.h=cl(UIS.h,120,innerHeight-16);
-  UIS.x=cl(UIS.x==null?innerWidth-w-8:UIS.x,0,Math.max(0,innerWidth-Math.min(w,innerWidth)));
-  UIS.y=cl(UIS.y==null?Math.max(8,innerHeight-Math.min(innerHeight*.6,560)-8):UIS.y,top0,Math.max(0,innerHeight-44));
+  UIS.x=cl(UIS.x==null?innerWidth-w-8:UIS.x,kx-w,innerWidth-kx);
+  UIS.y=cl(UIS.y==null?Math.max(8,innerHeight-Math.min(innerHeight*.6,560)-8):UIS.y,TPG-h,innerHeight-TPG);
 }
 function tpPos(){rootSet('--tpx',UIS.x+'px');rootSet('--tpy',UIS.y+'px');if(UIS.w!=null)rootSet('--tpw',UIS.w+'px');else document.documentElement.style.removeProperty('--tpw');if(UIS.h!=null)rootSet('--tpfh',UIS.h+'px');else document.documentElement.style.removeProperty('--tpfh')}
 function tpApply(){
   document.body.classList.toggle('tpf',UIS.tpf);
   $('tpfb').classList.toggle('on',UIS.tpf);$('tpfb').textContent=UIS.tpf?'🪟 操作窓を下に戻す':'🪟 操作窓を分離';
-  rootSet('--tpa',TPA[UIS.a]+'%');$('tpa').textContent='透'+TPA[UIS.a];
+  document.body.classList.toggle('tpt',UIS.t);$('tpa').classList.toggle('on',UIS.t);$('tpa').setAttribute('aria-pressed',UIS.t?'true':'false');
   if(UIS.tpf){tpClamp();tpPos()}
   fit();
 }
 function tpToggle(){UIS.tpf=!UIS.tpf;if(UIS.tpf&&frameMode==='n'){/* 通常枠でも浮かせられる */}tpApply();if(UIS.tpf){requestAnimationFrame(()=>{tpClamp();tpPos()})}}
 $('tpfb').onclick=tpToggle;$('tpd').onclick=tpToggle;
-$('tpa').onclick=()=>{UIS.a=(UIS.a+1)%TPA.length;tpApply()};
+$('tpa').onclick=()=>{UIS.t=!UIS.t;tpApply()};
 (function(){
-  const g=$('gdrag');let m=null,lastUp=0,lx=0,ly=0;
+  /* 持ち手は上（#grip）と下（#grip2）の2つ。ボタン以外のどこを掴んでも動かせる（右端の⠿も含む） */
+  let m=null,lastUp=0,lx=0,ly=0;
   const reset=()=>{if(UIS.tpf){UIS.x=UIS.y=UIS.w=UIS.h=null;tpApply();requestAnimationFrame(()=>{tpClamp();tpPos()})}else{document.documentElement.style.removeProperty('--bigh');document.documentElement.style.removeProperty('--tph')}};
-  g.addEventListener('pointerdown',e=>{
-    if(e.button>0)return;const r=$('tp').getBoundingClientRect(),bd=document.body;
-    m={id:e.pointerId,sx:e.clientX,sy:e.clientY,x:r.left,y:r.top,h:r.height,bh:$('wrap').getBoundingClientRect().height,mode:UIS.tpf?'move':bd.classList.contains('big')?'big':'fs',moved:false};
-    try{g.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
-  g.addEventListener('pointermove',e=>{
+  const down=e=>{
+    if(e.button>0||e.target.closest('button'))return;const g=e.currentTarget,r=$('tp').getBoundingClientRect(),bd=document.body;
+    m={g,id:e.pointerId,sx:e.clientX,sy:e.clientY,x:r.left,y:r.top,h:r.height,bh:$('wrap').getBoundingClientRect().height,mode:UIS.tpf?'move':bd.classList.contains('big')?'big':'fs',moved:false};
+    try{g.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()};
+  const move=e=>{
     if(!m||e.pointerId!==m.id)return;const dx=e.clientX-m.sx,dy=e.clientY-m.sy;if(Math.abs(dx)+Math.abs(dy)>4)m.moved=true;
     if(m.mode==='move'){UIS.x=m.x+dx;UIS.y=m.y+dy;tpClamp();tpPos()}
     else if(m.mode==='big')rootSet('--bigh',cl(m.bh+dy,160,innerHeight-110)+'px');
-    else rootSet('--tph',cl(m.h-dy,120,innerHeight*.86)+'px')});
+    else rootSet('--tph',cl(m.h-dy,120,innerHeight*.86)+'px')};
   const end=e=>{if(!m)return;const t=performance.now();if(e&&e.type==='pointerup'&&!m.moved){if(t-lastUp<380&&Math.hypot(e.clientX-lx,e.clientY-ly)<12){reset();lastUp=0}else{lastUp=t;lx=e.clientX;ly=e.clientY}}m=null};
-  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>g.addEventListener(t,end));
+  for(const g of[$('grip'),$('grip2')]){
+    g.addEventListener('pointerdown',down);g.addEventListener('pointermove',move);
+    ['pointerup','pointercancel','lostpointercapture'].forEach(t=>g.addEventListener(t,end));
+  }
   addEventListener('blur',()=>{m=null});document.addEventListener('visibilitychange',()=>{m=null});
   /* 大きさの変更（分離中だけ）：右下のつまみ */
   const z=$('tpr'),zi=z.querySelector('i');let rz=null;

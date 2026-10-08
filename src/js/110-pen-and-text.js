@@ -14,6 +14,7 @@ function allocCanvas(w,h,label,cpu){
       c=document.createElement('canvas');c.width=W;c.height=H;
       const g=c.getContext('2d',cpu?{willReadFrequently:true}:undefined);if(!g)throw new Error('2d context');
       g.fillRect(0,0,1,1);const p=g.getImageData(0,0,1,1).data;if(p.length!==4)throw new Error('canvas allocation');
+      g.clearRect(0,0,1,1);  /* 確保テストで描いた1画素の黒点を消す（残すと、透明な絵の左上が黒く不透明になる。台帳Z-81） */
       if(i)note(label+'の作業解像度を'+W+'×'+H+'pxに下げました。');
       return c;
     }catch(_){

@@ -7,8 +7,11 @@ function blurRegion(l,S){
   ctx=og1;img(l,S,0);ctx=og2;img(l,S,l.blur);ctx=main;
   og1.globalCompositeOperation='destination-out';og2.globalCompositeOperation='destination-in';
   og1.drawImage(l.bm,-S/2,-S/2,S,S);og2.drawImage(l.bm,-S/2,-S/2,S,S);
+  /* ぼかし前×(1-m)＋ぼかし後×m は「足し算（lighter）」で一枚にしてから描く。source-over で2枚を順に重ねると、
+     マスクのやわらかい縁（m=0〜1）で不透明度が 1-m+m² に落ち（m=.5で75%）、背景が透けて境界が変色する（台帳Z-76）。 */
+  og1.setTransform(1,0,0,1,0,0);og1.globalCompositeOperation='lighter';og1.drawImage(ob2,0,0);
   og1.globalCompositeOperation=og2.globalCompositeOperation='source-over';
-  main.save();main.setTransform(1,0,0,1,0,0);main.drawImage(ob1,0,0);main.drawImage(ob2,0,0);main.restore();
+  main.save();main.setTransform(1,0,0,1,0,0);main.drawImage(ob1,0,0);main.restore();
 }
 function strokeSel(q){
   const l=pl;if(!l||!l.M)return;const key=psn?'sm':'bm',col=psn?'#ff5d8f':'#3b82f6',er=psn?serase:berase;

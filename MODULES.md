@@ -1,6 +1,6 @@
 # MODULES.md — HTML分割の対応表
 
-2026-10-03に `action-maker-v19-layer-tree.html` を、挙動を変えずに分割した。`src/manifest.json` の順序が評価順であり、`tools/build.js` が同順で結合する。生成物の `action-maker-v19-layer-tree.html` は手編集しない。
+2026-10-03に `action-maker-v19-layer-tree.html`（2026-10-08に`index.html`へ改名）を、挙動を変えずに分割した。`src/manifest.json` の順序が評価順であり、`tools/build.js` が同順で結合する。生成物の `index.html` は手編集しない。
 
 | 断片 | 内容（主な関数・グローバル） |
 |---|---|
@@ -23,15 +23,15 @@
 | `src/js/130-gif.js` | GIFエンコーダ、GIF/テキスト/ぼかしイベント |
 | `src/js/140-controls.js` | スライダーの±ボタンと数値入力 |
 | `src/js/150-blur.js` | 範囲ぼかし・範囲選択、マスク表示、ピン描画 |
-| `src/js/160-still-export.js` | 高解像度静止画書き出し `snapImg` |
+| `src/js/160-still-export.js` | 高解像度静止画書き出し `snapImg`（PNG/JPEG/PDF）、PDF生成（外部ライブラリなし）`pdfFromCanvas`/`zlibDeflate`/`outPdf` |
 | `src/js/170-undo.js` | Undo/Redo `snap`/`restore`/`pushUndo`、`SKIP` |
 | `src/js/180-project-io.js` | 保存・読込 `ser`/`loadProj`/`saveProj`、自動保存 |
 | `src/js/190-hints-and-demos.js` | ヒント、サンプル生成 `demoA`/`demoB` |
 | `src/js/200-warp-ui.js` | 歪み選択・歪みUI（ブラシ/ピンの切替`wmUi`、ブラシ設定`wbUi`）、エフェクト全消去 |
 | `src/js/210-performance.js` | 処理品質の自動調整 `perfTick`/`setLvl` |
-| `src/js/220-parts.js` | パーツのコピー・切り取り・貼り付け、トレイ |
+| `src/js/220-parts.js` | パーツのコピー・切り取り・貼り付け、トレイ、切り出し用Canvas`boxCv(l,{adj,full})`、「このオブジェクトだけ保存」`pexp`（PNG/PDF） |
 | `src/js/230-color-picker.js` | スポイト |
-| `src/js/240-tooling-and-init.js` | ツール・タブ、メニュー、枠3段`setFrame`、操作窓`UIS`/`tpApply`、画像追加`pickImages`/`addImages`、初期化、ロック用ラッパー |
+| `src/js/240-tooling-and-init.js` | ツール・タブ、メニュー、枠3段`setFrame`、操作窓`UIS`/`tpClamp`/`tpApply`（上下2つの持ち手・四辺へ掃ける・透過オン/オフ）、画像追加`pickImages`/`addImages`、初期化、ロック用ラッパー |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 
 ## 開発手順
@@ -48,4 +48,5 @@
 | `tools/make_samples.py` | `python3 tools/make_samples.py <出力フォルダ> [--heavy]`。コーナーケース画像23種（`--heavy`で108MP・16384²も） |
 | `tools/stress.py` | `python3 tools/stress.py <HTMLの絶対パス> <samplesフォルダ> [名前の一部…] [--shots <フォルダ>]`。各画像を追加→色→質感→ペン→消しゴム→歪み→ブラシ→歪み越しペン→Undo→保存/読込→焼き込み→書き出し。最後に「要確認」を一覧 |
 | `tools/edge_warp.py` | `python3 tools/edge_warp.py <HTMLの絶対パス> <画像>`。歪みの角の場合21項目（画面端始まり・極端なサイズ/強さ・Undo往復・キャンセル・ロック・ピン併用・拡大・保存読込）。`NG 0 / 21`が正常 |
+| `tools/check_fixes.py` | `python3 tools/check_fixes.py <HTMLの絶対パス>`。2026-10-08の修正の検査（ぼかし境界の不透明度／色調整の範囲の座標（縦長・横長・正方形）／操作窓の四辺クランプ・下の持ち手・透過／ビューワーのボタンと↩↪／オブジェクト22個／PDF出力）。全項目`OK`が正常（台帳Z-90） |
 | `tools/bench.py` | `python3 tools/bench.py <HTMLの絶対パス> [ラベル]`。色調整・質感・ペン・歪みの1操作の時間（6MP） |

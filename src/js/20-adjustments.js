@@ -35,12 +35,16 @@ function adjPrep(l){
   for(let i=0;i<=1025;i++){const L=Math.min(1,i/1024);let v=L+b*.22;v+=wh*.20*Math.pow(v,3)+bl*.20*Math.pow(1-v,3);v+=hi*.18*ss(c01((v-.5)/.5))+sh*.18*(1-ss(c01(v/.5)));v=.5+(v-.5)*(1+co);T[i]=c01(v)}
   return{T,hu:a.hue/360,sa:a.saturation/100,te:a.temperature/100,MK:adjMask(l,a,'adjm')};
 }
+/* 範囲マスク（MR×MR）は「オブジェクトの正方形」基準で塗り・表示される。画像はその正方形の中に縦横比を保って収まる（img()：k=min(S/iw,S/ih)）ので、
+   画像上の位置 t(0〜1) をマスク上の位置へ f（短辺側の比。縦長・横長でだけ<1）で変換する。正方形ではf=1で従来と同じ（台帳Z-77：縦長・横長で範囲がずれていた）。 */
+const mkIdx=(t,f)=>{const u=f===1?t:.5+(t-.5)*f,i=Math.floor(u*MR);return i<0?0:i>MR-1?MR-1:i};
 /* 色調整（画素独立）。p=RGBA、(ox,oy)は全体(tw×th)の中での位置。行ごとにyield */
 function* adjColorGen(p,w,h,ox,oy,tw,th,P){
   const T=P.T,hu=P.hu,sa=P.sa,te=P.te,MK=P.MK,useHS=hu!==0||sa!==0,useT=te!==0,k1=1+sa;
-  let mxi=null;if(MK){mxi=new Int32Array(w);for(let x=0;x<w;x++)mxi[x]=Math.min(MR-1,Math.floor((ox+x)/tw*MR))}
+  const fu=tw>=th?1:tw/th,fv=th>=tw?1:th/tw;
+  let mxi=null;if(MK){mxi=new Int32Array(w);for(let x=0;x<w;x++)mxi[x]=mkIdx((ox+x)/tw,fu)}
   for(let y=0;y<h;y++){
-    const mrow=MK?Math.min(MR-1,Math.floor((oy+y)/th*MR))*MR:0;
+    const mrow=MK?mkIdx((oy+y)/th,fv)*MR:0;
     for(let x=0,j=y*w*4;x<w;x++,j+=4){
       if(!p[j+3])continue;
       const r0=p[j]*.00392157,g0=p[j+1]*.00392157,b0=p[j+2]*.00392157;
@@ -112,9 +116,10 @@ function* txGen(p,w,h,f,MK,s,uF,pool){
     }
     yield;
   }
-  let mxi=null;if(MK){mxi=new Int32Array(w);for(let x=0;x<w;x++)mxi[x]=Math.min(MR-1,Math.floor(x/w*MR))}
+  const fu=w>=h?1:w/h,fv=h>=w?1:h/w;  /* 範囲マスクの座標変換（mkIdx参照） */
+  let mxi=null;if(MK){mxi=new Int32Array(w);for(let x=0;x<w;x++)mxi[x]=mkIdx(x/w,fu)}
   for(let y=0;y<h;y++){
-    const mrow=MK?Math.min(MR-1,Math.floor(y/h*MR))*MR:0;
+    const mrow=MK?mkIdx(y/h,fv)*MR:0;
     for(let x=0,i=y*w;x<w;x++,i++){
       const j=i*4;if(!p[j+3])continue;
       let m=1;if(MK)m=MK[mrow+mxi[x]];if(m<=0)continue;

@@ -20,8 +20,8 @@ const EDESC={'🐻':'くま','🐥':'ひよこ','🧒':'こども','🐱':'ね�
 const pc=()=>sel;
 
 function add(em,im,o){
-  if(AC.length>=8){note('オブジェクトは最大8個までです。いらないものを消してから追加してください');return}
-  const id=++uid,a={id,name:'オブジェクト'+id,img:im||emo(em||EPAL[AC.length%EPAL.length]),fx:.2+.2*(AC.length%4),fy:.6+.09*Math.floor(AC.length/4),
+  /* オブジェクト数の上限は設けない（台帳Z-79。旧：8個）。初期位置は4列×4段で回す（段が画面の外へ出ないように） */
+  const id=++uid,a={id,name:'オブジェクト'+id,img:im||emo(em||EPAL[AC.length%EPAL.length]),fx:.2+.2*(AC.length%4),fy:.6+.09*(Math.floor(AC.length/4)%4),
     size:1,pv:0,face:1,rot:0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false,adj:null,adjm:null,hasAdjM:false};
   if(o)for(const k in o)if(o[k]!==undefined)a[k]=o[k];
   AC.push(a);setSel(a);return a;
