@@ -52,7 +52,8 @@ input[type=file]{display:none}
 .lypop{position:fixed;z-index:300;width:min(94vw,440px);max-height:72vh;overflow:auto;background:var(--pane);color:var(--ink);border:2px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:10px;overscroll-behavior:contain}.lypop[hidden]{display:none}
 .lyhd{display:flex;justify-content:space-between;align-items:center}.lytb{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .trow{display:flex;align-items:center;gap:6px;border:2px solid transparent;border-radius:10px;padding:4px 6px;margin-top:2px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
-.trow.l{margin-top:8px;font-weight:900}.trow.o{margin-left:6px}.trow.on{border-color:var(--acc);background:rgba(59,130,246,.10)}.trow.off{opacity:.55}.trow.drag{opacity:.5}.trow.ov{border-style:dashed;border-color:var(--acc)}
+.trow.l{margin-top:8px;font-weight:900}.trow.o{margin-left:6px}.trow.on{border-color:var(--acc);background:rgba(59,130,246,.10)}.trow.off{opacity:.55}.trow.drag{opacity:.5}
+#lyl{position:relative}.lyins{position:absolute;left:0;right:0;height:0;border-top:3px dotted var(--acc);pointer-events:none;z-index:2}.lyins.o{left:16px}.lyins::before{content:'';position:absolute;left:-3px;top:-7px;width:9px;height:9px;border-radius:50%;background:var(--acc)}
 .trow img{width:28px;height:28px;object-fit:contain;border-radius:6px;background:rgba(127,127,127,.15);flex:none}.trow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.trow .br{opacity:.6;flex:none}.trow button{padding:2px 8px}
 body.fs{overflow:hidden}
 body.fs #wrap{position:fixed;left:0;top:0;right:0;bottom:0;height:100vh;height:100dvh;border-radius:0;z-index:50}
@@ -75,26 +76,42 @@ body.fs .pop{top:calc(52px + env(safe-area-inset-top,0px))}
 #topbar select{flex:1;min-width:120px}
 .tab{display:none;margin-top:8px}.tab.on{display:block}
 #tabs button{flex:1 1 auto;font-weight:900;font-size:13px;padding:6px 8px}
-#tp{max-height:46vh;overflow:auto;overscroll-behavior:contain}body.fs #tp{max-height:var(--tph,46vh)}#tp::after{content:"";display:block;height:34vh}
-/* 操作窓の持ち手（枠が「大」「全画面」の時、または分離中だけ出る） */
-#grip{display:none;align-items:center;gap:6px;position:sticky;top:0;z-index:5;margin:0 0 4px;padding:2px 0 4px;background:var(--pane)}
+#tp{max-height:46vh;overflow:auto;overscroll-behavior:contain}body.fs #tp{max-height:var(--tph,46vh)}#tpb::after{content:"";display:block;height:34vh}
+/* 操作窓の構成（台帳Z-106・Z-107）：枠が「大」「全画面」「分離」の時は、#tpを縦に3つ並べる＝上の持ち手（細い帯）／中身（#tpb。ここだけスクロール）／下の持ち手（細い帯）。
+   持ち手と中身は別の領域なので、スクロールした中身の文字や印が持ち手に重ならない。持ち手には文字を置かず、つまみの印だけ（説明は長押し）。 */
+body.fs #tp,body.big #tp,body.tpf #tp{display:flex;flex-direction:column;overflow:hidden;padding:0}
+body.fs #tp{padding-bottom:env(safe-area-inset-bottom,0px)}
+body.fs #tpb,body.big #tpb,body.tpf #tpb{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 10px}
+#grip{display:none;align-items:center;gap:6px;position:relative;flex:0 0 auto;min-height:28px;padding:2px 8px;background:var(--pane)}
 body.fs #grip,body.big #grip,body.tpf #grip{display:flex}
-#gdrag{flex:1;font-size:12px;font-weight:900;opacity:.7;padding:7px 4px;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none;white-space:nowrap}
-body.tpf #gdrag{cursor:move}
+body.tpf #grip{padding:2px 28px}  /* 左右の端は、四隅の大きさ変更の領域（#tpz）のために空ける */
+/* つかむ所は帯の全体（印より広い）。印は中央の短い棒 */
+#gdrag,#gdrag2{flex:1;align-self:stretch;min-height:22px;position:relative;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none}
+#gdrag::before,#gdrag2::before{content:"";position:absolute;left:50%;top:50%;width:46px;height:5px;margin:-2px 0 0 -23px;border-radius:3px;background:var(--line)}
+body.tpf #gdrag,body.tpf #gdrag2{cursor:move}
 #grip button{padding:2px 7px;font-size:13px;line-height:1.2;flex:0 0 auto}
 #grip,#grip2{touch-action:none;user-select:none;-webkit-user-select:none}
 #tpa{display:none}body.tpf #tpa{display:inline-block}
 body.tpf #tpd{background:var(--acc);border-color:var(--acc);color:#fff}
-/* 下の持ち手（分離中だけ）と、持ち手の右端のつかみ領域：窓を画面の上・左右へ掃いても、どこかの持ち手が画面に残る */
-#grip2{display:none;align-items:center;gap:6px;position:sticky;bottom:0;z-index:5;margin:4px 0 0;padding:2px 34px 2px 0;background:var(--pane)}
+/* 下の持ち手（分離中だけ）。上より細い */
+#grip2{display:none;position:relative;flex:0 0 auto;height:22px;padding:0 28px;background:var(--pane)}
 body.tpf #grip2{display:flex}
-#gdrag2{flex:1;font-size:12px;font-weight:900;opacity:.7;padding:7px 4px;cursor:move;white-space:nowrap}
-.gdr{display:none;flex:0 0 auto;width:30px;text-align:center;font-weight:900;opacity:.7;cursor:move;padding:5px 0}
-body.tpf .gdr{display:block}
 body.tpf.tpc #grip2{display:none}
+/* 大きさの変更（分離中だけ）：四隅は26px、縁はごく細い6px。窓の中、一番上に重ねる */
+#tpz{display:none;position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:8}
+body.tpf #tpz{display:block}
+#tpz>*{position:absolute;display:block;pointer-events:auto;touch-action:none}
+#tpz i{width:26px;height:26px}
+#tpz i::after{content:"";position:absolute;width:9px;height:9px;border:0 solid var(--line);opacity:.9}
+#tpz i[data-c=nw]{left:0;top:0;cursor:nwse-resize}#tpz i[data-c=nw]::after{left:5px;top:5px;border-width:2px 0 0 2px;border-radius:5px 0 0 0}
+#tpz i[data-c=ne]{right:0;top:0;cursor:nesw-resize}#tpz i[data-c=ne]::after{right:5px;top:5px;border-width:2px 2px 0 0;border-radius:0 5px 0 0}
+#tpz i[data-c=sw]{left:0;bottom:0;cursor:nesw-resize}#tpz i[data-c=sw]::after{left:5px;bottom:5px;border-width:0 0 2px 2px;border-radius:0 0 0 5px}
+#tpz i[data-c=se]{right:0;bottom:0;cursor:nwse-resize}#tpz i[data-c=se]::after{right:5px;bottom:5px;border-width:0 2px 2px 0;border-radius:0 0 5px 0}
+#tpz b[data-c=n]{left:26px;right:26px;top:0;height:6px;cursor:ns-resize}#tpz b[data-c=s]{left:26px;right:26px;bottom:0;height:6px;cursor:ns-resize}
+#tpz b[data-c=w]{left:0;top:26px;bottom:26px;width:6px;cursor:ew-resize}#tpz b[data-c=e]{right:0;top:26px;bottom:26px;width:6px;cursor:ew-resize}
 /* 折りたたみ＝持ち手の行だけ残す */
-body.fs.tpc #tp>:not(#grip):not(#tpr),body.big.tpc #tp>:not(#grip):not(#tpr),body.tpf.tpc #tp>:not(#grip):not(#tpr){display:none}
-body.fs.tpc #tp::after,body.big.tpc #tp::after,body.tpf.tpc #tp::after{display:none}
+body.fs.tpc #tp>:not(#grip):not(#tpz),body.big.tpc #tp>:not(#grip):not(#tpz),body.tpf.tpc #tp>:not(#grip):not(#tpz){display:none}
+body.tpf.tpc #tp{height:auto}
 /* 枠「大」：作品を上に固定し、幅いっぱい・高さは--bighで可変。操作窓は下（持ち手を上下に動かすと作品と窓の割合が変わる） */
 body.big{max-width:none;padding:0}
 body.big h1,body.big #topbar{display:none}
@@ -102,11 +119,11 @@ body.big #wrap{position:sticky;top:0;z-index:20;height:var(--bigh,62vh);height:v
 body.big #tp{margin:8px 8px 0;max-height:calc(100vh - var(--bigh,62vh) - 18px);max-height:calc(100dvh - var(--bigh,62dvh) - 18px)}
 body.big.tpc:not(.tpf) #wrap{height:calc(100vh - 56px);height:calc(100dvh - 56px)}
 /* 分離（浮かせる）：作品の上に半透明で重ねる。文字・ボタンは不透明のまま、背景だけ透ける */
-body.tpf #tp{position:fixed;right:auto;bottom:auto;left:var(--tpx,8px);top:var(--tpy,120px);width:var(--tpw,min(94vw,340px));max-height:var(--tpfh,min(60vh,560px));margin:0;z-index:60;border-radius:16px;padding-bottom:10px;box-shadow:0 10px 32px rgba(0,0,0,.4);background:var(--pane)}
-body.tpf #tp::after{display:none}
-body.tpf #grip{background:color-mix(in srgb,var(--pane) 94%,transparent);border-radius:12px}
+body.tpf #tp{position:fixed;right:auto;bottom:auto;left:var(--tpx,8px);top:var(--tpy,120px);width:var(--tpw,min(94vw,340px));height:var(--tpfh,auto);max-height:var(--tpfh,min(60vh,560px));margin:0;z-index:60;border-radius:16px;padding:0;box-shadow:0 10px 32px rgba(0,0,0,.4);background:var(--pane)}
+body.tpf #tpb{margin:0 6px;padding:0 6px}body.tpf #tpb::after{display:none}
+body.tpf #grip{background:color-mix(in srgb,var(--pane) 94%,transparent);border-radius:14px 14px 0 0}body.tpf #grip2{border-radius:0 0 14px 14px}
 /* 透け透け（既定ON・分離中だけ。「透」ボタンでオン／オフ）：文字・ボタンの枠・スライダー以外の背景を透かす。文字は縁取りで読めるようにする。
-   持ち手の行だけは、スクロールした中身と重ならないよう薄い下地を残す */
+   持ち手の帯は中身と別の領域なので、薄い下地を残すだけでよい（重ならない：台帳Z-107） */
 body.tpf.tpt #tp{background:transparent;box-shadow:none;border-color:transparent;text-shadow:0 0 2px var(--pane),0 0 3px var(--pane),0 0 6px var(--pane)}
 body.tpf.tpt #tp :is(button,select,.file,.num,input[type=text],input[type=number]){background:color-mix(in srgb,var(--bg) 14%,transparent)}
 body.tpf.tpt #tp button.on,body.tpf.tpt #tp #tpd{background:color-mix(in srgb,var(--acc) 80%,transparent);text-shadow:none}
@@ -114,17 +131,20 @@ body.tpf.tpt #tp #physMode{background:color-mix(in srgb,#3a2470 82%,transparent)
 body.tpf.tpt #tp .grp.alt{background:transparent}
 body.tpf.tpt #grip,body.tpf.tpt #grip2{background:color-mix(in srgb,var(--pane) 55%,transparent)}
 body.big.tpf #wrap{height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border-radius:0}
-#tpr{display:none}
-body.tpf #tpr{display:block;position:sticky;bottom:0;height:0;touch-action:none}
-body.tpf.tpc #tpr{display:none}
-#tpr i{position:absolute;right:0;bottom:2px;width:30px;height:30px;cursor:nwse-resize;border-radius:0 0 12px 0;background:linear-gradient(135deg,transparent 52%,var(--line) 52%,var(--line) 62%,transparent 62%,transparent 72%,var(--line) 72%,var(--line) 82%,transparent 82%)}
+/* 「＋画像」の段のオプション（台帳Z-96）／オブジェクト0個の表示（Z-97）／座標のラベル（Z-98） */
+.opt{display:inline-flex;gap:5px;align-items:center;font-size:12px;opacity:.9}.opt.dis{opacity:.45}.opt input{width:16px;height:16px;margin:0}
+#noobj{padding:8px 10px;border:2px dashed var(--line);border-radius:10px}#noobj[hidden]{display:none}
+body.noobj #tabs button:not([data-t="bg"]),body.noobj #physMode{display:none}
+body.noobj .tab:not([data-tab="bg"]){display:none!important}
+.crdl{position:absolute;left:0;top:0;z-index:6;pointer-events:none;font:11px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:6px;background:rgba(20,16,32,.74);color:#fff;white-space:nowrap}
+.crdl.o{background:rgba(255,45,135,.88)}.crdl[hidden]{display:none}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 </style>
 </head>
 <body>
 <h1>アクションメーカー</h1>
 <div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option></select></div>
-<div id="wrap"><canvas id="cv"></canvas>
+<div id="wrap"><canvas id="cv"></canvas><div class="crdl" id="crdp" hidden></div><div class="crdl o" id="crdo" hidden></div>
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
@@ -133,6 +153,8 @@ body.tpf.tpc #tpr{display:none}
   <button id="vlk" aria-label="ビューワーを固定（もう一度押すまで拡大・移動を一切しない）">🔒 ビューワーを固定</button>
   <button id="zr" disabled aria-label="拡大を1倍に戻す">1× 拡大を戻す</button>
   <button id="tpfb" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟 操作窓を分離</button>
+  <button id="crdb" aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
+  <button id="cvsb" aria-label="キャンバスの大きさを変える（背景・出力のタブを開く）">📐 キャンバスの大きさ</button>
 </div>
 <div class="cmenu" id="mA" hidden>
   <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
@@ -144,10 +166,13 @@ body.tpf.tpc #tpr{display:none}
 <div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
 
 <div class="pane" id="tp">
-  <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）">⠿ 操作窓</span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button><span class="gdr" aria-hidden="true">⠿</span></div>
+  <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）"></span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
+  <div id="tpb">
   <div class="row"><button id="physMode">⚙️ 物理モードに切り替え</button></div>
   <div class="row" id="ch1"></div>
-  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">パーツ</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
+  <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
+  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><button id="bnd">境界線を表示</button><button id="clrfx">エフェクトを全消去</button></div>
@@ -171,7 +196,7 @@ body.tpf.tpc #tpr{display:none}
   </div>
 
   <div class="tab" data-tab="wp"><div id="wp">
-    <details id="whelp" open><summary>使い方（タップで開閉）</summary><div class="note"><b>🖌 ブラシ</b>：絵をなぞって、粘土のように動かします（Photoshop／Photopeaの「ゆがみ」と同じ考え方）。「押し出す」はなぞった方向へ、「膨らませる・縮める・ひねる」は押している間じっと効き、「戻す」で歪みを元へ、「なめらかに」で歪みをならします。サイズは画面上の大きさ（拡大すると細かく効きます）。ペンの筆圧にも対応。<br><b>📍 ピン</b>：置いた場所を中心に、あとから範囲や強さを調整でき、波打つ・往復する「動く歪み」にできます。リングの中心をドラッグで移動、右端の白いつまみをドラッグで範囲を変更。<br>ブラシとピンは同時に使えます（ブラシ→ピンの順で重なります）。</div></details>
+    <details id="whelp" open><summary>使い方（タップで開閉）</summary><div class="note"><b>🖌 ブラシ</b>：絵をなぞって、粘土のように動かします（多くの描画ソフトの「ゆがみ」と同じ考え方）。「押し出す」はなぞった方向へ、「膨らませる・縮める・ひねる」は押している間じっと効き、「戻す」で歪みを元へ、「なめらかに」で歪みをならします。サイズは画面上の大きさ（拡大すると細かく効きます）。ペンの筆圧にも対応。<br><b>📍 ピン</b>：置いた場所を中心に、あとから範囲や強さを調整でき、波打つ・往復する「動く歪み」にできます。リングの中心をドラッグで移動、右端の白いつまみをドラッグで範囲を変更。<br>ブラシとピンは同時に使えます（ブラシ→ピンの順で重なります）。</div></details>
     <div class="row tools"><button id="wmB" class="on">🖌 ブラシで歪ませる</button><button id="wm1">📍 ピンを置く</button><button id="wm2">✋ ピンを選ぶ・動かす</button></div>
     <div id="wbr">
       <div class="row tools" id="wbt"></div>
@@ -229,6 +254,14 @@ body.tpf.tpc #tpr{display:none}
     <div class="row"><span class="lab">ホワイト</span><input id="adjWh" type="range" min="-100" max="100" step="1" value="0"><b class="v" id="adjWhv">0</b></div>
     <div class="row"><span class="lab">ブラック</span><input id="adjBl" type="range" min="-100" max="100" step="1" value="0"><b class="v" id="adjBlv">0</b></div>
     <div class="row"><button id="adjReset">調整をリセット</button></div></div>
+    <div class="grp alt" id="cmMatch"><div class="gh">🎯 色を合わせる（ほかのオブジェクトの色に寄せる）</div>
+    <div class="row"><span class="lab">合わせる先</span><select id="cmRef" aria-label="色を合わせる先のオブジェクト"></select></div>
+    <div class="row"><span class="lab">強さ</span><input id="cmStr" type="range" min="0" max="100" step="1" value="100" aria-label="色を合わせる強さ"><b class="v" id="cmStrv">100</b></div>
+    <div class="row"><button id="cmL" class="on">明るさも合わせる</button><button id="cmGo">🎯 色を合わせる</button></div>
+    <div class="note">選んだオブジェクトの色（明るさ・色みの平均と散らばり）に、いま選んでいるオブジェクトを寄せます。後から人物などを足した時の、場の色へのなじませ用です。「適用範囲」で範囲を指定してあれば、こちらはその範囲だけが変わり、合わせる先に範囲が塗ってあれば、その範囲の色が基準になります。結果は「確定」と同じく絵に入ります（下の「レイヤーとして保存」にチェックすれば別レイヤー）。色だけで、質感・局所は合わせません。</div></div>
+    <div class="grp alt" id="cmBox"><div class="gh">📌 確定（いまの色調整・質感を絵に焼き込む）</div>
+    <div class="row"><button id="cmOk">✔ 確定</button><label class="note" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="cmLy">レイヤーとして保存</label></div>
+    <div class="note">「確定」＝いまの色調整・質感（範囲指定も込み）を絵に焼き込み、強さを0に戻します（取り消しは「元に戻す」）。以後の全体の調整とぶつかりません。<br>「レイヤーとして保存」にチェックして確定すると、焼き込まずに、調整した所だけを新しいレイヤーの別オブジェクトに切り離します。元の絵は調整前に戻り、そのレイヤーを隠す・消せば元通りです（元の絵に半透明の所があると、重なった所の不透明度がわずかに増えます）。</div></div>
   </div>
 
   <div class="tab" data-tab="fx">
@@ -268,9 +301,10 @@ body.tpf.tpc #tpr{display:none}
   <div class="tab" data-tab="pt">
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
     <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
-    <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
+    <div class="row"><span class="lab">縁のぼかし</span><input id="ptf" type="range" min="0" max="40" step="1" value="0" aria-label="切り抜きの縁のぼかし（0＝くっきり。大きいほど縁が自然にぼける。境界がはっきりしない絵向け）"><b class="v" id="ptfv">0</b></div>
+     <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
     <div class="row"><button id="pexp">📷 このオブジェクトだけ保存（色調整・質感・ぼかし込み／原寸）</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
-    <div class="note">選んでいるオブジェクトの一部を囲んでコピー（または切り取り）すると、画面の左下に置かれます。サムネイルをタップすると、新しいオブジェクトとして貼り付けます。</div>
+    <div class="note">選んでいるオブジェクトの一部を囲んでコピー（または切り取り）すると、画面の左下に置かれます。サムネイルをタップすると、新しいオブジェクトとして貼り付けます。「縁のぼかし」が0だと縁はくっきり、大きくすると縁がぼけて、境界がはっきりしない絵（毛・煙・髪など）でもなじみます。コピーと切り取りの両方に同じ幅で効くので、切り取った跡と切り抜きがぴったり合います。</div>
   </div>
 
   <div class="tab" data-tab="ph">
@@ -296,6 +330,9 @@ body.tpf.tpc #tpr{display:none}
   </div>
 
   <div class="tab" data-tab="bg">
+    <div class="row" id="cvsz"><span class="lab">キャンバス</span><input id="cvw" class="num" type="number" min="16" max="8192" step="1" inputmode="numeric" aria-label="キャンバスの幅（px）" style="width:76px"><span>×</span><input id="cvh" class="num" type="number" min="16" max="8192" step="1" inputmode="numeric" aria-label="キャンバスの高さ（px）" style="width:76px"><span class="note" style="margin:0">px</span><button id="cvset" aria-label="入れた大きさにする">適用</button></div>
+    <div class="row"><select id="cvpre" aria-label="キャンバスの大きさの候補"><option value="">候補から選ぶ…</option><option value="1080x1080">正方形 1080×1080</option><option value="1080x1920">縦長 9:16 1080×1920</option><option value="1920x1080">横長 16:9 1920×1080</option><option value="1200x1600">縦 3:4 1200×1600</option><option value="1600x1200">横 4:3 1600×1200</option></select><button id="cvfit" aria-label="選んでいるオブジェクトの絵の大きさ（px）に、キャンバスを合わせる">選んだ絵に合わせる</button><button id="cvauto" aria-label="キャンバスの大きさを自動（画面の枠に合わせる）に戻す">自動に戻す</button></div>
+    <div class="note" id="cvnote"></div>
     <div class="row"><span class="lab">背景</span><input id="bg1" type="color" value="#ffffff" aria-label="背景の上の色"><button class="pk" data-for="bg1" aria-label="スポイト">💧</button><input id="bg2" type="color" value="#ffffff" aria-label="背景の下の色"><button class="pk" data-for="bg2" aria-label="スポイト">💧</button><select id="bgm" aria-label="背景の種類"><option value="grad">2色</option><option value="solid" selected>1色</option><option value="none">透明(PNGのみ)</option></select></div>
     <div class="row"><label class="file">背景画像<input id="bgf" type="file" accept="image/*"></label><button id="bgr">画像を外す</button></div>
     <div class="row"><span class="lab">ぼかし</span><input id="bgb" type="range" min="0" max="30" value="0" aria-label="背景のぼかし"></div>
@@ -306,17 +343,18 @@ body.tpf.tpc #tpr{display:none}
     <div id="out"></div>
     <div class="note">動画は WebM（対応端末ではMP4）、GIFは最大10秒・幅360pxです。保存できない環境では、表示された動画・画像を長押しして保存してください。</div>
   </div>
-  <div id="grip2"><span id="gdrag2" aria-label="操作窓の下の持ち手（ドラッグで移動。ダブルタップで元に戻す）">⠿ 操作窓</span></div>
-  <div id="tpr" aria-label="操作窓の大きさを変える"><i></i></div>
+  </div>
+  <div id="grip2"><span id="gdrag2" aria-label="操作窓の下の持ち手（ドラッグで移動。ダブルタップで元に戻す）"></span></div>
+  <div id="tpz" aria-label="操作窓の大きさを変える（四隅と縁をドラッグ）"><i data-c="nw"></i><i data-c="ne"></i><i data-c="sw"></i><i data-c="se"></i><b data-c="n"></b><b data-c="s"></b><b data-c="w"></b><b data-c="e"></b></div>
 </div>
 
 <input id="fadd" type="file" accept="image/*" multiple>
 <div id="lypop" class="lypop" hidden role="dialog" aria-label="レイヤーとオブジェクト">
   <div class="lyhd"><b>レイヤーとオブジェクト</b><button id="lyx" aria-label="閉じる">✕</button></div>
-  <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><button id="oadd3" aria-label="サンプル絵文字のオブジェクトを追加">＋絵文字</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
+  <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd3" aria-label="サンプル絵文字のオブジェクトを追加">＋絵文字</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
   <div id="lyl"></div>
   <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="lyphx" checked>非表示レイヤーを物理の計算から除外する</label>
-  <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。行は長押し（マウスはドラッグ）で並べ替え。オブジェクトを別レイヤーの行やオブジェクトの上へ落とすと所属が変わります。上ほど手前。</div>
+  <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。行は長押し（マウスはドラッグ）で並べ替え。入れたい行と行のすき間に点線が出るので、そこで離します（オブジェクトは別レイヤーのすき間にも入れられます。外で離すと取り消し）。上ほど手前。</div>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -324,6 +362,9 @@ const cv=$('cv'),mctx=cv.getContext('2d');let ctx=mctx;
 const oc=document.createElement('canvas'),octx=oc.getContext('2d');
 const MR=512;const nb=()=>{const c=document.createElement('canvas');c.width=c.height=MR;return c};
 let W,H,dpr,S0;
+/* キャンバスの大きさ（px。作品の性質。台帳Z-98）。0＝自動（従来どおり、画面の枠に合わせる。通常は正方形・大/全画面は枠の縦横比）。
+   指定した時は、その縦横比で枠の中に収め、書き出しの1×がこの大きさになる。座標表示のpxもこの大きさで測る */
+const DOC={w:0,h:0};
 const E=x=>x*x*(3-2*x),cl=(v,a,b)=>Math.min(Math.max(v,a),b);
 function emo(t){const c=document.createElement('canvas');c.width=c.height=320;const g=c.getContext('2d');g.font='272px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,160,176);return c}
 
@@ -578,7 +619,7 @@ function adjDirty(l){l._adjDirty=true;l._adjV=(l._adjV|0)+1;l._adjRect=null;l._a
 function adjUi(){
   if(!sel)return;const a=ensureAdj(sel),map=[['adjBr','brightness','adjBrv'],['adjCo','contrast','adjCov'],['adjSa','saturation','adjSav'],['adjHu','hue','adjHuv'],['adjTe','temperature','adjTev'],['adjHi','highlights','adjHiv'],['adjSh','shadows','adjShv'],['adjWh','whites','adjWhv'],['adjBl','blacks','adjBlv'],['adjFe','feather','adjFev']];
   map.forEach(([id,k,v])=>{$(id).value=a[k];$(v).textContent=k==='hue'?a[k]+'°':a[k]});
-  $('adjPaint').classList.toggle('on',adjMode==='paint');$('adjErase').classList.toggle('on',adjMode==='erase');$('adjShow').classList.toggle('on',adjShow);{const on=rngOn(sel,rk());$('adjScAll').classList.toggle('on',!on);$('adjScRng').classList.toggle('on',on);$('adjRngRow').style.display=$('adjBsRow').style.display=on?'':'none'}lfUi();
+  $('adjPaint').classList.toggle('on',adjMode==='paint');$('adjErase').classList.toggle('on',adjMode==='erase');$('adjShow').classList.toggle('on',adjShow);{const on=rngOn(sel,rk());$('adjScAll').classList.toggle('on',!on);$('adjScRng').classList.toggle('on',on);$('adjRngRow').style.display=$('adjBsRow').style.display=on?'':'none'}lfUi();cmUi();
 }
 function rk(){return rngT==='fx'?'lf':'adj'}
 function rngOn(l,k){const v=l[k+'Rng'];return v===undefined?!!l[k+'m']:!!v}
@@ -620,9 +661,9 @@ function addSpecial(k){
 function attach(l){if(l.toType==='layer')return;const c=byId(l.to);if(!c)return;const u=S0*c.size;l.ox=(l.fx*W-c.fx*W)/u*c.face;l.oy=(l.fy*H-c.fy*H)/u;l.att=true}
 function detach(l){const c=byId(l.to);if(c){const u=S0*c.size;l.fx=(c.fx*W+l.ox*u*c.face)/W;l.fy=(c.fy*H+l.oy*u)/H}l.att=false}
 function del(){
-  if(AC.length<2||!sel)return;if(blocked(sel))return;const a=sel;
+  if(!sel)return;if(blocked(sel))return;const a=sel;  /* 最後の1個も消せる（オブジェクト0個を許可：台帳Z-97） */
   AC.forEach(x=>{if(x.to===a.id&&x.toType!=='layer'){if(x.att){x.fx=x.wx/W;x.fy=x.wy/H}x.att=false;x.to=null;x.maskTo=false}if(x.syncTo===a.id){x.pins=x.pins.slice();x.syncTo=null}});
-  AC=AC.filter(x=>x!==a);setSel(AC[0]);
+  AC=AC.filter(x=>x!==a);setSel(AC[0]||null);
 }
 
 const mot=l=>{const r={x:0,y:0,r:0,s:0},f=editing||tool!=='move';
@@ -631,7 +672,19 @@ const mot=l=>{const r={x:0,y:0,r:0,s:0},f=editing||tool!=='move';
     else if(k==='m'){const d=c.d*Math.PI/180;r.x=v*Math.cos(d);r.y=-v*Math.sin(d)}else r[k]=v}
   return r};
 
-function fit(){const fs=document.body.classList.contains('fs')||document.body.classList.contains('big'),r=$('wrap').getBoundingClientRect();dpr=hk||Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.round(r.width));H=fs?Math.max(1,Math.round(r.height)):W;cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';oc.width=cv.width;oc.height=cv.height;ob1.width=ob2.width=cv.width;ob1.height=ob2.height=cv.height;S0=Math.min(W,H)*.26}
+function fit(){
+  const bd=document.body,fs=bd.classList.contains('fs')||bd.classList.contains('big'),r=$('wrap').getBoundingClientRect();
+  if(DOC.w>0&&DOC.h>0){
+    /* 指定サイズ：縦横比を保って枠に収める。W・Hは小数のまま持ち、書き出し（hk）ではキャンバスの画素数をちょうどDOC.w×hk・DOC.h×hkにする（四捨五入の1pxのずれを出さない） */
+    const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,r.height):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
+    W=Math.max(1,w);H=Math.max(1,W/a);dpr=hk?DOC.w*hk/W:Math.min(devicePixelRatio||1,2);
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';
+    cv.style.margin=(fs?Math.max(0,(r.height-H)/2):0)+'px auto 0';
+  }else{
+    dpr=hk||Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.round(r.width));H=fs?Math.max(1,Math.round(r.height)):W;cv.width=W*dpr;cv.height=H*dpr;cv.style.width='';cv.style.margin='';cv.style.height=H+'px';
+  }
+  oc.width=cv.width;oc.height=cv.height;ob1.width=ob2.width=cv.width;ob1.height=ob2.height=cv.height;S0=Math.min(W,H)*.26;
+}
 
 const FILT='filter' in CanvasRenderingContext2D.prototype;
 /* ぼかし：そのままだと画像の外の透明へにじんで、フチが薄く消える。端の1画素を外へ延ばした画像をぼかし、元の矩形で切り抜く */
@@ -806,7 +859,7 @@ $('pStop').onclick=()=>{const p=ensurePhys(sel);p.vx=0;p.vy=0};
 function loop(ts){
   const raw=ts-last,dt=Math.min(raw/1000,.05);last=ts;perfTick(warpMs);if(++fc%12===0)syncNums();
   if(!paused)for(const l of AC){for(const[k]of K){const c=l.ch[k];c.ph=(c.ph+dt*gs*c.hz)%1}for(const p of l.pins)p.ph=(p.ph+dt*gs*p.hz)%1}
-  physStep(dt*physTimeScale);wbTick(dt);paintFrame();adjPump();
+  physStep(dt*physTimeScale);wbTick(dt);paintFrame();crdTick();adjPump();
   const zz=Z.s!==1||Z.x!==0||Z.y!==0;if(zz!==zshown){zshown=zz;$('zr').disabled=!zz}
   requestAnimationFrame(loop);
 }
@@ -824,28 +877,64 @@ function isLocked(l){const y=layOf(l);return !y.visible||y.locked}
 function editable(l){return isVisible(l)&&!isLocked(l)}
 function blocked(l){if(!l||editable(l))return false;note(isVisible(l)?'このレイヤーはロック中です（配置の移動だけできます）':'このレイヤーは非表示です');return true}
 function moveLayTo(f,t){if(f===t||f<0||t<0||f>=LAYERS.length||t>=LAYERS.length)return;pushUndo();const[y]=LAYERS.splice(f,1);LAYERS.splice(t,0,y);dirtyProj=true;layUi()}
-function moveObj(a,d){pushUndo();
-  if(d.k==='l'){a.layerId=LAYERS[+d.i].id;AC.splice(AC.indexOf(a),1);AC.push(a)}
-  else{const t=byId(+d.id);if(!t||t===a)return;const up=AC.indexOf(a)<AC.indexOf(t)||layOf(a)!==layOf(t);a.layerId=layOf(t).id;AC.splice(AC.indexOf(a),1);AC.splice(AC.indexOf(t)+(up?1:0),0,a)}
-  dirtyProj=true;chips()}
+/* 並べ替え（台帳Z-99）：行と行のすき間に入れる。「すき間」は、レイヤー同士なら表示の上から数えた位置s（0＝いちばん手前の上）、
+   オブジェクトなら、レイヤーLの中の上（手前）から数えた位置k（0＝そのレイヤーでいちばん手前、人数＝いちばん奥）。 */
+function moveLayAt(i,s){const n=LAYERS.length,p=n-1-i;if(i<0||i>=n||s<0||s>n||s===p||s===p+1)return false;const s2=s>p?s-1:s;moveLayTo(i,n-1-s2);return true}
+function moveObjAt(a,y,k){
+  const mem=AC.filter(x=>layOf(x)===y).reverse(),ai=mem.indexOf(a);
+  if(!a||!y||k<0||k>mem.length||(ai>=0&&(k===ai||k===ai+1)))return false;
+  const rest=mem.filter(x=>x!==a),k2=ai>=0&&ai<k?k-1:k;
+  pushUndo();a.layerId=y.id;AC.splice(AC.indexOf(a),1);
+  if(!rest.length)AC.push(a);
+  else if(k2<rest.length)AC.splice(AC.indexOf(rest[k2])+1,0,a);   /* rest[k2]のすぐ手前（ACでは後ろ）へ */
+  else AC.splice(AC.indexOf(rest[rest.length-1]),0,a);            /* そのレイヤーでいちばん奥へ */
+  dirtyProj=true;chips();return true}
 function lyPlace(){const b=$('lyopen');if(!b||lyPop.hidden)return;const r=b.getBoundingClientRect(),w=lyPop.offsetWidth,h=lyPop.offsetHeight;
   let y=r.bottom+6;if(y+h>innerHeight-8)y=Math.max(8,r.top-h-6);lyPop.style.left=Math.min(Math.max(8,r.left),Math.max(8,innerWidth-w-8))+'px';lyPop.style.top=y+'px'}
 function lyToggle(open){lyPop.hidden=open===undefined?!lyPop.hidden:!open;if(!lyPop.hidden)layUi()}
-function treeDrag(r){let t=null,on=false,sy=0;
+/* ドラッグで並べ替え：行の上ではなく、入れる場所（行と行のすき間）に点線を出す（台帳Z-99）。
+   すき間の候補を、ドラッグ中の指のyに一番近いものから選ぶ。自分の今の位置のすき間（動かない）では線を出さず、離しても何も起きない。
+   ポップオーバの外で離すと取り消し（pointercancelも取り消し） */
+function insSlots(kind){
+  const rows=[...$('lyl').querySelectorAll('.trow')],rc=rows.map(x=>x.getBoundingClientRect()),out=[];
+  if(kind==='l'){
+    let s=0;rows.forEach((x,j)=>{if(x.dataset.k==='l')out.push({y:j?(rc[j-1].bottom+rc[j].top)/2:rc[j].top-2,s:s++})});
+    if(rows.length)out.push({y:rc[rc.length-1].bottom+2,s});
+  }else rows.forEach((x,j)=>{
+    if(x.dataset.k!=='l')return;
+    let m=0;while(j+m+1<rows.length&&rows[j+m+1].dataset.k==='o')m++;
+    const i=+x.dataset.i;
+    out.push({y:m?(rc[j].bottom+rc[j+1].top)/2:rc[j].bottom+1,i,k:0});
+    for(let k=1;k<m;k++)out.push({y:(rc[j+k].bottom+rc[j+k+1].top)/2,i,k});
+    if(m)out.push({y:rc[j+m].bottom+1,i,k:m});
+  });
+  return out;
+}
+function treeDrag(r){let t=null,on=false,sy=0,ins=null,cur=null;
+  const isL=r.dataset.k==='l';
+  const lineOff=()=>{if(ins){ins.remove();ins=null}cur=null};
   const go=()=>{on=true;r.classList.add('drag')};
+  const noop=c=>{if(isL){const n=LAYERS.length,p=n-1-(+r.dataset.i);return c.s===p||c.s===p+1}
+    const a=byId(+r.dataset.id),y=LAYERS[c.i];if(!a||!y)return true;const ai=AC.filter(x=>layOf(x)===y).reverse().indexOf(a);return ai>=0&&(c.k===ai||c.k===ai+1)};
+  const aim=e=>{  /* 指のyに一番近いすき間を選び、点線を出す */
+    const box=$('lyl'),br=box.getBoundingClientRect(),pr=lyPop.getBoundingClientRect();
+    const inside=e.clientX>=pr.left&&e.clientX<=pr.right&&e.clientY>=Math.max(br.top,pr.top)-6&&e.clientY<=Math.min(br.bottom,pr.bottom)+6;
+    let best=null;if(inside)for(const c of insSlots(isL?'l':'o'))if(!best||Math.abs(c.y-e.clientY)<Math.abs(best.y-e.clientY))best=c;
+    cur=best&&!noop(best)?best:null;
+    if(!cur){if(ins)ins.hidden=true;return}
+    if(!ins){ins=document.createElement('div');ins.className='lyins';box.appendChild(ins)}
+    ins.hidden=false;ins.classList.toggle('o',!isL);ins.style.top=(cur.y-br.top-1.5)+'px'};
   r.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;sy=e.clientY;if(e.pointerType!=='mouse')t=setTimeout(go,350)});
   r.addEventListener('pointermove',e=>{
     if(!on){if(e.pointerType==='mouse'&&e.buttons&&Math.abs(e.clientY-sy)>5){go();try{r.setPointerCapture(e.pointerId)}catch(_){}}else if(t&&Math.abs(e.clientY-sy)>8){clearTimeout(t);t=null}
       if(!on)return}
-    const rows=[...$('lyl').querySelectorAll('.trow')];rows.forEach(x=>x.classList.remove('ov'));
-    const o=rows.find(x=>{const b=x.getBoundingClientRect();return e.clientY>=b.top&&e.clientY<b.bottom});if(o&&o!==r)o.classList.add('ov');e.preventDefault()});
+    aim(e);e.preventDefault()});
   r.addEventListener('touchmove',e=>{if(on)e.preventDefault()},{passive:false});
-  const fin=()=>{clearTimeout(t);t=null;if(!on)return;on=false;r.classList.remove('drag');
-    const rows=[...$('lyl').querySelectorAll('.trow')],o=rows.find(x=>x.classList.contains('ov'));rows.forEach(x=>x.classList.remove('ov'));if(!o)return;
-    const d=o.dataset;
-    if(r.dataset.k==='l')moveLayTo(+r.dataset.i,d.k==='l'?+d.i:LAYERS.indexOf(layOf(byId(+d.id))));
-    else{const a=byId(+r.dataset.id);if(a)moveObj(a,d)}};
-  r.addEventListener('pointerup',fin);r.addEventListener('pointercancel',fin)}
+  const fin=ok=>{clearTimeout(t);t=null;if(!on)return;on=false;r.classList.remove('drag');
+    const c=ok?cur:null;lineOff();if(!c)return;
+    if(isL)moveLayAt(+r.dataset.i,c.s);
+    else{const a=byId(+r.dataset.id);if(a)moveObjAt(a,LAYERS[c.i],c.k)}};
+  r.addEventListener('pointerup',()=>fin(true));r.addEventListener('pointercancel',()=>fin(false))}
 function layUi(){
   const box=$('lyl');if(!box||lyPop.hidden)return;box.innerHTML='';
   const mk=(t,al,f,on)=>{const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-label',al);b.classList.toggle('on',!!on);b.onclick=e=>{e.stopPropagation();f()};return b};
@@ -872,8 +961,8 @@ $('lyadd').onclick=()=>{pushUndo();const id=Math.max(...LAYERS.map(y=>y.id))+1,i
 $('lyren').onclick=()=>{const y=LY(curLid),v=prompt('レイヤー名',y.name);if(v&&v.trim()){pushUndo();y.name=v.trim();dirtyProj=true;chips()}};
 $('lydel').onclick=()=>{if(LAYERS.length<2){note('最後のレイヤーは削除できません');return}const i=LAYERS.findIndex(y=>y.id===curLid);if(i<0)return;pushUndo();const to=LAYERS[i?i-1:1];
   AC.forEach(a=>{if(a.layerId===curLid)a.layerId=to.id;if(a.toType==='layer'&&a.to===curLid){a.to=null;a.toType='actor';a.maskTo=false}});
-  LAYERS.splice(i,1);curLid=to.id;dirtyProj=true;setSel(sel||AC[0])};
-$('oadd').onclick=()=>pickImages();$('oadd2').onclick=()=>{addSpecial('d');setTab('dr')};$('odel').onclick=()=>del();
+  LAYERS.splice(i,1);curLid=to.id;dirtyProj=true;setSel(sel||AC[0]||null)};
+$('oadd2').onclick=()=>{addSpecial('d');setTab('dr')};$('odel').onclick=()=>del();
 $('lyphx').onchange=e=>{physHideEx=e.target.checked;dirtyProj=true};
 $('lyx').onclick=()=>lyToggle(false);
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!lyPop.hidden)lyToggle(false)});
@@ -892,8 +981,25 @@ function mv(p){
   else{a.fx=cl((p.x+(dragOff?dragOff.dx:0))/W,-.25,1.25);a.fy=cl((p.y+(dragOff?dragOff.dy:0))/H,-.25,1.25)}
 }
 cv.addEventListener('pointerdown',e=>{noFrame=true;try{pdown(e)}finally{noFrame=false}});
+/* ===== 操作の取り残しの自己修復（台帳Z-102）=====
+   不変条件：指（ポインター）が1本も押されていなければ、ドラッグ・ペン・歪み・パン・ピンチの操作状態（tgt・drawing・wg・wbg・pan・pz0）は無いはず。
+   これが崩れると、新しい指が全部「2本目」扱いになり、✋の移動も2本指の拡大もできなくなる（実機で発生。原因となった離し損ねは未特定）。
+   離した通知が届かなかった場合（OSのジェスチャーなど）や、終了処理が途中で例外になった場合に備え、①新しい操作の1本目（isPrimary）が来た時点で、
+   同じ種類の古い記録を捨てて状態を初期化する ②終了処理は例外が出ても必ずup()まで通す ③画面が隠れたら初期化する。 */
+const ptyp=new Map(),HEAL=[];let healShown=false;
+function heal(why){
+  HEAL.push({t:Math.round(performance.now()),why,ptrs:ptrs.size,wg:!!wg,wbg:!!wbg,drawing:!!drawing,tgt:!!tgt,pan:!!pan,pz0:!!pz0});if(HEAL.length>20)HEAL.shift();
+  ptrs.clear();ptyp.clear();pz0=null;up();
+  if(!healShown){healShown=true;note('前の操作の状態が残っていたので、元に戻しました')}
+}
+function healStale(e){
+  if(!e.isPrimary)return;
+  let st=false;for(const[id,t]of[...ptyp])if(t===e.pointerType){ptrs.delete(id);ptyp.delete(id);st=true}
+  if(!ptrs.size&&(st||tgt||drawing||wg||wbg||pan||pz0))heal(st?'ptrs':'flags');
+}
 function pdown(e){
-  cap(e);const q=sp(e);ptrs.set(e.pointerId,q);
+  healStale(e);
+  cap(e);const q=sp(e);ptrs.set(e.pointerId,q);ptyp.set(e.pointerId,e.pointerType);
   if(ptrs.size===1)firstDownTs=performance.now();
   if(ptrs.size>=2){
     const quick=performance.now()-firstDownTs<300;
@@ -902,6 +1008,7 @@ function pdown(e){
   }
   if(pickFor){pickAt(q);return}
   if(handMode){if(!vLock){pid=e.pointerId;pan={x:q.x-Z.x,y:q.y-Z.y}}return}
+  if(!sel){pid=e.pointerId;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
   pushUndo();pid=e.pointerId;const p=wp(q);
   if(rulerOn){drawing=true;rulerPt={x0:p.x,y0:p.y,x1:p.x,y1:p.y};return}
   if(paint){if(blocked(sel))return;drawing=true;lp=null;stroke(q);return}
@@ -932,24 +1039,26 @@ cv.addEventListener('pointermove',e=>{
   if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
 });
 let thist=[],firstDownTs=0;
-const end=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pz0=null;
-  if(!ptrs.size){
-    if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
-    if(rulerOn&&rulerPt){
-      const px=Math.hypot(rulerPt.x1-rulerPt.x0,rulerPt.y1-rulerPt.y0);
-      if(px>4){pendingRulerPx=px;$('pRulerSet').style.display='flex'}
-      rulerPt=null;drawing=false;pid=-1;return;
-    }
-    if(tgt&&tgt.phys&&tgt.phys.on&&!tgt.phys.fixed&&thist.length>=2){
-      const a=thist[0],b=thist[thist.length-1],dt=(b.t-a.t)/1000;
-      if(dt>0.01){tgt.phys.vx=cl((b.x-a.x)/dt,-2000,2000);tgt.phys.vy=cl((b.y-a.y)/dt,-2000,2000)}
-    }
-    if(pbox&&drawing&&pl&&boxStart&&boxEnd){rectSel(pl,boxStart,boxEnd);flashUntil=performance.now()+500}
-    thist=[];up();
-  }
+const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)pz0=null;
+  if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){thist=[];up()}}}
 };
+function endAll(){
+  if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
+  if(rulerOn&&rulerPt){
+    const px=Math.hypot(rulerPt.x1-rulerPt.x0,rulerPt.y1-rulerPt.y0);
+    if(px>4){pendingRulerPx=px;$('pRulerSet').style.display='flex'}
+    rulerPt=null;drawing=false;pid=-1;return;
+  }
+  if(tgt&&tgt.phys&&tgt.phys.on&&!tgt.phys.fixed&&thist.length>=2){
+    const a=thist[0],b=thist[thist.length-1],dt=(b.t-a.t)/1000;
+    if(dt>0.01){tgt.phys.vx=cl((b.x-a.x)/dt,-2000,2000);tgt.phys.vy=cl((b.y-a.y)/dt,-2000,2000)}
+  }
+  if(pbox&&drawing&&pl&&boxStart&&boxEnd){rectSel(pl,boxStart,boxEnd);flashUntil=performance.now()+500}
+  thist=[];up();
+}
 addEventListener('pointerup',end);addEventListener('pointercancel',end);
-addEventListener('blur',()=>{ptrs.clear();pz0=null;up()});
+addEventListener('blur',()=>{ptrs.clear();ptyp.clear();pz0=null;up()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){ptrs.clear();ptyp.clear();pz0=null;up()}});
 cv.addEventListener('lostpointercapture',end);
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')wHov=null});
@@ -1008,7 +1117,7 @@ function chips(){
   const b=document.createElement('button'),y=sel?layOf(sel):LY(curLid);b.id='lyopen';b.className='lyopen';b.setAttribute('aria-label','レイヤーとオブジェクトの一覧を開く');
   if(sel){const im=document.createElement('img');im.alt='';im.src=thumbURL(sel);b.append(im)}
   b.append(document.createTextNode('🗂 '+y.name+(sel?' › '+sel.name:'')+' ▾'));b.onclick=()=>lyToggle();box.appendChild(b);
-  const q=document.createElement('button');q.id='qadd';q.textContent='＋画像';q.setAttribute('aria-label','画像を選んで新しいオブジェクトを追加');armTip(q);q.onclick=()=>pickImages();box.appendChild(q);layUi();
+  layUi();addRowUi();  /* 「＋画像」の段（#addrow）は固定の部品：台帳Z-96 */
 }
 function frame(l){
   if(!W||!l||vLock||noFrame)return;
@@ -1019,6 +1128,8 @@ function frame(l){
   if(syp<pad)Z.y+=pad-syp;else if(syp>H-pad)Z.y-=syp-(H-pad);
 }
 function setSel(l){
+  if(!l){sel=null;chips();noObjUi(true);return}  /* オブジェクト0個（台帳Z-97）：選択なし。操作窓は背景・出力だけにする */
+  noObjUi(false);
   if(l&&l.layerId!=null&&LAYERS.some(y=>y.id===l.layerId))curLid=l.layerId;
   sel=l;chips();frame(l);
   $('nm').value=l.name;
@@ -1649,7 +1760,10 @@ $('bmc').onclick=()=>{if(sel.bm)sel.bm.getContext('2d').clearRect(0,0,MR,MR);sel
 
 /* ===== 静止画(高解像度) ===== */
 function snapImg(){
-  const k=+$('sq').value,f=$('sf').value,jpg=f==='jpg';hk=k;adjHQ=true;fit();
+  let k=+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
+  /* 画素が大きすぎる時は倍率を下げる（上限EXPORT_MAXPX。台帳Z-98） */
+  if(bw*bh*k*k>EXPORT_MAXPX){const k2=Math.max(1,Math.floor(Math.sqrt(EXPORT_MAXPX/(bw*bh))));if(k2<k){note('画素が大きすぎるので、倍率を'+k2+'×に下げて保存します');k=k2}}
+  hk=k;adjHQ=true;fit();
   try{
     paintFrame();
     if(f==='pdf'){
@@ -1714,7 +1828,7 @@ function frz(a,k,vk){const c=a[k];if(!c)return null;const f=a['_f'+k],v=a[vk]||0
 function snap(){
   const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:a.bite,adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
   const B={m:BG.m,c:BG.c,c2:BG.c2,b:BG.b,img:BG.img,v:BG.v||0};
-  return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS])};
+  return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),D:{w:DOC.w,h:DOC.h},sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS,DOC.w,DOC.h])};
 }
 function bgUi(){$('bg1').value=BG.c;$('bg2').value=BG.c2;$('bgm').value=BG.m;$('bgb').value=BG.b}
 function restore(sn){
@@ -1727,7 +1841,9 @@ function restore(sn){
   AC.forEach(a=>{if(a.syncTo!=null){const t=byId(a.syncTo);if(t)a.pins=t.pins}});
   Object.assign(BG,{m:sn.B.m,c:sn.B.c,c2:sn.B.c2,b:sn.B.b,img:sn.B.img,v:sn.B.v});bgUi();
   if(sn.L){LAYERS=sn.L.map(y=>({...y}));curLid=sn.cl}
-  setSel(AC[sn.sel]||AC[0]);
+  if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit();if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
+  canvasUi();
+  setSel(AC[sn.sel]||AC[0]||null);
 }
 const US=[],RS=[];
 let undoSeq=0;
@@ -1745,7 +1861,7 @@ function pushUndo(){const sn=snap();if(US.length&&US[US.length-1].sig===sn.sig)r
 function undo(){if(!US.length)return;const sn=snap();sn._uh=++undoSeq;RS.push(sn);restore(US.pop());trimHistory()}
 function redo(){if(!RS.length)return;const sn=snap();sn._uh=++undoSeq;US.push(sn);restore(RS.pop());trimHistory()}
 $('undo').onclick=undo;$('un2').onclick=undo;$('redo').onclick=redo;$('rd2').onclick=redo;
-$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#tpr'))pushUndo()},true);
+$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#grip2,#tpz'))pushUndo()},true);
 $('tp').addEventListener('focusin',e=>{if(e.target.type==='number'||e.target.type==='text')pushUndo()});
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!/^(text|number)$/.test(document.activeElement.type||'')){if(e.key==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(e.key==='y'){e.preventDefault();redo()}}});
 
@@ -1755,7 +1871,7 @@ function u2(c){if(!c)return null;const w=c.naturalWidth||c.width,h=c.naturalHeig
 const encMesh=m=>{if(!m)return null;const u=new Uint8Array(m.d.buffer,m.d.byteOffset,m.d.byteLength);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return{n:m.n,b:btoa(s)}};
 const decMesh=o=>{if(!o||!o.b||!o.n)return null;try{const s=atob(o.b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);if(u.length!==o.n*o.n*4)return null;return{n:o.n,d:new Int16Array(u.buffer)}}catch(_){return null}};
 function ser(){
-  return JSON.stringify({v:1,uid,sel:AC.indexOf(sel),LAY:{L:LAYERS,cur:curLid,hx:physHideEx},BG:{...BG,img:u2(BG.img)},
+  return JSON.stringify({v:1,uid,sel:AC.indexOf(sel),DOC:{w:DOC.w,h:DOC.h},LAY:{L:LAYERS,cur:curLid,hx:physHideEx},BG:{...BG,img:u2(BG.img)},
     AC:AC.map(a=>{const o=JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v));
       o.dm=encMesh(a.dm);o.img=u2(a.img);o.iscv=!!a.cv;o.mask=a.mask&&a.hasMask?u2(a.mask):null;o.bm=a.bm&&a.hasBm?u2(a.bm):null;o.bite=a.bite&&a.eat?u2(a.bite):null;o.adjm=a.adjm&&a.hasAdjM?u2(a.adjm):null;o.lfm=a.lfm&&a.hasLFM?u2(a.lfm):null;return o})});
 }
@@ -1775,7 +1891,10 @@ async function loadProj(txt){
   LAYERS=(d.LAY&&d.LAY.L&&d.LAY.L.length?d.LAY.L:[{id:1,name:'レイヤー1',visible:true,locked:false}]).map(y=>({...y}));curLid=(d.LAY&&d.LAY.cur)||LAYERS[0].id;physHideEx=d.LAY?d.LAY.hx!==false:true;
   AC.forEach(a=>{if(a.layerId==null||!LAYERS.some(y=>y.id===a.layerId))a.layerId=LAYERS[0].id});
   AC.forEach(a=>{if(a.syncTo!=null){const t=byId(a.syncTo);if(t)a.pins=t.pins}});
-  Object.assign(BG,d.BG,{img:bgI,v:(BG.v||0)+1});bgUi();setSel(AC[d.sel]||AC[0]);
+  Object.assign(BG,d.BG,{img:bgI,v:(BG.v||0)+1});bgUi();
+  /* キャンバスの大きさ（台帳Z-98）。旧データには無い＝自動 */
+  DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit();canvasUi();
+  setSel(AC[d.sel]||AC[0]||null);
 }
 function saveProj(){
   const url=URL.createObjectURL(new Blob([ser()],{type:'application/json'})),o=$('out');o.innerHTML='';
@@ -1800,7 +1919,7 @@ function blob(col){
 }
 const cs=(a,k,v,ph)=>{a.ch[k]={a:v[0],hz:v[1],w:v[2],d:v[3]||0,e:v[4]||0,ph:ph||0}};
 const mkpin=(t,x,y,r,o)=>({t,x,y,r,a:o.a!==undefined?o.a:(t==='p'?1:.6),vx:o.vx||0,vy:o.vy||0,b:o.b||0,hz:o.hz||1,w:o.w||'sin',ma:o.ma||0,md:o.md||0,mw:o.mw||'sin',ph:0});
-function resetAll(){pushUndo();AC=[];uid=0;sel=null;Z.s=1;Z.x=Z.y=0;paused=false;$('pl').textContent='⏸ とめる';pzSync();BG.img=null;BG.b=0;BG.m='solid';BG.c=BG.c2='#ffffff';BG.v=(BG.v||0)+1}
+function resetAll(){pushUndo();AC=[];uid=0;sel=null;DOC.w=DOC.h=0;fit();canvasUi();Z.s=1;Z.x=Z.y=0;paused=false;$('pl').textContent='⏸ とめる';pzSync();BG.img=null;BG.b=0;BG.m='solid';BG.c=BG.c2='#ffffff';BG.v=(BG.v||0)+1}
 function note(t){$('ht').textContent=t;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},7000)}
 function demoA(){
   resetAll();BG.m='grad';BG.c='#ffe8f0';BG.c2='#ffc4d8';bgUi();
@@ -1882,9 +2001,37 @@ $('qs').onchange=e=>{wq=e.target.value;if(wq!=='auto')setLvl(+wq);else $('qtx').
 
 /* ===== パーツのコピー／切り取り／貼り付け ===== */
 const CL=[];
-/* 切り出し用のCanvasを作る。o.adj＝色調整・質感を反映した絵を使う（既定は元画像。「ぼかしを統合」は元画像に焼くので反映してはいけない：二重がけになる）。
+/* 切り出し用のCanvasを作る。o.adj＝色調整・質感を反映した絵を使う（単体保存・コピー・切り取り・複製。既定は元画像。「ぼかしを統合」は元画像に焼くので反映してはいけない：二重がけになる）。
    o.full＝縮小しない原寸（上限EXPORT_MAXPX画素）。既定は長辺512〜1600pxに揃える（パーツ用）。 */
 const EXPORT_MAXPX=25e6;
+/* 範囲マスク（sm・bm：正方形MR×MR。絵はその中央にレターボックスされている）を、絵の矩形W×Hに合わせてgへ描く（台帳Z-103）。
+   正方形のマスクをそのままW×Hに引き伸ばすと、縦長・横長の絵で範囲がずれる（全体を囲んで切り取っても、上下や左右が取り残されていた）。
+   square＝W×Hが正方形の枠（歪み後のwo。枠＝マスクの範囲そのもの）の時はそのまま重ねる。 */
+function drawMask(g,m,W,H,square){
+  if(square){g.drawImage(m,0,0,W,H);return}
+  const k=Math.min(MR/W,MR/H),dw=W*k,dh=H*k;g.drawImage(m,(MR-dw)/2,(MR-dh)/2,dw,dh,0,0,W,H);
+}
+/* 切り抜きの範囲マスク（W×H）。縁の処理（台帳Z-105）。
+   smは512pxの柔らかい筆（shadowBlur）で描いた範囲を引き伸ばすので、そのまま使うと縁が広くぼける。そこで、①50%を境に二値にして筆のぼけを取り、
+   ②縁だけを指定の幅でぼかす（f＝縁のぼかし。0＝くっきり＝約1pxだけなめらか、大きいほど広くぼける。MR=512基準で、出力が大きい絵では比例して太くする）。
+   ぼかす時は画像の端を外へ延ばしてから行う（端まで囲んだ時に、端の1画素が半透明で取り残されるのを防ぐ。台帳Z-103）。 */
+let ptFeather=0;
+function partMask(l,W,H,square,f){
+  const L=Math.max(W,H),k=Math.min(1,2048/L),w=Math.max(1,Math.round(W*k)),h=Math.max(1,Math.round(H*k));
+  const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});
+  drawMask(g,l.sm,w,h,square);
+  const im=g.getImageData(0,0,w,h),d=im.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>=128?255:0;g.putImageData(im,0,0);
+  let o=c;
+  if(FILT){
+    const sg=Math.max(.8,f*.4*Math.max(w,h)/MR),m=Math.ceil(sg*3)+1,t=document.createElement('canvas');t.width=w+2*m;t.height=h+2*m;const tg=t.getContext('2d');
+    tg.drawImage(c,m,m);
+    tg.drawImage(c,0,0,1,h,0,m,m,h);tg.drawImage(c,w-1,0,1,h,m+w,m,m,h);tg.drawImage(c,0,0,w,1,m,0,w,m);tg.drawImage(c,0,h-1,w,1,m,m+h,w,m);
+    tg.drawImage(c,0,0,1,1,0,0,m,m);tg.drawImage(c,w-1,0,1,1,m+w,0,m,m);tg.drawImage(c,0,h-1,1,1,0,m+h,m,m);tg.drawImage(c,w-1,h-1,1,1,m+w,m+h,m,m);
+    const u=document.createElement('canvas');u.width=w;u.height=h;const ug=u.getContext('2d');ug.filter='blur('+sg+'px)';ug.drawImage(t,-m,-m);ug.filter='none';o=u;
+  }
+  if(w===W&&h===H)return o;
+  const r=document.createElement('canvas');r.width=W;r.height=H;r.getContext('2d').drawImage(o,0,0,W,H);return r;
+}
 function boxCv(l,o){
   o=o||{};let src=l.wo;
   if(!src){if(o.adj){const h=adjHQ;adjHQ=true;try{src=adjSource(l)}finally{adjHQ=h}}else src=l.img}
@@ -1902,7 +2049,7 @@ function boxCv(l,o){
   const ox=(W-dw)/2,oy=(H-dh)/2;
   if(l.hasBm&&l.blur>0&&l.bm&&FILT){
     g.drawImage(src,ox,oy,dw,dh);
-    const bmc=document.createElement('canvas');bmc.width=W;bmc.height=H;bmc.getContext('2d').drawImage(l.bm,0,0,W,H);
+    const bmc=document.createElement('canvas');bmc.width=W;bmc.height=H;drawMask(bmc.getContext('2d'),l.bm,W,H,!!l.wo);
     const scale=dw/Math.max(1,S0*l.size),bc=document.createElement('canvas');bc.width=W;bc.height=H;const bg=bc.getContext('2d');
     bg.filter='blur('+(l.blur*scale)+'px)';bg.drawImage(src,ox,oy,dw,dh);
     bg.filter='none';  /* 戻し忘れると、下のマスクの描画までぼかされ、g側のマスクと食い違って境界の不透明度が崩れる（台帳Z-76） */
@@ -1915,29 +2062,30 @@ function boxCv(l,o){
 }
 function takePart(cut){
   const l=sel;if(!l||!l.hasSm||!l.sm){note('先に「囲む」で、コピーしたい部分をなぞってください');return}
-  pushUndo();const{c,W,H}=boxCv(l),g=c.getContext('2d');g.globalCompositeOperation='destination-in';g.drawImage(l.sm,0,0,W,H);
+  /* 色調整・質感を反映した絵から切り出す（台帳Z-83）。貼り付けたパーツが、元の見た目と同じ色になる。切り取りで元に残る側は元画像のままで、調整は引き続き上から掛かる（二重がけにならない） */
+  pushUndo();const{c,W,H}=boxCv(l,{adj:true}),g=c.getContext('2d');g.globalCompositeOperation='destination-in';g.drawImage(partMask(l,W,H,!!l.wo,ptFeather),0,0);
   const d=g.getImageData(0,0,W,H).data;let x0=W,y0=H,x1=0,y1=0;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(d[(y*W+x)*4+3]>8){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
   if(x1<=x0||y1<=y0){note('囲んだ範囲に絵がありません');return}
   const w=x1-x0+1,h=y1-y0+1,p=document.createElement('canvas');p.width=w;p.height=h;p.getContext('2d').drawImage(c,x0,y0,w,h,0,0,w,h);
-  CL.unshift({c:p,W,H,size:l.size,src:l.name,sx:l.fx,sy:l.fy,ux:((x0+x1)/(2*W)-.5)*l.size,uy:((y0+y1)/(2*H)-.5)*l.size});if(CL.length>8)CL.pop();renderTray();
+  CL.unshift({c:p,W,H,size:l.size,src:l.name,sx:l.fx,sy:l.fy,ux:((x0+x1)/(2*W)-.5)*(W/Math.max(W,H))*l.size,uy:((y0+y1)/(2*H)-.5)*(H/Math.max(W,H))*l.size});if(CL.length>8)CL.pop();renderTray();
   if(cut){
-    ensureBase(l);const bw=l._bw,bh=l._bh,bg=l.base.getContext('2d');bg.globalCompositeOperation='destination-out';bg.drawImage(l.sm,0,0,bw,bh);bg.globalCompositeOperation='source-over';
-    if(l.pen){const pgc=l.pen.getContext('2d');pgc.globalCompositeOperation='destination-out';pgc.drawImage(l.sm,0,0,bw,bh);pgc.globalCompositeOperation='source-over'}
+    ensureBase(l);const bw=l._bw,bh=l._bh,bg=l.base.getContext('2d'),pm=partMask(l,bw,bh,false,ptFeather);bg.globalCompositeOperation='destination-out';bg.drawImage(pm,0,0);bg.globalCompositeOperation='source-over';
+    if(l.pen){const pgc=l.pen.getContext('2d');pgc.globalCompositeOperation='destination-out';pgc.drawImage(pm,0,0);pgc.globalCompositeOperation='source-over'}
     bumpBP(l,1,!!l.pen);recompose(l);
   }
   note(cut?'切り取って、画面の左下に置きました':'コピーして、画面の左下に置きました（サムネイルをタップで貼り付け）');
 }
 function pasteClip(i){
   const k=CL[i];if(!k)return;pushUndo();
-  const R2=Math.max(k.W||512,k.H||512),id=++uid,a={id,sp:'p',name:'パーツ'+id,img:k.c,fx:k.sx+k.ux*S0/W+.04,fy:k.sy+k.uy*S0/H+.04,size:Math.max(.04,k.size*Math.max(k.c.width,k.c.height)/R2),pv:0,face:1,rot:0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false};
+  const R2=Math.max(k.W||512,k.H||512),id=++uid,a={id,sp:'p',name:'切り抜き'+id,img:k.c,fx:k.sx+k.ux*S0/W+.04,fy:k.sy+k.uy*S0/H+.04,size:Math.max(.04,k.size*Math.max(k.c.width,k.c.height)/R2),pv:0,face:1,rot:0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false};
   AC.push(a);setSel(a);
 }
 function renderTray(){
   const t=$('tray');t.innerHTML='';
   CL.forEach((k,i)=>{const b=document.createElement('button'),im=document.createElement('img'),th=document.createElement('canvas'),S=64,r=Math.min(S/k.c.width,S/k.c.height);
     th.width=th.height=S;th.getContext('2d').drawImage(k.c,(S-k.c.width*r)/2,(S-k.c.height*r)/2,k.c.width*r,k.c.height*r);
-    im.src=th.toDataURL();im.alt='';b.title='タップで貼り付け（'+k.src+'より）';b.setAttribute('aria-label','パーツを貼り付け');b.append(im);b.onclick=()=>pasteClip(i);t.appendChild(b)});
+    im.src=th.toDataURL();im.alt='';b.title='タップで貼り付け（'+k.src+'より）';b.setAttribute('aria-label','切り抜きを貼り付け');b.append(im);b.onclick=()=>pasteClip(i);t.appendChild(b)});
 }
 $('pcopy').onclick=()=>takePart(false);$('pcut').onclick=()=>takePart(true);$('pdup').onclick=()=>{fillSel('sm','#ff5d8f');takePart(false);pasteClip(0)};
 /* このオブジェクトだけ保存（台帳Z-80で強化）：色調整・質感・ぼかし込み／原寸（上限EXPORT_MAXPX画素）／PNGまたはPDF。透明な余白は切り詰める */
@@ -1958,7 +2106,157 @@ $('pexp').onclick=async()=>{
 $('pall').onclick=()=>fillSel('sm','#ff5d8f');
 $('pclr').onclick=()=>{if(sel.sm)sel.sm.getContext('2d').clearRect(0,0,MR,MR);sel.hasSm=false;sel.smv=(sel.smv||0)+1};
 $('pclrh').onclick=()=>{CL.length=0;renderTray()};
+$('ptf').oninput=e=>{ptFeather=+e.target.value;$('ptfv').textContent=ptFeather};
 $('pbs').oninput=e=>{brushParts=+e.target.value};
+
+/* ===== 確定／レイヤーとして保存／色を合わせる（台帳Z-83・Z-84・Z-85。AGENTS §3.6）=====
+   確定＝いまの色調整・質感（範囲指定も込み）を絵に焼き込み、調整の強さを0に戻す。取り消しは「元に戻す」だけ。
+   「レイヤーとして保存」＝焼き込まず、調整した所だけを新しいレイヤーの別オブジェクトに切り離す。元の絵は調整前に戻る（そのレイヤーを隠す・消せば元通り）。
+   色を合わせる＝別のオブジェクトの色（Lab空間の平均と散らばり＝Reinhard法）に寄せ、結果を確定と同じ経路で入れる（焼き込みか、レイヤーか）。
+   UIの一時状態（チェック・参照先）は作品データ・Undoに入れない。 */
+let cmAsLayer=false,cmWithL=true,cmBusy=false,cmSig='';
+const cmFrame=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
+const cmDims=im=>[im.naturalWidth||im.width||0,im.naturalHeight||im.height||0];
+
+/* 調整込みの絵を、元画像と同じ大きさの新しいCanvasに作る（範囲指定のマスクも込み。調整が無ければ元画像の複製） */
+function cmAdjusted(l){
+  const[iw,ih]=cmDims(l.img);if(!iw||!ih)return null;
+  const h=adjHQ;adjHQ=true;let src;try{src=adjSource(l)}finally{adjHQ=h}
+  const c=allocCanvas(iw,ih,'確定'),g=c.getContext('2d');
+  g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+  g.drawImage(src,0,0,c.width,c.height);return c;
+}
+/* 調整が及ぶ範囲。全体に効く調整が1つでもあればnull（＝全面）。範囲指定だけなら、塗った範囲（どれかのマスクが少しでも触れた所）の2値マスク（MR²）。n＝触れたセル数。
+   境界は、調整側の混ぜ具合（マスクの値）で既にやわらかく混ざっているので、2値にしても継ぎ目は出ない（マスクが0の所は調整前と同じ絵のため） */
+function cmCover(l,keys){
+  if(!keys.length)return null;const a=ensureAdj(l),ms=[];
+  for(const k of keys){const m=adjMask(l,a,k);if(!m)return null;ms.push(m)}
+  const c=document.createElement('canvas');c.width=c.height=MR;const g=c.getContext('2d'),id=g.createImageData(MR,MR),d=id.data;let n=0;
+  for(let i=0;i<MR*MR;i++){let on=0;for(const m of ms)if(m[i]>.004){on=1;break}const j=i*4;d[j]=d[j+1]=d[j+2]=255;d[j+3]=on?255:0;n+=on}
+  g.putImageData(id,0,0);return{c,n};
+}
+/* 範囲マスク（MR²の正方形・絵はその中にletterbox。mkIdxと同じ対応）で絵の透明度を切り抜く */
+function cmClip(c,cov){
+  if(!cov)return c;const iw=c.width,ih=c.height,fu=iw>=ih?1:iw/ih,fv=ih>=iw?1:ih/iw,g=c.getContext('2d');
+  g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='destination-in';g.imageSmoothingEnabled=false;
+  g.drawImage(cov.c,MR*(.5-fu/2),MR*(.5-fv/2),MR*fu,MR*fv,0,0,iw,ih);g.restore();return c;
+}
+/* 絵を差し替える（setImgと違い、「消えた部分を残す」bite等は触らない）。調整の強さのリセットは呼ぶ側 */
+function cmSetImage(l,c){
+  l.img=c;l.cv=null;l.base=null;l.pen=null;l.sd=null;l._adjC=null;l._adjJob=null;l._raw=null;l._adjRef=null;adjDirty(l);
+}
+function cmResetAdj(l){const a=ensureAdj(l);COLK.forEach(k=>a[k]=0);const f=ensureLF(l);LFK.forEach(k=>f[k].amount=0)}
+/* シート＝元のオブジェクトの複製（位置・大きさ・向き・動き・歪み・ぼかし・マスク関係はそのまま）に、絵だけ差し替えたもの。物理と範囲・調整値は引き継がない */
+function cmSheet(l,c){
+  const o=JSON.parse(JSON.stringify(l,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v));
+  Object.assign(o,{id:++uid,name:(l.name||'オブジェクト')+'・調整',img:c,cv:null,base:null,pen:null,sd:null,wo:null,
+    mask:l.mask?cloneC(l.mask):nb(),bm:l.bm?cloneC(l.bm):null,bite:l.bite?cloneC(l.bite):nb(),
+    adjm:null,lfm:null,hasAdjM:false,hasLFM:false,adj:ADJ0(),dm:l.dm?{n:l.dm.n,d:l.dm.d.slice()}:null,wx:0,wy:0,dirty:true,wd:true});
+  for(const k of['lf','adjRng','lfRng','adjmv','lfmv','phys','hasSm','smv'])delete o[k];
+  for(const k in o.ch)o.ch[k].ph=(l.ch[k]&&l.ch[k].ph)||0;           /* 動きは元と同じ位相から始め、同じ速さで進む＝そろって動く */
+  (o.pins||[]).forEach((p,i)=>{p.ph=(l.pins[i]&&l.pins[i].ph)||0});
+  return o;
+}
+/* 元のレイヤーのすぐ上に、新しいレイヤーを作ってシートを置く。選択は元のオブジェクトのまま（続けて全体を調整できるように） */
+function cmPlace(l,o){
+  const i=LAYERS.indexOf(layOf(l)),id=Math.max(...LAYERS.map(y=>y.id))+1,nm='調整：'+(l.name||'').slice(0,12);
+  LAYERS.splice(i+1,0,{id,name:nm,visible:true,locked:false});o.layerId=id;AC.push(o);dirtyProj=true;return nm;
+}
+const cmTooBig=(l,tex)=>{const[iw,ih]=cmDims(l.img);if(tex&&iw*ih>EDIT_CFG.maxPx){note('この画像は大きすぎて質感を焼き込めません（上限'+Math.round(EDIT_CFG.maxPx/1e6)+'メガ画素）。質感をリセットするか、色調整だけで確定してください');return true}return false};
+
+/* ---- 確定 ---- */
+async function cmCommit(){
+  const l=sel;if(!l||cmBusy||blocked(l))return;
+  const ca=adjActive(l),cf=lfActive(l);
+  if(!ca&&!cf){note('確定する色調整・質感がありません');return}
+  if(cmTooBig(l,cf))return;
+  if(cmAsLayer&&l.phys&&l.phys.on){note('物理が有効なオブジェクトは、レイヤーとして保存できません（物理を切るか、通常の確定にしてください）');return}
+  cmBusy=true;note('確定しています…');await cmFrame();
+  try{
+    const asLy=cmAsLayer,cov=cmCover(l,[...(ca?['adjm']:[]),...(cf?['lfm']:[])]);
+    if(asLy&&cov&&!cov.n){note('範囲が塗られていないので、何も変わりません');return}
+    const A=cmAdjusted(l);if(!A){note('確定できませんでした');return}
+    pushUndo();
+    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);adjDirty(l);note('調整した'+(cov?'範囲':'絵')+'を、新しいレイヤー「'+nm+'」に切り離しました。元の絵は調整前に戻っています')}
+    else{cmSetImage(l,A);cmResetAdj(l);note('確定しました（取り消しは「元に戻す」）')}
+    paintFrame();adjUi();chips();
+  }catch(e){note('確定できませんでした：'+((e&&e.message)||e))}
+  finally{cmBusy=false}
+}
+
+/* ---- 色を合わせる（Lab：L*a*b*。台帳Z-85は「まず色だけ」）---- */
+const CM_S2L=(()=>{const t=new Float32Array(256);for(let i=0;i<256;i++){const c=i/255;t[i]=c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4)}return t})();
+const CM_L2S=(()=>{const n=16384,t=new Uint8Array(n+1);for(let i=0;i<=n;i++){const v=i/n;t[i]=Math.round(255*(v<=.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-.055))}return t})();
+const _lab=new Float64Array(3),cmF=t=>t>.008856?Math.cbrt(t):7.787*t+.137931,cmFi=t=>{const t3=t*t*t;return t3>.008856?t3:(t-.137931)/7.787};
+function cmLab(r,g,b){
+  const R=CM_S2L[r],G=CM_S2L[g],B=CM_S2L[b],fx=cmF((.4124564*R+.3575761*G+.1804375*B)/.95047),fy=cmF(.2126729*R+.7151522*G+.0721750*B),fz=cmF((.0193339*R+.1191920*G+.9503041*B)/1.08883);
+  _lab[0]=116*fy-16;_lab[1]=500*(fx-fy);_lab[2]=200*(fy-fz);
+}
+function cmRgb(L,a,b,o,j){
+  const fy=(L+16)/116,X=cmFi(fy+a/500)*.95047,Y=cmFi(fy),Z=cmFi(fy-b/200)*1.08883;
+  let R=3.2404542*X-1.5371385*Y-.4985314*Z,G=-.969266*X+1.8760108*Y+.041556*Z,B=.0556434*X-.2040259*Y+1.0572252*Z;
+  R=R<0?0:R>1?1:R;G=G<0?0:G>1?1:G;B=B<0?0:B>1?1:B;
+  o[j]=CM_L2S[(R*16384+.5)|0];o[j+1]=CM_L2S[(G*16384+.5)|0];o[j+2]=CM_L2S[(B*16384+.5)|0];
+}
+/* いまの見た目（調整込み）の、Labの平均と標準偏差。色調整の範囲が有効なら、その範囲だけ。透明な所は数えない。小さく縮めて測る */
+function cmStats(l){
+  const src=adjSource(l),[iw,ih]=cmDims(src),k=Math.min(1,384/Math.max(iw,ih,1)),w=Math.max(1,Math.round(iw*k)),h=Math.max(1,Math.round(ih*k));
+  const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=true;g.drawImage(src,0,0,w,h);
+  const d=g.getImageData(0,0,w,h).data,MK=adjMask(l,ensureAdj(l),'adjm'),fu=w>=h?1:w/h,fv=h>=w?1:h/w;
+  let n=0,s0=0,s1=0,s2=0,q0=0,q1=0,q2=0;
+  for(let y=0;y<h;y++){const mr=MK?mkIdx(y/h,fv)*MR:0;
+    for(let x=0;x<w;x++){const j=(y*w+x)*4,al=d[j+3]/255;if(al<.02)continue;const wt=MK?al*MK[mr+mkIdx(x/w,fu)]:al;if(wt<=0)continue;
+      cmLab(d[j],d[j+1],d[j+2]);const L=_lab[0],a=_lab[1],b=_lab[2];n+=wt;s0+=wt*L;s1+=wt*a;s2+=wt*b;q0+=wt*L*L;q1+=wt*a*a;q2+=wt*b*b}}
+  if(n<1e-3)return null;
+  const m0=s0/n,m1=s1/n,m2=s2/n;
+  return{m:[m0,m1,m2],s:[Math.sqrt(Math.max(0,q0/n-m0*m0)),Math.sqrt(Math.max(0,q1/n-m1*m1)),Math.sqrt(Math.max(0,q2/n-m2*m2))]};
+}
+async function cmMatch(){
+  const l=sel;if(!l||cmBusy||blocked(l))return;
+  const r=byId(+$('cmRef').value);if(!r||r===l){note('先に「合わせる先」のオブジェクトを選んでください');return}
+  if(cmTooBig(l,lfActive(l)))return;
+  if(cmAsLayer&&l.phys&&l.phys.on){note('物理が有効なオブジェクトは、レイヤーとして保存できません（物理を切るか、通常の確定にしてください）');return}
+  const rs=cmStats(r),ts=cmStats(l);
+  if(!rs||!ts){note(rs?'このオブジェクトの範囲に絵がありません':'合わせる先の範囲に絵がありません');return}
+  cmBusy=true;note('色を合わせています…');await cmFrame();
+  try{
+    const st=cl(+$('cmStr').value/100,0,1),useL=cmWithL,asLy=cmAsLayer;
+    /* 散らばりの比。平らな絵（散らばりがほぼ0）は倍率1、極端な比は丸める（ノイズや色かぶりの暴走を防ぐ） */
+    const sc=[0,1,2].map(i=>ts.s[i]<.5?1:cl(rs.s[i]/ts.s[i],.35,2.8)),mt=ts.m,mr=rs.m;
+    const ca=adjActive(l),cf=lfActive(l),cov=cmCover(l,[...(ca?['adjm']:[]),...(cf?['lfm']:[]),'adjm']);
+    if(asLy&&cov&&!cov.n){note('範囲が塗られていないので、何も変わりません');return}
+    const A=cmAdjusted(l);if(!A){note('色を合わせられませんでした');return}
+    const iw=A.width,ih=A.height,g=A.getContext('2d',{willReadFrequently:true}),MK=adjMask(l,ensureAdj(l),'adjm'),fu=iw>=ih?1:iw/ih,fv=ih>=iw?1:ih/iw;
+    let mxi=null;if(MK){mxi=new Int32Array(iw);for(let x=0;x<iw;x++)mxi[x]=mkIdx(x/iw,fu)}
+    const BH=Math.max(16,Math.floor(2e6/iw)),big=iw*ih>3e6;
+    for(let y0=0;y0<ih;y0+=BH){
+      const hh=Math.min(BH,ih-y0),id=g.getImageData(0,y0,iw,hh),p=id.data;
+      for(let y=0;y<hh;y++){const mrow=MK?mkIdx((y0+y)/ih,fv)*MR:0;
+        for(let x=0,j=y*iw*4;x<iw;x++,j+=4){
+          if(!p[j+3])continue;const m=MK?MK[mrow+mxi[x]]:1;if(m<=0)continue;
+          cmLab(p[j],p[j+1],p[j+2]);const L=_lab[0],a=_lab[1],b=_lab[2],s=st*m;
+          const L2=useL?L+((L-mt[0])*sc[0]+mr[0]-L)*s:L,a2=a+((a-mt[1])*sc[1]+mr[1]-a)*s,b2=b+((b-mt[2])*sc[2]+mr[2]-b)*s;
+          cmRgb(L2,a2,b2,p,j)}}
+      g.putImageData(id,0,y0);if(big)await cmFrame();
+    }
+    pushUndo();
+    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);adjDirty(l);note('「'+r.name+'」に合わせた絵を、新しいレイヤー「'+nm+'」に置きました。元の絵は調整前に戻っています')}
+    else{cmSetImage(l,A);cmResetAdj(l);note('「'+r.name+'」の色に合わせました（取り消しは「元に戻す」）')}
+    paintFrame();adjUi();chips();
+  }catch(e){note('色を合わせられませんでした：'+((e&&e.message)||e))}
+  finally{cmBusy=false}
+}
+
+/* ---- UI ---- */
+function cmUi(){
+  const s=$('cmRef');if(!s)return;
+  const sig=(sel?sel.id:'')+'|'+AC.map(a=>a.id+':'+a.name).join(',');
+  if(sig!==cmSig){cmSig=sig;const keep=s.value;s.innerHTML='';s.add(new Option('合わせる先を選ぶ',''));for(const o of AC)if(o!==sel)s.add(new Option(o.name,o.id));if([...s.options].some(o=>o.value===keep))s.value=keep}
+  $('cmLy').checked=cmAsLayer;$('cmL').classList.toggle('on',cmWithL);
+}
+$('cmOk').onclick=cmCommit;$('cmGo').onclick=cmMatch;
+$('cmLy').onchange=e=>{cmAsLayer=e.target.checked};
+$('cmL').onclick=()=>{cmWithL=!cmWithL;cmUi()};
 /* ===== スポイト(画面の色を取る) ===== */
 let pickFor=null,picking=false;
 function setColor(id,hex){const el=$(id);el.value=hex;el.dispatchEvent(new Event('input',{bubbles:true}))}
@@ -1969,22 +2267,131 @@ document.querySelectorAll('.pk').forEach(b=>b.onclick=async()=>{
   pickFor=id;picking=true;note('キャンバスをタップすると、その場所の色を取ります');
 });
 addEventListener('keydown',e=>{if(e.key==='Escape'&&pickFor){pickFor=null;picking=false}});
+
+/* ===== キャンバスの大きさ・座標の表示・オブジェクト0個の表示（台帳Z-96〜Z-98） ===== */
+
+/* ---- キャンバスの大きさ（px）。DOC（00-bootstrap.js）に持つ。0＝自動 ---- */
+const CV_MIN=16,CV_MAX=8192;
+/* 大きさを決める。w・hが無効なら自動に戻す。大きすぎる時は縦横比を保って縮める（長辺CV_MAX・総画素EXPORT_MAXPXまで）。
+   保存・Undoは呼ぶ側が先にpushUndo（操作窓の押下では自動で入る）。戻り値＝実際に決まった[w,h]（自動なら[0,0]）。 */
+function setCanvasSize(w,h){
+  w=Math.round(+w);h=Math.round(+h);
+  if(!(w>0&&h>0)){DOC.w=DOC.h=0}
+  else{
+    const k=Math.min(1,CV_MAX/Math.max(w,h),Math.sqrt(EXPORT_MAXPX/(w*h)));
+    if(k<1){w=Math.round(w*k);h=Math.round(h*k);note('大きすぎるので、縦横比を保って '+w+'×'+h+' px に縮めました（上限：長辺'+CV_MAX+'px・合計2500万画素）')}
+    DOC.w=Math.max(CV_MIN,w);DOC.h=Math.max(CV_MIN,h);
+  }
+  fit();if(!vLock){Z.s=1;Z.x=Z.y=0}dirtyProj=true;canvasUi();
+  return[DOC.w,DOC.h];
+}
+/* 画面の表示（背景・出力のタブのキャンバスの段と、静止画の倍率の候補）を今の状態に合わせる */
+function canvasUi(){
+  const w=DOC.w||Math.round(W||0),h=DOC.h||Math.round(H||0),a=document.activeElement;
+  if(a!==$('cvw'))$('cvw').value=w;if(a!==$('cvh'))$('cvh').value=h;
+  $('cvnote').textContent=DOC.w?'キャンバス '+DOC.w+'×'+DOC.h+' px。静止画の1×がこの大きさです（座標もこのpxで測ります）。':'自動：画面の枠に合わせます（今は約 '+w+'×'+h+' px）。大きさを決めると、書き出しも座標もその大きさになります。';
+  $('cvauto').disabled=!DOC.w;
+  [...$('sq').options].forEach(o=>{const k=+o.value;o.textContent=k+'×（'+Math.round(w*k)+'×'+Math.round(h*k)+'px）'});
+}
+$('cvset').onclick=()=>{const w=+$('cvw').value,h=+$('cvh').value;if(!(w>=CV_MIN&&h>=CV_MIN)){note('幅と高さは '+CV_MIN+' px 以上の数で入れてください');return}setCanvasSize(w,h)};
+$('cvauto').onclick=()=>setCanvasSize(0,0);
+$('cvpre').onchange=e=>{const v=e.target.value;e.target.value='';if(!v)return;const[w,h]=v.split('x').map(Number);setCanvasSize(w,h)};
+$('cvfit').onclick=()=>{if(!sel){note('先にオブジェクトを追加してください');return}if(!fitCanvasToImage(sel.img))note('絵の大きさが分かりませんでした')};
+/* 画像のpxにキャンバスを合わせる。戻り値＝合わせられたか */
+function fitCanvasToImage(im){
+  const w=im&&(im.naturalWidth||im.width),h=im&&(im.naturalHeight||im.height);
+  if(!(w>0&&h>0))return false;
+  setCanvasSize(w,h);return true;
+}
+$('cvsb').onclick=()=>{setTab('bg');document.body.classList.contains('tpc')&&$('tc').click();$('cvsz').scrollIntoView({block:'center'})};
+
+/* ---- 「＋画像」の段（#addrow）：1枚目だけ、キャンバスを画像に合わせる選択肢（台帳Z-96） ---- */
+function addRowUi(){
+  const on=AC.length===0,c=$('fitcv');c.disabled=!on;$('fitcvl').classList.toggle('dis',!on);
+  $('fitcvl').title=on?'':'オブジェクトが0個の時だけ使えます';
+}
+$('qadd').onclick=()=>pickImages();
+
+/* ---- オブジェクト0個（台帳Z-97）：操作窓は背景・出力だけにして、案内を出す。個別の編集は、どれも選択中のオブジェクトを前提にしているため、入口で閉じる ---- */
+let noObjAuto=false;
+function noObjUi(on){
+  const bd=document.body,was=bd.classList.contains('noobj');
+  bd.classList.toggle('noobj',on);$('noobj').hidden=!on;
+  const cur=(document.querySelector('.tab.on')||{dataset:{}}).dataset.tab;
+  if(on&&!was){
+    if(cur!=='bg'){noObjAuto=true;setTab('bg')}
+  }else if(!on&&was&&noObjAuto){noObjAuto=false;if(document.querySelector('.tab.on')&&document.querySelector('.tab.on').dataset.tab==='bg')setTab('pl')}
+  if(on)crdHide();
+}
+
+/* ---- 座標の表示（👁メニューの「座標を表示」。台帳Z-98）----
+   座標は、キャンバスのpx（コンピュータグラフィックスの標準：左上が原点、右へx・下へyが増える）。画面の拡大・移動には影響されない（作品の上の位置）。
+   ・指やペンの位置：触れている間と、離した後の一定時間。マウスは、カーソルが枠の上にある間ずっと
+   ・オブジェクトの位置（中心）：ドラッグ中はずっと、離した後は一定時間。オフにすると両方消える
+   座標のpx換算：作品の位置(W×H) × （キャンバスのpx ÷ W）。自動サイズの時は画面の枠のpx */
+const CRD={on:false,px:0,py:0,hold:false,hideAt:0,oa:null,ou:0,TOUCH_MS:1500,OBJ_MS:2000};
+const crdX=x=>Math.round(x*(DOC.w||W)/W),crdY=y=>Math.round(y*(DOC.h||H)/H);
+function crdHide(){$('crdp').hidden=true;$('crdo').hidden=true;CRD.hold=false;CRD.oa=null;CRD.hideAt=0}
+function crdPlace(el,x,y,anchor){  /* (x,y)＝キャンバス内の表示位置（CSS px）。ラベルは枠の外へ出ない */
+  el.hidden=false;const lw=el.offsetWidth,lh=el.offsetHeight;
+  let lx=x,ly=y;if(anchor==='c'){lx=x-lw/2}else if(anchor==='r'){lx=x-lw}
+  lx=cl(lx,3,Math.max(3,W-lw-3));ly=cl(ly,3,Math.max(3,H-lh-3));
+  el.style.transform='translate('+Math.round(cv.offsetLeft+lx)+'px,'+Math.round(cv.offsetTop+ly)+'px)';
+}
+function crdPointer(e,pressed){
+  if(!CRD.on||tgt)return;  /* オブジェクトをドラッグ中は、オブジェクトのラベルだけ出す */
+  const r=cv.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,p=wp({x:sx*W/r.width,y:sy*H/r.height}),el=$('crdp');
+  CRD.px=p.x;CRD.py=p.y;el.textContent='x '+crdX(p.x)+'  y '+crdY(p.y);
+  const cursorLike=e.pointerType==='mouse'||(e.pointerType==='pen'&&!pressed);
+  if(cursorLike){CRD.hold=true;CRD.hideAt=0;crdPlace(el,sx+14,sy+18)}
+  else{CRD.hold=true;CRD.hideAt=0;crdPlace(el,sx-30,sy-48)}  /* 指の上（指で隠れない所）に出す */
+}
+cv.addEventListener('pointerdown',e=>crdPointer(e,true));
+cv.addEventListener('pointermove',e=>crdPointer(e,e.buttons>0||ptrs.has(e.pointerId)));
+cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){CRD.hold=false;$('crdp').hidden=true}});
+addEventListener('pointerup',e=>{if(CRD.on&&e.pointerType!=='mouse'&&CRD.hold){CRD.hold=false;CRD.hideAt=performance.now()+CRD.TOUCH_MS}});
+addEventListener('pointercancel',e=>{if(CRD.on&&CRD.hold){CRD.hold=false;CRD.hideAt=performance.now()+CRD.TOUCH_MS}});
+/* 毎フレーム：オブジェクトの座標（ドラッグ中はずっと、離したら一定時間）と、指のラベルの消滅 */
+function crdTick(){
+  if(!CRD.on)return;
+  const now=performance.now(),o=$('crdo'),p=$('crdp');
+  if(tgt){CRD.oa=tgt;CRD.ou=Infinity}else if(CRD.oa&&CRD.ou===Infinity)CRD.ou=now+CRD.OBJ_MS;
+  if(CRD.oa&&now<CRD.ou&&AC.includes(CRD.oa)){
+    const a=CRD.oa,sx=a.wx*Z.s+Z.x,sy=a.wy*Z.s+Z.y,half=S0*a.size*.5*Z.s;
+    o.textContent='◎ x '+crdX(a.wx)+'  y '+crdY(a.wy);
+    crdPlace(o,sx,sy-half-o.offsetHeight-8>3?sy-half-o.offsetHeight-8:sy+half+8,'c');
+    p.hidden=true;  /* ドラッグ中は、指のラベルを出さない（オブジェクトのラベルとかぶる） */
+  }else{o.hidden=true;CRD.oa=null}
+  if(!CRD.hold&&CRD.hideAt&&now>CRD.hideAt){p.hidden=true;CRD.hideAt=0}
+}
+$('crdb').onclick=()=>{CRD.on=!CRD.on;$('crdb').classList.toggle('on',CRD.on);$('crdb').setAttribute('aria-pressed',CRD.on?'true':'false');if(!CRD.on)crdHide()};
 let strokeActor=null;
-let tipEl=null;
-function hideTip(){if(tipEl){tipEl.remove();tipEl=null}}
+let tipEl=null,tipTo=0;
+const TIPMS=4000;  /* 説明文は、指を離す・動かす・一定時間のどれかで必ず消える（台帳Z-95） */
+function hideTip(){clearTimeout(tipTo);if(tipEl){tipEl.remove();tipEl=null}}
+function hideTipLater(ms){clearTimeout(tipTo);tipTo=setTimeout(hideTip,ms)}
 function showTip(el,text){
   hideTip();tipEl=document.createElement('div');tipEl.className='ltip';tipEl.textContent=text;document.body.appendChild(tipEl);
   const r=el.getBoundingClientRect();
   tipEl.style.left=Math.min(innerWidth-tipEl.offsetWidth-8,Math.max(8,r.left+r.width/2-tipEl.offsetWidth/2))+'px';
   tipEl.style.top=Math.max(8,r.top-tipEl.offsetHeight-8)+'px';
+  hideTipLater(TIPMS);
 }
+/* 長押し（タッチ）で説明文を出す。持ち手のように、親が setPointerCapture して離す・動かすの通知が自分に届かなくなる要素でも消えるよう、
+   押している間だけ document の捕捉段階で見張る（要素自身の pointerup だけに頼ると、持ち手の説明文が一度出ると消えなかった：台帳Z-95） */
 function armTip(el){
   const text=el.getAttribute('aria-label');if(!text||el._tipped)return;el._tipped=1;el.title=text;
-  let t;
-  el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;clearTimeout(t);t=setTimeout(()=>showTip(el,text),480)});
-  el.addEventListener('pointerup',()=>{clearTimeout(t);setTimeout(hideTip,900)});
-  el.addEventListener('pointercancel',()=>{clearTimeout(t);hideTip()});
-  el.addEventListener('pointermove',()=>clearTimeout(t));
+  let t=0,off=null,x0=0,y0=0,pid=-1;
+  const stop=()=>{if(off){off();off=null}};
+  el.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='touch')return;
+    clearTimeout(t);stop();x0=e.clientX;y0=e.clientY;pid=e.pointerId;
+    t=setTimeout(()=>showTip(el,text),480);
+    const up=ev=>{if(ev.pointerId!==pid)return;clearTimeout(t);stop();hideTipLater(ev.type==='pointercancel'?0:900)};
+    const mv=ev=>{if(ev.pointerId!==pid)return;if(Math.hypot(ev.clientX-x0,ev.clientY-y0)>8){clearTimeout(t);stop();hideTip()}};
+    document.addEventListener('pointerup',up,true);document.addEventListener('pointercancel',up,true);document.addEventListener('pointermove',mv,true);
+    off=()=>{document.removeEventListener('pointerup',up,true);document.removeEventListener('pointercancel',up,true);document.removeEventListener('pointermove',mv,true)};
+  });
 }
 function armTips(root){root.querySelectorAll('[aria-label]').forEach(armTip)}
 const HINT=$('ht').textContent;
@@ -2000,7 +2407,7 @@ function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bp
   if(pcolPk)pcolPk.style.display=t==='pen'?'':'none';
   if(t!=='move'&&!seen[t]){seen[t]=1;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},4500)}}
 const TT={adj:()=>'move',fx:()=>'move',pt:()=>lastPart,pl:()=>'move',mo:()=>'move',bg:()=>'move',ph:()=>'move',wp:()=>'warp',dr:()=>lastPen,mk:()=>lastMask};
-function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.getElementById('tabs').style.display=t==='ph'?'none':'flex';$('physMode').textContent=t==='ph'?'🎬 アニメーションに戻る':'⚙️ 物理モードに切り替え';if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild)}adjUi();setTool(TT[t]())}
+function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.getElementById('tabs').style.display=t==='ph'?'none':'flex';$('physMode').textContent=t==='ph'?'🎬 アニメーションに戻る':'⚙️ 物理モードに切り替え';if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();setTool(TT[t]())}
 document.querySelectorAll('#tp [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 $('tc').onclick=()=>{const c=document.body.classList.toggle('tpc');$('tc').textContent=c?'▴':'▾'};
 $('gd').onclick=()=>{guide=!guide;$('gd').classList.toggle('on',guide)};
@@ -2019,8 +2426,13 @@ async function addImages(files){
   for(const f of fl){
     const im=await loadImg(f);if(!im){note('「'+(f.name||'画像')+'」を読み込めませんでした');continue}
     pushUndo();
+    const nm=(f.name||'').replace(/\.[^.]+$/,'').slice(0,16)||undefined;
+    /* 「1枚目だけキャンバスを画像に合わせる」（台帳Z-96）：オブジェクトが0個で、チェックが入っている時の、最初の1枚だけ。キャンバスをその画像のpxにし、画像がキャンバスいっぱいになる大きさで中央に置く */
+    if(k===0&&AC.length===0&&$('fitcv').checked&&fitCanvasToImage(im)){
+      add(null,im,{name:nm,size:Math.max(W,H)/S0,fx:.5,fy:.5});k++;continue;
+    }
     /* 見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
-    add(null,im,{name:(f.name||'').replace(/\.[^.]+$/,'').slice(0,16)||undefined,size:2,fx:cl((W/2-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((H/2-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
+    add(null,im,{name:nm,size:2,fx:cl((W/2-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((H/2-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
   }
   chips();
 }
@@ -2099,18 +2511,26 @@ $('tpa').onclick=()=>{UIS.t=!UIS.t;tpApply()};
     ['pointerup','pointercancel','lostpointercapture'].forEach(t=>g.addEventListener(t,end));
   }
   addEventListener('blur',()=>{m=null});document.addEventListener('visibilitychange',()=>{m=null});
-  /* 大きさの変更（分離中だけ）：右下のつまみ */
-  const z=$('tpr'),zi=z.querySelector('i');let rz=null;
-  zi.addEventListener('pointerdown',e=>{const r=$('tp').getBoundingClientRect();rz={id:e.pointerId,sx:e.clientX,sy:e.clientY,w:r.width,h:r.height};try{zi.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();e.stopPropagation()});
-  zi.addEventListener('pointermove',e=>{if(!rz||e.pointerId!==rz.id)return;UIS.w=rz.w+e.clientX-rz.sx;UIS.h=rz.h+e.clientY-rz.sy;tpClamp();tpPos()});
-  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>zi.addEventListener(t,()=>{rz=null}));
+  /* 大きさの変更（分離中だけ。台帳Z-106）：四隅（26px）と、ごく細い縁（6px）。上・左を動かす時は、反対側の辺を固定して位置も動かす。高さは実際の高さとして持つ（--tpfh） */
+  let rz=null;
+  const rzDown=e=>{const t=e.currentTarget,r=$('tp').getBoundingClientRect();rz={t,c:t.dataset.c,id:e.pointerId,sx:e.clientX,sy:e.clientY,x:r.left,y:r.top,w:r.width,h:r.height};try{t.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();e.stopPropagation()};
+  const rzMove=e=>{
+    if(!rz||e.pointerId!==rz.id)return;const dx=e.clientX-rz.sx,dy=e.clientY-rz.sy,c=rz.c;
+    let w=rz.w,h=rz.h,x=rz.x,y=rz.y;
+    if(c.includes('e'))w=rz.w+dx;if(c.includes('w'))w=rz.w-dx;
+    if(c.includes('s'))h=rz.h+dy;if(c.includes('n'))h=rz.h-dy;
+    w=cl(w,240,innerWidth-8);h=cl(h,120,innerHeight-16);
+    if(c.includes('w'))x=rz.x+rz.w-w;if(c.includes('n'))y=rz.y+rz.h-h;
+    UIS.x=x;UIS.y=y;UIS.w=w;UIS.h=h;tpClamp();tpPos()};
+  const rzEnd=e=>{if(rz&&(!e||e.pointerId===undefined||e.pointerId===rz.id))rz=null};
+  $('tpz').querySelectorAll('[data-c]').forEach(t=>{t.addEventListener('pointerdown',rzDown);t.addEventListener('pointermove',rzMove);['pointerup','pointercancel','lostpointercapture'].forEach(n=>t.addEventListener(n,rzEnd))});
 })();
 addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('mV').hidden||!$('mA').hidden){menuClose();return}if(frameMode==='f')setFrame(frPrev)});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&frameMode==='f')setFrame(frPrev)});
 if(window.ResizeObserver)new ResizeObserver(()=>fit()).observe($('wrap'));
 addEventListener('resize',()=>{fit();tpClamp();if(UIS.tpf)tpPos()});
 
-setFrame('b',true);tpApply();pzSync();fit();add();add();setSel(AC[0]);setTab('pl');initExtra();armTips(document);rulerTxUpdate();
+setFrame('b',true);tpApply();pzSync();fit();canvasUi();add();add();setSel(AC[0]);setTab('pl');initExtra();armTips(document);rulerTxUpdate();
 requestAnimationFrame(t=>{last=t;loop(t)});
 
 /* ロック中レイヤーの編集ボタンを止める（B-2） */

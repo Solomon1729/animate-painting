@@ -5,7 +5,7 @@ function u2(c){if(!c)return null;const w=c.naturalWidth||c.width,h=c.naturalHeig
 const encMesh=m=>{if(!m)return null;const u=new Uint8Array(m.d.buffer,m.d.byteOffset,m.d.byteLength);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return{n:m.n,b:btoa(s)}};
 const decMesh=o=>{if(!o||!o.b||!o.n)return null;try{const s=atob(o.b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);if(u.length!==o.n*o.n*4)return null;return{n:o.n,d:new Int16Array(u.buffer)}}catch(_){return null}};
 function ser(){
-  return JSON.stringify({v:1,uid,sel:AC.indexOf(sel),LAY:{L:LAYERS,cur:curLid,hx:physHideEx},BG:{...BG,img:u2(BG.img)},
+  return JSON.stringify({v:1,uid,sel:AC.indexOf(sel),DOC:{w:DOC.w,h:DOC.h},LAY:{L:LAYERS,cur:curLid,hx:physHideEx},BG:{...BG,img:u2(BG.img)},
     AC:AC.map(a=>{const o=JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v));
       o.dm=encMesh(a.dm);o.img=u2(a.img);o.iscv=!!a.cv;o.mask=a.mask&&a.hasMask?u2(a.mask):null;o.bm=a.bm&&a.hasBm?u2(a.bm):null;o.bite=a.bite&&a.eat?u2(a.bite):null;o.adjm=a.adjm&&a.hasAdjM?u2(a.adjm):null;o.lfm=a.lfm&&a.hasLFM?u2(a.lfm):null;return o})});
 }
@@ -25,7 +25,10 @@ async function loadProj(txt){
   LAYERS=(d.LAY&&d.LAY.L&&d.LAY.L.length?d.LAY.L:[{id:1,name:'レイヤー1',visible:true,locked:false}]).map(y=>({...y}));curLid=(d.LAY&&d.LAY.cur)||LAYERS[0].id;physHideEx=d.LAY?d.LAY.hx!==false:true;
   AC.forEach(a=>{if(a.layerId==null||!LAYERS.some(y=>y.id===a.layerId))a.layerId=LAYERS[0].id});
   AC.forEach(a=>{if(a.syncTo!=null){const t=byId(a.syncTo);if(t)a.pins=t.pins}});
-  Object.assign(BG,d.BG,{img:bgI,v:(BG.v||0)+1});bgUi();setSel(AC[d.sel]||AC[0]);
+  Object.assign(BG,d.BG,{img:bgI,v:(BG.v||0)+1});bgUi();
+  /* キャンバスの大きさ（台帳Z-98）。旧データには無い＝自動 */
+  DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit();canvasUi();
+  setSel(AC[d.sel]||AC[0]||null);
 }
 function saveProj(){
   const url=URL.createObjectURL(new Blob([ser()],{type:'application/json'})),o=$('out');o.innerHTML='';

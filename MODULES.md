@@ -29,8 +29,10 @@
 | `src/js/190-hints-and-demos.js` | ヒント、サンプル生成 `demoA`/`demoB` |
 | `src/js/200-warp-ui.js` | 歪み選択・歪みUI（ブラシ/ピンの切替`wmUi`、ブラシ設定`wbUi`）、エフェクト全消去 |
 | `src/js/210-performance.js` | 処理品質の自動調整 `perfTick`/`setLvl` |
-| `src/js/220-parts.js` | パーツのコピー・切り取り・貼り付け、トレイ、切り出し用Canvas`boxCv(l,{adj,full})`、「このオブジェクトだけ保存」`pexp`（PNG/PDF） |
+| `src/js/220-parts.js` | パーツのコピー・切り取り・貼り付け（調整込み。Z-83）、トレイ、切り出し用Canvas`boxCv(l,{adj,full})`、「このオブジェクトだけ保存」`pexp`（PNG/PDF） |
+| `src/js/225-commit.js` | 確定`cmCommit`（色調整・質感を絵に焼き込み）、レイヤーとして保存（シート`cmSheet`・`cmPlace`・範囲の切り抜き`cmCover`/`cmClip`）、色を合わせる`cmMatch`（Lab・Reinhard法）、UI`cmUi`（台帳Z-83〜Z-85） |
 | `src/js/230-color-picker.js` | スポイト |
+| `src/js/235-canvas-coords.js` | キャンバスのpx`setCanvasSize`/`canvasUi`/`fitCanvasToImage`（`DOC`）、「＋画像」の段`addRowUi`、オブジェクト0個の案内`noObjUi`、座標の表示`CRD`/`crdPointer`/`crdTick`（台帳Z-96〜Z-98） |
 | `src/js/240-tooling-and-init.js` | ツール・タブ、メニュー、枠3段`setFrame`、操作窓`UIS`/`tpClamp`/`tpApply`（上下2つの持ち手・四辺へ掃ける・透過オン/オフ）、画像追加`pickImages`/`addImages`、初期化、ロック用ラッパー |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 
@@ -49,4 +51,7 @@
 | `tools/stress.py` | `python3 tools/stress.py <HTMLの絶対パス> <samplesフォルダ> [名前の一部…] [--shots <フォルダ>]`。各画像を追加→色→質感→ペン→消しゴム→歪み→ブラシ→歪み越しペン→Undo→保存/読込→焼き込み→書き出し。最後に「要確認」を一覧 |
 | `tools/edge_warp.py` | `python3 tools/edge_warp.py <HTMLの絶対パス> <画像>`。歪みの角の場合21項目（画面端始まり・極端なサイズ/強さ・Undo往復・キャンセル・ロック・ピン併用・拡大・保存読込）。`NG 0 / 21`が正常 |
 | `tools/check_fixes.py` | `python3 tools/check_fixes.py <HTMLの絶対パス>`。2026-10-08の修正の検査（ぼかし境界の不透明度／色調整の範囲の座標（縦長・横長・正方形）／操作窓の四辺クランプ・下の持ち手・透過／ビューワーのボタンと↩↪／オブジェクト22個／PDF出力）。全項目`OK`が正常（台帳Z-90） |
+| `tools/check_commit.py` | `python3 tools/check_commit.py <HTMLの絶対パス>`。確定（全体・範囲）／レイヤーとして保存／断る場合／シートの引き継ぎ／色合わせ／パーツの調整反映／保存読込／実ボタン・タブ（9群56項目）。全項目`OK`が正常（台帳Z-93） |
+| `tools/check_ui.py` | `python3 tools/check_ui.py <HTMLの絶対パス>`。画面まわり7群103項目（持ち手の説明が消える／操作窓の大きさ・重ならない／✋・ピンチの自己修復／オブジェクト0個／キャンバスのpx・画像に合わせる・書き出しpx／座標の表示／並べ替えの点線）。実際のタッチ（CDP）とマウス。全項目`OK`で`OK 103  NG 0`（台帳Z-95〜Z-99・Z-102・Z-106・Z-107） |
+| `tools/ledger.py` | `python3 tools/ledger.py`＝台帳（`roadmap.md`§Z）を状態ごとの表に振り分け、全文を`archive/ledger-detail.md`に無損失で保管する（台帳Z-101）。`--check`で整理済みか確認。 |
 | `tools/bench.py` | `python3 tools/bench.py <HTMLの絶対パス> [ラベル]`。色調整・質感・ペン・歪みの1操作の時間（6MP） |

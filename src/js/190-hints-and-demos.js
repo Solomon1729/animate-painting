@@ -10,7 +10,7 @@ function blob(col){
 }
 const cs=(a,k,v,ph)=>{a.ch[k]={a:v[0],hz:v[1],w:v[2],d:v[3]||0,e:v[4]||0,ph:ph||0}};
 const mkpin=(t,x,y,r,o)=>({t,x,y,r,a:o.a!==undefined?o.a:(t==='p'?1:.6),vx:o.vx||0,vy:o.vy||0,b:o.b||0,hz:o.hz||1,w:o.w||'sin',ma:o.ma||0,md:o.md||0,mw:o.mw||'sin',ph:0});
-function resetAll(){pushUndo();AC=[];uid=0;sel=null;Z.s=1;Z.x=Z.y=0;paused=false;$('pl').textContent='⏸ とめる';pzSync();BG.img=null;BG.b=0;BG.m='solid';BG.c=BG.c2='#ffffff';BG.v=(BG.v||0)+1}
+function resetAll(){pushUndo();AC=[];uid=0;sel=null;DOC.w=DOC.h=0;fit();canvasUi();Z.s=1;Z.x=Z.y=0;paused=false;$('pl').textContent='⏸ とめる';pzSync();BG.img=null;BG.b=0;BG.m='solid';BG.c=BG.c2='#ffffff';BG.v=(BG.v||0)+1}
 function note(t){$('ht').textContent=t;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},7000)}
 function demoA(){
   resetAll();BG.m='grad';BG.c='#ffe8f0';BG.c2='#ffc4d8';bgUi();

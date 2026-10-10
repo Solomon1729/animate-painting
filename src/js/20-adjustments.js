@@ -222,7 +222,7 @@ function adjDirty(l){l._adjDirty=true;l._adjV=(l._adjV|0)+1;l._adjRect=null;l._a
 function adjUi(){
   if(!sel)return;const a=ensureAdj(sel),map=[['adjBr','brightness','adjBrv'],['adjCo','contrast','adjCov'],['adjSa','saturation','adjSav'],['adjHu','hue','adjHuv'],['adjTe','temperature','adjTev'],['adjHi','highlights','adjHiv'],['adjSh','shadows','adjShv'],['adjWh','whites','adjWhv'],['adjBl','blacks','adjBlv'],['adjFe','feather','adjFev']];
   map.forEach(([id,k,v])=>{$(id).value=a[k];$(v).textContent=k==='hue'?a[k]+'°':a[k]});
-  $('adjPaint').classList.toggle('on',adjMode==='paint');$('adjErase').classList.toggle('on',adjMode==='erase');$('adjShow').classList.toggle('on',adjShow);{const on=rngOn(sel,rk());$('adjScAll').classList.toggle('on',!on);$('adjScRng').classList.toggle('on',on);$('adjRngRow').style.display=$('adjBsRow').style.display=on?'':'none'}lfUi();
+  $('adjPaint').classList.toggle('on',adjMode==='paint');$('adjErase').classList.toggle('on',adjMode==='erase');$('adjShow').classList.toggle('on',adjShow);{const on=rngOn(sel,rk());$('adjScAll').classList.toggle('on',!on);$('adjScRng').classList.toggle('on',on);$('adjRngRow').style.display=$('adjBsRow').style.display=on?'':'none'}lfUi();cmUi();
 }
 function rk(){return rngT==='fx'?'lf':'adj'}
 function rngOn(l,k){const v=l[k+'Rng'];return v===undefined?!!l[k+'m']:!!v}

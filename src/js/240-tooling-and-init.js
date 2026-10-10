@@ -1,19 +1,30 @@
 let strokeActor=null;
-let tipEl=null;
-function hideTip(){if(tipEl){tipEl.remove();tipEl=null}}
+let tipEl=null,tipTo=0;
+const TIPMS=4000;  /* 説明文は、指を離す・動かす・一定時間のどれかで必ず消える（台帳Z-95） */
+function hideTip(){clearTimeout(tipTo);if(tipEl){tipEl.remove();tipEl=null}}
+function hideTipLater(ms){clearTimeout(tipTo);tipTo=setTimeout(hideTip,ms)}
 function showTip(el,text){
   hideTip();tipEl=document.createElement('div');tipEl.className='ltip';tipEl.textContent=text;document.body.appendChild(tipEl);
   const r=el.getBoundingClientRect();
   tipEl.style.left=Math.min(innerWidth-tipEl.offsetWidth-8,Math.max(8,r.left+r.width/2-tipEl.offsetWidth/2))+'px';
   tipEl.style.top=Math.max(8,r.top-tipEl.offsetHeight-8)+'px';
+  hideTipLater(TIPMS);
 }
+/* 長押し（タッチ）で説明文を出す。持ち手のように、親が setPointerCapture して離す・動かすの通知が自分に届かなくなる要素でも消えるよう、
+   押している間だけ document の捕捉段階で見張る（要素自身の pointerup だけに頼ると、持ち手の説明文が一度出ると消えなかった：台帳Z-95） */
 function armTip(el){
   const text=el.getAttribute('aria-label');if(!text||el._tipped)return;el._tipped=1;el.title=text;
-  let t;
-  el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;clearTimeout(t);t=setTimeout(()=>showTip(el,text),480)});
-  el.addEventListener('pointerup',()=>{clearTimeout(t);setTimeout(hideTip,900)});
-  el.addEventListener('pointercancel',()=>{clearTimeout(t);hideTip()});
-  el.addEventListener('pointermove',()=>clearTimeout(t));
+  let t=0,off=null,x0=0,y0=0,pid=-1;
+  const stop=()=>{if(off){off();off=null}};
+  el.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='touch')return;
+    clearTimeout(t);stop();x0=e.clientX;y0=e.clientY;pid=e.pointerId;
+    t=setTimeout(()=>showTip(el,text),480);
+    const up=ev=>{if(ev.pointerId!==pid)return;clearTimeout(t);stop();hideTipLater(ev.type==='pointercancel'?0:900)};
+    const mv=ev=>{if(ev.pointerId!==pid)return;if(Math.hypot(ev.clientX-x0,ev.clientY-y0)>8){clearTimeout(t);stop();hideTip()}};
+    document.addEventListener('pointerup',up,true);document.addEventListener('pointercancel',up,true);document.addEventListener('pointermove',mv,true);
+    off=()=>{document.removeEventListener('pointerup',up,true);document.removeEventListener('pointercancel',up,true);document.removeEventListener('pointermove',mv,true)};
+  });
 }
 function armTips(root){root.querySelectorAll('[aria-label]').forEach(armTip)}
 const HINT=$('ht').textContent;
@@ -29,7 +40,7 @@ function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bp
   if(pcolPk)pcolPk.style.display=t==='pen'?'':'none';
   if(t!=='move'&&!seen[t]){seen[t]=1;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},4500)}}
 const TT={adj:()=>'move',fx:()=>'move',pt:()=>lastPart,pl:()=>'move',mo:()=>'move',bg:()=>'move',ph:()=>'move',wp:()=>'warp',dr:()=>lastPen,mk:()=>lastMask};
-function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.getElementById('tabs').style.display=t==='ph'?'none':'flex';$('physMode').textContent=t==='ph'?'🎬 アニメーションに戻る':'⚙️ 物理モードに切り替え';if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild)}adjUi();setTool(TT[t]())}
+function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.getElementById('tabs').style.display=t==='ph'?'none':'flex';$('physMode').textContent=t==='ph'?'🎬 アニメーションに戻る':'⚙️ 物理モードに切り替え';if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();setTool(TT[t]())}
 document.querySelectorAll('#tp [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 $('tc').onclick=()=>{const c=document.body.classList.toggle('tpc');$('tc').textContent=c?'▴':'▾'};
 $('gd').onclick=()=>{guide=!guide;$('gd').classList.toggle('on',guide)};
@@ -48,8 +59,13 @@ async function addImages(files){
   for(const f of fl){
     const im=await loadImg(f);if(!im){note('「'+(f.name||'画像')+'」を読み込めませんでした');continue}
     pushUndo();
+    const nm=(f.name||'').replace(/\.[^.]+$/,'').slice(0,16)||undefined;
+    /* 「1枚目だけキャンバスを画像に合わせる」（台帳Z-96）：オブジェクトが0個で、チェックが入っている時の、最初の1枚だけ。キャンバスをその画像のpxにし、画像がキャンバスいっぱいになる大きさで中央に置く */
+    if(k===0&&AC.length===0&&$('fitcv').checked&&fitCanvasToImage(im)){
+      add(null,im,{name:nm,size:Math.max(W,H)/S0,fx:.5,fy:.5});k++;continue;
+    }
     /* 見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
-    add(null,im,{name:(f.name||'').replace(/\.[^.]+$/,'').slice(0,16)||undefined,size:2,fx:cl((W/2-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((H/2-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
+    add(null,im,{name:nm,size:2,fx:cl((W/2-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((H/2-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
   }
   chips();
 }
@@ -128,18 +144,26 @@ $('tpa').onclick=()=>{UIS.t=!UIS.t;tpApply()};
     ['pointerup','pointercancel','lostpointercapture'].forEach(t=>g.addEventListener(t,end));
   }
   addEventListener('blur',()=>{m=null});document.addEventListener('visibilitychange',()=>{m=null});
-  /* 大きさの変更（分離中だけ）：右下のつまみ */
-  const z=$('tpr'),zi=z.querySelector('i');let rz=null;
-  zi.addEventListener('pointerdown',e=>{const r=$('tp').getBoundingClientRect();rz={id:e.pointerId,sx:e.clientX,sy:e.clientY,w:r.width,h:r.height};try{zi.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();e.stopPropagation()});
-  zi.addEventListener('pointermove',e=>{if(!rz||e.pointerId!==rz.id)return;UIS.w=rz.w+e.clientX-rz.sx;UIS.h=rz.h+e.clientY-rz.sy;tpClamp();tpPos()});
-  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>zi.addEventListener(t,()=>{rz=null}));
+  /* 大きさの変更（分離中だけ。台帳Z-106）：四隅（26px）と、ごく細い縁（6px）。上・左を動かす時は、反対側の辺を固定して位置も動かす。高さは実際の高さとして持つ（--tpfh） */
+  let rz=null;
+  const rzDown=e=>{const t=e.currentTarget,r=$('tp').getBoundingClientRect();rz={t,c:t.dataset.c,id:e.pointerId,sx:e.clientX,sy:e.clientY,x:r.left,y:r.top,w:r.width,h:r.height};try{t.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();e.stopPropagation()};
+  const rzMove=e=>{
+    if(!rz||e.pointerId!==rz.id)return;const dx=e.clientX-rz.sx,dy=e.clientY-rz.sy,c=rz.c;
+    let w=rz.w,h=rz.h,x=rz.x,y=rz.y;
+    if(c.includes('e'))w=rz.w+dx;if(c.includes('w'))w=rz.w-dx;
+    if(c.includes('s'))h=rz.h+dy;if(c.includes('n'))h=rz.h-dy;
+    w=cl(w,240,innerWidth-8);h=cl(h,120,innerHeight-16);
+    if(c.includes('w'))x=rz.x+rz.w-w;if(c.includes('n'))y=rz.y+rz.h-h;
+    UIS.x=x;UIS.y=y;UIS.w=w;UIS.h=h;tpClamp();tpPos()};
+  const rzEnd=e=>{if(rz&&(!e||e.pointerId===undefined||e.pointerId===rz.id))rz=null};
+  $('tpz').querySelectorAll('[data-c]').forEach(t=>{t.addEventListener('pointerdown',rzDown);t.addEventListener('pointermove',rzMove);['pointerup','pointercancel','lostpointercapture'].forEach(n=>t.addEventListener(n,rzEnd))});
 })();
 addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('mV').hidden||!$('mA').hidden){menuClose();return}if(frameMode==='f')setFrame(frPrev)});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&frameMode==='f')setFrame(frPrev)});
 if(window.ResizeObserver)new ResizeObserver(()=>fit()).observe($('wrap'));
 addEventListener('resize',()=>{fit();tpClamp();if(UIS.tpf)tpPos()});
 
-setFrame('b',true);tpApply();pzSync();fit();add();add();setSel(AC[0]);setTab('pl');initExtra();armTips(document);rulerTxUpdate();
+setFrame('b',true);tpApply();pzSync();fit();canvasUi();add();add();setSel(AC[0]);setTab('pl');initExtra();armTips(document);rulerTxUpdate();
 requestAnimationFrame(t=>{last=t;loop(t)});
 
 /* ロック中レイヤーの編集ボタンを止める（B-2） */

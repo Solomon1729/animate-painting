@@ -11,9 +11,9 @@ function addSpecial(k){
 function attach(l){if(l.toType==='layer')return;const c=byId(l.to);if(!c)return;const u=S0*c.size;l.ox=(l.fx*W-c.fx*W)/u*c.face;l.oy=(l.fy*H-c.fy*H)/u;l.att=true}
 function detach(l){const c=byId(l.to);if(c){const u=S0*c.size;l.fx=(c.fx*W+l.ox*u*c.face)/W;l.fy=(c.fy*H+l.oy*u)/H}l.att=false}
 function del(){
-  if(AC.length<2||!sel)return;if(blocked(sel))return;const a=sel;
+  if(!sel)return;if(blocked(sel))return;const a=sel;  /* 最後の1個も消せる（オブジェクト0個を許可：台帳Z-97） */
   AC.forEach(x=>{if(x.to===a.id&&x.toType!=='layer'){if(x.att){x.fx=x.wx/W;x.fy=x.wy/H}x.att=false;x.to=null;x.maskTo=false}if(x.syncTo===a.id){x.pins=x.pins.slice();x.syncTo=null}});
-  AC=AC.filter(x=>x!==a);setSel(AC[0]);
+  AC=AC.filter(x=>x!==a);setSel(AC[0]||null);
 }
 
 const mot=l=>{const r={x:0,y:0,r:0,s:0},f=editing||tool!=='move';
@@ -22,7 +22,19 @@ const mot=l=>{const r={x:0,y:0,r:0,s:0},f=editing||tool!=='move';
     else if(k==='m'){const d=c.d*Math.PI/180;r.x=v*Math.cos(d);r.y=-v*Math.sin(d)}else r[k]=v}
   return r};
 
-function fit(){const fs=document.body.classList.contains('fs')||document.body.classList.contains('big'),r=$('wrap').getBoundingClientRect();dpr=hk||Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.round(r.width));H=fs?Math.max(1,Math.round(r.height)):W;cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';oc.width=cv.width;oc.height=cv.height;ob1.width=ob2.width=cv.width;ob1.height=ob2.height=cv.height;S0=Math.min(W,H)*.26}
+function fit(){
+  const bd=document.body,fs=bd.classList.contains('fs')||bd.classList.contains('big'),r=$('wrap').getBoundingClientRect();
+  if(DOC.w>0&&DOC.h>0){
+    /* 指定サイズ：縦横比を保って枠に収める。W・Hは小数のまま持ち、書き出し（hk）ではキャンバスの画素数をちょうどDOC.w×hk・DOC.h×hkにする（四捨五入の1pxのずれを出さない） */
+    const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,r.height):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
+    W=Math.max(1,w);H=Math.max(1,W/a);dpr=hk?DOC.w*hk/W:Math.min(devicePixelRatio||1,2);
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';
+    cv.style.margin=(fs?Math.max(0,(r.height-H)/2):0)+'px auto 0';
+  }else{
+    dpr=hk||Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.round(r.width));H=fs?Math.max(1,Math.round(r.height)):W;cv.width=W*dpr;cv.height=H*dpr;cv.style.width='';cv.style.margin='';cv.style.height=H+'px';
+  }
+  oc.width=cv.width;oc.height=cv.height;ob1.width=ob2.width=cv.width;ob1.height=ob2.height=cv.height;S0=Math.min(W,H)*.26;
+}
 
 const FILT='filter' in CanvasRenderingContext2D.prototype;
 /* ぼかし：そのままだと画像の外の透明へにじんで、フチが薄く消える。端の1画素を外へ延ばした画像をぼかし、元の矩形で切り抜く */

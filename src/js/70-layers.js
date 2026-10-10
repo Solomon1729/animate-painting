@@ -6,28 +6,64 @@ function isLocked(l){const y=layOf(l);return !y.visible||y.locked}
 function editable(l){return isVisible(l)&&!isLocked(l)}
 function blocked(l){if(!l||editable(l))return false;note(isVisible(l)?'このレイヤーはロック中です（配置の移動だけできます）':'このレイヤーは非表示です');return true}
 function moveLayTo(f,t){if(f===t||f<0||t<0||f>=LAYERS.length||t>=LAYERS.length)return;pushUndo();const[y]=LAYERS.splice(f,1);LAYERS.splice(t,0,y);dirtyProj=true;layUi()}
-function moveObj(a,d){pushUndo();
-  if(d.k==='l'){a.layerId=LAYERS[+d.i].id;AC.splice(AC.indexOf(a),1);AC.push(a)}
-  else{const t=byId(+d.id);if(!t||t===a)return;const up=AC.indexOf(a)<AC.indexOf(t)||layOf(a)!==layOf(t);a.layerId=layOf(t).id;AC.splice(AC.indexOf(a),1);AC.splice(AC.indexOf(t)+(up?1:0),0,a)}
-  dirtyProj=true;chips()}
+/* 並べ替え（台帳Z-99）：行と行のすき間に入れる。「すき間」は、レイヤー同士なら表示の上から数えた位置s（0＝いちばん手前の上）、
+   オブジェクトなら、レイヤーLの中の上（手前）から数えた位置k（0＝そのレイヤーでいちばん手前、人数＝いちばん奥）。 */
+function moveLayAt(i,s){const n=LAYERS.length,p=n-1-i;if(i<0||i>=n||s<0||s>n||s===p||s===p+1)return false;const s2=s>p?s-1:s;moveLayTo(i,n-1-s2);return true}
+function moveObjAt(a,y,k){
+  const mem=AC.filter(x=>layOf(x)===y).reverse(),ai=mem.indexOf(a);
+  if(!a||!y||k<0||k>mem.length||(ai>=0&&(k===ai||k===ai+1)))return false;
+  const rest=mem.filter(x=>x!==a),k2=ai>=0&&ai<k?k-1:k;
+  pushUndo();a.layerId=y.id;AC.splice(AC.indexOf(a),1);
+  if(!rest.length)AC.push(a);
+  else if(k2<rest.length)AC.splice(AC.indexOf(rest[k2])+1,0,a);   /* rest[k2]のすぐ手前（ACでは後ろ）へ */
+  else AC.splice(AC.indexOf(rest[rest.length-1]),0,a);            /* そのレイヤーでいちばん奥へ */
+  dirtyProj=true;chips();return true}
 function lyPlace(){const b=$('lyopen');if(!b||lyPop.hidden)return;const r=b.getBoundingClientRect(),w=lyPop.offsetWidth,h=lyPop.offsetHeight;
   let y=r.bottom+6;if(y+h>innerHeight-8)y=Math.max(8,r.top-h-6);lyPop.style.left=Math.min(Math.max(8,r.left),Math.max(8,innerWidth-w-8))+'px';lyPop.style.top=y+'px'}
 function lyToggle(open){lyPop.hidden=open===undefined?!lyPop.hidden:!open;if(!lyPop.hidden)layUi()}
-function treeDrag(r){let t=null,on=false,sy=0;
+/* ドラッグで並べ替え：行の上ではなく、入れる場所（行と行のすき間）に点線を出す（台帳Z-99）。
+   すき間の候補を、ドラッグ中の指のyに一番近いものから選ぶ。自分の今の位置のすき間（動かない）では線を出さず、離しても何も起きない。
+   ポップオーバの外で離すと取り消し（pointercancelも取り消し） */
+function insSlots(kind){
+  const rows=[...$('lyl').querySelectorAll('.trow')],rc=rows.map(x=>x.getBoundingClientRect()),out=[];
+  if(kind==='l'){
+    let s=0;rows.forEach((x,j)=>{if(x.dataset.k==='l')out.push({y:j?(rc[j-1].bottom+rc[j].top)/2:rc[j].top-2,s:s++})});
+    if(rows.length)out.push({y:rc[rc.length-1].bottom+2,s});
+  }else rows.forEach((x,j)=>{
+    if(x.dataset.k!=='l')return;
+    let m=0;while(j+m+1<rows.length&&rows[j+m+1].dataset.k==='o')m++;
+    const i=+x.dataset.i;
+    out.push({y:m?(rc[j].bottom+rc[j+1].top)/2:rc[j].bottom+1,i,k:0});
+    for(let k=1;k<m;k++)out.push({y:(rc[j+k].bottom+rc[j+k+1].top)/2,i,k});
+    if(m)out.push({y:rc[j+m].bottom+1,i,k:m});
+  });
+  return out;
+}
+function treeDrag(r){let t=null,on=false,sy=0,ins=null,cur=null;
+  const isL=r.dataset.k==='l';
+  const lineOff=()=>{if(ins){ins.remove();ins=null}cur=null};
   const go=()=>{on=true;r.classList.add('drag')};
+  const noop=c=>{if(isL){const n=LAYERS.length,p=n-1-(+r.dataset.i);return c.s===p||c.s===p+1}
+    const a=byId(+r.dataset.id),y=LAYERS[c.i];if(!a||!y)return true;const ai=AC.filter(x=>layOf(x)===y).reverse().indexOf(a);return ai>=0&&(c.k===ai||c.k===ai+1)};
+  const aim=e=>{  /* 指のyに一番近いすき間を選び、点線を出す */
+    const box=$('lyl'),br=box.getBoundingClientRect(),pr=lyPop.getBoundingClientRect();
+    const inside=e.clientX>=pr.left&&e.clientX<=pr.right&&e.clientY>=Math.max(br.top,pr.top)-6&&e.clientY<=Math.min(br.bottom,pr.bottom)+6;
+    let best=null;if(inside)for(const c of insSlots(isL?'l':'o'))if(!best||Math.abs(c.y-e.clientY)<Math.abs(best.y-e.clientY))best=c;
+    cur=best&&!noop(best)?best:null;
+    if(!cur){if(ins)ins.hidden=true;return}
+    if(!ins){ins=document.createElement('div');ins.className='lyins';box.appendChild(ins)}
+    ins.hidden=false;ins.classList.toggle('o',!isL);ins.style.top=(cur.y-br.top-1.5)+'px'};
   r.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;sy=e.clientY;if(e.pointerType!=='mouse')t=setTimeout(go,350)});
   r.addEventListener('pointermove',e=>{
     if(!on){if(e.pointerType==='mouse'&&e.buttons&&Math.abs(e.clientY-sy)>5){go();try{r.setPointerCapture(e.pointerId)}catch(_){}}else if(t&&Math.abs(e.clientY-sy)>8){clearTimeout(t);t=null}
       if(!on)return}
-    const rows=[...$('lyl').querySelectorAll('.trow')];rows.forEach(x=>x.classList.remove('ov'));
-    const o=rows.find(x=>{const b=x.getBoundingClientRect();return e.clientY>=b.top&&e.clientY<b.bottom});if(o&&o!==r)o.classList.add('ov');e.preventDefault()});
+    aim(e);e.preventDefault()});
   r.addEventListener('touchmove',e=>{if(on)e.preventDefault()},{passive:false});
-  const fin=()=>{clearTimeout(t);t=null;if(!on)return;on=false;r.classList.remove('drag');
-    const rows=[...$('lyl').querySelectorAll('.trow')],o=rows.find(x=>x.classList.contains('ov'));rows.forEach(x=>x.classList.remove('ov'));if(!o)return;
-    const d=o.dataset;
-    if(r.dataset.k==='l')moveLayTo(+r.dataset.i,d.k==='l'?+d.i:LAYERS.indexOf(layOf(byId(+d.id))));
-    else{const a=byId(+r.dataset.id);if(a)moveObj(a,d)}};
-  r.addEventListener('pointerup',fin);r.addEventListener('pointercancel',fin)}
+  const fin=ok=>{clearTimeout(t);t=null;if(!on)return;on=false;r.classList.remove('drag');
+    const c=ok?cur:null;lineOff();if(!c)return;
+    if(isL)moveLayAt(+r.dataset.i,c.s);
+    else{const a=byId(+r.dataset.id);if(a)moveObjAt(a,LAYERS[c.i],c.k)}};
+  r.addEventListener('pointerup',()=>fin(true));r.addEventListener('pointercancel',()=>fin(false))}
 function layUi(){
   const box=$('lyl');if(!box||lyPop.hidden)return;box.innerHTML='';
   const mk=(t,al,f,on)=>{const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-label',al);b.classList.toggle('on',!!on);b.onclick=e=>{e.stopPropagation();f()};return b};
@@ -54,8 +90,8 @@ $('lyadd').onclick=()=>{pushUndo();const id=Math.max(...LAYERS.map(y=>y.id))+1,i
 $('lyren').onclick=()=>{const y=LY(curLid),v=prompt('レイヤー名',y.name);if(v&&v.trim()){pushUndo();y.name=v.trim();dirtyProj=true;chips()}};
 $('lydel').onclick=()=>{if(LAYERS.length<2){note('最後のレイヤーは削除できません');return}const i=LAYERS.findIndex(y=>y.id===curLid);if(i<0)return;pushUndo();const to=LAYERS[i?i-1:1];
   AC.forEach(a=>{if(a.layerId===curLid)a.layerId=to.id;if(a.toType==='layer'&&a.to===curLid){a.to=null;a.toType='actor';a.maskTo=false}});
-  LAYERS.splice(i,1);curLid=to.id;dirtyProj=true;setSel(sel||AC[0])};
-$('oadd').onclick=()=>pickImages();$('oadd2').onclick=()=>{addSpecial('d');setTab('dr')};$('odel').onclick=()=>del();
+  LAYERS.splice(i,1);curLid=to.id;dirtyProj=true;setSel(sel||AC[0]||null)};
+$('oadd2').onclick=()=>{addSpecial('d');setTab('dr')};$('odel').onclick=()=>del();
 $('lyphx').onchange=e=>{physHideEx=e.target.checked;dirtyProj=true};
 $('lyx').onclick=()=>lyToggle(false);
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!lyPop.hidden)lyToggle(false)});
