@@ -16,6 +16,7 @@
     "js/90-ui.js",
     "js/100-background-and-export.js",
     "js/110-pen-and-text.js",
+    "js/115-pen-assist.js",
     "js/120-warp.js",
     "js/130-gif.js",
     "js/140-controls.js",
@@ -30,6 +31,7 @@
     "js/225-commit.js",
     "js/230-color-picker.js",
     "js/235-canvas-coords.js",
+    "js/237-loupe.js",
     "js/240-tooling-and-init.js",
     "document-suffix.html"
   ]

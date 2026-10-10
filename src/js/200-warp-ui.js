@@ -11,6 +11,7 @@ function renderPins(){
     b.textContent=(i+1)+(p.t==='b'?(p.a<0?'🕳':'🫧'):p.t==='s'?'🌀':'👆');b.setAttribute('aria-label',(i+1)+'番目：'+tn);armTip(b);
     b.classList.toggle('on',i===curIdx(l));b.onclick=()=>{l.ps=i;loadPin(p);renderPins()};box.appendChild(b)});
   if(!l.pins.length){const n=document.createElement('span');n.className='note';n.style.margin=0;n.textContent='（まだ歪みがありません。オブジェクトをタップして追加）';box.appendChild(n)}
+  pnInfo();
   const sSel=$('wsyncSel');if(sSel){
     sSel.innerHTML='<option value="">同期しない</option>'+AC.filter(a=>a!==l).map(o=>`<option value="${o.id}"${l.syncTo===o.id?' selected':''}>${o.name}</option>`).join('');
     sSel.value=l.syncTo||'';
@@ -48,3 +49,34 @@ function clearEffects(l){
   setSel(l);note('エフェクトを全部消しました（画像はそのままです）');
 }
 $('clrfx').onclick=()=>clearEffects(sel);
+/* ===== ピンの位置の微調整（台帳Z-110）=====
+   選んだピンを、矢印で1刻みずつ動かす（長押しで連続・加速）。対象は「位置」と、👆タッチのピンの「動き量」（引っ張る向きと長さ）。
+   刻みは画像の大きさに対する割合（細かい0.05%／ふつう0.2%／大きい1%）。👁メニューの「手元の拡大窓」がオンなら、動かしている間、そのピンを中心に拡大して見せる。
+   1回の連続操作（1.5秒以内）は、Undo 1回で戻る。ロック・非表示は blocked を通す。 */
+let pnT='pos',pnLast=0;
+function pnInfo(){
+  const l=sel,p=l&&l.pins.length?l.pins[curIdx(l)]:null,tv=$('pnTv'),o=$('pninfo');if(!tv||!o)return;
+  tv.disabled=!p||p.t!=='p';if(tv.disabled&&pnT==='vec')pnT='pos';
+  $('pnTp').classList.toggle('on',pnT==='pos');tv.classList.toggle('on',pnT==='vec');
+  if(!p||!l.M){o.textContent='ピンを選ぶと、位置を矢印で1刻みずつ動かせます（長押しで連続）。👁メニューの「手元の拡大窓」をオンにすると、動かした所を拡大して見られます。';return}
+  const S=S0*l.size,t=l.M.transformPoint(new DOMPoint((p.x-.5)*S,(p.y-.5)*S)),w=wp({x:t.x/dpr,y:t.y/dpr});
+  o.textContent=(curIdx(l)+1)+'番のピン：作品の位置 x '+crdX(w.x)+'  y '+crdY(w.y)+(p.t==='p'?'／動き量 '+(p.vx*100).toFixed(1)+'% , '+(p.vy*100).toFixed(1)+'%':'');
+}
+function pnNudge(dx,dy){
+  const l=sel;if(!l||blocked(l))return;const p=l.pins.length?l.pins[curIdx(l)]:null;
+  if(!p){note('先にピンを選んでください');return}
+  const now=performance.now(),k=+$('pnS').value||.002;if(now-pnLast>1500)pushUndo();pnLast=now;
+  if(pnT==='vec'&&p.t==='p'){p.vx=cl(p.vx+dx*k,-1,1);p.vy=cl(p.vy+dy*k,-1,1)}
+  else{p.x=cl(p.x+dx*k,-.5,1.5);p.y=cl(p.y+dy*k,-.5,1.5)}
+  l.wd=true;wTouch=now;lupePin(l,p);pnInfo();
+}
+function pnHold(id,dx,dy){
+  const b=$(id);let t1,t2,n=0;const stop=()=>{clearTimeout(t1);clearInterval(t2)};
+  b.onpointerdown=e=>{e.preventDefault();stop();n=0;pnNudge(dx,dy);t1=setTimeout(()=>{t2=setInterval(()=>{n++;const m=n>34?10:n>16?4:1;pnNudge(dx*m,dy*m)},70)},380)};
+  b.onpointerup=b.onpointerleave=b.onpointercancel=stop;
+  b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pnNudge(dx,dy)}};
+}
+pnHold('pnU',0,-1);pnHold('pnD',0,1);pnHold('pnL',-1,0);pnHold('pnR',1,0);
+$('pnTp').onclick=()=>{pnT='pos';pnInfo()};$('pnTv').onclick=()=>{pnT='vec';pnInfo()};
+addEventListener('pointerup',()=>{if(tool==='warp')pnInfo()});
+pnInfo();

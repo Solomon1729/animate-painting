@@ -3,7 +3,7 @@
 <body>
 <h1>アクションメーカー</h1>
 <div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option></select></div>
-<div id="wrap"><canvas id="cv"></canvas><div class="crdl" id="crdp" hidden></div><div class="crdl o" id="crdo" hidden></div>
+<div id="wrap"><canvas id="cv"></canvas><div class="crdl" id="crdp" hidden></div><div class="crdl o" id="crdo" hidden></div><canvas class="lupe" id="lupe" width="132" height="132" hidden aria-hidden="true"></canvas>
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
@@ -13,6 +13,13 @@
   <button id="zr" disabled aria-label="拡大を1倍に戻す">1× 拡大を戻す</button>
   <button id="tpfb" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟 操作窓を分離</button>
   <button id="crdb" aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
+  <button id="lpb" aria-label="手元の拡大窓（オン：ペン・切り抜き・ぼかしや色調整の範囲・歪みのピンを触っている間、指の下を隅に拡大して見せる）" aria-pressed="false">🔍 手元の拡大窓</button>
+  <button id="lpz" aria-label="拡大窓の倍率：自動（使っている道具の太さに合わせる）と固定を切り替える" disabled>🔍 倍率：自動（太さに合わせる）</button>
+  <details id="lpd" class="lpd"><summary>拡大窓の詳細</summary>
+    <label>固定の倍率（固定の時）<input type="range" id="lpF" min="1.5" max="10" step="0.5" value="4" aria-label="拡大窓の固定倍率"></label>
+    <label>輪の見せる大きさ％（自動の時）<input type="range" id="lpR" min="20" max="80" step="5" value="45" aria-label="自動の時、道具の太さの輪を窓の何パーセントの大きさに見せるか"></label>
+    <label>窓の大きさ（px）<input type="range" id="lpS" min="96" max="220" step="4" value="132" aria-label="拡大窓の大きさ"></label>
+  </details>
   <button id="cvsb" aria-label="キャンバスの大きさを変える（背景・出力のタブを開く）">📐 キャンバスの大きさ</button>
 </div>
 <div class="cmenu" id="mA" hidden>
@@ -69,6 +76,9 @@
     <div id="wpn">
     <div class="row"><button id="wsh">◎ ピンの範囲を表示</button></div>
     <div class="row" id="pinl"></div>
+    <div class="row" id="pnud"><span class="lab">微調整</span><button id="pnU" aria-label="選んだピンを上へ（長押しで連続）">▲</button><button id="pnD" aria-label="選んだピンを下へ（長押しで連続）">▼</button><button id="pnL" aria-label="選んだピンを左へ（長押しで連続）">◀</button><button id="pnR" aria-label="選んだピンを右へ（長押しで連続）">▶</button><select id="pnS" aria-label="1回で動かす量"><option value="0.0005">細かい</option><option value="0.002" selected>ふつう</option><option value="0.01">大きい</option></select></div>
+    <div class="row"><span class="lab">対象</span><button id="pnTp" class="on" aria-label="ピンの位置を動かす">位置</button><button id="pnTv" aria-label="👆タッチのピンの「動き量」（引っ張る向きと長さ）を動かす" disabled>動き量（👆）</button></div>
+    <div class="note" id="pninfo"></div>
     <div class="row"><span class="lab">同期</span><select id="wsyncSel" aria-label="歪みを同期する相手"><option value="">同期しない</option></select></div>
     <div class="row"><button data-w="p">👆 タッチ</button><button data-w="bp">🫧 膨らみ</button><button data-w="bn">🕳 凹み</button><button data-w="b" class="on">⇅ 膨らみ↔凹み</button><button data-w="s">🌀 螺旋</button></div>
     <div class="row"><span class="lab">範囲</span><input id="wr" type="range" min="0.03" max="0.7" step="0.01" value="0.25" aria-label="歪みの範囲"></div>
@@ -90,6 +100,11 @@
     <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button></div>
     <div class="row" id="es2" style="display:none"><span class="lab">消し具合</span><input id="es" type="range" min="0.01" max="1" step="0.05" value="1" aria-label="消しゴムの強さ（弱いほど半透明に残る）"></div>
     <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0.1" max="40" value="10" aria-label="ペンの太さ"></div>
+    <div class="grp alt" id="paBox"><div class="gh">📏 ペンの補正（0＝補正なし。ペン・消しゴムに効く）</div>
+    <div class="row"><span class="lab">直線補正</span><input id="paL" type="range" min="0" max="100" step="1" value="0" aria-label="直線補正の強さ（0で補正なし。強いほど、まっすぐな線に直します）"></div>
+    <div class="row"><span class="lab">曲線補正</span><input id="paC" type="range" min="0" max="100" step="1" value="0" aria-label="曲線補正の強さ（0で補正なし。強いほど、選んだ種類の曲線に直します）"></div>
+    <div class="row"><span class="lab">曲線の種類</span><select id="paK" aria-label="曲線の種類"><option value="arc">円・円弧</option><option value="quad" selected>2次曲線</option><option value="cubic">3次ベジェ</option></select></div>
+    <div class="note">なぞっている間は、補正後の線と形の名前（直線・曲線など）が仮表示され、指を離すと描かれます。強いほど強制的に整い、弱いと小さな動きが残ります（弱いほど、よく似た形の時だけ補正）。直線のつもりが曲線になる時は「直線補正」を上げるか「曲線補正」を下げてください（逆の時は反対）。</div></div>
     <div class="row"><span class="lab">文字</span><input id="tx" type="text" placeholder="文字を入力" aria-label="文字" style="flex:1;min-width:120px;font:inherit;padding:6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:inherit"><input id="tcl" type="color" value="#2b2140" aria-label="文字の色"><button class="pk" data-for="tcl" aria-label="スポイト">💧</button></div>
     <div class="row"><button id="addt">＋文字を置く</button><button id="addd">＋白紙レイヤー</button></div>
     <div class="note">ペンで描いた線は、通常の「消しゴム」で描いた分だけ消せます（元の絵は残ります）。元の絵そのものを消したいときは「消しゴム（画像ごと）」を使ってください。文字を選んでいる間は、入力欄の変更がその文字に反映されます。</div>
