@@ -87,14 +87,14 @@ with sync_playwright() as p:
         pg.mouse.up();pg.wait_for_timeout(200)
         t=rect('#tp');g2=rect('#grip2')
         rep('下の持ち手をドラッグして上の外へ出せる／持ち手は画面に残る',t['t']<0 and 0<g2['b']<=70,(t['t'],g2['b']))
-        # 上の持ち手の右端のつかみ領域で左へ
+        # 上の持ち手（つまみの帯）を掴んで左へ（右端のつかみ領域#grip .gdr は台帳Z-107で廃止：持ち手の帯そのものが広い当たり判定）
         pg.evaluate("UIS.x=UIS.y=UIS.w=UIS.h=null;tpApply()");pg.wait_for_timeout(300)
-        z=rect('#grip .gdr')
+        z=rect('#gdrag')
         cx,cy=(z['l']+z['r'])/2,(z['t']+z['b'])/2
         pg.mouse.move(cx,cy);pg.mouse.down()
         for i in range(1,31):pg.mouse.move(cx-i*40,cy)
-        pg.mouse.up();pg.wait_for_timeout(200);t=rect('#tp');z=rect('#grip .gdr')
-        rep('右端のつかみ領域で掴んで左の外へ出せる／領域は画面に残る',t['l']<0 and z['l']>=0 and z['r']<=420,(t['l'],z))
+        pg.mouse.up();pg.wait_for_timeout(200);t=rect('#tp')
+        rep('上の持ち手で掴んで左の外へ出せる／右端が画面に残る',t['l']<0 and t['r']>=44,(t['l'],t['r']))
     else:rep('下の持ち手がある',False)
     # 透け透け
     pg.evaluate("UIS.x=UIS.y=UIS.w=UIS.h=null;tpApply()");pg.wait_for_timeout(300)

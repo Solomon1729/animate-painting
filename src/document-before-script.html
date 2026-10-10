@@ -3,7 +3,7 @@
 <body>
 <h1>アクションメーカー</h1>
 <div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option></select></div>
-<div id="wrap"><canvas id="cv"></canvas>
+<div id="wrap"><canvas id="cv"></canvas><div class="crdl" id="crdp" hidden></div><div class="crdl o" id="crdo" hidden></div>
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
@@ -12,6 +12,8 @@
   <button id="vlk" aria-label="ビューワーを固定（もう一度押すまで拡大・移動を一切しない）">🔒 ビューワーを固定</button>
   <button id="zr" disabled aria-label="拡大を1倍に戻す">1× 拡大を戻す</button>
   <button id="tpfb" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟 操作窓を分離</button>
+  <button id="crdb" aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
+  <button id="cvsb" aria-label="キャンバスの大きさを変える（背景・出力のタブを開く）">📐 キャンバスの大きさ</button>
 </div>
 <div class="cmenu" id="mA" hidden>
   <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
@@ -23,10 +25,13 @@
 <div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
 
 <div class="pane" id="tp">
-  <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）">⠿ 操作窓</span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button><span class="gdr" aria-hidden="true">⠿</span></div>
+  <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）"></span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
+  <div id="tpb">
   <div class="row"><button id="physMode">⚙️ 物理モードに切り替え</button></div>
   <div class="row" id="ch1"></div>
-  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">パーツ</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
+  <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
+  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><button id="bnd">境界線を表示</button><button id="clrfx">エフェクトを全消去</button></div>
@@ -50,7 +55,7 @@
   </div>
 
   <div class="tab" data-tab="wp"><div id="wp">
-    <details id="whelp" open><summary>使い方（タップで開閉）</summary><div class="note"><b>🖌 ブラシ</b>：絵をなぞって、粘土のように動かします（Photoshop／Photopeaの「ゆがみ」と同じ考え方）。「押し出す」はなぞった方向へ、「膨らませる・縮める・ひねる」は押している間じっと効き、「戻す」で歪みを元へ、「なめらかに」で歪みをならします。サイズは画面上の大きさ（拡大すると細かく効きます）。ペンの筆圧にも対応。<br><b>📍 ピン</b>：置いた場所を中心に、あとから範囲や強さを調整でき、波打つ・往復する「動く歪み」にできます。リングの中心をドラッグで移動、右端の白いつまみをドラッグで範囲を変更。<br>ブラシとピンは同時に使えます（ブラシ→ピンの順で重なります）。</div></details>
+    <details id="whelp" open><summary>使い方（タップで開閉）</summary><div class="note"><b>🖌 ブラシ</b>：絵をなぞって、粘土のように動かします（多くの描画ソフトの「ゆがみ」と同じ考え方）。「押し出す」はなぞった方向へ、「膨らませる・縮める・ひねる」は押している間じっと効き、「戻す」で歪みを元へ、「なめらかに」で歪みをならします。サイズは画面上の大きさ（拡大すると細かく効きます）。ペンの筆圧にも対応。<br><b>📍 ピン</b>：置いた場所を中心に、あとから範囲や強さを調整でき、波打つ・往復する「動く歪み」にできます。リングの中心をドラッグで移動、右端の白いつまみをドラッグで範囲を変更。<br>ブラシとピンは同時に使えます（ブラシ→ピンの順で重なります）。</div></details>
     <div class="row tools"><button id="wmB" class="on">🖌 ブラシで歪ませる</button><button id="wm1">📍 ピンを置く</button><button id="wm2">✋ ピンを選ぶ・動かす</button></div>
     <div id="wbr">
       <div class="row tools" id="wbt"></div>
@@ -108,6 +113,14 @@
     <div class="row"><span class="lab">ホワイト</span><input id="adjWh" type="range" min="-100" max="100" step="1" value="0"><b class="v" id="adjWhv">0</b></div>
     <div class="row"><span class="lab">ブラック</span><input id="adjBl" type="range" min="-100" max="100" step="1" value="0"><b class="v" id="adjBlv">0</b></div>
     <div class="row"><button id="adjReset">調整をリセット</button></div></div>
+    <div class="grp alt" id="cmMatch"><div class="gh">🎯 色を合わせる（ほかのオブジェクトの色に寄せる）</div>
+    <div class="row"><span class="lab">合わせる先</span><select id="cmRef" aria-label="色を合わせる先のオブジェクト"></select></div>
+    <div class="row"><span class="lab">強さ</span><input id="cmStr" type="range" min="0" max="100" step="1" value="100" aria-label="色を合わせる強さ"><b class="v" id="cmStrv">100</b></div>
+    <div class="row"><button id="cmL" class="on">明るさも合わせる</button><button id="cmGo">🎯 色を合わせる</button></div>
+    <div class="note">選んだオブジェクトの色（明るさ・色みの平均と散らばり）に、いま選んでいるオブジェクトを寄せます。後から人物などを足した時の、場の色へのなじませ用です。「適用範囲」で範囲を指定してあれば、こちらはその範囲だけが変わり、合わせる先に範囲が塗ってあれば、その範囲の色が基準になります。結果は「確定」と同じく絵に入ります（下の「レイヤーとして保存」にチェックすれば別レイヤー）。色だけで、質感・局所は合わせません。</div></div>
+    <div class="grp alt" id="cmBox"><div class="gh">📌 確定（いまの色調整・質感を絵に焼き込む）</div>
+    <div class="row"><button id="cmOk">✔ 確定</button><label class="note" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="cmLy">レイヤーとして保存</label></div>
+    <div class="note">「確定」＝いまの色調整・質感（範囲指定も込み）を絵に焼き込み、強さを0に戻します（取り消しは「元に戻す」）。以後の全体の調整とぶつかりません。<br>「レイヤーとして保存」にチェックして確定すると、焼き込まずに、調整した所だけを新しいレイヤーの別オブジェクトに切り離します。元の絵は調整前に戻り、そのレイヤーを隠す・消せば元通りです（元の絵に半透明の所があると、重なった所の不透明度がわずかに増えます）。</div></div>
   </div>
 
   <div class="tab" data-tab="fx">
@@ -147,9 +160,10 @@
   <div class="tab" data-tab="pt">
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
     <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
-    <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
+    <div class="row"><span class="lab">縁のぼかし</span><input id="ptf" type="range" min="0" max="40" step="1" value="0" aria-label="切り抜きの縁のぼかし（0＝くっきり。大きいほど縁が自然にぼける。境界がはっきりしない絵向け）"><b class="v" id="ptfv">0</b></div>
+     <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
     <div class="row"><button id="pexp">📷 このオブジェクトだけ保存（色調整・質感・ぼかし込み／原寸）</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
-    <div class="note">選んでいるオブジェクトの一部を囲んでコピー（または切り取り）すると、画面の左下に置かれます。サムネイルをタップすると、新しいオブジェクトとして貼り付けます。</div>
+    <div class="note">選んでいるオブジェクトの一部を囲んでコピー（または切り取り）すると、画面の左下に置かれます。サムネイルをタップすると、新しいオブジェクトとして貼り付けます。「縁のぼかし」が0だと縁はくっきり、大きくすると縁がぼけて、境界がはっきりしない絵（毛・煙・髪など）でもなじみます。コピーと切り取りの両方に同じ幅で効くので、切り取った跡と切り抜きがぴったり合います。</div>
   </div>
 
   <div class="tab" data-tab="ph">
@@ -175,6 +189,9 @@
   </div>
 
   <div class="tab" data-tab="bg">
+    <div class="row" id="cvsz"><span class="lab">キャンバス</span><input id="cvw" class="num" type="number" min="16" max="8192" step="1" inputmode="numeric" aria-label="キャンバスの幅（px）" style="width:76px"><span>×</span><input id="cvh" class="num" type="number" min="16" max="8192" step="1" inputmode="numeric" aria-label="キャンバスの高さ（px）" style="width:76px"><span class="note" style="margin:0">px</span><button id="cvset" aria-label="入れた大きさにする">適用</button></div>
+    <div class="row"><select id="cvpre" aria-label="キャンバスの大きさの候補"><option value="">候補から選ぶ…</option><option value="1080x1080">正方形 1080×1080</option><option value="1080x1920">縦長 9:16 1080×1920</option><option value="1920x1080">横長 16:9 1920×1080</option><option value="1200x1600">縦 3:4 1200×1600</option><option value="1600x1200">横 4:3 1600×1200</option></select><button id="cvfit" aria-label="選んでいるオブジェクトの絵の大きさ（px）に、キャンバスを合わせる">選んだ絵に合わせる</button><button id="cvauto" aria-label="キャンバスの大きさを自動（画面の枠に合わせる）に戻す">自動に戻す</button></div>
+    <div class="note" id="cvnote"></div>
     <div class="row"><span class="lab">背景</span><input id="bg1" type="color" value="#ffffff" aria-label="背景の上の色"><button class="pk" data-for="bg1" aria-label="スポイト">💧</button><input id="bg2" type="color" value="#ffffff" aria-label="背景の下の色"><button class="pk" data-for="bg2" aria-label="スポイト">💧</button><select id="bgm" aria-label="背景の種類"><option value="grad">2色</option><option value="solid" selected>1色</option><option value="none">透明(PNGのみ)</option></select></div>
     <div class="row"><label class="file">背景画像<input id="bgf" type="file" accept="image/*"></label><button id="bgr">画像を外す</button></div>
     <div class="row"><span class="lab">ぼかし</span><input id="bgb" type="range" min="0" max="30" value="0" aria-label="背景のぼかし"></div>
@@ -185,16 +202,17 @@
     <div id="out"></div>
     <div class="note">動画は WebM（対応端末ではMP4）、GIFは最大10秒・幅360pxです。保存できない環境では、表示された動画・画像を長押しして保存してください。</div>
   </div>
-  <div id="grip2"><span id="gdrag2" aria-label="操作窓の下の持ち手（ドラッグで移動。ダブルタップで元に戻す）">⠿ 操作窓</span></div>
-  <div id="tpr" aria-label="操作窓の大きさを変える"><i></i></div>
+  </div>
+  <div id="grip2"><span id="gdrag2" aria-label="操作窓の下の持ち手（ドラッグで移動。ダブルタップで元に戻す）"></span></div>
+  <div id="tpz" aria-label="操作窓の大きさを変える（四隅と縁をドラッグ）"><i data-c="nw"></i><i data-c="ne"></i><i data-c="sw"></i><i data-c="se"></i><b data-c="n"></b><b data-c="s"></b><b data-c="w"></b><b data-c="e"></b></div>
 </div>
 
 <input id="fadd" type="file" accept="image/*" multiple>
 <div id="lypop" class="lypop" hidden role="dialog" aria-label="レイヤーとオブジェクト">
   <div class="lyhd"><b>レイヤーとオブジェクト</b><button id="lyx" aria-label="閉じる">✕</button></div>
-  <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><button id="oadd3" aria-label="サンプル絵文字のオブジェクトを追加">＋絵文字</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
+  <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd3" aria-label="サンプル絵文字のオブジェクトを追加">＋絵文字</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
   <div id="lyl"></div>
   <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="lyphx" checked>非表示レイヤーを物理の計算から除外する</label>
-  <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。行は長押し（マウスはドラッグ）で並べ替え。オブジェクトを別レイヤーの行やオブジェクトの上へ落とすと所属が変わります。上ほど手前。</div>
+  <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。行は長押し（マウスはドラッグ）で並べ替え。入れたい行と行のすき間に点線が出るので、そこで離します（オブジェクトは別レイヤーのすき間にも入れられます。外で離すと取り消し）。上ほど手前。</div>
 </div>
 <script>

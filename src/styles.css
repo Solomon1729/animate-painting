@@ -45,7 +45,8 @@ input[type=file]{display:none}
 .lypop{position:fixed;z-index:300;width:min(94vw,440px);max-height:72vh;overflow:auto;background:var(--pane);color:var(--ink);border:2px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:10px;overscroll-behavior:contain}.lypop[hidden]{display:none}
 .lyhd{display:flex;justify-content:space-between;align-items:center}.lytb{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .trow{display:flex;align-items:center;gap:6px;border:2px solid transparent;border-radius:10px;padding:4px 6px;margin-top:2px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
-.trow.l{margin-top:8px;font-weight:900}.trow.o{margin-left:6px}.trow.on{border-color:var(--acc);background:rgba(59,130,246,.10)}.trow.off{opacity:.55}.trow.drag{opacity:.5}.trow.ov{border-style:dashed;border-color:var(--acc)}
+.trow.l{margin-top:8px;font-weight:900}.trow.o{margin-left:6px}.trow.on{border-color:var(--acc);background:rgba(59,130,246,.10)}.trow.off{opacity:.55}.trow.drag{opacity:.5}
+#lyl{position:relative}.lyins{position:absolute;left:0;right:0;height:0;border-top:3px dotted var(--acc);pointer-events:none;z-index:2}.lyins.o{left:16px}.lyins::before{content:'';position:absolute;left:-3px;top:-7px;width:9px;height:9px;border-radius:50%;background:var(--acc)}
 .trow img{width:28px;height:28px;object-fit:contain;border-radius:6px;background:rgba(127,127,127,.15);flex:none}.trow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.trow .br{opacity:.6;flex:none}.trow button{padding:2px 8px}
 body.fs{overflow:hidden}
 body.fs #wrap{position:fixed;left:0;top:0;right:0;bottom:0;height:100vh;height:100dvh;border-radius:0;z-index:50}
@@ -68,26 +69,42 @@ body.fs .pop{top:calc(52px + env(safe-area-inset-top,0px))}
 #topbar select{flex:1;min-width:120px}
 .tab{display:none;margin-top:8px}.tab.on{display:block}
 #tabs button{flex:1 1 auto;font-weight:900;font-size:13px;padding:6px 8px}
-#tp{max-height:46vh;overflow:auto;overscroll-behavior:contain}body.fs #tp{max-height:var(--tph,46vh)}#tp::after{content:"";display:block;height:34vh}
-/* 操作窓の持ち手（枠が「大」「全画面」の時、または分離中だけ出る） */
-#grip{display:none;align-items:center;gap:6px;position:sticky;top:0;z-index:5;margin:0 0 4px;padding:2px 0 4px;background:var(--pane)}
+#tp{max-height:46vh;overflow:auto;overscroll-behavior:contain}body.fs #tp{max-height:var(--tph,46vh)}#tpb::after{content:"";display:block;height:34vh}
+/* 操作窓の構成（台帳Z-106・Z-107）：枠が「大」「全画面」「分離」の時は、#tpを縦に3つ並べる＝上の持ち手（細い帯）／中身（#tpb。ここだけスクロール）／下の持ち手（細い帯）。
+   持ち手と中身は別の領域なので、スクロールした中身の文字や印が持ち手に重ならない。持ち手には文字を置かず、つまみの印だけ（説明は長押し）。 */
+body.fs #tp,body.big #tp,body.tpf #tp{display:flex;flex-direction:column;overflow:hidden;padding:0}
+body.fs #tp{padding-bottom:env(safe-area-inset-bottom,0px)}
+body.fs #tpb,body.big #tpb,body.tpf #tpb{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 10px}
+#grip{display:none;align-items:center;gap:6px;position:relative;flex:0 0 auto;min-height:28px;padding:2px 8px;background:var(--pane)}
 body.fs #grip,body.big #grip,body.tpf #grip{display:flex}
-#gdrag{flex:1;font-size:12px;font-weight:900;opacity:.7;padding:7px 4px;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none;white-space:nowrap}
-body.tpf #gdrag{cursor:move}
+body.tpf #grip{padding:2px 28px}  /* 左右の端は、四隅の大きさ変更の領域（#tpz）のために空ける */
+/* つかむ所は帯の全体（印より広い）。印は中央の短い棒 */
+#gdrag,#gdrag2{flex:1;align-self:stretch;min-height:22px;position:relative;cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none}
+#gdrag::before,#gdrag2::before{content:"";position:absolute;left:50%;top:50%;width:46px;height:5px;margin:-2px 0 0 -23px;border-radius:3px;background:var(--line)}
+body.tpf #gdrag,body.tpf #gdrag2{cursor:move}
 #grip button{padding:2px 7px;font-size:13px;line-height:1.2;flex:0 0 auto}
 #grip,#grip2{touch-action:none;user-select:none;-webkit-user-select:none}
 #tpa{display:none}body.tpf #tpa{display:inline-block}
 body.tpf #tpd{background:var(--acc);border-color:var(--acc);color:#fff}
-/* 下の持ち手（分離中だけ）と、持ち手の右端のつかみ領域：窓を画面の上・左右へ掃いても、どこかの持ち手が画面に残る */
-#grip2{display:none;align-items:center;gap:6px;position:sticky;bottom:0;z-index:5;margin:4px 0 0;padding:2px 34px 2px 0;background:var(--pane)}
+/* 下の持ち手（分離中だけ）。上より細い */
+#grip2{display:none;position:relative;flex:0 0 auto;height:22px;padding:0 28px;background:var(--pane)}
 body.tpf #grip2{display:flex}
-#gdrag2{flex:1;font-size:12px;font-weight:900;opacity:.7;padding:7px 4px;cursor:move;white-space:nowrap}
-.gdr{display:none;flex:0 0 auto;width:30px;text-align:center;font-weight:900;opacity:.7;cursor:move;padding:5px 0}
-body.tpf .gdr{display:block}
 body.tpf.tpc #grip2{display:none}
+/* 大きさの変更（分離中だけ）：四隅は26px、縁はごく細い6px。窓の中、一番上に重ねる */
+#tpz{display:none;position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:8}
+body.tpf #tpz{display:block}
+#tpz>*{position:absolute;display:block;pointer-events:auto;touch-action:none}
+#tpz i{width:26px;height:26px}
+#tpz i::after{content:"";position:absolute;width:9px;height:9px;border:0 solid var(--line);opacity:.9}
+#tpz i[data-c=nw]{left:0;top:0;cursor:nwse-resize}#tpz i[data-c=nw]::after{left:5px;top:5px;border-width:2px 0 0 2px;border-radius:5px 0 0 0}
+#tpz i[data-c=ne]{right:0;top:0;cursor:nesw-resize}#tpz i[data-c=ne]::after{right:5px;top:5px;border-width:2px 2px 0 0;border-radius:0 5px 0 0}
+#tpz i[data-c=sw]{left:0;bottom:0;cursor:nesw-resize}#tpz i[data-c=sw]::after{left:5px;bottom:5px;border-width:0 0 2px 2px;border-radius:0 0 0 5px}
+#tpz i[data-c=se]{right:0;bottom:0;cursor:nwse-resize}#tpz i[data-c=se]::after{right:5px;bottom:5px;border-width:0 2px 2px 0;border-radius:0 0 5px 0}
+#tpz b[data-c=n]{left:26px;right:26px;top:0;height:6px;cursor:ns-resize}#tpz b[data-c=s]{left:26px;right:26px;bottom:0;height:6px;cursor:ns-resize}
+#tpz b[data-c=w]{left:0;top:26px;bottom:26px;width:6px;cursor:ew-resize}#tpz b[data-c=e]{right:0;top:26px;bottom:26px;width:6px;cursor:ew-resize}
 /* 折りたたみ＝持ち手の行だけ残す */
-body.fs.tpc #tp>:not(#grip):not(#tpr),body.big.tpc #tp>:not(#grip):not(#tpr),body.tpf.tpc #tp>:not(#grip):not(#tpr){display:none}
-body.fs.tpc #tp::after,body.big.tpc #tp::after,body.tpf.tpc #tp::after{display:none}
+body.fs.tpc #tp>:not(#grip):not(#tpz),body.big.tpc #tp>:not(#grip):not(#tpz),body.tpf.tpc #tp>:not(#grip):not(#tpz){display:none}
+body.tpf.tpc #tp{height:auto}
 /* 枠「大」：作品を上に固定し、幅いっぱい・高さは--bighで可変。操作窓は下（持ち手を上下に動かすと作品と窓の割合が変わる） */
 body.big{max-width:none;padding:0}
 body.big h1,body.big #topbar{display:none}
@@ -95,11 +112,11 @@ body.big #wrap{position:sticky;top:0;z-index:20;height:var(--bigh,62vh);height:v
 body.big #tp{margin:8px 8px 0;max-height:calc(100vh - var(--bigh,62vh) - 18px);max-height:calc(100dvh - var(--bigh,62dvh) - 18px)}
 body.big.tpc:not(.tpf) #wrap{height:calc(100vh - 56px);height:calc(100dvh - 56px)}
 /* 分離（浮かせる）：作品の上に半透明で重ねる。文字・ボタンは不透明のまま、背景だけ透ける */
-body.tpf #tp{position:fixed;right:auto;bottom:auto;left:var(--tpx,8px);top:var(--tpy,120px);width:var(--tpw,min(94vw,340px));max-height:var(--tpfh,min(60vh,560px));margin:0;z-index:60;border-radius:16px;padding-bottom:10px;box-shadow:0 10px 32px rgba(0,0,0,.4);background:var(--pane)}
-body.tpf #tp::after{display:none}
-body.tpf #grip{background:color-mix(in srgb,var(--pane) 94%,transparent);border-radius:12px}
+body.tpf #tp{position:fixed;right:auto;bottom:auto;left:var(--tpx,8px);top:var(--tpy,120px);width:var(--tpw,min(94vw,340px));height:var(--tpfh,auto);max-height:var(--tpfh,min(60vh,560px));margin:0;z-index:60;border-radius:16px;padding:0;box-shadow:0 10px 32px rgba(0,0,0,.4);background:var(--pane)}
+body.tpf #tpb{margin:0 6px;padding:0 6px}body.tpf #tpb::after{display:none}
+body.tpf #grip{background:color-mix(in srgb,var(--pane) 94%,transparent);border-radius:14px 14px 0 0}body.tpf #grip2{border-radius:0 0 14px 14px}
 /* 透け透け（既定ON・分離中だけ。「透」ボタンでオン／オフ）：文字・ボタンの枠・スライダー以外の背景を透かす。文字は縁取りで読めるようにする。
-   持ち手の行だけは、スクロールした中身と重ならないよう薄い下地を残す */
+   持ち手の帯は中身と別の領域なので、薄い下地を残すだけでよい（重ならない：台帳Z-107） */
 body.tpf.tpt #tp{background:transparent;box-shadow:none;border-color:transparent;text-shadow:0 0 2px var(--pane),0 0 3px var(--pane),0 0 6px var(--pane)}
 body.tpf.tpt #tp :is(button,select,.file,.num,input[type=text],input[type=number]){background:color-mix(in srgb,var(--bg) 14%,transparent)}
 body.tpf.tpt #tp button.on,body.tpf.tpt #tp #tpd{background:color-mix(in srgb,var(--acc) 80%,transparent);text-shadow:none}
@@ -107,8 +124,11 @@ body.tpf.tpt #tp #physMode{background:color-mix(in srgb,#3a2470 82%,transparent)
 body.tpf.tpt #tp .grp.alt{background:transparent}
 body.tpf.tpt #grip,body.tpf.tpt #grip2{background:color-mix(in srgb,var(--pane) 55%,transparent)}
 body.big.tpf #wrap{height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border-radius:0}
-#tpr{display:none}
-body.tpf #tpr{display:block;position:sticky;bottom:0;height:0;touch-action:none}
-body.tpf.tpc #tpr{display:none}
-#tpr i{position:absolute;right:0;bottom:2px;width:30px;height:30px;cursor:nwse-resize;border-radius:0 0 12px 0;background:linear-gradient(135deg,transparent 52%,var(--line) 52%,var(--line) 62%,transparent 62%,transparent 72%,var(--line) 72%,var(--line) 82%,transparent 82%)}
+/* 「＋画像」の段のオプション（台帳Z-96）／オブジェクト0個の表示（Z-97）／座標のラベル（Z-98） */
+.opt{display:inline-flex;gap:5px;align-items:center;font-size:12px;opacity:.9}.opt.dis{opacity:.45}.opt input{width:16px;height:16px;margin:0}
+#noobj{padding:8px 10px;border:2px dashed var(--line);border-radius:10px}#noobj[hidden]{display:none}
+body.noobj #tabs button:not([data-t="bg"]),body.noobj #physMode{display:none}
+body.noobj .tab:not([data-tab="bg"]){display:none!important}
+.crdl{position:absolute;left:0;top:0;z-index:6;pointer-events:none;font:11px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:6px;background:rgba(20,16,32,.74);color:#fff;white-space:nowrap}
+.crdl.o{background:rgba(255,45,135,.88)}.crdl[hidden]{display:none}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}

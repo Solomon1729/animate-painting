@@ -27,7 +27,9 @@
     "js/200-warp-ui.js",
     "js/210-performance.js",
     "js/220-parts.js",
+    "js/225-commit.js",
     "js/230-color-picker.js",
+    "js/235-canvas-coords.js",
     "js/240-tooling-and-init.js",
     "document-suffix.html"
   ]

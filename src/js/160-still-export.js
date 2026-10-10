@@ -1,7 +1,10 @@
 
 /* ===== 静止画(高解像度) ===== */
 function snapImg(){
-  const k=+$('sq').value,f=$('sf').value,jpg=f==='jpg';hk=k;adjHQ=true;fit();
+  let k=+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
+  /* 画素が大きすぎる時は倍率を下げる（上限EXPORT_MAXPX。台帳Z-98） */
+  if(bw*bh*k*k>EXPORT_MAXPX){const k2=Math.max(1,Math.floor(Math.sqrt(EXPORT_MAXPX/(bw*bh))));if(k2<k){note('画素が大きすぎるので、倍率を'+k2+'×に下げて保存します');k=k2}}
+  hk=k;adjHQ=true;fit();
   try{
     paintFrame();
     if(f==='pdf'){

@@ -47,7 +47,7 @@ function chips(){
   const b=document.createElement('button'),y=sel?layOf(sel):LY(curLid);b.id='lyopen';b.className='lyopen';b.setAttribute('aria-label','レイヤーとオブジェクトの一覧を開く');
   if(sel){const im=document.createElement('img');im.alt='';im.src=thumbURL(sel);b.append(im)}
   b.append(document.createTextNode('🗂 '+y.name+(sel?' › '+sel.name:'')+' ▾'));b.onclick=()=>lyToggle();box.appendChild(b);
-  const q=document.createElement('button');q.id='qadd';q.textContent='＋画像';q.setAttribute('aria-label','画像を選んで新しいオブジェクトを追加');armTip(q);q.onclick=()=>pickImages();box.appendChild(q);layUi();
+  layUi();addRowUi();  /* 「＋画像」の段（#addrow）は固定の部品：台帳Z-96 */
 }
 function frame(l){
   if(!W||!l||vLock||noFrame)return;
@@ -58,6 +58,8 @@ function frame(l){
   if(syp<pad)Z.y+=pad-syp;else if(syp>H-pad)Z.y-=syp-(H-pad);
 }
 function setSel(l){
+  if(!l){sel=null;chips();noObjUi(true);return}  /* オブジェクト0個（台帳Z-97）：選択なし。操作窓は背景・出力だけにする */
+  noObjUi(false);
   if(l&&l.layerId!=null&&LAYERS.some(y=>y.id===l.layerId))curLid=l.layerId;
   sel=l;chips();frame(l);
   $('nm').value=l.name;

@@ -8,7 +8,7 @@ function frz(a,k,vk){const c=a[k];if(!c)return null;const f=a['_f'+k],v=a[vk]||0
 function snap(){
   const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:a.bite,adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
   const B={m:BG.m,c:BG.c,c2:BG.c2,b:BG.b,img:BG.img,v:BG.v||0};
-  return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS])};
+  return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),D:{w:DOC.w,h:DOC.h},sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS,DOC.w,DOC.h])};
 }
 function bgUi(){$('bg1').value=BG.c;$('bg2').value=BG.c2;$('bgm').value=BG.m;$('bgb').value=BG.b}
 function restore(sn){
@@ -21,7 +21,9 @@ function restore(sn){
   AC.forEach(a=>{if(a.syncTo!=null){const t=byId(a.syncTo);if(t)a.pins=t.pins}});
   Object.assign(BG,{m:sn.B.m,c:sn.B.c,c2:sn.B.c2,b:sn.B.b,img:sn.B.img,v:sn.B.v});bgUi();
   if(sn.L){LAYERS=sn.L.map(y=>({...y}));curLid=sn.cl}
-  setSel(AC[sn.sel]||AC[0]);
+  if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit();if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
+  canvasUi();
+  setSel(AC[sn.sel]||AC[0]||null);
 }
 const US=[],RS=[];
 let undoSeq=0;
@@ -39,6 +41,6 @@ function pushUndo(){const sn=snap();if(US.length&&US[US.length-1].sig===sn.sig)r
 function undo(){if(!US.length)return;const sn=snap();sn._uh=++undoSeq;RS.push(sn);restore(US.pop());trimHistory()}
 function redo(){if(!RS.length)return;const sn=snap();sn._uh=++undoSeq;US.push(sn);restore(RS.pop());trimHistory()}
 $('undo').onclick=undo;$('un2').onclick=undo;$('redo').onclick=redo;$('rd2').onclick=redo;
-$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#tpr'))pushUndo()},true);
+$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#grip2,#tpz'))pushUndo()},true);
 $('tp').addEventListener('focusin',e=>{if(e.target.type==='number'||e.target.type==='text')pushUndo()});
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!/^(text|number)$/.test(document.activeElement.type||'')){if(e.key==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(e.key==='y'){e.preventDefault();redo()}}});
