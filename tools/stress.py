@@ -91,7 +91,8 @@ def run_sample(pw, path):
         v3 = pg.evaluate("vis()")
         S['ieraser']['refl'] = v2['h'] != v3['h']
         pg.evaluate("setTool('eraser')")
-        draw(pg, dx0=-70, dy0=0, wav=14); pg.wait_for_timeout(250)
+        # ペンと同じ道をなぞって消す（2026-10-11：ペン先の位置が指に合うよう直したため、極端に細長い画像では、ずらした道だと線に当たらず「反映なし」になる）
+        draw(pg, dx0=-60, dy0=0, wav=14); pg.wait_for_timeout(250)
         v4 = pg.evaluate("vis()")
         S['eraser'] = {'ok': True, 'refl': v3['h'] != v4['h']}
         if shots: pg.screenshot(path=os.path.join(shots, name + '_3penerase.png'))

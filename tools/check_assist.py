@@ -7,6 +7,7 @@
 
 群：
   1 ペン補正（Z-108）：直線・円・曲線・消しゴム・Undo・補正オフ時は従来どおり・取り残し
+  1b 始点は動かさない／仮表示と確定後が同じ見た目／非正方形の画像でペン先が指の位置に出る（2026-10-11ユーザー指摘・台帳Z-124）
   2 拡大窓（Z-109）：既定オフ・出る/出ない道具・隅へ逃げる・中身・倍率の自動（太さ）と固定・道具の表への追加
   3 ピンの微調整（Z-110）：刻み・長押し・Undo1回・タッチのピンの動き量・ロック
 """
@@ -216,6 +217,64 @@ def run(p):
     chk('ロック中：補正オンでも描かれない', pg.evaluate(INK, 'line')['n'] == nl0, [nl0, pg.evaluate(INK, 'line')['n']])
     pg.evaluate("layOf(sel).locked=false"); setpa(pg, 0, 0)
 
+    # ===== 1b 始点は動かさない／仮表示と確定後が同じ見た目／非正方形でも指の位置に描く（2026-10-11ユーザー指摘） =====
+    print('--- 1b 始点固定・仮表示の一致・非正方形の位置 ---')
+    pg.evaluate("setTool('pen');pw=8;sel.pen=null;sel.base=null;sel.cv=null;adjDirty(sel)")
+    WH = pg.evaluate("[W,H]")
+    qs = lambda x, y: ((x - R['l']) * WH[0] / R['w'], (y - R['t']) * WH[1] / R['h'])
+    cx0, cy0 = R['l'] + R['w'] * .5, R['t'] + R['h'] * .5
+    loops = [(cx0 + 60 * math.cos(t) * (1 + .12 * math.sin(3 * t)), cy0 + 60 * math.sin(t) + i * .15) for i, t in ((i, i * 2 * math.pi / 90) for i in range(200))]
+    sq = qs(*loops[0])
+    for nm, L, C, K in (('直線100', 100, 0, 'quad'), ('円弧100', 0, 100, 'arc'), ('3次100', 0, 100, 'cubic'), ('直線60＋曲線60', 60, 60, 'cubic')):
+        setpa(pg, L, C, K)
+        pg.mouse.move(*loops[0]); pg.mouse.down(); ds = []
+        for i, q in enumerate(loops[1:], 1):
+            pg.mouse.move(*q)
+            if i % 25 == 0:
+                pg.wait_for_timeout(40)
+                o = pg.evaluate("PS&&PS.out?[PS.out[0].x,PS.out[0].y]:null")
+                if o: ds.append(math.hypot(o[0] - sq[0], o[1] - sq[1]))
+        pg.mouse.up(); pg.wait_for_timeout(100)
+        a0 = pg.evaluate("""([qx,qy])=>{const l=sel,c=l.pen;if(!c)return -1;const p=penXY(l,{x:qx,y:qy},c.width,c.height);return c.getContext('2d').getImageData(Math.round(p.x),Math.round(p.y),1,1).data[3]}""", list(sq))
+        chk('始点固定：ぐるぐる（%s）の間、補正後の線の始点が最初に触れた点のまま（最大ずれ%.3fpx）' % (nm, max(ds) if ds else -1), len(ds) >= 6 and max(ds) < 0.01, [round(d, 3) for d in ds][:8])
+        chk('始点固定：確定後も、最初に触れた点にインクがある（%s）' % nm, a0 > 200, a0)
+        pg.evaluate("undo()"); pg.wait_for_timeout(60)
+    # 仮表示と確定後が同じ見た目（拡大表示＋小さな画像＝ペン層が粗い状況。画面解像度のベクター仮表示だと、離した瞬間にボケる）
+    pg.evaluate("()=>{Z.s=6;Z.x=-(W/2*6-W/2);Z.y=-(H/2*6-H/2)}"); pg.wait_for_timeout(150)
+    setpa(pg, 100, 0, 'quad'); pg.evaluate("pw=3")
+    seg = [(cx0 - 40 + 80 * i / 40, cy0 - 8 + 16 * i / 40 + (1.0 if i % 2 else -1.0)) for i in range(41)]
+    pg.mouse.move(*seg[0]); pg.mouse.down()
+    for q in seg[1:]: pg.mouse.move(*q)
+    pg.wait_for_timeout(200)
+    COL = "([x,y0,h])=>{const g=cv.getContext('2d'),d=g.getImageData(Math.round(x*dpr),Math.round(y0*dpr),1,Math.round(h*dpr)).data,o=[];for(let i=0;i<d.length;i+=4)o.push(d[i],d[i+1],d[i+2]);return o}"
+    ca = pg.evaluate(COL, [cx0, cy0 - 40, 80])
+    pg.mouse.up(); pg.wait_for_timeout(250)
+    cb = pg.evaluate(COL, [cx0, cy0 - 40, 80])
+    dmax = max(abs(a - b) for a, b in zip(ca, cb))
+    chk('仮表示と確定後が同じ見た目（6倍拡大・粗いペン層。線を横切る画素列の差が小さい。最大差%d）' % dmax, dmax <= 25 and len(ca) == len(cb) and len(ca) > 60, dmax)
+    pg.evaluate("undo();Z.s=1;Z.x=0;Z.y=0;pw=8"); pg.wait_for_timeout(80)
+    # 非正方形の画像（横長800×400・縦長300×600）：ペン先が指の位置に出る。補正オフ・オンの両方
+    for dims in ((800, 400), (300, 600)):
+        pg.evaluate("""([w,h])=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#8cf';g.fillRect(0,0,w,h);setImg(sel,c);sel.size=1.6;sel.fx=.5;sel.fy=.5;Z.s=1;Z.x=0;Z.y=0}""", list(dims))
+        pg.wait_for_timeout(200)
+        g = pg.evaluate("""()=>{const l=sel,S=S0*l.size,sc=Math.hypot(l.M.a,l.M.b)/dpr,bd=boundsOf(l,S),t=l.M.transformPoint(new DOMPoint(0,0));return {cx:t.x/dpr,cy:t.y/dpr,dw:bd.w*sc,dh:bd.h*sc}}""")
+        for nm, L in (('補正オフ', 0), ('直線補正100', 100)):
+            setpa(pg, L, 0, 'quad')
+            fxy = (.35, -.4); px, py = g['cx'] + fxy[0] * g['dw'], g['cy'] + fxy[1] * g['dh']
+            pg.evaluate("sel.pen=null;sel.cv=null;sel.base=null;adjDirty(sel)")
+            pg.mouse.move(px, py); pg.mouse.down(); pg.mouse.move(px + 1, py); pg.mouse.move(px + 2, py); pg.mouse.up(); pg.wait_for_timeout(150)
+            ink = pg.evaluate(INK, 'circle')
+            pg.evaluate("sel.pen=null;sel.cv=null;sel.base=null")
+            r2 = pg.evaluate("""()=>{const c=sel.pen;return c?[c.width,c.height]:null}""")
+            # INKは重心(cx,cy)を返さないので、別途測る
+            pg.mouse.move(px, py); pg.mouse.down(); pg.mouse.move(px + 1, py); pg.mouse.move(px + 2, py); pg.mouse.up(); pg.wait_for_timeout(150)
+            c = pg.evaluate("""()=>{const c=sel.pen,w=c.width,h=c.height,d=c.getContext('2d').getImageData(0,0,w,h).data;let sx=0,sy=0,n=0;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>128){sx+=x;sy+=y;n++}return {w,h,fx:sx/n/w,fy:sy/n/h,n}}""")
+            efx, efy = .5 + fxy[0], .5 + fxy[1]
+            chk('非正方形%dx%d・%s：ペン先が指の位置（画像内の割合 x%.2f y%.2f）に出る（実測 x%.3f y%.3f）' % (dims[0], dims[1], nm, efx, efy, c['fx'], c['fy']), c['n'] > 20 and abs(c['fx'] - efx) < .02 and abs(c['fy'] - efy) < .02, c)
+    pg.evaluate("()=>{const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');for(let i=0;i<16;i++){g.fillStyle=i%2?'#d0392b':'#2b6fd0';g.fillRect(i*32,0,32,512)}setImg(sel,c);sel.pen=null;sel.base=null;sel.cv=null;adjDirty(sel)}")
+    setpa(pg, 0, 0, 'quad'); pg.evaluate("pw=8")
+    R = canvas_rect(pg)
+
     # ===== 2 拡大窓（Z-109） =====
     print('--- 2 拡大窓（Z-109） ---')
     pg.evaluate("setTool('pen')"); setpa(pg, 0, 0)
@@ -274,6 +333,7 @@ def run(p):
     pg.mouse.up(); pg.wait_for_timeout(900); pg.evaluate("undo()")
 
     # 倍率：自動は道具の太さに従う
+    pg.wait_for_timeout(150)  # Undoの直後は、次の描画までactorのMが無い
     zs = pg.evaluate("""()=>{setTool('pen');LUP.auto=true;const o={};for(const v of[3,8,20,48]){pw=v;o[v]=lupeZoom(lupeMode(),sel)}
       const m=lupeMode();pw=8;const dia=m.ring(sel),z=lupeZoom(m,sel);return {o,dia,z,want:LUP.sz*LUP.R/100/dia}}""")
     zv = [zs['o'][k] for k in ('3', '8', '20', '48')]
