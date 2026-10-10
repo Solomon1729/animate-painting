@@ -19,6 +19,7 @@
 | `src/js/90-ui.js` | 動きUI、選択 `setSel`、チップ、フレーム、配置UIのイベント |
 | `src/js/100-background-and-export.js` | 背景 `BG`、録画・通常書き出し |
 | `src/js/110-pen-and-text.js` | ペン `base`/`pen`、文字、調整・質感UIイベント |
+| `src/js/115-pen-assist.js` | ペンの補正（台帳Z-108）：点列の当てはめ（直線`paFitLine`・円弧`paFitArc`・始点終点固定のベジェ`paFitBez`、形の選択`paShape`）、なぞり中の仮表示`paPreview`、離した時に一度だけ描く`paCommit`。`PA`（強さ・曲線の種類）、`paOn()`（0なら従来経路） |
 | `src/js/120-warp.js` | 歪みの処理・焼き込み、歪み用定数`WBC`、ブラシのメッシュ`wbDab`/`meshWarp`/`warpInc`、ピン`pinPass`、ブラシ操作`wbDown`/`wbMove`/`drawBrushRing` |
 | `src/js/130-gif.js` | GIFエンコーダ、GIF/テキスト/ぼかしイベント |
 | `src/js/140-controls.js` | スライダーの±ボタンと数値入力 |
@@ -33,6 +34,7 @@
 | `src/js/225-commit.js` | 確定`cmCommit`（色調整・質感を絵に焼き込み）、レイヤーとして保存（シート`cmSheet`・`cmPlace`・範囲の切り抜き`cmCover`/`cmClip`）、色を合わせる`cmMatch`（Lab・Reinhard法）、UI`cmUi`（台帳Z-83〜Z-85） |
 | `src/js/230-color-picker.js` | スポイト |
 | `src/js/235-canvas-coords.js` | キャンバスのpx`setCanvasSize`/`canvasUi`/`fitCanvasToImage`（`DOC`）、「＋画像」の段`addRowUi`、オブジェクト0個の案内`noObjUi`、座標の表示`CRD`/`crdPointer`/`crdTick`（台帳Z-96〜Z-98） |
+| `src/js/237-loupe.js` | 手元の拡大窓（台帳Z-109）：`LUP`（状態・設定）、対象の道具の表`LUM`（マグネット選択などは1行足すだけ）、`lupeMode`/`lupeZoom`（倍率は道具の太さに合わせる自動／固定）、`lupeTick`（loopから毎フレーム）、`lupePin`（ピン微調整の連携） |
 | `src/js/240-tooling-and-init.js` | ツール・タブ、メニュー、枠3段`setFrame`、操作窓`UIS`/`tpClamp`/`tpApply`（上下2つの持ち手・四辺へ掃ける・透過オン/オフ）、画像追加`pickImages`/`addImages`、初期化、ロック用ラッパー |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 
@@ -52,6 +54,7 @@
 | `tools/edge_warp.py` | `python3 tools/edge_warp.py <HTMLの絶対パス> <画像>`。歪みの角の場合21項目（画面端始まり・極端なサイズ/強さ・Undo往復・キャンセル・ロック・ピン併用・拡大・保存読込）。`NG 0 / 21`が正常 |
 | `tools/check_fixes.py` | `python3 tools/check_fixes.py <HTMLの絶対パス>`。2026-10-08の修正の検査（ぼかし境界の不透明度／色調整の範囲の座標（縦長・横長・正方形）／操作窓の四辺クランプ・下の持ち手・透過／ビューワーのボタンと↩↪／オブジェクト22個／PDF出力）。全項目`OK`が正常（台帳Z-90） |
 | `tools/check_commit.py` | `python3 tools/check_commit.py <HTMLの絶対パス>`。確定（全体・範囲）／レイヤーとして保存／断る場合／シートの引き継ぎ／色合わせ／パーツの調整反映／保存読込／実ボタン・タブ（9群56項目）。全項目`OK`が正常（台帳Z-93） |
+| `tools/check_assist.py` | `python3 tools/check_assist.py <HTMLの絶対パス>`。ペン補正（直線・円・曲線・消しゴム・Undo・取り残し・歪み・ロック）／拡大窓（既定オフ・対象の道具・隅へ逃げる・中身の一致・倍率の自動/固定・道具の表への追加）／ピンの微調整（刻み・長押し・Undo・動き量・ロック・拡大窓連携）の3群57項目（台帳Z-108〜Z-110）。ヘッドレスのみ・実機未確認 |
 | `tools/check_ui.py` | `python3 tools/check_ui.py <HTMLの絶対パス>`。画面まわり7群103項目（持ち手の説明が消える／操作窓の大きさ・重ならない／✋・ピンチの自己修復／オブジェクト0個／キャンバスのpx・画像に合わせる・書き出しpx／座標の表示／並べ替えの点線）。実際のタッチ（CDP）とマウス。全項目`OK`で`OK 103  NG 0`（台帳Z-95〜Z-99・Z-102・Z-106・Z-107） |
 | `tools/ledger.py` | `python3 tools/ledger.py`＝台帳（`roadmap.md`§Z）を状態ごとの表に振り分け、全文を`archive/ledger-detail.md`に無損失で保管する（台帳Z-101）。`--check`で整理済みか確認。 |
 | `tools/bench.py` | `python3 tools/bench.py <HTMLの絶対パス> [ラベル]`。色調整・質感・ペン・歪みの1操作の時間（6MP） |

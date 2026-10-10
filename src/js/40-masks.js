@@ -32,7 +32,7 @@ function paintFrame(){
   roots.forEach(r=>{
     const ks=AC.filter(o=>o.att&&o.to===r.id),d=objD(r);
     P(r,ks.length?self=>{ks.filter(o=>!o.front).forEach(d);self();ks.filter(o=>o.front).forEach(d)}:undefined)});
-  drawBrushRing();
+  drawBrushRing();paPreview();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
   if(rulerPt){
     ctx.save();ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);

@@ -138,13 +138,14 @@ body.noobj #tabs button:not([data-t="bg"]),body.noobj #physMode{display:none}
 body.noobj .tab:not([data-tab="bg"]){display:none!important}
 .crdl{position:absolute;left:0;top:0;z-index:6;pointer-events:none;font:11px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:6px;background:rgba(20,16,32,.74);color:#fff;white-space:nowrap}
 .crdl.o{background:rgba(255,45,135,.88)}.crdl[hidden]{display:none}
+.lupe{position:absolute;left:0;top:0;z-index:7;pointer-events:none;border-radius:14px;border:2px solid rgba(255,255,255,.95);box-shadow:0 0 0 1px rgba(20,16,32,.55),0 4px 14px rgba(0,0,0,.4);background:#e9e6ef}.lupe[hidden]{display:none}.lpd{font-size:12px;padding:2px 4px}.lpd summary{cursor:pointer;font-weight:700;padding:6px 4px}.lpd label{display:block;margin:6px 0;font-weight:700}.lpd.dis{opacity:.5}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 </style>
 </head>
 <body>
 <h1>アクションメーカー</h1>
 <div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option></select></div>
-<div id="wrap"><canvas id="cv"></canvas><div class="crdl" id="crdp" hidden></div><div class="crdl o" id="crdo" hidden></div>
+<div id="wrap"><canvas id="cv"></canvas><div class="crdl" id="crdp" hidden></div><div class="crdl o" id="crdo" hidden></div><canvas class="lupe" id="lupe" width="132" height="132" hidden aria-hidden="true"></canvas>
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
@@ -154,6 +155,13 @@ body.noobj .tab:not([data-tab="bg"]){display:none!important}
   <button id="zr" disabled aria-label="拡大を1倍に戻す">1× 拡大を戻す</button>
   <button id="tpfb" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟 操作窓を分離</button>
   <button id="crdb" aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
+  <button id="lpb" aria-label="手元の拡大窓（オン：ペン・切り抜き・ぼかしや色調整の範囲・歪みのピンを触っている間、指の下を隅に拡大して見せる）" aria-pressed="false">🔍 手元の拡大窓</button>
+  <button id="lpz" aria-label="拡大窓の倍率：自動（使っている道具の太さに合わせる）と固定を切り替える" disabled>🔍 倍率：自動（太さに合わせる）</button>
+  <details id="lpd" class="lpd"><summary>拡大窓の詳細</summary>
+    <label>固定の倍率（固定の時）<input type="range" id="lpF" min="1.5" max="10" step="0.5" value="4" aria-label="拡大窓の固定倍率"></label>
+    <label>輪の見せる大きさ％（自動の時）<input type="range" id="lpR" min="20" max="80" step="5" value="45" aria-label="自動の時、道具の太さの輪を窓の何パーセントの大きさに見せるか"></label>
+    <label>窓の大きさ（px）<input type="range" id="lpS" min="96" max="220" step="4" value="132" aria-label="拡大窓の大きさ"></label>
+  </details>
   <button id="cvsb" aria-label="キャンバスの大きさを変える（背景・出力のタブを開く）">📐 キャンバスの大きさ</button>
 </div>
 <div class="cmenu" id="mA" hidden>
@@ -210,6 +218,9 @@ body.noobj .tab:not([data-tab="bg"]){display:none!important}
     <div id="wpn">
     <div class="row"><button id="wsh">◎ ピンの範囲を表示</button></div>
     <div class="row" id="pinl"></div>
+    <div class="row" id="pnud"><span class="lab">微調整</span><button id="pnU" aria-label="選んだピンを上へ（長押しで連続）">▲</button><button id="pnD" aria-label="選んだピンを下へ（長押しで連続）">▼</button><button id="pnL" aria-label="選んだピンを左へ（長押しで連続）">◀</button><button id="pnR" aria-label="選んだピンを右へ（長押しで連続）">▶</button><select id="pnS" aria-label="1回で動かす量"><option value="0.0005">細かい</option><option value="0.002" selected>ふつう</option><option value="0.01">大きい</option></select></div>
+    <div class="row"><span class="lab">対象</span><button id="pnTp" class="on" aria-label="ピンの位置を動かす">位置</button><button id="pnTv" aria-label="👆タッチのピンの「動き量」（引っ張る向きと長さ）を動かす" disabled>動き量（👆）</button></div>
+    <div class="note" id="pninfo"></div>
     <div class="row"><span class="lab">同期</span><select id="wsyncSel" aria-label="歪みを同期する相手"><option value="">同期しない</option></select></div>
     <div class="row"><button data-w="p">👆 タッチ</button><button data-w="bp">🫧 膨らみ</button><button data-w="bn">🕳 凹み</button><button data-w="b" class="on">⇅ 膨らみ↔凹み</button><button data-w="s">🌀 螺旋</button></div>
     <div class="row"><span class="lab">範囲</span><input id="wr" type="range" min="0.03" max="0.7" step="0.01" value="0.25" aria-label="歪みの範囲"></div>
@@ -231,6 +242,11 @@ body.noobj .tab:not([data-tab="bg"]){display:none!important}
     <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button></div>
     <div class="row" id="es2" style="display:none"><span class="lab">消し具合</span><input id="es" type="range" min="0.01" max="1" step="0.05" value="1" aria-label="消しゴムの強さ（弱いほど半透明に残る）"></div>
     <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0.1" max="40" value="10" aria-label="ペンの太さ"></div>
+    <div class="grp alt" id="paBox"><div class="gh">📏 ペンの補正（0＝補正なし。ペン・消しゴムに効く）</div>
+    <div class="row"><span class="lab">直線補正</span><input id="paL" type="range" min="0" max="100" step="1" value="0" aria-label="直線補正の強さ（0で補正なし。強いほど、まっすぐな線に直します）"></div>
+    <div class="row"><span class="lab">曲線補正</span><input id="paC" type="range" min="0" max="100" step="1" value="0" aria-label="曲線補正の強さ（0で補正なし。強いほど、選んだ種類の曲線に直します）"></div>
+    <div class="row"><span class="lab">曲線の種類</span><select id="paK" aria-label="曲線の種類"><option value="arc">円・円弧</option><option value="quad" selected>2次曲線</option><option value="cubic">3次ベジェ</option></select></div>
+    <div class="note">なぞっている間は、補正後の線と形の名前（直線・曲線など）が仮表示され、指を離すと描かれます。強いほど強制的に整い、弱いと小さな動きが残ります（弱いほど、よく似た形の時だけ補正）。直線のつもりが曲線になる時は「直線補正」を上げるか「曲線補正」を下げてください（逆の時は反対）。</div></div>
     <div class="row"><span class="lab">文字</span><input id="tx" type="text" placeholder="文字を入力" aria-label="文字" style="flex:1;min-width:120px;font:inherit;padding:6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:inherit"><input id="tcl" type="color" value="#2b2140" aria-label="文字の色"><button class="pk" data-for="tcl" aria-label="スポイト">💧</button></div>
     <div class="row"><button id="addt">＋文字を置く</button><button id="addd">＋白紙レイヤー</button></div>
     <div class="note">ペンで描いた線は、通常の「消しゴム」で描いた分だけ消せます（元の絵は残ります）。元の絵そのものを消したいときは「消しゴム（画像ごと）」を使ってください。文字を選んでいる間は、入力欄の変更がその文字に反映されます。</div>
@@ -786,7 +802,7 @@ function paintFrame(){
   roots.forEach(r=>{
     const ks=AC.filter(o=>o.att&&o.to===r.id),d=objD(r);
     P(r,ks.length?self=>{ks.filter(o=>!o.front).forEach(d);self();ks.filter(o=>o.front).forEach(d)}:undefined)});
-  drawBrushRing();
+  drawBrushRing();paPreview();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
   if(rulerPt){
     ctx.save();ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
@@ -859,7 +875,7 @@ $('pStop').onclick=()=>{const p=ensurePhys(sel);p.vx=0;p.vy=0};
 function loop(ts){
   const raw=ts-last,dt=Math.min(raw/1000,.05);last=ts;perfTick(warpMs);if(++fc%12===0)syncNums();
   if(!paused)for(const l of AC){for(const[k]of K){const c=l.ch[k];c.ph=(c.ph+dt*gs*c.hz)%1}for(const p of l.pins)p.ph=(p.ph+dt*gs*p.hz)%1}
-  physStep(dt*physTimeScale);wbTick(dt);paintFrame();crdTick();adjPump();
+  physStep(dt*physTimeScale);wbTick(dt);paintFrame();crdTick();lupeTick();adjPump();
   const zz=Z.s!==1||Z.x!==0||Z.y!==0;if(zz!==zshown){zshown=zz;$('zr').disabled=!zz}
   requestAnimationFrame(loop);
 }
@@ -1043,6 +1059,7 @@ const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)p
   if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){thist=[];up()}}}
 };
 function endAll(){
+  paCommit();  /* ペンの補正：溜めた点列を、補正した線として一度に描く（台帳Z-108。補正オフなら何もしない） */
   if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
   if(rulerOn&&rulerPt){
     const px=Math.hypot(rulerPt.x1-rulerPt.x0,rulerPt.y1-rulerPt.y0);
@@ -1267,6 +1284,7 @@ function loc(l,q){const t=l.M.inverse().transformPoint(new DOMPoint(q.x*dpr,q.y*
 const dirtyRect=(x0,y0,x1,y1,bs)=>{const r=bs/2+3;return{x:Math.min(x0,x1)-r,y:Math.min(y0,y1)-r,w:Math.abs(x1-x0)+2*r,h:Math.abs(y1-y0)+2*r}};
 function penAt(q,l){
   if(!l||!l.M)return;
+  if(paOn()){paPush(q,l);return}  /* ペンの補正がオン：点列を溜め、指を離した時にpaCommitが描く（台帳Z-108） */
   ensureBase(l);const bw=l._bw,bh=l._bh,a=loc(l,q),x=a.u*bw,y=a.v*bh,bs=pw*Math.min(bw,bh)/128,px=lp?lp.x:x,py=lp?lp.y:y;
   if(tool==='ieraser'){
     const base=l.base,g=base.getContext('2d');
@@ -1295,6 +1313,158 @@ $('adjAll').onclick=()=>adjAll(true);$('adjClear').onclick=()=>adjAll(false);
 $('adjReset').onclick=adjReset;$('adjShow').onclick=()=>{adjShow=!adjShow;adjUi();paintFrame()};
 $('tx').oninput=e=>{if(sel.txt!=null){sel.txt=e.target.value;setImg(sel,txtCv(sel.txt,sel.tcol))}};
 $('tcl').oninput=e=>{if(sel.txt!=null){sel.tcol=e.target.value;setImg(sel,txtCv(sel.txt,sel.tcol))}};
+
+/* ===== ペンの補正（台帳Z-108）=====
+   手ブレしてもズレない、まっすぐな線・綺麗な曲線を引くための補正。ペン・消しゴム（描いた分／画像ごと）に効く。
+   ・「直線補正」「曲線補正」はそれぞれ強さ0〜100のバー。0＝その補正なし。両方0なら従来どおり（penAtがそのまま描く＝既存の動作に一切触れない）。
+   ・なぞっている間は点列だけを溜め、補正した線を画面の上に仮表示する（paPreview）。指を離した時に一度だけ画像へ描く（paCommit）。
+   ・当てはめ：直線（最小二乗）／曲線＝円・円弧（Kåsa法）・2次ベジェ・3次ベジェ（端点固定の最小二乗）。
+   ・強さ s の意味：①ブレの許容範囲（弱い＝よく似た時だけ補正し、大きな曲がりは別の形のまま残す。100＝いつでも強制）
+     ②補正の度合い（元の点と当てはめた線を s の割合で混ぜる。弱いと小さな動きが残る）。
+   ・両方オンの時は、直線と曲線のどちらがよく合うかで自動的に選ぶ（曲線は直線より複雑なので、同じくらい合うなら直線を優先）。
+     直線のつもりが曲線になる（逆も）時は、直線補正を上げる／曲線補正を下げる（逆は反対）で調整する。
+   ・点列の座標は、penAtが受け取るキャンバス座標q（画面上の位置）。当てはめも画面上で行うので、画面で真っ直ぐ＝真っ直ぐ。
+     画像へ描く時は、従来のpenAtと同じ `loc`（画面→画像）を通す。 */
+const PA={L:0,C:0,K:'quad'};
+let PS=null;
+const paOn=()=>(tool==='pen'||tool==='eraser'||tool==='ieraser')&&(PA.L>0||PA.C>0);
+
+/* ---- 純粋な計算（DOMに触れない。tools/check_assist.pyとNodeの単体検査で確かめる）---- */
+function paLen(p){let L=0;for(let i=1;i<p.length;i++)L+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);return L}
+/* 弧長で等間隔に並べ直す（t＝弧長の比 0〜1） */
+function paResample(p,n){
+  const c=[0];for(let i=1;i<p.length;i++)c.push(c[i-1]+Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y));
+  const L=c[c.length-1],o=[];let j=0;
+  for(let i=0;i<n;i++){
+    const s=L*i/(n-1);while(j<p.length-2&&c[j+1]<s)j++;
+    const d=c[j+1]-c[j],t=d>1e-9?Math.min(1,Math.max(0,(s-c[j])/d)):0;
+    o.push({x:p[j].x+(p[j+1].x-p[j].x)*t,y:p[j].y+(p[j+1].y-p[j].y)*t,t:i/(n-1)});
+  }
+  return o;
+}
+function paFitLine(P){
+  const n=P.length;let mx=0,my=0;for(const q of P){mx+=q.x;my+=q.y}mx/=n;my/=n;
+  let sxx=0,sxy=0,syy=0;for(const q of P){const dx=q.x-mx,dy=q.y-my;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy}
+  const th=.5*Math.atan2(2*sxy,sxx-syy),ux=Math.cos(th),uy=Math.sin(th);
+  const proj=q=>{const d=(q.x-mx)*ux+(q.y-my)*uy;return{x:mx+ux*d,y:my+uy*d}};
+  const A=proj(P[0]),B=proj(P[n-1]);
+  let e=0;for(const q of P){const d=-(q.x-mx)*uy+(q.y-my)*ux;e+=d*d}
+  return{rms:Math.sqrt(e/n),F:P.map(q=>({x:A.x+(B.x-A.x)*q.t,y:A.y+(B.y-A.y)*q.t}))};
+}
+/* 円・円弧（Kåsa法）。ほぼ直線（半径が極端に大きい）なら null。始点と終点が近く、ほぼ一周していれば閉じた円にする */
+function paFitArc(P,L){
+  const n=P.length;let mx=0,my=0;for(const q of P){mx+=q.x;my+=q.y}mx/=n;my/=n;
+  let suu=0,suv=0,svv=0,suuu=0,svvv=0,suvv=0,svuu=0;
+  for(const q of P){const u=q.x-mx,v=q.y-my;suu+=u*u;suv+=u*v;svv+=v*v;suuu+=u*u*u;svvv+=v*v*v;suvv+=u*v*v;svuu+=v*u*u}
+  const det=suu*svv-suv*suv;if(!isFinite(det)||Math.abs(det)<1e-9*(suu+svv)*(suu+svv))return null;
+  const b1=.5*(suuu+suvv),b2=.5*(svvv+svuu),uc=(b1*svv-b2*suv)/det,vc=(b2*suu-b1*suv)/det;
+  const cx=mx+uc,cy=my+vc,r=Math.sqrt(uc*uc+vc*vc+(suu+svv)/n);
+  if(!(r>0)||!isFinite(r)||r>L*8)return null;
+  const ang=[Math.atan2(P[0].y-cy,P[0].x-cx)];
+  for(let i=1;i<n;i++){const t=Math.atan2(P[i].y-cy,P[i].x-cx);let d=t-ang[i-1];while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;ang.push(ang[i-1]+d)}
+  let sweep=ang[n-1]-ang[0];
+  if(Math.hypot(P[n-1].x-P[0].x,P[n-1].y-P[0].y)<.18*L&&Math.abs(sweep)>1.5*Math.PI)sweep=(sweep<0?-1:1)*2*Math.PI;
+  let e=0;for(const q of P){const d=Math.hypot(q.x-cx,q.y-cy)-r;e+=d*d}
+  return{rms:Math.sqrt(e/n),F:P.map(q=>({x:cx+r*Math.cos(ang[0]+sweep*q.t),y:cy+r*Math.sin(ang[0]+sweep*q.t)}))};
+}
+function paBez(c,t){
+  const u=1-t;
+  if(c.length===3)return{x:u*u*c[0].x+2*u*t*c[1].x+t*t*c[2].x,y:u*u*c[0].y+2*u*t*c[1].y+t*t*c[2].y};
+  return{x:u*u*u*c[0].x+3*u*u*t*c[1].x+3*u*t*t*c[2].x+t*t*t*c[3].x,y:u*u*u*c[0].y+3*u*u*t*c[1].y+3*u*t*t*c[2].y+t*t*t*c[3].y};
+}
+/* 端点（始点・終点）を固定した最小二乗。tt＝各点のパラメータ */
+function paSolveBez(P,tt,cubic){
+  const n=P.length,A=P[0],B=P[n-1];
+  if(!cubic){
+    let sn=0,sx=0,sy=0;
+    for(let i=0;i<n;i++){const t=tt[i],u=1-t,k=2*t*u;sn+=k*k;sx+=k*(P[i].x-u*u*A.x-t*t*B.x);sy+=k*(P[i].y-u*u*A.y-t*t*B.y)}
+    if(sn<1e-9)return null;return[A,{x:sx/sn,y:sy/sn},B];
+  }
+  let s11=0,s12=0,s22=0,r1x=0,r1y=0,r2x=0,r2y=0;
+  for(let i=0;i<n;i++){
+    const t=tt[i],u=1-t,b0=u*u*u,b1=3*t*u*u,b2=3*t*t*u,b3=t*t*t,rx=P[i].x-b0*A.x-b3*B.x,ry=P[i].y-b0*A.y-b3*B.y;
+    s11+=b1*b1;s12+=b1*b2;s22+=b2*b2;r1x+=b1*rx;r1y+=b1*ry;r2x+=b2*rx;r2y+=b2*ry;
+  }
+  const det=s11*s22-s12*s12;if(!isFinite(det)||Math.abs(det)<1e-9)return null;
+  return[A,{x:(r1x*s22-r2x*s12)/det,y:(r1y*s22-r2y*s12)/det},{x:(r2x*s11-r1x*s12)/det,y:(r2y*s11-r1y*s12)/det},B];
+}
+/* ベジェの当てはめ。パラメータは弧長比から始め、曲線上の最も近い点へ2回付け替えて精度を上げる */
+function paFitBez(P,cubic){
+  const n=P.length,M=40;let tt=P.map(q=>q.t),c=null;
+  for(let it=0;it<3;it++){
+    c=paSolveBez(P,tt,cubic);if(!c)return null;
+    if(it===2)break;
+    const tab=[];for(let k=0;k<=M;k++)tab.push(paBez(c,k/M));
+    tt=P.map(q=>{let bi=0,bd=1e18;for(let k=0;k<=M;k++){const d=(q.x-tab[k].x)**2+(q.y-tab[k].y)**2;if(d<bd){bd=d;bi=k}}return bi/M});
+    tt[0]=0;tt[n-1]=1;
+  }
+  const tab=[];for(let k=0;k<=60;k++)tab.push(paBez(c,k/60));
+  let e=0;for(const q of P){let bd=1e18;for(const w of tab){const d=(q.x-w.x)**2+(q.y-w.y)**2;if(d<bd)bd=d}e+=bd}
+  return{rms:Math.sqrt(e/n),F:P.map(q=>paBez(c,q.t))};
+}
+/* 点列raw（[{x,y}]）を補正する。戻り値＝{out:点列, kind:'raw'|'line'|'arc'|'quad'|'cubic', s:当てはめた形の強さ(0〜1)}
+   L,C＝直線・曲線の強さ（0〜100）、K＝曲線の種類。点が少ない・短すぎる時はそのまま（補正しない） */
+function paShape(raw,Ls,Cs,K){
+  const L=paLen(raw);
+  if(raw.length<3||L<10)return{out:raw,kind:'raw',s:0};
+  const n=Math.max(12,Math.min(160,Math.round(L/3))),R=paResample(raw,n),sL=Ls/100,sC=Cs/100;
+  const tolL=s=>s>=1?Infinity:.008+.12*s*s,tolC=s=>s>=1?Infinity:.006+.10*s*s;  /* ブレ（二乗平均の距離÷線の長さ）の許容 */
+  const cand=[];
+  if(sL>0){const f=paFitLine(R);f.kind='line';f.s=sL;f.nrm=f.rms/L;f.ok=f.nrm<=tolL(sL);f.score=f.nrm/(.15+sL);cand.push(f)}
+  if(sC>0){const f=K==='arc'?paFitArc(R,L):paFitBez(R,K==='cubic');if(f){f.kind=K;f.s=sC;f.nrm=f.rms/L;f.ok=f.nrm<=tolC(sC);f.score=2*f.nrm/(.15+sC);cand.push(f)}}
+  const c=cand.filter(f=>f.ok).sort((a,b)=>a.score-b.score)[0];
+  if(!c)return{out:R.map(q=>({x:q.x,y:q.y})),kind:'raw',s:0};
+  const a=c.s;
+  return{out:R.map((q,i)=>({x:q.x*(1-a)+c.F[i].x*a,y:q.y*(1-a)+c.F[i].y*a})),kind:c.kind,s:a,nrm:c.nrm};
+}
+
+/* ---- ペンの流れへの接続 ---- */
+const PAN={raw:'補正なし',line:'直線',arc:'円・円弧',quad:'2次曲線',cubic:'3次曲線'};
+/* ペンの太さの画面上の実寸（CSS px）。画像の作業解像度の1画素＝画面で何pxか、から求める */
+function paBrushPx(l){
+  const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512,S=S0*l.size,bs=pw*Math.min(bw,bh)/128;
+  return Math.max(1,bs*Math.min(S/bw,S/bh)*Math.hypot(l.M.a,l.M.b)/dpr);
+}
+function paPush(q,l){
+  if(lp===null||!PS||PS.l!==l){ensureBase(l);PS={l,tool,pts:[],kind:'raw',s:0}}
+  lp=PS;  /* なぞり中の印（up()でnullに戻る＝次の一筆の始まりが分かる） */
+  const p=PS.pts,e=p[p.length-1];if(!e||e.x!==q.x||e.y!==q.y)p.push({x:q.x,y:q.y});
+  if(p.length>5000)PS.pts=p.filter((_,i)=>i%2===0||i===p.length-1);
+}
+/* 指を離した時：補正した線を、従来のpenAtと同じ設定で一度に描く（endAllから呼ぶ） */
+function paCommit(){
+  const S=PS;PS=null;if(!S||!S.l||!S.pts.length)return;
+  const l=S.l;if(!l.M||!AC.includes(l))return;
+  const sh=S.pts.length>=3?paShape(S.pts,PA.L,PA.C,PA.K):{out:S.pts,kind:'raw'};
+  ensureBase(l);const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=sh.out.map(q=>{const a=loc(l,q);return{x:a.u*bw,y:a.v*bh}}),inb=S.tool==='ieraser';
+  let g;
+  if(inb){g=l.base.getContext('2d');g.globalCompositeOperation='destination-out';g.globalAlpha=eraseStrength}
+  else{
+    if(!l.pen||l.pen.width!==bw||l.pen.height!==bh)l.pen=allocCanvas(bw,bh,'ペン');
+    g=l.pen.getContext('2d');g.globalCompositeOperation=S.tool==='eraser'?'destination-out':'source-over';
+    g.globalAlpha=S.tool==='eraser'?eraseStrength:1;g.strokeStyle=g.fillStyle=pcol;
+  }
+  g.lineWidth=bs;g.lineCap=g.lineJoin='round';g.beginPath();g.moveTo(P[0].x,P[0].y);
+  if(P.length===1)g.lineTo(P[0].x,P[0].y);else for(let i=1;i<P.length;i++)g.lineTo(P[i].x,P[i].y);
+  g.stroke();
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of P){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
+  bumpBP(l,inb?1:0,inb?0:1);recompose(l,dirtyRect(x0,y0,x1,y1,bs));
+}
+/* なぞっている最中の仮表示（paintFrameから）。補正後の線＋どの形になったかのラベル */
+function paPreview(){
+  const S=PS;if(!S)return;if(!drawing){PS=null;return}
+  if(hk||adjHQ||!S.pts.length)return;const l=S.l;if(!l||!l.M)return;
+  const sh=S.pts.length>=3?paShape(S.pts,PA.L,PA.C,PA.K):{out:S.pts,kind:'raw',s:0},o=sh.out,w=paBrushPx(l);S.kind=sh.kind;S.s=sh.s;
+  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.lineCap=ctx.lineJoin='round';
+  const path=()=>{ctx.beginPath();ctx.moveTo(o[0].x,o[0].y);if(o.length===1)ctx.lineTo(o[0].x,o[0].y);else for(let i=1;i<o.length;i++)ctx.lineTo(o[i].x,o[i].y)};
+  if(S.tool==='pen'){path();ctx.lineWidth=w;ctx.strokeStyle=pcol;ctx.stroke()}
+  else{path();ctx.lineWidth=w+2;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();path();ctx.lineWidth=w;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.stroke()}
+  const e=o[o.length-1],txt=PAN[sh.kind]+(sh.kind==='raw'?'':' '+Math.round(sh.s*100)+'%');
+  ctx.font='bold 12px sans-serif';const tw=ctx.measureText(txt).width+12,tx=cl(e.x-tw/2,3,Math.max(3,W-tw-3)),ty=cl(e.y-50,3,Math.max(3,H-24));
+  ctx.fillStyle='rgba(20,16,32,.78)';ctx.fillRect(tx,ty,tw,20);ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(txt,tx+6,ty+10);
+  ctx.restore();
+}
+$('paL').oninput=e=>{PA.L=+e.target.value};$('paC').oninput=e=>{PA.C=+e.target.value};$('paK').onchange=e=>{PA.K=e.target.value};
 /* 歪み: ①タッチ(押し引き) ②膨らみ/凹み ③螺旋（動く歪み＝ピン）＋ ④ゆがみブラシ（静止の歪み＝変位メッシュ）。
    画面に出す絵は、元画像 → ブラシのメッシュ（l.dm）→ ピン の順に歪ませる（逆写像）。 */
 let wskip=1,warpRaw=false,warpBakeR=0;const WM=.3,WX=1+2*WM,WD0=()=>({r:.25,a:.6,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5}),WDS={};
@@ -1861,7 +2031,7 @@ function pushUndo(){const sn=snap();if(US.length&&US[US.length-1].sig===sn.sig)r
 function undo(){if(!US.length)return;const sn=snap();sn._uh=++undoSeq;RS.push(sn);restore(US.pop());trimHistory()}
 function redo(){if(!RS.length)return;const sn=snap();sn._uh=++undoSeq;US.push(sn);restore(RS.pop());trimHistory()}
 $('undo').onclick=undo;$('un2').onclick=undo;$('redo').onclick=redo;$('rd2').onclick=redo;
-$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#grip2,#tpz'))pushUndo()},true);
+$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#grip2,#tpz,#pnud'))pushUndo()},true);
 $('tp').addEventListener('focusin',e=>{if(e.target.type==='number'||e.target.type==='text')pushUndo()});
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!/^(text|number)$/.test(document.activeElement.type||'')){if(e.key==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(e.key==='y'){e.preventDefault();redo()}}});
 
@@ -1950,6 +2120,7 @@ function renderPins(){
     b.textContent=(i+1)+(p.t==='b'?(p.a<0?'🕳':'🫧'):p.t==='s'?'🌀':'👆');b.setAttribute('aria-label',(i+1)+'番目：'+tn);armTip(b);
     b.classList.toggle('on',i===curIdx(l));b.onclick=()=>{l.ps=i;loadPin(p);renderPins()};box.appendChild(b)});
   if(!l.pins.length){const n=document.createElement('span');n.className='note';n.style.margin=0;n.textContent='（まだ歪みがありません。オブジェクトをタップして追加）';box.appendChild(n)}
+  pnInfo();
   const sSel=$('wsyncSel');if(sSel){
     sSel.innerHTML='<option value="">同期しない</option>'+AC.filter(a=>a!==l).map(o=>`<option value="${o.id}"${l.syncTo===o.id?' selected':''}>${o.name}</option>`).join('');
     sSel.value=l.syncTo||'';
@@ -1987,6 +2158,37 @@ function clearEffects(l){
   setSel(l);note('エフェクトを全部消しました（画像はそのままです）');
 }
 $('clrfx').onclick=()=>clearEffects(sel);
+/* ===== ピンの位置の微調整（台帳Z-110）=====
+   選んだピンを、矢印で1刻みずつ動かす（長押しで連続・加速）。対象は「位置」と、👆タッチのピンの「動き量」（引っ張る向きと長さ）。
+   刻みは画像の大きさに対する割合（細かい0.05%／ふつう0.2%／大きい1%）。👁メニューの「手元の拡大窓」がオンなら、動かしている間、そのピンを中心に拡大して見せる。
+   1回の連続操作（1.5秒以内）は、Undo 1回で戻る。ロック・非表示は blocked を通す。 */
+let pnT='pos',pnLast=0;
+function pnInfo(){
+  const l=sel,p=l&&l.pins.length?l.pins[curIdx(l)]:null,tv=$('pnTv'),o=$('pninfo');if(!tv||!o)return;
+  tv.disabled=!p||p.t!=='p';if(tv.disabled&&pnT==='vec')pnT='pos';
+  $('pnTp').classList.toggle('on',pnT==='pos');tv.classList.toggle('on',pnT==='vec');
+  if(!p||!l.M){o.textContent='ピンを選ぶと、位置を矢印で1刻みずつ動かせます（長押しで連続）。👁メニューの「手元の拡大窓」をオンにすると、動かした所を拡大して見られます。';return}
+  const S=S0*l.size,t=l.M.transformPoint(new DOMPoint((p.x-.5)*S,(p.y-.5)*S)),w=wp({x:t.x/dpr,y:t.y/dpr});
+  o.textContent=(curIdx(l)+1)+'番のピン：作品の位置 x '+crdX(w.x)+'  y '+crdY(w.y)+(p.t==='p'?'／動き量 '+(p.vx*100).toFixed(1)+'% , '+(p.vy*100).toFixed(1)+'%':'');
+}
+function pnNudge(dx,dy){
+  const l=sel;if(!l||blocked(l))return;const p=l.pins.length?l.pins[curIdx(l)]:null;
+  if(!p){note('先にピンを選んでください');return}
+  const now=performance.now(),k=+$('pnS').value||.002;if(now-pnLast>1500)pushUndo();pnLast=now;
+  if(pnT==='vec'&&p.t==='p'){p.vx=cl(p.vx+dx*k,-1,1);p.vy=cl(p.vy+dy*k,-1,1)}
+  else{p.x=cl(p.x+dx*k,-.5,1.5);p.y=cl(p.y+dy*k,-.5,1.5)}
+  l.wd=true;wTouch=now;lupePin(l,p);pnInfo();
+}
+function pnHold(id,dx,dy){
+  const b=$(id);let t1,t2,n=0;const stop=()=>{clearTimeout(t1);clearInterval(t2)};
+  b.onpointerdown=e=>{e.preventDefault();stop();n=0;pnNudge(dx,dy);t1=setTimeout(()=>{t2=setInterval(()=>{n++;const m=n>34?10:n>16?4:1;pnNudge(dx*m,dy*m)},70)},380)};
+  b.onpointerup=b.onpointerleave=b.onpointercancel=stop;
+  b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pnNudge(dx,dy)}};
+}
+pnHold('pnU',0,-1);pnHold('pnD',0,1);pnHold('pnL',-1,0);pnHold('pnR',1,0);
+$('pnTp').onclick=()=>{pnT='pos';pnInfo()};$('pnTv').onclick=()=>{pnT='vec';pnInfo()};
+addEventListener('pointerup',()=>{if(tool==='warp')pnInfo()});
+pnInfo();
 
 /* ===== 処理の軽さ(自動で段階を下げる) ===== */
 let pavg=16,pcool=120,lvl=0,wq='auto';
@@ -2365,6 +2567,100 @@ function crdTick(){
   if(!CRD.hold&&CRD.hideAt&&now>CRD.hideAt){p.hidden=true;CRD.hideAt=0}
 }
 $('crdb').onclick=()=>{CRD.on=!CRD.on;$('crdb').classList.toggle('on',CRD.on);$('crdb').setAttribute('aria-pressed',CRD.on?'true':'false');if(!CRD.on)crdHide()};
+
+/* ===== 手元の拡大窓（台帳Z-109）=====
+   ペン・切り抜き（囲む）・ぼかしと色調整の範囲・歪みのピン位置合わせで、指の下（手元）を、邪魔にならない隅へ拡大して見せる別窓。
+   ・👁メニューの「手元の拡大窓」でオン／オフ（既定オフ）。UIの一時状態なので、作品・Undo・保存には入れない。
+   ・倍率は**既定が「自動」＝使っている道具の太さに合わせる**（ペン先・ブラシの輪が、窓の`LUP.R`%の大きさに見える倍率。細い道具ほど大きく写る）。
+     太さを持たない道具（囲む・ピン）は`zoom`の既定倍率。メニューの「拡大窓の詳細」で、固定倍率・輪の見せる大きさ・窓の大きさを変えられる。
+   ・出す時＝下の表の道具を使っていて、指（ペン・マウス）が押されている間。離したあとも少しだけ残す。2本指（ピンチ）の間は出さない。
+     ピンの微調整（台帳Z-110）では、動かしているピンを中心に、操作の間だけ出す（`lupePin`）。
+   ・中身は、画面（cv）の今の絵をそのまま拡大して写すだけ。描画の経路を増やさない＝ペンの仮表示（paPreview）やピンの輪も、そのまま写る。
+     中心の十字が、ペン先（指）が触れている位置。太さを持つ道具は、太さの輪も重ねる。
+   ・窓の位置は、枠の四隅のうち指から一番遠い隅。指が近づいたら別の隅へ逃げる（指の下・描いている所に重ならない）。
+   ・窓はポインターを受けない（pointer-events:none）ので、操作を邪魔しない。
+   ・**道具の追加（例：マグネット選択＝台帳Z-87の②）は、`LUM`の表に1行足すだけ**にしてある（窓の描画・隅の逃げ・倍率は触らない）。 */
+const LUP={on:false,auto:true,fz:4,R:45,sz:132,ZMIN:1.5,ZMAX:10,down:false,cx:0,cy:0,corner:0,until:0,pin:null,pinUntil:0,LINGER:700,PIN_MS:2600};
+/* 拡大窓の対象の道具の表。
+   id     ：名前
+   want   ：いま対象か（真なら出す）
+   ring   ：(l)＝道具の太さ（画面の論理px・直径）。無ければ0（太さを持たない）。倍率の自動と、窓の中の輪に使う
+   zoom   ：太さが無い時の、自動倍率の既定
+   center ：省略可。(c)＝窓の中心（キャンバスの論理px）。指の位置の代わりにしたい時（マグネットの吸着点など）に{x,y}を返す
+   draw   ：省略可。(g,E)＝窓の上に重ね描き。E.to(x,y)＝キャンバスの論理px→窓の中のpx、E.z＝倍率、E.d＝窓の大きさ（デバイスpx） */
+const maskBrushPx=(l,b)=>b*2/MR*S0*l.size*Math.hypot(l.M.a,l.M.b)/dpr;  /* マスクのブラシ（半径b、MR座標）→画面の直径px */
+const LUM=[
+  {id:'pen',want:()=>tool==='pen'||tool==='eraser'||tool==='ieraser',ring:l=>paBrushPx(l),zoom:4},
+  {id:'box',want:()=>!!pbox,ring:()=>0,zoom:3},
+  {id:'psn',want:()=>!!psn,ring:l=>maskBrushPx(l,brushParts),zoom:3},
+  {id:'bpn',want:()=>!!bpn,ring:l=>maskBrushPx(l,brushBlur),zoom:3},
+  {id:'adj',want:()=>!!adjMode,ring:l=>maskBrushPx(l,adjBrush),zoom:3},
+  {id:'paint',want:()=>!!paint,ring:l=>maskBrushPx(l,brushMask),zoom:3},
+  {id:'pin',want:()=>tool==='warp'&&wmode!=='brush',ring:()=>0,zoom:4}
+];
+/* いま拡大窓の対象になる道具（表の最初に当てはまる行）。道具の優先は、pdownの分岐と同じ順（paint→adj→box→bpn/psn→ペン→歪み）に合わせる */
+function lupeMode(){
+  if(!sel)return null;
+  const order=['paint','adj','box','bpn','psn','pen','pin'];
+  for(const id of order){const m=LUM.find(x=>x.id===id);if(m&&m.want())return m}
+  return LUM.find(m=>!order.includes(m.id)&&m.want())||null;  /* 表に足した道具 */
+}
+const lupeWanted=()=>!!lupeMode();
+/* 倍率：自動＝輪が窓のLUP.R%に見える倍率（太さ無しは既定）／固定＝LUP.fz */
+function lupeZoom(m,l){
+  if(!LUP.auto)return cl(LUP.fz,LUP.ZMIN,LUP.ZMAX);
+  const dia=m&&l&&l.M?m.ring(l):0;
+  return cl(dia>0?LUP.sz*LUP.R/100/dia:(m?m.zoom:4),LUP.ZMIN,LUP.ZMAX);
+}
+function lupePointer(e){const r=cv.getBoundingClientRect();LUP.cx=(e.clientX-r.left)*W/r.width;LUP.cy=(e.clientY-r.top)*H/r.height}
+cv.addEventListener('pointerdown',e=>{if(!LUP.on)return;lupePointer(e);LUP.down=true;LUP.pin=null});
+cv.addEventListener('pointermove',e=>{if(LUP.on&&LUP.down&&(pid===-1?e.isPrimary!==false:e.pointerId===pid))lupePointer(e)});
+const lupeUp=()=>{if(LUP.down&&!ptrs.size){LUP.down=false;LUP.until=performance.now()+LUP.LINGER}};
+addEventListener('pointerup',lupeUp);addEventListener('pointercancel',lupeUp);
+/* ピンの微調整から：このピンを中心に出す（拡大窓がオンの時だけ） */
+function lupePin(l,p){if(!LUP.on)return;LUP.pin={l,p};LUP.pinUntil=performance.now()+LUP.PIN_MS}
+/* 毎フレーム（loopから）：中心を決め、cvを写し、隅へ置く */
+function lupeTick(){
+  const el=$('lupe');if(!el)return;
+  const now=performance.now();let c=null,m=null,l=null;
+  if(LUP.on&&!hk&&!adjHQ&&sel){
+    if(LUP.pin&&now<LUP.pinUntil&&!LUP.down){
+      const p=LUP.pin.p;l=LUP.pin.l;m=LUM.find(x=>x.id==='pin');
+      if(l.M&&l.pins.includes(p)){const S=S0*l.size,t=l.M.transformPoint(new DOMPoint((p.x-.5)*S,(p.y-.5)*S));c={x:t.x/dpr,y:t.y/dpr}}
+    }else if((LUP.down||now<LUP.until)&&ptrs.size<2){
+      m=lupeMode();
+      if(m){l=sel;c={x:LUP.cx,y:LUP.cy};if(m.center){const cc=m.center(c);if(cc)c=cc}}
+    }
+  }
+  if(!c){if(!el.hidden)el.hidden=true;return}
+  const sz=LUP.sz,d=Math.round(sz*dpr),z=lupeZoom(m,l),wpx=m&&l&&l.M?m.ring(l):0;
+  if(el.width!==d||el.height!==d)el.width=el.height=d;
+  if(el._sz!==sz){el._sz=sz;el.style.width=el.style.height=sz+'px'}  /* CSSの大きさは常に指定する（dpr=1だと上の条件が働かず、canvas全般の幅100%が効いてしまう） */
+  const g=el.getContext('2d'),sw=sz/z*dpr;
+  g.setTransform(1,0,0,1,0,0);g.fillStyle='#e9e6ef';g.fillRect(0,0,d,d);g.imageSmoothingEnabled=true;
+  try{g.drawImage(cv,c.x*dpr-sw/2,c.y*dpr-sw/2,sw,sw,0,0,d,d)}catch(_){}
+  const mid=d/2,cross=(col,w)=>{g.strokeStyle=col;g.lineWidth=w*dpr;g.beginPath();
+    g.moveTo(mid-10*dpr,mid);g.lineTo(mid-3*dpr,mid);g.moveTo(mid+3*dpr,mid);g.lineTo(mid+10*dpr,mid);g.moveTo(mid,mid-10*dpr);g.lineTo(mid,mid-3*dpr);g.moveTo(mid,mid+3*dpr);g.lineTo(mid,mid+10*dpr);g.stroke()};
+  cross('rgba(0,0,0,.65)',3);cross('#fff',1.4);
+  if(wpx>0){const rr=Math.min(wpx*z/2*dpr,mid-3*dpr);g.beginPath();g.arc(mid,mid,rr,0,6.2832);g.lineWidth=3*dpr;g.strokeStyle='rgba(0,0,0,.45)';g.stroke();g.lineWidth=1.2*dpr;g.strokeStyle='#fff';g.stroke()}
+  if(m&&m.draw){try{m.draw(g,{c,z,d,dpr,to:(x,y)=>[(x-c.x)*z*dpr+mid,(y-c.y)*z*dpr+mid]})}catch(_){}}
+  const cs=[[8,8],[W-sz-8,8],[8,H-sz-8],[W-sz-8,H-sz-8]],near=k=>{const[x,y]=cs[k];return c.x>x-30&&c.x<x+sz+30&&c.y>y-30&&c.y<y+sz+30};
+  if(near(LUP.corner)){let b=-1,bd=-1;cs.forEach(([x,y],k)=>{if(near(k))return;const dd=Math.hypot(c.x-(x+sz/2),c.y-(y+sz/2));if(dd>bd){bd=dd;b=k}});if(b>=0)LUP.corner=b}
+  const[px,py]=cs[LUP.corner];
+  el.hidden=false;el.style.transform='translate('+Math.round(cv.offsetLeft+Math.max(3,px))+'px,'+Math.round(cv.offsetTop+Math.max(3,py))+'px)';
+}
+const lupeUi=()=>{
+  const b=$('lpb'),z=$('lpz');b.classList.toggle('on',LUP.on);b.setAttribute('aria-pressed',LUP.on?'true':'false');
+  z.textContent=LUP.auto?'🔍 倍率：自動（太さに合わせる）':'🔍 倍率：固定 ×'+LUP.fz;z.classList.toggle('on',LUP.auto);z.disabled=!LUP.on;
+  $('lpd').classList.toggle('dis',!LUP.on);
+  if(!LUP.on){$('lupe').hidden=true;LUP.down=false;LUP.pin=null}
+};
+$('lpb').onclick=()=>{LUP.on=!LUP.on;lupeUi()};
+$('lpz').onclick=()=>{LUP.auto=!LUP.auto;lupeUi()};
+$('lpF').oninput=e=>{LUP.fz=+e.target.value;lupeUi()};
+$('lpR').oninput=e=>{LUP.R=+e.target.value};
+$('lpS').oninput=e=>{LUP.sz=+e.target.value};
+lupeUi();
 let strokeActor=null;
 let tipEl=null,tipTo=0;
 const TIPMS=4000;  /* 説明文は、指を離す・動かす・一定時間のどれかで必ず消える（台帳Z-95） */

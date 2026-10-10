@@ -73,6 +73,7 @@ const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)p
   if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){thist=[];up()}}}
 };
 function endAll(){
+  paCommit();  /* ペンの補正：溜めた点列を、補正した線として一度に描く（台帳Z-108。補正オフなら何もしない） */
   if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
   if(rulerOn&&rulerPt){
     const px=Math.hypot(rulerPt.x1-rulerPt.x0,rulerPt.y1-rulerPt.y0);
