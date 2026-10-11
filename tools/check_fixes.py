@@ -3,6 +3,7 @@
 内容:    1 ぼかし境界の変色（表示・boxCv）  2 色調整の範囲の座標（縦長・横長・正方形）
          3 操作窓：画面外へ掃ける／下の持ち手／透のオン・オフ  4 戻す・やり直すの直置きとアイコンの大きさ
          5 オブジェクト数の上限撤廃  6 PDF書き出し（透明つき）と、単体保存への色調整の反映
+         7 boxCvのぼかし幅（縦長・横長。Z-111）  8 白紙を足した時の範囲表示（Z-118）  9 白紙の大きさ：A1〜A6・B1〜B6・px指定・上限（Z-117・Z-126）
 各項目 OK / NG（要確認）を出す。修正前のHTMLに流すと、1・2・3・4・5・6 の該当項目がNGになる（検知力の確認用）。
 アプリ内部の名前（add, sel, UIS, boxCv, adjSource, pdfFromCanvas 等）に依存する。改名したらここも直す。
 """
@@ -154,6 +155,95 @@ with sync_playwright() as p:
         d3=blob_of_out(pg);rep('単体保存(PDF)：PDFになる',d3[:5]==b'%PDF-' and len(pypdf.PdfReader(io.BytesIO(d3)).pages)==1,len(d3))
     except Exception as e:
         rep('PDF・単体保存の確認が実行できた',False,repr(e)[:200])
+    rep('エラーなし',not errs,errs);b.close()
+
+    # ---------- 7 boxCv のぼかし幅：縦長でも横長と同じ（2026-10-11、台帳Z-111）----------
+    print('== 7 boxCv のぼかし幅（Z-111）==')
+    b,pg,errs=page(p)
+    r=pg.evaluate("""(()=>{
+      const mk=(w,h,vert)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,w,h);g.fillStyle='#fff';
+        if(vert)g.fillRect(w/2,0,w/2,h);else g.fillRect(0,h/2,w,h/2);return c};
+      const meas=(w,h,vert)=>{
+        while(AC.length){sel=AC[0];del()}
+        const a=add();setImg(a,mk(w,h,vert));a.size=1.6;a.fx=.5;a.fy=.5;
+        const m=document.createElement('canvas');m.width=m.height=MR;const g=m.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,MR,MR);
+        a.bm=m;a.hasBm=true;a.blur=14;
+        const{c,W,H}=boxCv(a),d=c.getContext('2d').getImageData(0,0,W,H).data,n=vert?W:H;let lo=-1,hi=-1;
+        for(let i=0;i<n;i++){const x=vert?i:Math.floor(W/2),y=vert?Math.floor(H/2):i,v=d[(y*W+x)*4];if(lo<0&&v>=25.5)lo=i;if(hi<0&&v>=229.5)hi=i}
+        return hi-lo};
+      return{tall:meas(200,400,true),wide:meas(400,200,false)}})()""")
+    rep('縦長（200×400）と横長（400×200）で、ぼかした境界の幅が同じ（差1割以内。修正前は縦長が約半分）',abs(r['tall']-r['wide'])<=max(4,.1*r['wide']) and r['wide']>40,r)
+    rep('エラーなし',not errs,errs);b.close()
+
+    # ---------- 8 白紙を足した時の範囲表示（2026-10-11、台帳Z-118）----------
+    print('== 8 白紙を足した時の範囲表示（Z-118）==')
+    b,pg,errs=page(p)
+    pg.evaluate("AC.splice(0);BG.m='solid';BG.c='#ffffff';setSel(null)")
+    distinct=lambda:pg.evaluate("""(()=>{const g=cv.getContext('2d'),d=g.getImageData(Math.round(cv.width*.4),Math.round(cv.height*.4),Math.round(cv.width*.2),Math.round(cv.height*.2)).data;
+      const s=new Set();for(let i=1;i<d.length;i+=4)s.add(d[i]);return s.size})()""")
+    pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(300)
+    on=pg.evaluate("!!BLK.a&&BLK.a===sel");n1=distinct()
+    rep('「＋白紙レイヤー」を押すと、白紙の範囲が見える（枠＋市松で、中央の画素が2色以上）',on and n1>=2,(on,n1))
+    pg.mouse.click(5,5);pg.wait_for_timeout(300)
+    off=pg.evaluate("BLK.a===null");n2=distinct()
+    rep('次の操作（どこかを押す）で消え、白紙は透明（背景の白だけ）に戻る',off and n2==1,(off,n2))
+    pg.evaluate("document.getElementById('oadd2').click()");pg.wait_for_timeout(300)
+    rep('「＋白紙」（一覧のボタン）でも同じく範囲が見える',pg.evaluate("!!BLK.a")and distinct()>=2,distinct())
+    pg.keyboard.press('Shift');pg.wait_for_timeout(250)
+    rep('キー操作でも消える',pg.evaluate("BLK.a===null")and distinct()==1)
+    # 静止画の書き出しには出ない（ユーザーが何も操作していない状態を、スクリプトで再現）
+    pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(300)
+    pg.evaluate("document.getElementById('out').innerHTML='';document.getElementById('sf').value='png';document.getElementById('sq').value='1';snapImg()")
+    png=blob_of_out(pg);im=Image.open(io.BytesIO(png)).convert('RGB');w,h=im.size
+    cols=set(im.crop((int(w*.4),int(h*.4),int(w*.6),int(h*.6))).getdata())
+    rep('静止画の書き出しには出ない（中央が背景の白だけ）',len(cols)==1,len(cols))
+    rep('エラーなし',not errs,errs);b.close()
+
+    # ---------- 9 白紙の大きさ（2026-10-11、台帳Z-117・Z-126）----------
+    print('== 9 白紙の大きさ（Z-117・Z-126）==')
+    b,pg,errs=page(p)
+    pg.evaluate("AC.splice(0);setSel(null);setTab('dr')");pg.wait_for_timeout(200)
+    dims=lambda:pg.evaluate("(()=>{const a=AC[AC.length-1];return [a.cv.width,a.cv.height,a.name]})()")
+    rep('既定のスロットはA4・150dpi',pg.evaluate("[BLS.p,BLS.dpi,document.getElementById('blsz').value,document.getElementById('bldpi').value].join()")=='A4,150,A4,150')
+    rep('A1〜A6・B1〜B6・正方形・px指定が選べる',pg.evaluate("[...document.getElementById('blsz').options].map(o=>o.value).join()")=='A1,A2,A3,A4,A5,A6,B1,B2,B3,B4,B5,B6,sq,px')
+    pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(200)
+    d=dims();rep('「＋白紙レイヤー」で A4（210×297mm）@150dpi＝1240×1754px',d[0]==1240 and d[1]==1754,d)
+    pg.select_option('#blsz','B4');pg.evaluate("document.getElementById('oadd2').click()");pg.wait_for_timeout(200)
+    d=dims();rep('スロットをB4（JIS 257×364mm）にすると、一覧の「＋白紙」でも使われる（1518×2150px）',d[0]==1518 and d[1]==2150,d)
+    pg.evaluate("document.getElementById('blor').click()");pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(200)
+    d=dims();rep('向きを横にすると幅と高さが入れ替わる',d[0]==2150 and d[1]==1518,d)
+    pg.evaluate("document.getElementById('blor').click()");pg.select_option('#blsz','A1');pg.select_option('#bldpi','300');pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(300)
+    d=dims();asp=d[0]/d[1]
+    rep('A1@300dpi（約70メガ画素）は総画素の上限（800万）で縮み、縦横比は保たれる',d[0]*d[1]<=8e6+1 and d[0]*d[1]>7.5e6 and abs(asp-594/841)<.005,(d,round(asp,4)))
+    rep('縮めた時は知らせる',pg.evaluate("document.getElementById('hint').hidden===false&&document.getElementById('ht').textContent.includes('縮め')"))
+    pg.select_option('#bldpi','72');pg.select_option('#blsz','A6');pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(200)
+    d=dims();rep('A6@72dpi＝298×420px（小さい紙も作れる）',d[0]==298 and d[1]==420,d)
+    pg.select_option('#blsz','px')
+    vis=pg.evaluate("[!!document.getElementById('blcu').offsetParent,!!document.getElementById('bldpi').offsetParent,!!document.getElementById('blor').offsetParent]")
+    rep('px指定の時だけ幅×高さの欄が出て、dpiと向きは隠れる',vis==[True,False,False],vis)
+    pg.fill('#blw','300');pg.fill('#blh','5000');pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(200)
+    d=dims();rep('px指定 300×5000 は、長辺の上限4096で縮む（246×4096）',d[0]==246 and d[1]==4096,d)
+    pg.fill('#blw','640');pg.fill('#blh','360');pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(200)
+    d=dims();rep('px指定 640×360 はそのまま',d[0]==640 and d[1]==360,d)
+    pg.select_option('#blsz','sq');pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(200)
+    d=dims();rep('「正方形 512×512」で従来の白紙',d[0]==512 and d[1]==512,d)
+    # 絵の収まり：長辺＝従来の白紙と同じ（キャンバスの短辺の約83%）。ペンが非正方形の白紙の正しい位置に乗る
+    pg.select_option('#blsz','A4');pg.select_option('#bldpi','150');pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(300)
+    pg.mouse.click(5,5);pg.wait_for_timeout(100)
+    g=pg.evaluate("""(()=>{const a=sel,S=S0*a.size,r=cv.getBoundingClientRect(),k=r.width/W,iw=a.cv.width,ih=a.cv.height,sc=Math.min(S/iw,S/ih);
+      return{ok:a===AC[AC.length-1]&&a.sp==='d',long:S,fit:S<=Math.min(W,H)*.85,cx:r.left+a.fx*W*k,cy:r.top+a.fy*H*k,dw:iw*sc*k,dh:ih*sc*k,iw,ih}})()""")
+    rep('A4の白紙は、長辺がキャンバスの短辺の約83%で収まる',g['ok'] and g['fit'] and abs(g['long']/min(pg.evaluate('W'),pg.evaluate('H'))-.832)<.01,g)
+    pg.evaluate("setTool('pen');pw=8;PA.L=0;PA.C=0");pg.wait_for_timeout(100)
+    x0,y0=g['cx']-g['dw']/4,g['cy']-g['dh']/4
+    pg.mouse.move(x0-15,y0);pg.mouse.down();pg.mouse.move(x0,y0,steps=4);pg.mouse.move(x0+15,y0,steps=4);pg.mouse.up();pg.wait_for_timeout(300)
+    a=pg.evaluate("""([ix,iy,jx,jy])=>{const c=sel.img,g=c.getContext('2d'),f=(x,y)=>{const d=g.getImageData(Math.max(0,x-25),Math.max(0,y-25),50,50).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]>10)n++;return n};return{hit:f(ix,iy),far:f(jx,jy),w:c.width,h:c.height}}""",[round(g['iw']/4),round(g['ih']/4),round(g['iw']*3/4),round(g['ih']*3/4)])
+    rep('非正方形（A4）の白紙でも、ペンが指の位置（左上1/4）に描かれ、反対側（右下3/4）には何も付かない',a['hit']>200 and a['far']==0,a)
+    pg.evaluate("undo()");pg.wait_for_timeout(300)
+    rep('Undoで線が消える',pg.evaluate("(()=>{const c=sel.img,d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]>10){n=1;break}return n===0})()"))
+    # 保存→読込で、白紙の大きさが保たれる
+    pg.evaluate("redo()");pg.wait_for_timeout(200)
+    r=pg.evaluate("""(async()=>{const n=AC.length,j=ser();await loadProj(j);const a=AC[AC.length-1];return{n0:n,n1:AC.length,w:a.img.width||a.img.naturalWidth,h:a.img.height||a.img.naturalHeight,sp:a.sp}})()""")
+    rep('保存→読込で、A4の白紙の大きさ（1240×1754）が保たれる',r['n0']==r['n1'] and r['w']==1240 and r['h']==1754,r)
     rep('エラーなし',not errs,errs);b.close()
 
 print('== 判定 ==','すべてOK' if all(res) else f'NG {res.count(False)} / {len(res)}')

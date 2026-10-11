@@ -21,6 +21,10 @@ canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-
 .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
 .row:first-child{margin-top:0}
 .lab{font-size:13px;font-weight:900;min-width:3em}
+/* バーの行：ラベルを上の段へ分け、バーを長くする（台帳Z-88④）。1行を消せば元に戻る */
+.row>.lab:first-child:has(~input[type=range]){flex:0 0 100%;min-width:0}
+#blrow [hidden],#blcu[hidden]{display:none}
+.scrtip{position:fixed;z-index:300;pointer-events:none;transform:translate(-50%,-100%);background:#222;color:#fff;font:900 12px/1 system-ui,sans-serif;padding:6px 10px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 button,.file,select{font:inherit;font-size:13px;color:inherit;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:6px 10px;cursor:pointer;line-height:1.3}
 button.on{border-color:var(--acc);background:var(--acc);color:#fff}
 .tools button{flex:1 1 28%;font-weight:900;font-size:14px}
@@ -129,7 +133,7 @@ body.big.tpf #wrap{height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-a
 #noobj{padding:8px 10px;border:2px dashed var(--line);border-radius:10px}#noobj[hidden]{display:none}
 body.noobj #tabs button:not([data-t="bg"]),body.noobj #physMode{display:none}
 body.noobj .tab:not([data-tab="bg"]){display:none!important}
-.crdl{position:absolute;left:0;top:0;z-index:6;pointer-events:none;font:11px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:6px;background:rgba(20,16,32,.74);color:#fff;white-space:nowrap}
+.crdl{position:absolute;left:0;top:0;z-index:6;pointer-events:none;font:11px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:6px;background:rgba(20,16,32,.74);color:#fff;white-space:pre}  /* preは改行（座標の2行目・3行目。台帳Z-114）を残し、折り返さない */
 .crdl.o{background:rgba(255,45,135,.88)}.crdl[hidden]{display:none}
 .lupe{position:absolute;left:0;top:0;z-index:7;pointer-events:none;border-radius:14px;border:2px solid rgba(255,255,255,.95);box-shadow:0 0 0 1px rgba(20,16,32,.55),0 4px 14px rgba(0,0,0,.4);background:#e9e6ef}.lupe[hidden]{display:none}.lpd{font-size:12px;padding:2px 4px}.lpd summary{cursor:pointer;font-weight:700;padding:6px 4px}.lpd label{display:block;margin:6px 0;font-weight:700}.lpd.dis{opacity:.5}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}

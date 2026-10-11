@@ -8,6 +8,41 @@ function addSpecial(k){
   if(t){a.txt=$('tx').value||'こんにちは';a.tcol=$('tcl').value;a.img=txtCv(a.txt,a.tcol)}else{c.width=c.height=512;a.cv=c}
   AC.push(a);setSel(a);return a;
 }
+/* ===== 白紙の大きさ（台帳Z-117・Z-126）=====
+   「＋白紙」が足す紙の大きさ。紙の規格（mm・縦長の幅×高さ）と解像度（dpi）は別で、スロット（#blsz）は紙の大きさだけを持つ。既定はA4・150dpi。
+   Bは日本のJIS B判（B4＝257×364mm）。「正方形 512」は従来の白紙。「px」は幅×高さを直接指定。
+   上限：長辺PENCAP（ペンの作業解像度。これを超えると使い始めで縮む）と、総画素BLK_MAXPX（メモリ・Undoの保護）。超えたら縦横比を保って縮め、知らせる。
+   UIの一時状態（BLS）。作品・Undo・保存には入れない（できた白紙のpxは、絵そのものに入る）。 */
+const PAPER={A1:[594,841],A2:[420,594],A3:[297,420],A4:[210,297],A5:[148,210],A6:[105,148],B1:[728,1030],B2:[515,728],B3:[364,515],B4:[257,364],B5:[182,257],B6:[128,182]};
+const BLK_MAXPX=8e6,BLK_MIN=8;
+const BLS={p:'A4',land:false,dpi:150,w:1024,h:1024};
+function blankDims(){
+  let w,h;
+  if(BLS.p==='sq'){w=h=512}
+  else if(BLS.p==='px'){w=BLS.w;h=BLS.h}
+  else{const m=PAPER[BLS.p]||PAPER.A4;w=m[0]/25.4*BLS.dpi;h=m[1]/25.4*BLS.dpi;if(BLS.land)[w,h]=[h,w]}
+  w=Math.max(BLK_MIN,Math.round(w)||0);h=Math.max(BLK_MIN,Math.round(h)||0);
+  const k=Math.min(1,PENCAP/Math.max(w,h),Math.sqrt(BLK_MAXPX/(w*h)));
+  if(k<1)return{w:Math.max(BLK_MIN,Math.round(w*k)),h:Math.max(BLK_MIN,Math.round(h*k)),cut:true};
+  return{w,h,cut:false};
+}
+/* 白紙を足した時、その範囲を、次の操作（どこかを押す・キーを打つ）まで、枠（点線）＋薄い市松で見せる（台帳Z-118）。
+   白紙は透明で見えないため。表示だけ：作品・Undo・保存には入れず、静止画の書き出し・PDF（hk・adjHQ中）には描かない。足すボタンからだけ（読み込み・デモでは出さない）。 */
+const BLK={a:null};let _blkPat=null;
+function addBlank(){
+  const d=blankDims(),a=addSpecial('d');
+  a.cv.width=d.w;a.cv.height=d.h;   /* 足したばかりの透明な絵なので、大きさを変えても失うものはない */
+  if(BLS.p!=='sq')a.name='白紙'+a.id+' '+(BLS.p==='px'?d.w+'×'+d.h:BLS.p+(BLS.land?'（横）':''));
+  BLK.a=a;
+  if(d.cut)note('大きすぎるので '+d.w+'×'+d.h+' px に縮めました（上限：長辺'+PENCAP+'px・合計'+BLK_MAXPX/1e6+'百万画素）');
+  return a}
+addEventListener('pointerdown',()=>{BLK.a=null},true);addEventListener('keydown',()=>{BLK.a=null},true);
+function drawBlankHint(l,S){
+  if(!_blkPat){const c=document.createElement('canvas');c.width=c.height=32;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,32,32);g.fillStyle='#c4c4d2';g.fillRect(0,0,16,16);g.fillRect(16,16,16,16);_blkPat=ctx.createPattern(c,'repeat')}
+  const iw=l.img.naturalWidth||l.img.width||1,ih=l.img.naturalHeight||l.img.height||1,k=Math.min(S/iw,S/ih),dw=iw*k,dh=ih*k;  /* 絵と同じ収め方（長辺＝S） */
+  ctx.save();ctx.globalAlpha=.4;ctx.fillStyle=_blkPat;ctx.fillRect(-dw/2,-dh/2,dw,dh);
+  ctx.globalAlpha=.9;ctx.strokeStyle='#ff2d87';ctx.lineWidth=2;ctx.setLineDash([8,5]);ctx.strokeRect(-dw/2,-dh/2,dw,dh);ctx.restore();
+}
 function attach(l){if(l.toType==='layer')return;const c=byId(l.to);if(!c)return;const u=S0*c.size;l.ox=(l.fx*W-c.fx*W)/u*c.face;l.oy=(l.fy*H-c.fy*H)/u;l.att=true}
 function detach(l){const c=byId(l.to);if(c){const u=S0*c.size;l.fx=(c.fx*W+l.ox*u*c.face)/W;l.fy=(c.fy*H+l.oy*u)/H}l.att=false}
 function del(){
@@ -94,6 +129,7 @@ function draw(l,x,y,m,kids){
   const self=()=>{if(!isVisible(l))return;ctx.save();sc();
     const tcs=l.maskTo?(l.toType==='layer'?AC.filter(x=>x!==l&&x.layerId===l.to):[byId(l.to)]):[],tl=tcs.filter(t=>t&&t.hasMask&&t.M);
     if(tl.length)maskedImg(l,S,tl);else img(l,S);
+    if(BLK.a===l&&!hk&&!adjHQ)drawBlankHint(l,S);  /* 白紙を足した直後の範囲表示（台帳Z-118） */
     if(showBounds)drawBounds(l,S);
     if(paint&&l===pc()){ctx.globalAlpha=.55;ctx.drawImage(l.mask,-S/2,-S/2,S,S)}
     if(adjShow&&l===sel&&(rngT==='fx'?l.hasLFM&&l.lfm:l.hasAdjM&&l.adjm)){ctx.save();ctx.globalAlpha=.22;ctx.drawImage(rngT==='fx'?l.lfm:l.adjm,-S/2,-S/2,S,S);ctx.restore()}

@@ -44,7 +44,7 @@
     <div class="row"><button id="bnd">境界線を表示</button><button id="clrfx">エフェクトを全消去</button></div>
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:inherit"></div>
     <div class="row"><span class="lab">大きさ</span><input id="sz" type="range" min="0.03" max="6" step="0.01" aria-label="大きさ"><b class="v" id="szv"></b></div>
-    <div class="row"><span class="lab">角度</span><input id="rt" type="range" min="-180" max="180" step="5" value="0" aria-label="止まったままの角度"><b class="v" id="rtv"></b></div>
+    <div class="row"><span class="lab">角度</span><input id="rt" type="range" min="-180" max="180" step="5" value="0" data-snap="-180,-90,0,90,180" aria-label="止まったままの角度"><b class="v" id="rtv"></b></div>
     <div class="row" id="fbRow" style="display:none"><span class="lab">重なり</span><button id="fbF">😀 手前</button><button id="fbB">🫥 奥</button></div>
     <div class="row"><button id="emTgl">🎨 サンプル絵文字を使う</button></div>
     <div class="row em" id="em" style="display:none"></div>
@@ -89,7 +89,7 @@
     <div class="row"><span class="lab">はやさ</span><input id="wh" type="range" min="0.1" max="8" step="0.1" value="1" aria-label="反復のはやさ"></div>
     <div class="row"><span class="lab">軌道</span><select id="wm" aria-label="歪みの中心の軌道"><option value="sin">往復</option><option value="circle">円</option><option value="eight">8の字</option></select></div>
     <div class="row"><span class="lab">距離</span><input id="wd" type="range" min="0" max="0.5" step="0.01" value="0" aria-label="軌道の大きさ（0で動かさない）"></div>
-    <div class="row"><span class="lab">方向</span><input id="wn" type="range" min="0" max="180" step="5" value="0" aria-label="往復の方向"></div>
+    <div class="row"><span class="lab">方向</span><input id="wn" type="range" min="0" max="180" step="5" value="0" data-snap="0,45,90,135,180" aria-label="往復の方向"></div>
     <div class="row"><button id="wu">選んだピンを削除</button><button id="wc">ピンを全部消す</button></div>
     <div class="note">ピンモード：画面をなぞる／タップでピンを置きます。「反復」で強さが波打ち、「軌道」で歪みの中心が往復・円運動します。</div>
     </div>
@@ -107,6 +107,9 @@
     <div class="note">なぞっている間は、補正後の線と形の名前（直線・曲線など）が仮表示され、指を離すと描かれます。強いほど強制的に整い、弱いと小さな動きが残ります（弱いほど、よく似た形の時だけ補正）。直線のつもりが曲線になる時は「直線補正」を上げるか「曲線補正」を下げてください（逆の時は反対）。</div></div>
     <div class="row"><span class="lab">文字</span><input id="tx" type="text" placeholder="文字を入力" aria-label="文字" style="flex:1;min-width:120px;font:inherit;padding:6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:inherit"><input id="tcl" type="color" value="#2b2140" aria-label="文字の色"><button class="pk" data-for="tcl" aria-label="スポイト">💧</button></div>
     <div class="row"><button id="addt">＋文字を置く</button><button id="addd">＋白紙レイヤー</button></div>
+    <div class="row" id="blrow"><span class="lab" style="min-width:0">白紙の大きさ</span><select id="blsz" aria-label="＋白紙で足す紙の大きさ（紙の規格）"><option value="A1">A1（594×841mm）</option><option value="A2">A2（420×594mm）</option><option value="A3">A3（297×420mm）</option><option value="A4" selected>A4（210×297mm）</option><option value="A5">A5（148×210mm）</option><option value="A6">A6（105×148mm）</option><option value="B1">B1（JIS 728×1030mm）</option><option value="B2">B2（JIS 515×728mm）</option><option value="B3">B3（JIS 364×515mm）</option><option value="B4">B4（JIS 257×364mm）</option><option value="B5">B5（JIS 182×257mm）</option><option value="B6">B6（JIS 128×182mm）</option><option value="sq">正方形 512×512</option><option value="px">px で指定…</option></select><button id="blor" aria-pressed="false" aria-label="紙の向き（縦・横）">縦</button><select id="bldpi" aria-label="紙の解像度（dpi）"><option value="72">72dpi</option><option value="150" selected>150dpi</option><option value="300">300dpi</option></select></div>
+    <div class="row" id="blcu" hidden><input id="blw" class="num" type="number" min="8" max="4096" step="1" inputmode="numeric" value="1024" aria-label="白紙の幅（px）" style="width:76px"><span>×</span><input id="blh" class="num" type="number" min="8" max="4096" step="1" inputmode="numeric" value="1024" aria-label="白紙の高さ（px）" style="width:76px"><span class="note" style="margin:0">px</span></div>
+    <div class="note" id="blnote"></div>
     <div class="note">ペンで描いた線は、通常の「消しゴム」で描いた分だけ消せます（元の絵は残ります）。元の絵そのものを消したいときは「消しゴム（画像ごと）」を使ってください。文字を選んでいる間は、入力欄の変更がその文字に反映されます。</div>
   </div>
 
@@ -185,7 +188,7 @@
     <div class="grp"><div class="gh">全体</div>
     <div class="row"><button id="pOn">物理を有効にする</button><button id="pFloor" class="on">床</button><button id="pWall" class="on">壁</button><button id="pCol" class="on">当たり判定</button></div>
     <div class="row"><span class="lab">重力</span><input id="pG" type="range" min="0" max="3" step="0.05" value="1" aria-label="重力の強さ（1で現実の重力相当。単位を設定していない場合は目安）"></div>
-    <div class="row"><span class="lab">重力の向き</span><input id="pGd" type="range" min="0" max="360" step="5" value="90" aria-label="重力の向き（90度＝下、0度＝右、270度＝上）"></div>
+    <div class="row"><span class="lab">重力の向き</span><input id="pGd" type="range" min="0" max="360" step="5" value="90" data-snap="0,90,180,270,360" aria-label="重力の向き（90度＝下、0度＝右、270度＝上）"></div>
     <div class="row"><span class="lab">時間の流れ</span><input id="pT" type="range" min="0" max="3" step="0.05" value="1" aria-label="物理の時間の流れの速さ（1で現実と同じ、0で静止）"><b class="v" id="pTv">×1</b></div>
     </div>
     <div class="grp alt"><div class="gh">単位（定規）</div>
