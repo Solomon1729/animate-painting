@@ -58,10 +58,13 @@ function recompose(l,rect){
 }
 function loc(l,q){const t=l.M.inverse().transformPoint(new DOMPoint(q.x*dpr,q.y*dpr)),S=S0*l.size;return{u:t.x/S+.5,v:t.y/S+.5}}
 const dirtyRect=(x0,y0,x1,y1,bs)=>{const r=bs/2+3;return{x:Math.min(x0,x1)-r,y:Math.min(y0,y1)-r,w:Math.abs(x1-x0)+2*r,h:Math.abs(y1-y0)+2*r}};
+/* 画面の点q→ペン層（base/pen）の画素。絵はS×Sの正方形の中に縦横比を保って収まる（img()）ので、長辺の画素数mを基準にする。
+   正方形なら u*bw, v*bh と同じ。非正方形で u*bw, v*bh とすると、短辺の方向でペン先が指からずれる（台帳Z-124、2026-10-11に確認：横長800×400で指の位置の約半分に寄っていた） */
+function penXY(l,q,bw,bh){const a=loc(l,q),m=Math.max(bw,bh);return{x:(a.u-.5)*m+bw/2,y:(a.v-.5)*m+bh/2}}
 function penAt(q,l){
   if(!l||!l.M)return;
   if(paOn()){paPush(q,l);return}  /* ペンの補正がオン：点列を溜め、指を離した時にpaCommitが描く（台帳Z-108） */
-  ensureBase(l);const bw=l._bw,bh=l._bh,a=loc(l,q),x=a.u*bw,y=a.v*bh,bs=pw*Math.min(bw,bh)/128,px=lp?lp.x:x,py=lp?lp.y:y;
+  ensureBase(l);const bw=l._bw,bh=l._bh,a=penXY(l,q,bw,bh),x=a.x,y=a.y,bs=pw*Math.min(bw,bh)/128,px=lp?lp.x:x,py=lp?lp.y:y;
   if(tool==='ieraser'){
     const base=l.base,g=base.getContext('2d');
     g.globalCompositeOperation='destination-out';g.globalAlpha=eraseStrength;g.lineWidth=bs;g.lineCap=g.lineJoin='round';

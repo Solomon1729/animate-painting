@@ -1282,10 +1282,13 @@ function recompose(l,rect){
 }
 function loc(l,q){const t=l.M.inverse().transformPoint(new DOMPoint(q.x*dpr,q.y*dpr)),S=S0*l.size;return{u:t.x/S+.5,v:t.y/S+.5}}
 const dirtyRect=(x0,y0,x1,y1,bs)=>{const r=bs/2+3;return{x:Math.min(x0,x1)-r,y:Math.min(y0,y1)-r,w:Math.abs(x1-x0)+2*r,h:Math.abs(y1-y0)+2*r}};
+/* 画面の点q→ペン層（base/pen）の画素。絵はS×Sの正方形の中に縦横比を保って収まる（img()）ので、長辺の画素数mを基準にする。
+   正方形なら u*bw, v*bh と同じ。非正方形で u*bw, v*bh とすると、短辺の方向でペン先が指からずれる（台帳Z-124、2026-10-11に確認：横長800×400で指の位置の約半分に寄っていた） */
+function penXY(l,q,bw,bh){const a=loc(l,q),m=Math.max(bw,bh);return{x:(a.u-.5)*m+bw/2,y:(a.v-.5)*m+bh/2}}
 function penAt(q,l){
   if(!l||!l.M)return;
   if(paOn()){paPush(q,l);return}  /* ペンの補正がオン：点列を溜め、指を離した時にpaCommitが描く（台帳Z-108） */
-  ensureBase(l);const bw=l._bw,bh=l._bh,a=loc(l,q),x=a.u*bw,y=a.v*bh,bs=pw*Math.min(bw,bh)/128,px=lp?lp.x:x,py=lp?lp.y:y;
+  ensureBase(l);const bw=l._bw,bh=l._bh,a=penXY(l,q,bw,bh),x=a.x,y=a.y,bs=pw*Math.min(bw,bh)/128,px=lp?lp.x:x,py=lp?lp.y:y;
   if(tool==='ieraser'){
     const base=l.base,g=base.getContext('2d');
     g.globalCompositeOperation='destination-out';g.globalAlpha=eraseStrength;g.lineWidth=bs;g.lineCap=g.lineJoin='round';
@@ -1342,28 +1345,30 @@ function paResample(p,n){
   }
   return o;
 }
+/* 直線。**始点（最初に触れた点）は動かさない**（2026-10-11ユーザー指摘）：始点Aを通る直線のうち、点列の二乗距離が最小のもの＝Aまわりの二次モーメントの主軸。
+   終点は、指の終点を線へ落とした位置。ぐるぐる回って終点が始点の近くに戻った時は、線が点に縮まないよう、いちばん遠くへ伸びた位置までにする */
 function paFitLine(P){
-  const n=P.length;let mx=0,my=0;for(const q of P){mx+=q.x;my+=q.y}mx/=n;my/=n;
-  let sxx=0,sxy=0,syy=0;for(const q of P){const dx=q.x-mx,dy=q.y-my;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy}
-  const th=.5*Math.atan2(2*sxy,sxx-syy),ux=Math.cos(th),uy=Math.sin(th);
-  const proj=q=>{const d=(q.x-mx)*ux+(q.y-my)*uy;return{x:mx+ux*d,y:my+uy*d}};
-  const A=proj(P[0]),B=proj(P[n-1]);
-  let e=0;for(const q of P){const d=-(q.x-mx)*uy+(q.y-my)*ux;e+=d*d}
-  return{rms:Math.sqrt(e/n),F:P.map(q=>({x:A.x+(B.x-A.x)*q.t,y:A.y+(B.y-A.y)*q.t}))};
+  const n=P.length,A=P[0];
+  let sxx=0,sxy=0,syy=0;for(const q of P){const dx=q.x-A.x,dy=q.y-A.y;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy}
+  const th=.5*Math.atan2(2*sxy,sxx-syy);let ux=Math.cos(th),uy=Math.sin(th);
+  let sum=0;for(const q of P)sum+=(q.x-A.x)*ux+(q.y-A.y)*uy;
+  if(sum<0){ux=-ux;uy=-uy}  /* 点列の大半がある側を向ける */
+  let mx=0,e=0;for(const q of P){const t=(q.x-A.x)*ux+(q.y-A.y)*uy,d=-(q.x-A.x)*uy+(q.y-A.y)*ux;if(t>mx)mx=t;e+=d*d}
+  const B=P[n-1];let te=(B.x-A.x)*ux+(B.y-A.y)*uy;if(te<.25*mx)te=mx;
+  return{rms:Math.sqrt(e/n),F:P.map(q=>({x:A.x+ux*te*q.t,y:A.y+uy*te*q.t}))};
 }
-/* 円・円弧（Kåsa法）。ほぼ直線（半径が極端に大きい）なら null。始点と終点が近く、ほぼ一周していれば閉じた円にする */
+/* 円・円弧。**始点を通る円**（始点は動かさない）で、中心は代数的な最小二乗（Kåsa法の始点固定版：始点を原点にすると、中心cについて線形になる）。
+   ほぼ直線（半径が極端に大きい）なら null。始点と終点が近く、ほぼ一周していれば閉じた円にする */
 function paFitArc(P,L){
-  const n=P.length;let mx=0,my=0;for(const q of P){mx+=q.x;my+=q.y}mx/=n;my/=n;
-  let suu=0,suv=0,svv=0,suuu=0,svvv=0,suvv=0,svuu=0;
-  for(const q of P){const u=q.x-mx,v=q.y-my;suu+=u*u;suv+=u*v;svv+=v*v;suuu+=u*u*u;svvv+=v*v*v;suvv+=u*v*v;svuu+=v*u*u}
-  const det=suu*svv-suv*suv;if(!isFinite(det)||Math.abs(det)<1e-9*(suu+svv)*(suu+svv))return null;
-  const b1=.5*(suuu+suvv),b2=.5*(svvv+svuu),uc=(b1*svv-b2*suv)/det,vc=(b2*suu-b1*suv)/det;
-  const cx=mx+uc,cy=my+vc,r=Math.sqrt(uc*uc+vc*vc+(suu+svv)/n);
+  const n=P.length,A=P[0];let sxx=0,sxy=0,syy=0,b1=0,b2=0;
+  for(const q of P){const u=q.x-A.x,v=q.y-A.y,d2=u*u+v*v;sxx+=u*u;sxy+=u*v;syy+=v*v;b1+=d2*u;b2+=d2*v}
+  const det=sxx*syy-sxy*sxy;if(!isFinite(det)||Math.abs(det)<1e-9*(sxx+syy)*(sxx+syy))return null;
+  const ux=(b1*syy-b2*sxy)/(2*det),vy=(b2*sxx-b1*sxy)/(2*det),cx=A.x+ux,cy=A.y+vy,r=Math.hypot(ux,vy);
   if(!(r>0)||!isFinite(r)||r>L*8)return null;
-  const ang=[Math.atan2(P[0].y-cy,P[0].x-cx)];
+  const ang=[Math.atan2(A.y-cy,A.x-cx)];
   for(let i=1;i<n;i++){const t=Math.atan2(P[i].y-cy,P[i].x-cx);let d=t-ang[i-1];while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;ang.push(ang[i-1]+d)}
   let sweep=ang[n-1]-ang[0];
-  if(Math.hypot(P[n-1].x-P[0].x,P[n-1].y-P[0].y)<.18*L&&Math.abs(sweep)>1.5*Math.PI)sweep=(sweep<0?-1:1)*2*Math.PI;
+  if(Math.hypot(P[n-1].x-A.x,P[n-1].y-A.y)<.18*L&&Math.abs(sweep)>1.5*Math.PI)sweep=(sweep<0?-1:1)*2*Math.PI;
   let e=0;for(const q of P){const d=Math.hypot(q.x-cx,q.y-cy)-r;e+=d*d}
   return{rms:Math.sqrt(e/n),F:P.map(q=>({x:cx+r*Math.cos(ang[0]+sweep*q.t),y:cy+r*Math.sin(ang[0]+sweep*q.t)}))};
 }
@@ -1402,7 +1407,7 @@ function paFitBez(P,cubic){
   let e=0;for(const q of P){let bd=1e18;for(const w of tab){const d=(q.x-w.x)**2+(q.y-w.y)**2;if(d<bd)bd=d}e+=bd}
   return{rms:Math.sqrt(e/n),F:P.map(q=>paBez(c,q.t))};
 }
-/* 点列raw（[{x,y}]）を補正する。戻り値＝{out:点列, kind:'raw'|'line'|'arc'|'quad'|'cubic', s:当てはめた形の強さ(0〜1)}
+/* 点列raw（[{x,y}]）を補正する。**始点は、どの形でも動かさない**（直線・円弧は始点を通る当てはめ、ベジェは始点終点を固定）。戻り値＝{out:点列, kind:'raw'|'line'|'arc'|'quad'|'cubic', s:当てはめた形の強さ(0〜1)}
    L,C＝直線・曲線の強さ（0〜100）、K＝曲線の種類。点が少ない・短すぎる時はそのまま（補正しない） */
 function paShape(raw,Ls,Cs,K){
   const L=paLen(raw);
@@ -1436,7 +1441,7 @@ function paCommit(){
   const S=PS;PS=null;if(!S||!S.l||!S.pts.length)return;
   const l=S.l;if(!l.M||!AC.includes(l))return;
   const sh=S.pts.length>=3?paShape(S.pts,PA.L,PA.C,PA.K):{out:S.pts,kind:'raw'};
-  ensureBase(l);const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=sh.out.map(q=>{const a=loc(l,q);return{x:a.u*bw,y:a.v*bh}}),inb=S.tool==='ieraser';
+  ensureBase(l);const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=sh.out.map(q=>penXY(l,q,bw,bh)),inb=S.tool==='ieraser';
   let g;
   if(inb){g=l.base.getContext('2d');g.globalCompositeOperation='destination-out';g.globalAlpha=eraseStrength}
   else{
@@ -1450,14 +1455,37 @@ function paCommit(){
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of P){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
   bumpBP(l,inb?1:0,inb?0:1);recompose(l,dirtyRect(x0,y0,x1,y1,bs));
 }
+/* ペンの仮表示を、**離したあと（ペン層の解像度）と同じ見た目**で出す（2026-10-11ユーザー指摘「直線がボケる」）。
+   画面の解像度でベクター描画すると、くっきり見えていた線が、離した瞬間にペン層の解像度（小さい画像・拡大表示で粗い）でボケて見える。
+   そこで、ペン層の座標系で線を描いた小さなCanvasを、画像と同じ変換で重ねる（同じ補間になる）。範囲が大きい・歪み中は、ベクターのまま。 */
+let _paSc=null;
+function paRasterPreview(l,o){
+  if(hasWarp(l)||!l.base||!l._bw)return false;
+  const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=o.map(q=>penXY(l,q,bw,bh)),r=bs/2+2;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of P){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
+  x0=Math.max(0,Math.floor(x0-r));y0=Math.max(0,Math.floor(y0-r));x1=Math.min(bw,Math.ceil(x1+r));y1=Math.min(bh,Math.ceil(y1+r));
+  const rw=x1-x0,rh=y1-y0;if(rw<=0||rh<=0)return true;  /* 画像の外だけをなぞっている（確定しても何も描かれない） */
+  if(rw*rh>4e6)return false;
+  if(!_paSc)_paSc=document.createElement('canvas');
+  if(_paSc.width<rw||_paSc.height<rh){_paSc.width=Math.max(_paSc.width,rw);_paSc.height=Math.max(_paSc.height,rh)}
+  const g=_paSc.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,rw,rh);
+  g.setTransform(1,0,0,1,-x0,-y0);g.lineWidth=bs;g.lineCap=g.lineJoin='round';g.strokeStyle=pcol;g.beginPath();g.moveTo(P[0].x,P[0].y);
+  if(P.length===1)g.lineTo(P[0].x,P[0].y);else for(let i=1;i<P.length;i++)g.lineTo(P[i].x,P[i].y);
+  g.stroke();
+  const S=S0*l.size,m=Math.max(bw,bh);
+  ctx.save();ctx.setTransform(l.M);ctx.scale(S/m,S/m);ctx.translate(x0-bw/2,y0-bh/2);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  ctx.drawImage(_paSc,0,0,rw,rh,0,0,rw,rh);ctx.restore();
+  return true;
+}
 /* なぞっている最中の仮表示（paintFrameから）。補正後の線＋どの形になったかのラベル */
 function paPreview(){
   const S=PS;if(!S)return;if(!drawing){PS=null;return}
   if(hk||adjHQ||!S.pts.length)return;const l=S.l;if(!l||!l.M)return;
-  const sh=S.pts.length>=3?paShape(S.pts,PA.L,PA.C,PA.K):{out:S.pts,kind:'raw',s:0},o=sh.out,w=paBrushPx(l);S.kind=sh.kind;S.s=sh.s;
+  const sh=S.pts.length>=3?paShape(S.pts,PA.L,PA.C,PA.K):{out:S.pts,kind:'raw',s:0},o=sh.out,w=paBrushPx(l);S.kind=sh.kind;S.s=sh.s;S.out=o;
+  const rast=S.tool==='pen'&&paRasterPreview(l,o);
   ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.lineCap=ctx.lineJoin='round';
   const path=()=>{ctx.beginPath();ctx.moveTo(o[0].x,o[0].y);if(o.length===1)ctx.lineTo(o[0].x,o[0].y);else for(let i=1;i<o.length;i++)ctx.lineTo(o[i].x,o[i].y)};
-  if(S.tool==='pen'){path();ctx.lineWidth=w;ctx.strokeStyle=pcol;ctx.stroke()}
+  if(S.tool==='pen'){if(!rast){path();ctx.lineWidth=w;ctx.strokeStyle=pcol;ctx.stroke()}}
   else{path();ctx.lineWidth=w+2;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();path();ctx.lineWidth=w;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.stroke()}
   const e=o[o.length-1],txt=PAN[sh.kind]+(sh.kind==='raw'?'':' '+Math.round(sh.s*100)+'%');
   ctx.font='bold 12px sans-serif';const tw=ctx.measureText(txt).width+12,tx=cl(e.x-tw/2,3,Math.max(3,W-tw-3)),ty=cl(e.y-50,3,Math.max(3,H-24));
