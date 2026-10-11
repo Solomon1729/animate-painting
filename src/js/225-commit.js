@@ -68,7 +68,7 @@ async function cmCommit(){
     const A=cmAdjusted(l);if(!A){note('確定できませんでした');return}
     pushUndo();
     if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);adjDirty(l);note('調整した'+(cov?'範囲':'絵')+'を、新しいレイヤー「'+nm+'」に切り離しました。元の絵は調整前に戻っています')}
-    else{cmSetImage(l,A);cmResetAdj(l);note('確定しました（取り消しは「元に戻す」）')}
+    else{cmSetImage(l,A);cmResetAdj(l);note('確定しました（取り消しは「元に戻す」）',1500)}  /* 成功の通知だけ1.5秒で自動的に消す（台帳Z-116） */
     paintFrame();adjUi();chips();
   }catch(e){note('確定できませんでした：'+((e&&e.message)||e))}
   finally{cmBusy=false}

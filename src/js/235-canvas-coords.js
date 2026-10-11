@@ -60,22 +60,32 @@ function noObjUi(on){
    ・指やペンの位置：触れている間と、離した後の一定時間。マウスは、カーソルが枠の上にある間ずっと
    ・オブジェクトの位置（中心）：ドラッグ中はずっと、離した後は一定時間。オフにすると両方消える
    座標のpx換算：作品の位置(W×H) × （キャンバスのpx ÷ W）。自動サイズの時は画面の枠のpx */
-const CRD={on:false,px:0,py:0,hold:false,hideAt:0,oa:null,ou:0,TOUCH_MS:1500,OBJ_MS:2000};
+const CRD={on:false,px:0,py:0,hold:false,hideAt:0,oa:null,ou:0,TOUCH_MS:1500,OBJ_MS:2000,st:null};
 const crdX=x=>Math.round(x*(DOC.w||W)/W),crdY=y=>Math.round(y*(DOC.h||H)/H);
-function crdHide(){$('crdp').hidden=true;$('crdo').hidden=true;CRD.hold=false;CRD.oa=null;CRD.hideAt=0}
+function crdHide(){$('crdp').hidden=true;$('crdo').hidden=true;CRD.hold=false;CRD.oa=null;CRD.hideAt=0;CRD.st=null}
 function crdPlace(el,x,y,anchor){  /* (x,y)＝キャンバス内の表示位置（CSS px）。ラベルは枠の外へ出ない */
   el.hidden=false;const lw=el.offsetWidth,lh=el.offsetHeight;
   let lx=x,ly=y;if(anchor==='c'){lx=x-lw/2}else if(anchor==='r'){lx=x-lw}
   lx=cl(lx,3,Math.max(3,W-lw-3));ly=cl(ly,3,Math.max(3,H-lh-3));
   el.style.transform='translate('+Math.round(cv.offsetLeft+lx)+'px,'+Math.round(cv.offsetTop+ly)+'px)';
 }
+/* 押している間は、1行目＝今の座標、2行目＝押した所（ドラッグ開始）の座標（台帳Z-114）。離したあとも、ラベルが消えるまで両方残る。
+   ✋・拡大中の空き地ドラッグ（パン）では、作品が指についてくるので「指の下の作品の点」は動かない。そのままだと止まって見えるので、3行目に指の移動量（作品のpx）を足す。 */
+const crdSgn=n=>(n>0?'+':'')+n;
 function crdPointer(e,pressed){
   if(!CRD.on||tgt)return;  /* オブジェクトをドラッグ中は、オブジェクトのラベルだけ出す */
-  const r=cv.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,p=wp({x:sx*W/r.width,y:sy*H/r.height}),el=$('crdp');
-  CRD.px=p.x;CRD.py=p.y;el.textContent='x '+crdX(p.x)+'  y '+crdY(p.y);
+  const r=cv.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,q={x:sx*W/r.width,y:sy*H/r.height},p=wp(q),el=$('crdp');
+  if(e.type==='pointerdown'){if(e.isPrimary)CRD.st={x:p.x,y:p.y,qx:q.x,qy:q.y}}
+  else if(!pressed)CRD.st=null;  /* 触れていない（マウスが動いているだけ・ペンのホバー）時は、開始座標を出さない */
+  let t='x '+crdX(p.x)+'  y '+crdY(p.y);
+  if(pressed&&CRD.st){
+    t+='\n始 x '+crdX(CRD.st.x)+'  y '+crdY(CRD.st.y);
+    if(pan){const k=(DOC.w||W)/W/Z.s;t+='\n移動 '+crdSgn(Math.round((q.x-CRD.st.qx)*k))+'  '+crdSgn(Math.round((q.y-CRD.st.qy)*k))}
+  }
+  CRD.px=p.x;CRD.py=p.y;el.textContent=t;
   const cursorLike=e.pointerType==='mouse'||(e.pointerType==='pen'&&!pressed);
   if(cursorLike){CRD.hold=true;CRD.hideAt=0;crdPlace(el,sx+14,sy+18)}
-  else{CRD.hold=true;CRD.hideAt=0;crdPlace(el,sx-30,sy-48)}  /* 指の上（指で隠れない所）に出す */
+  else{CRD.hold=true;CRD.hideAt=0;el.hidden=false;crdPlace(el,sx-30,sy-30-el.offsetHeight)}  /* 指の上（指で隠れない所）に出す。行が増えても下端を指から30px上に保つ */
 }
 cv.addEventListener('pointerdown',e=>crdPointer(e,true));
 cv.addEventListener('pointermove',e=>crdPointer(e,e.buttons>0||ptrs.has(e.pointerId)));

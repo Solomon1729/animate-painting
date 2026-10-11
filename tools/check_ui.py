@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""画面まわりの検査（台帳Z-95〜Z-99・Z-102・Z-106・Z-107。2026-10-10）。
+"""画面まわりの検査（台帳Z-95〜Z-99・Z-102・Z-106・Z-107、Z-88。2026-10-10〜11）。
 
 使い方：  python3 tools/check_ui.py <HTMLの絶対パス>
   ヘッドレスChromium（Playwright）で、実際のタッチ（CDPのInput.dispatchTouchEvent）とマウスを使って確かめる。
@@ -10,6 +10,7 @@
   3 一度ピンを置いた後などで、✋・ピンチが効かなくなる状態の自己修復（Z-102）
   4 オブジェクト0個で壊れない（Z-97）      5 キャンバスの大きさ・画像に合わせる・書き出しのpx・Undo・保存（Z-96・Z-98）
   6 座標の表示（Z-98）                     7 レイヤー／オブジェクトの並べ替え：すき間の点線（Z-99）
+  8 バーの縦距離スクラブ・吸着・ラベルの段分け（Z-88）
 """
 import sys, os, re, json, struct, zlib, tempfile
 from playwright.sync_api import sync_playwright
@@ -263,6 +264,33 @@ def g_coords(p):
     pg.wait_for_timeout(1800); chk('触れ続けている間は消えない', lab('crdp') is not None)
     s.touch('touchEnd'); pg.wait_for_timeout(500); chk('離した直後はまだ出ている', lab('crdp') is not None)
     pg.wait_for_timeout(1700); chk('離して約2秒後には消える', lab('crdp') is None)
+    # --- Z-114：ドラッグ中は、1行目＝今の座標（動く）・2行目＝開始座標（動かない）。離したあとも消えるまで残る。マウスは、押している間だけ2行目が出る
+    pg.evaluate("(()=>{while(AC.length){sel=AC[0];del()}if(sel!==null)setSel(null)})()"); pg.wait_for_timeout(150)
+    x0, y0 = c['l'] + 100, c['t'] + 60
+    s.touch('touchStart', x0, y0); pg.wait_for_timeout(80)
+    for i in range(1, 5): s.touch('touchMove', x0 + 30 * i, y0 + 15 * i); pg.wait_for_timeout(50)
+    ln = (lab('crdp') or '').split('\n')
+    chk('ドラッグ中：1行目＝今の座標（動く）', len(ln) >= 2 and near(xy(ln[0]), (round(220 * 640 / c['w']), round(120 * 640 / c['w'])), 3), ln[:1])
+    chk('ドラッグ中：2行目＝開始座標（動かない）', len(ln) >= 2 and ln[1].startswith('始') and near(xy(ln[1]), (round(100 * 640 / c['w']), round(60 * 640 / c['w'])), 3), ln[1:2])
+    chk('拡大していない時は、移動量の行は出ない', len(ln) == 2, len(ln))
+    s.touch('touchEnd'); pg.wait_for_timeout(300)
+    chk('離した直後も、今の座標と開始座標が残る', len((lab('crdp') or '').split('\n')) >= 2)
+    pg.wait_for_timeout(1700)
+    pg.evaluate("Z.s=2;Z.x=-100;Z.y=-40"); pg.wait_for_timeout(100)   # 拡大中の空き地ドラッグ＝パン：作品が指についてくるので、指の下の作品の点は動かない
+    x0, y0 = c['l'] + 30, c['t'] + 30
+    s.touch('touchStart', x0, y0); pg.wait_for_timeout(80)
+    for i in range(1, 4): s.touch('touchMove', x0 + 30 * i, y0 + 15 * i); pg.wait_for_timeout(50)
+    ln = (lab('crdp') or '').split('\n'); mv = re.search(r'移動 ([+-]?\d+)\s+([+-]?\d+)', ln[2] if len(ln) > 2 else '')
+    chk('パン中：指の下の作品の点は動かない（1行目＝2行目）', len(ln) >= 3 and xy(ln[0]) is not None and near(xy(ln[0]), xy(ln[1]), 1), ln[:2])
+    chk('パン中：3行目に指の移動量（作品のpx）が出る', bool(mv) and abs(int(mv.group(1)) - round(90 * 640 / c['w'] / 2)) <= 2 and abs(int(mv.group(2)) - round(45 * 640 / c['w'] / 2)) <= 2, ln[2:3])
+    s.touch('touchEnd'); pg.wait_for_timeout(200); pg.evaluate("Z.s=1;Z.x=Z.y=0"); pg.wait_for_timeout(1700)
+    pg.mouse.move(c['l'] + 150, c['t'] + 90); pg.wait_for_timeout(70)
+    chk('マウス：触れていない（ホバー）間は1行だけ', len((lab('crdp') or '').split('\n')) == 1)
+    pg.mouse.down(); pg.mouse.move(c['l'] + 210, c['t'] + 120, steps=3); pg.wait_for_timeout(70)
+    ln = (lab('crdp') or '').split('\n')
+    chk('マウス：押している間は2行目に開始座標', len(ln) == 2 and ln[1].startswith('始') and near(xy(ln[1]), (round(150 * 640 / c['w']), round(90 * 640 / c['w'])), 3), ln)
+    pg.mouse.up(); pg.mouse.move(c['l'] + 220, c['t'] + 130); pg.wait_for_timeout(70)
+    chk('マウス：離して動かすと、また1行だけ', len((lab('crdp') or '').split('\n')) == 1)
     pg.evaluate("(()=>{while(AC.length){sel=AC[0];del()}setSel(null);const a=add();a.fx=.5;a.fy=.5;a.size=1.6;setSel(a)})()"); pg.wait_for_timeout(250)
     pg.mouse.move(c['l'] + c['w'] / 2, c['t'] + c['h'] / 2); pg.mouse.down(); pg.mouse.move(c['l'] + c['w'] / 2 + 40, c['t'] + c['h'] / 2 + 10, steps=4); pg.wait_for_timeout(120)
     w = pg.evaluate("[AC[0].wx,AC[0].wy]")
@@ -338,9 +366,58 @@ def g_drag(p):
     chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
 
 
+# ---------------------------------------------------------------- 8 バーの縦距離スクラブ・吸着（Z-88）
+def g_slider(p):
+    print('--- 8 バーの縦距離スクラブ・吸着（Z-88）')
+    s = Sess(p); pg = s.pg
+    pg.evaluate("setTab('pl');setFrame('f')"); pg.wait_for_timeout(400)
+    pg.evaluate("document.getElementById('sz').scrollIntoView({block:'center'})"); pg.wait_for_timeout(900)
+    info = lambda i: pg.evaluate("(id)=>{const r=document.getElementById(id),b=r.getBoundingClientRect(),l=r.closest('.row').querySelector('.lab').getBoundingClientRect(),t=document.querySelector('.scrtip');return {v:+r.value,l:b.left,t:b.top,w:b.width,h:b.height,labTop:l.top,min:+r.min,max:+r.max,num:r._n&&+r._n.value,tip:t&&!t.hidden?t.textContent:null,sc:document.getElementById('tpb').scrollTop}}", i)
+    setv = lambda i, v: pg.evaluate("([id,v])=>{const r=document.getElementById(id);r.value=v;r.dispatchEvent(new Event('input',{bubbles:true}))}", [i, v])
+    def thumb(i):
+        a = info(i); return a['l'] + 10 + (a['v'] - a['min']) / (a['max'] - a['min']) * (a['w'] - 20), a['t'] + a['h'] / 2
+    px = lambda i: (info(i)['max'] - info(i)['min']) / (info(i)['w'] - 20)   # 1pxあたりの値
+    pg.evaluate("window.EV={i:0,c:0};const r=document.getElementById('rt');r.addEventListener('input',e=>{if(!e.isTrusted||true)EV.i++});r.addEventListener('change',()=>EV.c++)")
+    a = info('sz'); chk('ラベルがバーの上の段に分かれる', a['labTop'] < a['t'] - 2, (a['labTop'], a['t']))
+    chk('角度・重力の向きに吸着の値（90度刻み）が付いている', pg.evaluate("document.getElementById('rt').dataset.snap")=='-180,-90,0,90,180' and pg.evaluate("document.getElementById('pGd').dataset.snap")=='0,90,180,270,360')
+    # --- マウス
+    setv('rt', 0); x, y = thumb('rt'); k = px('rt')
+    pg.mouse.move(x, y); pg.mouse.down()
+    pg.mouse.move(x + 2, y); chk('ふつうの速さ：初期値0の近くでは0に吸い付く', info('rt')['v'] == 0, info('rt')['v'])
+    pg.mouse.move(x + 30, y); v1 = info('rt')['v']; chk('×1：30px→ほぼ30px×1pxあたりの値（5刻み）', abs(v1 - 30 * k) <= 5.01, (v1, 30 * k))
+    chk('値を動かした時、数値の窓も合う', info('rt')['num'] == v1, info('rt'))
+    pg.mouse.move(x + 30, y - 100); v2 = info('rt')['v']; chk('指を縦に離すだけでは値は飛ばない（段が変わる瞬間）', abs(v2 - v1) < 0.001, (v1, v2))
+    chk('細かい段では「微調整 ×1/20」の印が出る', (info('rt')['tip'] or '').startswith('微調整'), info('rt')['tip'])
+    pg.mouse.move(x + 60, y - 100); v3 = info('rt')['v']; chk('縦100px：30px動かしても×1/20（約%.1f）' % (30 * k * .05), abs((v3 - v2) - 30 * k * .05) <= .6, v3 - v2)
+    pg.mouse.move(x + 90, y - 220); v4 = info('rt')['v']; chk('縦220px：×1/100（30pxで約%.2f）' % (30 * k * .01), abs((v4 - v3) - 30 * k * .01) <= .35, v4 - v3)
+    pg.mouse.move(x + 75, y - 5); v5 = info('rt')['v']; chk('縦に戻すと、そこから×1で続く（値は飛ばない。−15px分だけ戻る）', abs((v4 - v5) - 15 * k) <= 5.01, (v4, v5))
+    pg.mouse.up(); chk('離すと印が消え、changeが1回', info('rt')['tip'] is None and pg.evaluate("EV.c") == 1, (info('rt')['tip'], pg.evaluate("EV.c")))
+    chk('inputが連続して出ていた', pg.evaluate("EV.i") >= 3, pg.evaluate("EV.i"))
+    # 90度の吸着：0から約88度の所まで動かす→90ちょうど。細かい段では吸わない
+    setv('rt', 0); x, y = thumb('rt'); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x + 88 / k, y)
+    chk('90度の近くでは90ちょうどに吸い付く', info('rt')['v'] == 90, info('rt')['v']); pg.mouse.up()
+    setv('rt', 89); x, y = thumb('rt'); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x, y - 100); pg.mouse.move(x + 3, y - 100)
+    v = info('rt')['v']; chk('細かい段では吸い付かない（89付近をゆっくり動く）', v != 90 and abs(v - 89) < 1, v); pg.mouse.up()
+    setv('rt', 0); pg.evaluate("document.getElementById('rt').focus()"); pg.keyboard.press('ArrowRight')
+    chk('キーボードの矢印は今までどおり効く', info('rt')['v'] > 0, info('rt')['v'])
+    # --- 軌道を直接押す（マウス）：その位置へ
+    setv('rt', 0); a = info('rt'); pg.mouse.move(a['l'] + 10 + .75 * (a['w'] - 20), a['t'] + a['h'] / 2); pg.mouse.down(); pg.mouse.up()
+    chk('マウスで軌道を押すと、その位置へ（約+90度）', abs(info('rt')['v'] - 90) <= 6, info('rt')['v'])
+    # --- タッチ（CDP）：つまみの上で始めた時だけ引き受ける
+    setv('sz', 1); sc0 = info('sz')['sc']; x, y = thumb('sz'); k = px('sz')
+    s.touch('touchStart', x, y); pg.wait_for_timeout(40)
+    for i in range(1, 5): s.touch('touchMove', x + 10 * i, y); pg.wait_for_timeout(30)
+    t1 = info('sz')['v']; chk('タッチ：×1で+40px', abs(t1 - (1 + 40 * k)) <= .06, (t1, 1 + 40 * k))
+    for i in range(1, 5): s.touch('touchMove', x + 40 + 5 * i, y + 60 * i); pg.wait_for_timeout(30)
+    t2 = info('sz')['v']; chk('タッチ：指を縦に離すと細かい（20pxで%.3f）' % (20 * k * .1), abs((t2 - t1) - 20 * k * .1) <= .06, t2 - t1)
+    chk('タッチで縦に動かしても、操作窓はスクロールしない', info('sz')['sc'] == sc0, (sc0, info('sz')['sc']))
+    s.touch('touchEnd'); pg.wait_for_timeout(120); chk('離すと印が消える', info('sz')['tip'] is None)
+    chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp, sync_playwright() as p:
-        for g in (g_tip, g_win, g_heal, g_zero, lambda p: g_canvas(p, tmp), g_coords, g_drag):
+        for g in (g_tip, g_win, g_heal, g_zero, lambda p: g_canvas(p, tmp), g_coords, g_drag, g_slider):
             try: g(p)
             except Exception as e: chk('検査が途中で止まった：' + getattr(g, '__name__', 'canvas'), False, str(e)[:200])
     print('OK %d  NG %d' % tuple(OKN))

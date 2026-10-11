@@ -50,7 +50,8 @@ function boxCv(l,o){
   if(l.hasBm&&l.blur>0&&l.bm&&FILT){
     g.drawImage(src,ox,oy,dw,dh);
     const bmc=document.createElement('canvas');bmc.width=W;bmc.height=H;drawMask(bmc.getContext('2d'),l.bm,W,H,!!l.wo);
-    const scale=dw/Math.max(1,S0*l.size),bc=document.createElement('canvas');bc.width=W;bc.height=H;const bg=bc.getContext('2d');
+    /* 画面では絵は S×S（S=S0*size）に縦横比を保って収まる＝長辺がS。倍率は長辺で測る（dwだけだと縦長の絵で短辺になり、ぼかしが弱くなる。台帳Z-111） */
+    const scale=Math.max(dw,dh)/Math.max(1,S0*l.size),bc=document.createElement('canvas');bc.width=W;bc.height=H;const bg=bc.getContext('2d');
     bg.filter='blur('+(l.blur*scale)+'px)';bg.drawImage(src,ox,oy,dw,dh);
     bg.filter='none';  /* 戻し忘れると、下のマスクの描画までぼかされ、g側のマスクと食い違って境界の不透明度が崩れる（台帳Z-76） */
     g.globalCompositeOperation='destination-out';g.drawImage(bmc,0,0);
