@@ -7,7 +7,7 @@
    ・IO.pushPull      ：穴の周りの色で、穴をなめらかに埋める（ピラミッドで粗い→細かいへ。Gortlerのpush-pull）
    ・IO.noise         ：粒状ノイズ（σ=1に正規化。埋めた所の質感づけ）
    ・IO.flood         ：自動選択（Lab色距離の連結成長）
-   ・IO.edge／IO.dijkstra ：マグネット（輪郭に吸い付く最短経路）
+   ・IO.edge／IO.dijkstra／IO.liveWire ：マグネット（輪郭に吸い付く最短経路）。liveWireは、始点から外へ広げる探索を「カーソルが指した所まで」だけ進め、動くたびに解き直さない（再開できる。台帳Z-151）
    ・IO.trace／IO.dp  ：二値マスクの外周を頂点列にする（枠の編集）／頂点列の間引き（Douglas–Peucker） */
 const IO={};
 /* 箱ぼかし（半径r＝窓2r+1）。端の画素は延長（外へにじまない）。a：Float32Array（画素×ch） */
@@ -114,7 +114,15 @@ IO.edge=function(gray,w,h){
     const gx=-at(x-1,y-1)-2*at(x-1,y)-at(x-1,y+1)+at(x+1,y-1)+2*at(x+1,y)+at(x+1,y+1),gy=-at(x-1,y-1)-2*at(x,y-1)-at(x+1,y-1)+at(x-1,y+1)+2*at(x,y+1)+at(x+1,y+1);
     o[y*w+x]=Math.hypot(gx,gy);
   }
-  const s=Float32Array.from(o).sort(),p=s[Math.min(s.length-1,Math.floor(s.length*.98))]||1;
+  /* 98パーセンタイルは、全画素を並べ替えず、度数（4096段）から求める（誤差は最大値の1/4096。並べ替えは数十万画素で数十〜数百msかかった。台帳Z-151） */
+  let mx=0;for(let i=0;i<o.length;i++)if(o[i]>mx)mx=o[i];
+  let p=1;
+  if(mx>0){
+    const B=4096,hist=new Uint32Array(B),sc=(B-1)/mx,tgt=Math.floor(o.length*.98);
+    for(let i=0;i<o.length;i++)hist[(o[i]*sc)|0]++;
+    let acc=0,bi=B-1;for(let b=0;b<B;b++){acc+=hist[b];if(acc>tgt){bi=b;break}}
+    p=(bi+1)/sc;if(!(p>0))p=1;
+  }
   for(let i=0;i<o.length;i++)o[i]=Math.min(1,o[i]/p);
   return o;
 };
@@ -136,6 +144,34 @@ IO.dijkstra=function(cost,w,h,s,e,allow){
   if(!done[e])return null;
   const path=[];for(let i=e;i!==-1;i=prev[i]){path.push(i);if(i===s)break}
   return path.reverse();
+};
+/* 再開できる最短経路（ライブワイヤー。台帳Z-151）。始点から外へ向かうダイクストラ法を、必要になった所までだけ進める。
+   カーソルが動くたびに解き直すと、始点から遠いほど重い（実測：1回30〜90ms）ので、一度広げた所は使い回し、動いた分だけ足す
+   （始点のほうへ戻る動きは広げ直し不要＝prevをたどるだけ）。cost＝画素に入る費用（Float32Array w*h）。作業領域は作った時に1回だけ確保する。
+   start(s)：始点sから広げ直す（作業領域を初期化）／run(e,ms)：画素eが確定するまで（msミリ秒を超えたら途中で）広げる。eが確定したらtrue／path(e)：確定したeまでの画素番号の列（sから）／has(e)：eが確定済みか。
+   重要：取り出した画素は、その場で近傍まで広げてから「確定したか」を見る（取り出しただけで近傍を広げずに止めると、次に再開した時、その画素の先が不正確になる）。 */
+IO.liveWire=function(cost,w,h){
+  const n=w*h,dist=new Float32Array(n),prev=new Int32Array(n),done=new Uint8Array(n);
+  let hk=new Float32Array(4096),hi=new Int32Array(4096),hn=0,src=-1;
+  const push=(k,i)=>{if(hn>=hk.length){const k2=new Float32Array(hk.length*2),i2=new Int32Array(hi.length*2);k2.set(hk);i2.set(hi);hk=k2;hi=i2}let c=hn++;while(c>0){const p=(c-1)>>1;if(hk[p]<=k)break;hk[c]=hk[p];hi[c]=hi[p];c=p}hk[c]=k;hi[c]=i};
+  const pop=()=>{const ri=hi[0],lk=hk[--hn],li=hi[hn];let c=0;while(true){let l=2*c+1;if(l>=hn)break;if(l+1<hn&&hk[l+1]<hk[l])l++;if(hk[l]>=lk)break;hk[c]=hk[l];hi[c]=hi[l];c=l}hk[c]=lk;hi[c]=li;return ri};
+  return{
+    start(s){dist.fill(Infinity);prev.fill(-1);done.fill(0);hn=0;src=s;dist[s]=0;push(0,s)},
+    run(e,ms){
+      const t0=ms<1e8?performance.now():0;let c=0;
+      while(hn>0&&!done[e]){
+        const i=pop();if(done[i])continue;done[i]=1;
+        const x=i%w,y=(i/w)|0,d=dist[i];
+        for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=h)continue;
+          for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx;if(xx<0||xx>=w)continue;const j=yy*w+xx;if(done[j])continue;
+            const nd=d+cost[j]*(dx&&dy?1.4142:1);if(nd<dist[j]){dist[j]=nd;prev[j]=i;push(nd,j)}}}
+        if(t0&&(++c&127)===0&&performance.now()-t0>ms)break;
+      }
+      return !!done[e];
+    },
+    has:e=>!!done[e],
+    path(e){const p=[];for(let i=e;i!==-1;i=prev[i]){p.push(i);if(i===src)break}return p.reverse()}
+  };
 };
 /* 二値マスク（Uint8Array。0以外が内側）の外周を、頂点列（[[x,y],…]。画素の中心）にする（Moore近傍追跡）。連結成分ごとに1本。
    minArea＝これ未満の画素数の成分は捨てる。戻り値＝配列（面積の大きい順）。穴は含めない（外周のみ）。

@@ -125,7 +125,7 @@ function selWand(l,q){
 /* ---- マグネット選択：輪郭に吸い付く最短経路でつないで囲む ---- */
 function magInit(l){
   const P=selPic(l);let M=SEL.mg;
-  if(!M||M.l!==l||M.P!==P)M=SEL.mg={l,P,cost:selCost(P),anchors:[],segs:[],live:null,cur:null,down:false};
+  if(!M||M.l!==l||M.P!==P)M=SEL.mg={l,P,cost:selCost(P),anchors:[],segs:[],live:null,cur:null,down:false,lw:null,lwS:-1,want:null,pending:false};
   return M;
 }
 /* 点(x,y)の近く（半径5画素）で、いちばん輪郭らしい所へ寄せる */
@@ -135,17 +135,39 @@ function magSnapPt(M,x,y){
   for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){const xx=cx+dx,yy=cy+dy;if(xx<0||yy<0||xx>=W||yy>=H)continue;const v=E[yy*W+xx]-Math.hypot(dx,dy)*.012;if(v>bv){bv=v;bx=xx;by=yy}}
   return{x:bx,y:by};
 }
-/* 点a→点bの最短経路（画素の整数座標）。2点の周りの窓の中だけ探す */
+/* ---- 経路の探索（台帳Z-151）----
+   カーソルが動くたびに、点a→bを最初から解き直す方式は、始点から遠いほど重かった（実測：1回30〜90ms。タッチは1イベントに複数点が来るので、その数だけ解き直していた）。
+   今は、最後の点から外へ広げる探索`M.lw`（IO.liveWire）を点ごとに1本だけ持ち、一度広げた所は使い回す。
+   ・カーソルの画素が変わった時だけ、行き先を`M.want`に記録して`M.pending`を立てる（ここでは探索しない）
+   ・実際の探索は、毎フレーム`magPump`（selOverlayの先頭）が、時間予算（MAG_MS）つきで進める。間に合わない間は、前の経路が出たまま
+   ・指を離す・閉じる時だけ、最後まで同期で進める（`magFlush(M,1e9)`）＝点の位置はいつも最終のカーソルで決まる */
+const MAG_MS=6;
+function magWire(M,a){
+  const P=M.P,s=a.y*P.W+a.x;
+  if(!M.lw)M.lw=IO.liveWire(M.cost,P.W,P.H);
+  if(M.lwS!==s){M.lw.start(s);M.lwS=s}
+  return M.lw;
+}
+function magFlush(M,ms){
+  if(!M.pending)return;
+  const a=M.anchors[M.anchors.length-1],q=M.want;
+  if(!a||!q){M.pending=false;return}
+  const W=M.P.W,lw=magWire(M,a),e=q.y*W+q.x;
+  if(lw.run(e,ms)){M.live=lw.path(e).map(i=>[i%W,(i/W)|0]);M.pending=false}
+}
+const magPump=M=>{if(M&&M.pending)magFlush(M,MAG_MS)};
+/* 点a→点bの最短経路（画素の整数座標）。最後まで解く（閉じる時・検査用）。aが今の探索の始点なら、広げた所を使い回す */
 function magPath(M,a,b){
-  const P=M.P,W=P.W,H=P.H,mg=Math.max(30,Math.round(Math.hypot(b.x-a.x,b.y-a.y)*.5)),x0=Math.max(0,Math.min(a.x,b.x)-mg),y0=Math.max(0,Math.min(a.y,b.y)-mg),x1=Math.min(W,Math.max(a.x,b.x)+mg+1),y1=Math.min(H,Math.max(a.y,b.y)+mg+1),w=x1-x0,h=y1-y0,sub=new Float32Array(w*h);
-  for(let j=0;j<h;j++)for(let i=0;i<w;i++)sub[j*w+i]=M.cost[(y0+j)*W+x0+i];
-  const path=IO.dijkstra(sub,w,h,(a.y-y0)*w+(a.x-x0),(b.y-y0)*w+(b.x-x0));
-  return path?path.map(i=>[x0+i%w,y0+((i/w)|0)]):[[a.x,a.y],[b.x,b.y]];
+  const W=M.P.W,lw=magWire(M,a),e=b.y*W+b.x;
+  lw.run(e,1e9);
+  return lw.path(e).map(i=>[i%W,(i/W)|0]);
 }
 const magPix=(M,q,l)=>{const a=penXY(l,q,M.P.W,M.P.H);return{x:Math.max(0,Math.min(M.P.W-1,Math.floor(a.x))),y:Math.max(0,Math.min(M.P.H-1,Math.floor(a.y))),in:a.x>=0&&a.y>=0&&a.x<M.P.W&&a.y<M.P.H}};
 function magLive(M,l,q){
-  if(!M.anchors.length){M.live=null;return}
-  const a=M.anchors[M.anchors.length-1],b=magPix(M,q,l);M.live=magPath(M,a,b);
+  if(!M.anchors.length){M.live=null;M.want=null;M.pending=false;return}
+  const b=magPix(M,q,l),w=M.want;
+  if(w&&w.x===b.x&&w.y===b.y)return;
+  M.want={x:b.x,y:b.y};M.pending=true;
 }
 function magClose(l){
   const M=SEL.mg;if(!M||M.l!==l||M.anchors.length<3){note('3点以上を置いてから閉じてください');return}
@@ -154,7 +176,7 @@ function magClose(l){
   const m=selFillPoly([poly],M.P.W,M.P.H),n=selCombine(l,m,M.P.W,M.P.H);
   SEL.mg=null;note(n?'囲みました（切り取り・コピーで使えます）':'囲んだ範囲が空でした',2200);
 }
-function magUndo(l){const M=SEL.mg;if(!M||M.l!==l||!M.anchors.length)return;M.anchors.pop();M.segs.pop();M.live=null}
+function magUndo(l){const M=SEL.mg;if(!M||M.l!==l||!M.anchors.length)return;M.anchors.pop();M.segs.pop();M.live=null;M.want=null;M.pending=false}
 
 /* ---- 輪郭の編集（頂点のドラッグ・追加・削除）。選択の外周を頂点列にして持ち、直したら塗り直す（穴は無くなる）---- */
 function polyLoad(l){
@@ -168,7 +190,8 @@ function polyRaster(){
   const S=SEL.pl;if(!S)return;
   selSet(S.l,selFillPoly(S.polys,S.P.W,S.P.H),S.P.W,S.P.H);
 }
-const selB2S=(l,P,x,y)=>{const k=S0*l.size/Math.max(P.W,P.H),t=l.M.transformPoint(new DOMPoint((x-P.W/2)*k,(y-P.H/2)*k));return{x:t.x/dpr,y:t.y/dpr}};
+/* 作業コピーの画素(x,y)→画面のCSS px。DOMPointを作らず、行列（2D）を直接掛ける（経路は数千点あり、毎フレーム変換するため。台帳Z-151。結果は`l.M.transformPoint`と同じ） */
+const selB2S=(l,P,x,y)=>{const k=S0*l.size/Math.max(P.W,P.H),m=l.M,u=(x-P.W/2)*k,v=(y-P.H/2)*k;return{x:(m.a*u+m.c*v+m.e)/dpr,y:(m.b*u+m.d*v+m.f)/dpr}};
 function polyDown(q,l){
   const S=SEL.pl;if(!S||S.l!==l){polyLoad(l);if(!SEL.pl)return false}
   const T=SEL.pl,P=T.P;let best=null,bd=1e9;
@@ -213,7 +236,8 @@ function selAt(q,l){
 function selEnd(ok){
   if(pmag){
     const M=SEL.mg;if(!M||!M.down)return;M.down=false;
-    if(!ok||!M.live||!M.cur){M.live=null;return}
+    if(ok)magFlush(M,1e9);  /* 離した時のカーソルまで、最後まで広げる（毎フレームの探索が間に合っていなくても、点は最終の位置で決まる） */
+    if(!ok||!M.live||!M.cur){M.live=null;M.want=null;M.pending=false;return}
     const l=M.l,end=M.live[M.live.length-1],fs=selB2S(l,M.P,M.anchors[0].x+.5,M.anchors[0].y+.5);
     /* 最初の点の近くで離したら、閉じる */
     /* 閉じる範囲：16px（指の大きさ）。ただし、小さく囲んでいる時は、囲みの大きさの2割まで（始点が近すぎて、途中で勝手に閉じるのを防ぐ） */
@@ -221,7 +245,7 @@ function selEnd(ok){
     const cr=Math.max(6,Math.min(16,.2*Math.hypot(bx1-bx0,by1-by0)));
     if(M.anchors.length>=3&&Math.hypot(M.cur.q.x-fs.x,M.cur.q.y-fs.y)<cr){M.live=null;magClose(l);return}
     const s=magSnapPt(M,end[0]+.5,end[1]+.5);
-    M.segs.push(M.live);M.anchors.push(s);M.live=null;return;
+    M.segs.push(M.live);M.anchors.push(s);M.live=null;M.want=null;M.pending=false;return;
   }
   if(ppoly){const T=SEL.pl;if(T&&T.drag){T.drag=null;polyRaster()}}
 }
@@ -236,8 +260,15 @@ function selOverlay(){
   const l=sel;if(!l||!l.M||hk||adjHQ)return;
   const sw=SEL.spl&&SEL.spl.l===l&&SEL.spl.n>0&&!l.wo,mg=pmag&&SEL.mg&&SEL.mg.l===l,pl=ppoly&&SEL.pl&&SEL.pl.l===l;
   if(!sw&&!mg&&!pl)return;
+  if(mg)magPump(SEL.mg);  /* 経路の探索を、このフレームの時間予算（MAG_MS）の分だけ進める（台帳Z-151） */
   ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
-  const line=(pts,col,lw,dash)=>{if(pts.length<2)return;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.setLineDash(dash||[]);ctx.lineWidth=lw+2;ctx.strokeStyle='rgba(0,0,0,.4)';ctx.stroke();ctx.lineWidth=lw;ctx.strokeStyle=col;ctx.stroke();ctx.setLineDash([])};
+  const line=(pts,col,lw,dash)=>lines([pts],col,lw,dash);
+  /* 複数の線を1回の描画にまとめる（区間ごとに2回strokeすると、点の多い輪郭で重い）。pts＝点列の配列 */
+  const lines=(list,col,lw,dash)=>{
+    ctx.beginPath();let any=false;
+    for(const pts of list){if(pts.length<2)continue;any=true;ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y)}
+    if(!any)return;
+    ctx.setLineDash(dash||[]);ctx.lineWidth=lw+2;ctx.strokeStyle='rgba(0,0,0,.4)';ctx.stroke();ctx.lineWidth=lw;ctx.strokeStyle=col;ctx.stroke();ctx.setLineDash([])};
   const sq=(p,r,col)=>{ctx.beginPath();ctx.rect(p.x-r,p.y-r,2*r,2*r);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=1.2;ctx.strokeStyle='rgba(0,0,0,.65)';ctx.stroke()};
   if(sw){
     const S=SEL.spl;if(!S.cvs)S.cvs=spPaint(S);const k=S0*l.size/Math.max(S.W,S.H);
@@ -247,7 +278,7 @@ function selOverlay(){
   }
   if(mg){
     const M=SEL.mg,P=M.P,toS=pts=>pts.map(p=>selB2S(l,P,p[0]+.5,p[1]+.5));
-    for(const s of M.segs)line(toS(s),'#33d6ff',2);
+    lines(M.segs.map(toS),'#33d6ff',2);
     if(M.live)line(toS(M.live),'#33d6ff',2,[5,4]);
     M.anchors.forEach((a,i)=>{const s=selB2S(l,P,a.x+.5,a.y+.5);sq(s,i===0?6:4,i===0?'#ffd23f':'#ffffff')});
   }
