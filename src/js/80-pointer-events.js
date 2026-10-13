@@ -44,7 +44,9 @@ function pdown(e){
   if(paint){if(blocked(sel))return;drawing=true;lp=null;stroke(q);return}
   if(adjMode){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;adjBrushAt(q,pl);return}
   if(pbox){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;boxStart=loc(pl,q);boxEnd={...boxStart};return}
+  if(pwand||pmag||ppoly){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);if(selDown(q,e,pl)){drawing=true;lp=null}return}  /* 自動選択・マグネット・輪郭編集（台帳Z-87・Z-145）。タップだけで済む操作は、ドラッグ状態にしない */
   if(bpn||psn){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;strokeSel(q);return}
+  if(tool==='clone'){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);if(rtDown(q,e,pl)){drawing=true;lp=null;strokeActor=pl}return}  /* 修整（台帳Z-86ほか）。基準点を決めただけのタップは、描かない */
   if(tool==='pen'||tool==='eraser'||tool==='ieraser'){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;strokeActor=pl;penAt(q,pl);return}
   if(tool==='warp'){const l=hit(p)||sel;if(blocked(l))return;if(l!==sel)setSel(l);if(wmode==='brush')wbDown(q,e,l);else if(wmode==='pick')pickPin(q,l);else startWarp(q,l);return}
   const h=hit(p);
@@ -66,13 +68,15 @@ cv.addEventListener('pointermove',e=>{
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
   if(rulerOn&&rulerPt){const p=wp(q);rulerPt.x1=p.x;rulerPt.y1=p.y;return}
-  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
+  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
 });
 let thist=[],firstDownTs=0;
 const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)pz0=null;
   if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){thist=[];up()}}}
 };
 function endAll(){
+  selEnd(drawing);  /* マグネットの点・輪郭の頂点を確定（223-selection.js） */
+  rtEnd(drawing);  /* 修整：スタンプはここで1回写す（2本指などで取り消された時は写さない） */
   paCommit();  /* ペンの補正：溜めた点列を、補正した線として一度に描く（台帳Z-108。補正オフなら何もしない） */
   if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
   if(rulerOn&&rulerPt){

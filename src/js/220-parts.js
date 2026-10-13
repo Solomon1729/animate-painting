@@ -16,12 +16,26 @@ function drawMask(g,m,W,H,square){
    ②縁だけを指定の幅でぼかす（f＝縁のぼかし。0＝くっきり＝約1pxだけなめらか、大きいほど広くぼける。MR=512基準で、出力が大きい絵では比例して太くする）。
    ぼかす時は画像の端を外へ延ばしてから行う（端まで囲んだ時に、端の1画素が半透明で取り残されるのを防ぐ。台帳Z-103）。 */
 let ptFeather=0;
+/* 切り取り・貼り付けの設定（UIの一時状態。作品・Undo・保存には入れない。台帳Z-91・Z-143・Z-144）
+   ptHole：切った跡の穴の空け方。'core'＝戻せる（縁のぼかし帯は穴にしない。貼ると元どおり。既定）／'soft'＝ぼかして切る（縁も薄く抜く。貼っても縁が薄い＝別の切り取りをきれいに見せたい時向け）
+   ptPos ：貼る位置。'auto'＝切り取りは元の位置・コピーは少しずらす／'orig'＝いつも元の位置／'off'＝いつも少しずらす
+   ptNow ：切り取り・コピーしたら置き場を経由せず、すぐ新しいオブジェクトにする（Z-91①）　ptInh：元の動き・物理も引き継ぐ（Z-91②）
+   ptFill：切った跡を周囲で埋める（Z-91④）。'off'／'smooth'＝なめらか／'grain'＝質感つき */
+let ptHole='core',ptPos='auto',ptNow=false,ptInh=false,ptFill='off';
+/* 縁の「ぼかしの帯」を除いた、完全に不透明な芯だけのマスク（穴用。Z-143）。貼る側の縁（a）と、残る側の縁（1）で、a＋(1−a)＝1になり、元の位置へ貼れば元どおりになる */
+function coreMask(pm){
+  const w=pm.width,h=pm.height,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});
+  g.drawImage(pm,0,0);const im=g.getImageData(0,0,w,h),d=im.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>=253?255:0;g.putImageData(im,0,0);return c;
+}
 function partMask(l,W,H,square,f){
   const L=Math.max(W,H),k=Math.min(1,2048/L),w=Math.max(1,Math.round(W*k)),h=Math.max(1,Math.round(H*k));
-  const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});
-  drawMask(g,l.sm,w,h,square);
+  let c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});
+  /* 自動選択・マグネット・輪郭編集の高解像度マスク`_hm`が最新（版smvが一致）なら、512pxのsmの代わりにそれを使う（細かい輪郭を失わない。台帳Z-87・Z-145） */
+  const hm=l._hm;if(hm&&hm.v===(l.smv|0)&&hm.sq===!!square&&l.hasSm)g.drawImage(hm.c,0,0,w,h);else drawMask(g,l.sm,w,h,square);
   const im=g.getImageData(0,0,w,h),d=im.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>=128?255:0;g.putImageData(im,0,0);
-  let o=c;
+  if(SEL.snap>0)c=selSnap(l,c,SEL.snap);
+  let o=c;  /* 輪郭に合わせる（粗い囲みを実画像の輪郭へ。台帳Z-87）。パーツと穴の両方で同じ処理＝ぴったり合う */
+  /* 縁は、ぼかし0でも約1pxだけなめらかにする（ギザギザを避ける）。穴は縁の「帯」を含まない芯だけ（coreMask）なので、貼り戻した時に帯の下に元の縁が残り、薄い線にならない（台帳Z-144） */
   if(FILT){
     const sg=Math.max(.8,f*.4*Math.max(w,h)/MR),m=Math.ceil(sg*3)+1,t=document.createElement('canvas');t.width=w+2*m;t.height=h+2*m;const tg=t.getContext('2d');
     tg.drawImage(c,m,m);
@@ -39,7 +53,8 @@ function boxCv(l,o){
   let W,H,dw,dh;
   if(l.wo){W=H=Math.max(1024,Math.round(Math.max(iw,ih)));dw=WX*W;dh=WX*H}
   else{
-    let L=o.full?Math.round(Math.max(iw,ih)):Math.min(1600,Math.max(512,Math.round(Math.max(iw,ih))));
+    /* o.L＝長辺をこの画素数にする（切り取り・コピー用。ペン層base/penと同じ解像度で作り、穴とパーツの解像度を揃える。台帳Z-144③） */
+    let L=o.L?Math.max(1,Math.round(o.L)):o.full?Math.round(Math.max(iw,ih)):Math.min(1600,Math.max(512,Math.round(Math.max(iw,ih))));
     if(o.full&&iw*ih>EXPORT_MAXPX)L=Math.max(1,Math.floor(L*Math.sqrt(EXPORT_MAXPX/(iw*ih))));
     const k=L/Math.max(iw,ih);W=Math.max(1,Math.round(iw*k));H=Math.max(1,Math.round(ih*k));dw=W;dh=H}
   let c;
@@ -61,26 +76,59 @@ function boxCv(l,o){
   }else{g.drawImage(src,ox,oy,dw,dh)}
   return{c,W,H};
 }
-function takePart(cut){
-  const l=sel;if(!l||!l.hasSm||!l.sm){note('先に「囲む」で、コピーしたい部分をなぞってください');return}
-  /* 色調整・質感を反映した絵から切り出す（台帳Z-83）。貼り付けたパーツが、元の見た目と同じ色になる。切り取りで元に残る側は元画像のままで、調整は引き続き上から掛かる（二重がけにならない） */
-  pushUndo();const{c,W,H}=boxCv(l,{adj:true}),g=c.getContext('2d');g.globalCompositeOperation='destination-in';g.drawImage(partMask(l,W,H,!!l.wo,ptFeather),0,0);
-  const d=g.getImageData(0,0,W,H).data;let x0=W,y0=H,x1=0,y1=0;
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(d[(y*W+x)*4+3]>8){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
-  if(x1<=x0||y1<=y0){note('囲んだ範囲に絵がありません');return}
+/* 絵lの、マスク（maskFn(幅,高さ)→W×Hのキャンバス。不透明度がパーツの形）で切り出したパーツ（クリップ記録）を作る。切り取り・コピー・分割（台帳Z-142）の共通部分。
+   色調整・質感を反映した絵から、ペン層（base/pen）と同じ解像度で切り出す（台帳Z-83・Z-144③）。パーツが空ならnull */
+function makeClip(l,maskFn,cut){
+  const wd=workDims(l),res=Math.max(wd.w,wd.h);
+  const{c,W:pw0,H:ph0}=boxCv(l,{adj:true,L:res}),g=c.getContext('2d');g.globalCompositeOperation='destination-in';g.drawImage(maskFn(pw0,ph0),0,0);
+  const d=g.getImageData(0,0,pw0,ph0).data;let x0=pw0,y0=ph0,x1=0,y1=0;
+  for(let y=0;y<ph0;y++)for(let x=0;x<pw0;x++)if(d[(y*pw0+x)*4+3]>2){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  if(x1<=x0||y1<=y0)return null;
   const w=x1-x0+1,h=y1-y0+1,p=document.createElement('canvas');p.width=w;p.height=h;p.getContext('2d').drawImage(c,x0,y0,w,h,0,0,w,h);
-  CL.unshift({c:p,W,H,size:l.size,src:l.name,sx:l.fx,sy:l.fy,ux:((x0+x1)/(2*W)-.5)*(W/Math.max(W,H))*l.size,uy:((y0+y1)/(2*H)-.5)*(H/Math.max(W,H))*l.size});if(CL.length>8)CL.pop();renderTray();
+  /* パーツの中心の位置（オブジェクトの中心からの、S0を単位にしたずれ）。歪み後の絵（wo）は枠がWX倍 */
+  const wxk=l.wo?WX:1,mx=Math.max(pw0,ph0),cx=(x0+x1+1)/2,cy=(y0+y1+1)/2,ux=(cx-pw0/2)/mx*l.size*wxk,uy=(cy-ph0/2)/mx*l.size*wxk;
+  /* 元の位置に貼れるよう、いまの見た目の位置（回転・反転・親についていく・ピボットを含む）を、描画行列l.Mから出しておく（台帳Z-144②） */
+  let fx0=null,fy0=null;
+  if(l.M){const t=l.M.transformPoint(new DOMPoint(ux*S0,uy*S0));fx0=((t.x/dpr-Z.x)/Z.s)/W;fy0=((t.y/dpr-Z.y)/Z.s)/H}
+  return{c:p,W:pw0,H:ph0,size:l.size,src:l.name,sx:l.fx,sy:l.fy,ux,uy,fx0,fy0,cut:!!cut,lid:l.layerId,rot:l.rot||0,face:l.face||1,wxk,
+    inh:ptInh,ch:ptInh&&l.ch?JSON.parse(JSON.stringify(l.ch)):null,phys:ptInh&&l.phys?JSON.parse(JSON.stringify(l.phys)):null,pv:l.pv||0,rr:l.rr||0};
+}
+function takePart(cut,o){
+  o=o||{};
+  const l=sel;if(!l||!l.hasSm||!l.sm){note('先に「囲む」で、コピーしたい部分をなぞってください');return}
+  pushUndo();
+  const k=makeClip(l,(pw0,ph0)=>partMask(l,pw0,ph0,!!l.wo,ptFeather),cut);
+  if(!k){note('囲んだ範囲に絵がありません');return}
+  CL.unshift(k);
+  if(CL.length>8)CL.pop();renderTray();
   if(cut){
-    ensureBase(l);const bw=l._bw,bh=l._bh,bg=l.base.getContext('2d'),pm=partMask(l,bw,bh,false,ptFeather);bg.globalCompositeOperation='destination-out';bg.drawImage(pm,0,0);bg.globalCompositeOperation='source-over';
+    ensureBase(l);const bw=l._bw,bh=l._bh,bg=l.base.getContext('2d');
+    /* 穴：'core'（既定）は、縁のぼかしの帯を穴にしない。貼る側の縁（不透明度a）の下に元の縁（1）が残るので、元の位置に貼ればa＋(1−a)＝1で元どおり戻る。
+       'soft'は縁も薄く抜く（従来。貼っても縁が薄くなるが、別の切り取り後をきれいに見せたい時に都合がよい。台帳Z-143） */
+    let pm=partMask(l,bw,bh,false,ptFeather);if(ptHole==='core')pm=coreMask(pm);
+    const a0=ptFill!=='off'?rtAlphaPlane(bg,bw,bh):null;  /* 穴を埋める時の、元の不透明度（もともと透明な所は埋めない） */
+    bg.globalCompositeOperation='destination-out';bg.drawImage(pm,0,0);bg.globalCompositeOperation='source-over';
     if(l.pen){const pgc=l.pen.getContext('2d');pgc.globalCompositeOperation='destination-out';pgc.drawImage(pm,0,0);pgc.globalCompositeOperation='source-over'}
     bumpBP(l,1,!!l.pen);recompose(l);
+    if(ptFill!=='off'){try{retouchFillHole(l,pm,ptFill,a0)}catch(e){note('切った跡を埋められませんでした')}}  /* 台帳Z-91④。穴は残したまま続ける */
   }
-  note(cut?'切り取って、画面の左下に置きました':'コピーして、画面の左下に置きました（サムネイルをタップで貼り付け）');
+  if(ptNow&&!o.noAuto)pasteClip(0,{noUndo:true});
+  else note(cut?'切り取って、画面の左下に置きました':'コピーして、画面の左下に置きました（サムネイルをタップで貼り付け）');
 }
-function pasteClip(i){
-  const k=CL[i];if(!k)return;pushUndo();
-  const R2=Math.max(k.W||512,k.H||512),id=++uid,a={id,sp:'p',name:'切り抜き'+id,img:k.c,fx:k.sx+k.ux*S0/W+.04,fy:k.sy+k.uy*S0/H+.04,size:Math.max(.04,k.size*Math.max(k.c.width,k.c.height)/R2),pv:0,face:1,rot:0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false};
-  AC.push(a);setSel(a);
+/* クリップ記録kから、新しいオブジェクトを作る（AC・選択には入れない）。o.off＝いつも少しずらす／o.exact＝元の位置に置く（分割などで強制） */
+function clipToObj(k,o){
+  o=o||{};
+  const R2=Math.max(k.W||512,k.H||512),id=++uid,exact=o.exact||(o.off?false:ptPos==='orig'||(ptPos==='auto'&&!!k.cut)),dd=exact?0:.04;
+  const fx=k.fx0!=null?k.fx0+dd:k.sx+k.ux*S0/W+dd,fy=k.fy0!=null?k.fy0+dd:k.sy+k.uy*S0/H+dd;
+  const a={id,sp:'p',name:o.name||'切り抜き'+id,img:k.c,fx,fy,size:Math.max(.04,k.size*(k.wxk||1)*Math.max(k.c.width,k.c.height)/R2),pv:0,face:k.face||1,rot:k.rot||0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false};
+  if(k.inh&&k.ch){a.ch=JSON.parse(JSON.stringify(k.ch));a.pv=k.pv||0;a.rr=k.rr||0;if(k.phys)a.phys=JSON.parse(JSON.stringify(k.phys))}  /* 動き・物理を引き継ぐ（台帳Z-91②） */
+  {const ly=k.lid!=null&&LAYERS.find(y=>y.id===k.lid);if(ly&&ly.visible&&!ly.locked)a.layerId=k.lid}  /* 元と同じレイヤーに置く（非表示・ロック中のレイヤーには置かない） */
+  return a;
+}
+/* 貼り付け。o.off＝いつも少しずらす／o.noUndo＝Undoを積まない（takePartの直後に自動で貼る時は、takePartのUndoに含める） */
+function pasteClip(i,o){
+  o=o||{};const k=CL[i];if(!k)return;if(!o.noUndo)pushUndo();
+  const a=clipToObj(k,o);AC.push(a);setSel(a);
 }
 function renderTray(){
   const t=$('tray');t.innerHTML='';
@@ -88,7 +136,7 @@ function renderTray(){
     th.width=th.height=S;th.getContext('2d').drawImage(k.c,(S-k.c.width*r)/2,(S-k.c.height*r)/2,k.c.width*r,k.c.height*r);
     im.src=th.toDataURL();im.alt='';b.title='タップで貼り付け（'+k.src+'より）';b.setAttribute('aria-label','切り抜きを貼り付け');b.append(im);b.onclick=()=>pasteClip(i);t.appendChild(b)});
 }
-$('pcopy').onclick=()=>takePart(false);$('pcut').onclick=()=>takePart(true);$('pdup').onclick=()=>{fillSel('sm','#ff5d8f');takePart(false);pasteClip(0)};
+$('pcopy').onclick=()=>takePart(false);$('pcut').onclick=()=>takePart(true);$('pdup').onclick=()=>{fillSel('sm','#ff5d8f');takePart(false,{noAuto:true});pasteClip(0,{off:true,noUndo:true})};
 /* このオブジェクトだけ保存（台帳Z-80で強化）：色調整・質感・ぼかし込み／原寸（上限EXPORT_MAXPX画素）／PNGまたはPDF。透明な余白は切り詰める */
 $('pexp').onclick=async()=>{
   const l=sel;if(!l)return;
@@ -108,4 +156,5 @@ $('pall').onclick=()=>fillSel('sm','#ff5d8f');
 $('pclr').onclick=()=>{if(sel.sm)sel.sm.getContext('2d').clearRect(0,0,MR,MR);sel.hasSm=false;sel.smv=(sel.smv||0)+1};
 $('pclrh').onclick=()=>{CL.length=0;renderTray()};
 $('ptf').oninput=e=>{ptFeather=+e.target.value;$('ptfv').textContent=ptFeather};
+$('pthl').onchange=e=>{ptHole=e.target.value};$('ppos').onchange=e=>{ptPos=e.target.value};$('ptnow').onchange=e=>{ptNow=e.target.checked};$('ptmo').onchange=e=>{ptInh=e.target.checked};$('ptfill').onchange=e=>{ptFill=e.target.value};
 $('pbs').oninput=e=>{brushParts=+e.target.value};

@@ -27,12 +27,14 @@ const LUM=[
   {id:'bpn',want:()=>!!bpn,ring:l=>maskBrushPx(l,brushBlur),zoom:3},
   {id:'adj',want:()=>!!adjMode,ring:l=>maskBrushPx(l,adjBrush),zoom:3},
   {id:'paint',want:()=>!!paint,ring:l=>maskBrushPx(l,brushMask),zoom:3},
-  {id:'pin',want:()=>tool==='warp'&&wmode!=='brush',ring:()=>0,zoom:4}
+  {id:'rt',want:()=>tool==='clone',ring:l=>rtBrushPx(l),zoom:4},
+  {id:'pin',want:()=>tool==='warp'&&wmode!=='brush',ring:()=>0,zoom:4},
+  {id:'sel',want:()=>!!(pwand||pmag||ppoly),ring:()=>0,zoom:3}  /* 自動選択・マグネット・輪郭編集（223-selection.js） */
 ];
 /* いま拡大窓の対象になる道具（表の最初に当てはまる行）。道具の優先は、pdownの分岐と同じ順（paint→adj→box→bpn/psn→ペン→歪み）に合わせる */
 function lupeMode(){
   if(!sel)return null;
-  const order=['paint','adj','box','bpn','psn','pen','pin'];
+  const order=['paint','adj','box','bpn','psn','pen','rt','pin'];
   for(const id of order){const m=LUM.find(x=>x.id===id);if(m&&m.want())return m}
   return LUM.find(m=>!order.includes(m.id)&&m.want())||null;  /* 表に足した道具 */
 }

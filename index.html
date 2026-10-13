@@ -243,8 +243,26 @@ body.noobj .tab:not([data-tab="bg"]){display:none!important}
   </div></div>
 
   <div class="tab" data-tab="dr">
-    <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button></div>
+    <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button><button data-tool="clone">🩹 修整</button></div>
     <div class="row" id="es2" style="display:none"><span class="lab">消し具合</span><input id="es" type="range" min="0.01" max="1" step="0.05" value="1" aria-label="消しゴムの強さ（弱いほど半透明に残る）"></div>
+    <div class="grp alt" id="rtBox" style="display:none"><div class="gh">🩹 修整（写す・直す・ぼかす）</div>
+    <div class="row"><span class="lab">方式</span><select id="rtMode" aria-label="修整の方式">
+      <optgroup label="写す（基準点が要る）"><option value="clone">クローン（そのまま写す）</option><option value="heal">ヒーリング（明るさを周りに合わせて写す）</option></optgroup>
+      <optgroup label="直す"><option value="fill">周りで埋める（インペイント）</option><option value="smooth">滑らかにする（輪郭は保つ）</option><option value="blur">ぼかす</option><option value="sharp">くっきりさせる</option><option value="smudge">指でにじませる（スマッジ）</option></optgroup>
+      <optgroup label="明るさ・色"><option value="dodge">覆い焼き（明るく）</option><option value="burn">焼き込み（暗く）</option><option value="vivid">スポンジ（鮮やかに）</option><option value="dull">スポンジ（くすませる）</option></optgroup></select></div>
+    <div class="row" id="rtStyleRow"><span class="lab">打ち方</span><select id="rtStyle" aria-label="写し方"><option value="brush">ブラシ（なぞって写す）</option><option value="stamp">スタンプ（押して離すと1回写す）</option></select></div>
+    <div id="rtSrcBox">
+      <div class="row"><button id="rtSet" aria-label="写し元にする所（基準点）を決める">📍 基準点を決める</button><span class="note" id="rtSrcSt" style="margin:0"></span></div>
+      <div class="row"><label class="opt"><input type="checkbox" id="rtAl" checked aria-label="基準点との位置のずれを、なぞり直しても保つ">基準を連続させる</label><label class="opt"><input type="checkbox" id="rtFlip" aria-label="写し元を左右反転する">左右反転</label></div>
+      <div class="row"><span class="lab">回転</span><input id="rtRot" type="range" min="-180" max="180" step="1" value="0" data-snap="0" aria-label="写し元の回転（度）"></div>
+      <div class="row"><span class="lab">拡大</span><input id="rtSc" type="range" min="25" max="400" step="1" value="100" data-snap="100" aria-label="写し元の拡大・縮小（%）"></div>
+    </div>
+    <div class="row"><span class="lab">太さ</span><input id="rtS" type="range" min="1" max="60" step="0.5" value="12" aria-label="修整ブラシの太さ"></div>
+    <div class="row"><span class="lab">硬さ</span><input id="rtH" type="range" min="0" max="100" step="1" value="50" aria-label="修整ブラシの硬さ（高いほど縁までしっかり効く）"></div>
+    <div class="row"><span class="lab">強さ</span><input id="rtG" type="range" min="1" max="100" step="1" value="100" aria-label="修整の強さ"></div>
+    <div class="row" id="rtPRow"><span class="lab" id="rtPL">なじませる幅</span><input id="rtP" type="range" min="0" max="100" step="1" value="35" aria-label="方式ごとの調整（なじませる幅・滑らかさなど）"></div>
+    <div class="row"><label class="opt"><input type="checkbox" id="rtSel" aria-label="切り抜きタブで囲んだ範囲の中だけに効かせる">囲んだ範囲の中だけ</label></div>
+    <div class="note" id="rtNote"></div></div>
     <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0.1" max="40" value="10" aria-label="ペンの太さ"></div>
     <div class="grp alt" id="paBox"><div class="gh">📏 ペンの補正（0＝補正なし。ペン・消しゴムに効く）</div>
     <div class="row"><span class="lab">直線補正</span><input id="paL" type="range" min="0" max="100" step="1" value="0" aria-label="直線補正の強さ（0で補正なし。強いほど、まっすぐな線に直します）"></div>
@@ -323,10 +341,30 @@ body.noobj .tab:not([data-tab="bg"]){display:none!important}
 
   <div class="tab" data-tab="pt">
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
+    <div class="row tools"><button data-tool="pwand" aria-label="自動選択（タップした所と近い色でつながった範囲を選ぶ）">✨ 自動選択</button><button data-tool="pmag" aria-label="マグネット選択（輪郭に吸い付く線で囲む）">🧲 マグネット</button><button data-tool="ppoly" aria-label="輪郭を編集（選んだ範囲の輪郭の頂点を動かして直す）">◇ 輪郭を編集</button></div>
     <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
+    <div class="grp alt" id="selBox"><div class="gh">選び方の設定</div>
+      <div class="row"><span class="lab">今の選択と</span><select id="selMode" aria-label="新しく選んだ範囲を、今の選択とどう合わせるか"><option value="new" selected>置き換える</option><option value="add">足す</option><option value="sub">引く</option></select></div>
+      <div class="row" id="selTolRow"><span class="lab">許容差</span><input id="selTol" type="range" min="2" max="60" step="1" value="18" aria-label="自動選択の許容差（大きいほど、違う色まで同じ範囲として選ぶ）"></div>
+      <div class="row" id="selMagRow"><button id="selMagCl">閉じて選ぶ</button><button id="selMagUn">1点戻す</button><button id="selMagCn">やり直し</button></div>
+      <div class="row" id="selPolRow"><button id="selPolDel">頂点を消す</button><button id="selPolRs">元の形に戻す</button></div>
+      <div class="row"><span class="lab">輪郭に合わせる</span><input id="selSnap" type="range" min="0" max="100" step="1" value="0" aria-label="粗い囲みを、絵の輪郭に合わせて直す強さ（0＝そのまま。切り取り・コピー・分割に効く）"></div>
+      <div class="note" id="selNote"></div></div>
     <div class="row"><span class="lab">縁のぼかし</span><input id="ptf" type="range" min="0" max="40" step="1" value="0" aria-label="切り抜きの縁のぼかし（0＝くっきり。大きいほど縁が自然にぼける。境界がはっきりしない絵向け）"><b class="v" id="ptfv">0</b></div>
+    <div class="row"><span class="lab">穴の空け方</span><select id="pthl" aria-label="切り取った跡の穴の空け方（戻せる＝縁のぼかしの帯は穴にしない。貼り戻すと元どおり／ぼかして切る＝縁も薄く抜く）"><option value="core" selected>戻せる（貼ると元どおり）</option><option value="soft">ぼかして切る（縁も薄く抜く）</option></select></div>
+    <div class="row"><span class="lab">貼る位置</span><select id="ppos" aria-label="貼り付ける位置"><option value="auto" selected>自動（切り取り＝元の位置／コピー＝少しずらす）</option><option value="orig">いつも元の位置</option><option value="off">いつも少しずらす</option></select></div>
+    <div class="row"><label class="opt"><input type="checkbox" id="ptnow" aria-label="切り取り・コピーしたら、置き場を経由せず、すぐ新しいオブジェクトにする">すぐ新しいオブジェクトにする</label><label class="opt"><input type="checkbox" id="ptmo" aria-label="元のオブジェクトの動き・物理の設定も引き継ぐ">動き・物理も引き継ぐ</label></div>
+    <div class="row"><span class="lab">切った跡</span><select id="ptfill" aria-label="切り取った跡を周囲で埋める"><option value="off" selected>穴のまま</option><option value="smooth">周囲でなめらかに埋める</option><option value="grain">周囲で質感つきに埋める</option></select></div>
      <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
     <div class="row"><button id="pexp">📷 このオブジェクトだけ保存（色調整・質感・ぼかし込み／原寸）</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
+    <div class="grp alt" id="spBox"><div class="gh">✂ 分割（1枚の絵を、いくつかの部分に分ける）</div>
+      <div class="row"><button id="spTake">囲んだ所を1つに分ける</button><button id="spUn">1つ戻す</button></div>
+      <div class="row"><button id="spDone">新しいレイヤーに作る</button><button id="spCn">やめる</button></div>
+      <div class="note" id="spNote"></div></div>
+    <div class="grp alt" id="gdBox"><div class="gh">🌗 明暗の傾き（ムラ取り・移植）</div>
+      <div class="row"><button id="gdFit">傾きを取る（選択範囲）</button><button id="gdSub">引く</button><button id="gdAdd">足す</button></div>
+      <div class="row"><span class="lab">強さ</span><input id="gdK" type="range" min="0" max="200" step="5" value="100" data-snap="100" aria-label="傾きを引く・足す強さ（100＝取った分ちょうど）"></div>
+      <div class="note" id="gdNote">選んだ範囲の明るさ・色のゆるやかな傾き（面）を取り出します。「引く」でムラ取り、別の範囲や別のオブジェクトで「足す」と移植になります。</div></div>
     <div class="note">選んでいるオブジェクトの一部を囲んでコピー（または切り取り）すると、画面の左下に置かれます。サムネイルをタップすると、新しいオブジェクトとして貼り付けます。「縁のぼかし」が0だと縁はくっきり、大きくすると縁がぼけて、境界がはっきりしない絵（毛・煙・髪など）でもなじみます。コピーと切り取りの両方に同じ幅で効くので、切り取った跡と切り抜きがぴったり合います。</div>
   </div>
 
@@ -806,7 +844,7 @@ function draw(l,x,y,m,kids){
     if(showBounds)drawBounds(l,S);
     if(paint&&l===pc()){ctx.globalAlpha=.55;ctx.drawImage(l.mask,-S/2,-S/2,S,S)}
     if(adjShow&&l===sel&&(rngT==='fx'?l.hasLFM&&l.lfm:l.hasAdjM&&l.adjm)){ctx.save();ctx.globalAlpha=.22;ctx.drawImage(rngT==='fx'?l.lfm:l.adjm,-S/2,-S/2,S,S);ctx.restore()}
-    if(l===sel){if(l.hasBm&&l.bm&&(bpn||showBm))ovl(l,S,'bm','bmv','#3b82f6');if((psn||pbox)&&l.hasSm&&l.sm)ovl(l,S,'sm','smv','#ff5d8f');if(pbox&&drawing&&boxStart&&boxEnd){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle='#ff5d8f';ctx.lineWidth=2;ctx.setLineDash([6,4]);const x=Math.min(boxStart.u,boxEnd.u)*S-.5*S,y=Math.min(boxStart.v,boxEnd.v)*S-.5*S,w=Math.abs(boxEnd.u-boxStart.u)*S,h=Math.abs(boxEnd.v-boxStart.v)*S;ctx.strokeRect(x,y,w,h);ctx.restore()}if(tool==='warp'&&!hk&&!adjHQ&&l.pins.length&&(wmode!=='brush'||showPins||wg||performance.now()<flashUntil))drawPins(l,S)}
+    if(l===sel){if(l.hasBm&&l.bm&&(bpn||showBm))ovl(l,S,'bm','bmv','#3b82f6');if((psn||pbox||pwand||pmag||ppoly)&&l.hasSm&&l.sm)ovl(l,S,'sm','smv','#ff5d8f');if(pbox&&drawing&&boxStart&&boxEnd){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle='#ff5d8f';ctx.lineWidth=2;ctx.setLineDash([6,4]);const x=Math.min(boxStart.u,boxEnd.u)*S-.5*S,y=Math.min(boxStart.v,boxEnd.v)*S-.5*S,w=Math.abs(boxEnd.u-boxStart.u)*S,h=Math.abs(boxEnd.v-boxStart.v)*S;ctx.strokeRect(x,y,w,h);ctx.restore()}if(tool==='warp'&&!hk&&!adjHQ&&l.pins.length&&(wmode!=='brush'||showPins||wg||performance.now()<flashUntil))drawPins(l,S)}
     ctx.restore()};
   kids?kids(self):self();
   ctx.restore();
@@ -845,7 +883,7 @@ function paintFrame(){
   roots.forEach(r=>{
     const ks=AC.filter(o=>o.att&&o.to===r.id),d=objD(r);
     P(r,ks.length?self=>{ks.filter(o=>!o.front).forEach(d);self();ks.filter(o=>o.front).forEach(d)}:undefined)});
-  drawBrushRing();paPreview();
+  drawBrushRing();paPreview();rtOverlay();selOverlay();sizeHintDraw();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
   if(rulerPt){
     ctx.save();ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
@@ -1073,7 +1111,9 @@ function pdown(e){
   if(paint){if(blocked(sel))return;drawing=true;lp=null;stroke(q);return}
   if(adjMode){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;adjBrushAt(q,pl);return}
   if(pbox){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;boxStart=loc(pl,q);boxEnd={...boxStart};return}
+  if(pwand||pmag||ppoly){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);if(selDown(q,e,pl)){drawing=true;lp=null}return}  /* 自動選択・マグネット・輪郭編集（台帳Z-87・Z-145）。タップだけで済む操作は、ドラッグ状態にしない */
   if(bpn||psn){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;strokeSel(q);return}
+  if(tool==='clone'){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);if(rtDown(q,e,pl)){drawing=true;lp=null;strokeActor=pl}return}  /* 修整（台帳Z-86ほか）。基準点を決めただけのタップは、描かない */
   if(tool==='pen'||tool==='eraser'||tool==='ieraser'){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;strokeActor=pl;penAt(q,pl);return}
   if(tool==='warp'){const l=hit(p)||sel;if(blocked(l))return;if(l!==sel)setSel(l);if(wmode==='brush')wbDown(q,e,l);else if(wmode==='pick')pickPin(q,l);else startWarp(q,l);return}
   const h=hit(p);
@@ -1095,13 +1135,15 @@ cv.addEventListener('pointermove',e=>{
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
   if(rulerOn&&rulerPt){const p=wp(q);rulerPt.x1=p.x;rulerPt.y1=p.y;return}
-  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
+  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
 });
 let thist=[],firstDownTs=0;
 const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)pz0=null;
   if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){thist=[];up()}}}
 };
 function endAll(){
+  selEnd(drawing);  /* マグネットの点・輪郭の頂点を確定（223-selection.js） */
+  rtEnd(drawing);  /* 修整：スタンプはここで1回写す（2本指などで取り消された時は写さない） */
   paCommit();  /* ペンの補正：溜めた点列を、補正した線として一度に描く（台帳Z-108。補正オフなら何もしない） */
   if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
   if(rulerOn&&rulerPt){
@@ -1359,6 +1401,200 @@ $('adjAll').onclick=()=>adjAll(true);$('adjClear').onclick=()=>adjAll(false);
 $('adjReset').onclick=adjReset;$('adjShow').onclick=()=>{adjShow=!adjShow;adjUi();paintFrame()};
 $('tx').oninput=e=>{if(sel.txt!=null){sel.txt=e.target.value;setImg(sel,txtCv(sel.txt,sel.tcol))}};
 $('tcl').oninput=e=>{if(sel.txt!=null){sel.tcol=e.target.value;setImg(sel,txtCv(sel.txt,sel.tcol))}};
+
+/* ===== 画素処理の部品（台帳Z-86・Z-87・Z-120・Z-138・Z-141・Z-142・Z-145）=====
+   Canvasにもアプリの状態にも触れない純粋関数。配列（Float32Array／Uint8Array／Uint8ClampedArray）と幅・高さだけで動くので、検査しやすい（tools/check_clone.py）。
+   使うのは、修整ブラシ（236-retouch.js）と選択（223-selection.js）、切り取り跡の穴埋め（220-parts.js）。
+   ・IO.box／IO.gauss ：ぼかし（端は延長）。複数チャンネル（ch）の並びは画素ごとに交互（RGBRGB…）
+   ・IO.guided        ：ガイデッドフィルタ（He 2010）。輪郭を保つぼかし（滑らかにする）に使う（輪郭吸着は、囲みが輪郭から離れていると働かないので、223-selection.jsの`selSnap`は色の局所平均による分類にした）
+   ・IO.pushPull      ：穴の周りの色で、穴をなめらかに埋める（ピラミッドで粗い→細かいへ。Gortlerのpush-pull）
+   ・IO.noise         ：粒状ノイズ（σ=1に正規化。埋めた所の質感づけ）
+   ・IO.flood         ：自動選択（Lab色距離の連結成長）
+   ・IO.edge／IO.dijkstra ：マグネット（輪郭に吸い付く最短経路）
+   ・IO.trace／IO.dp  ：二値マスクの外周を頂点列にする（枠の編集）／頂点列の間引き（Douglas–Peucker） */
+const IO={};
+/* 箱ぼかし（半径r＝窓2r+1）。端の画素は延長（外へにじまない）。a：Float32Array（画素×ch） */
+IO.box=function(a,w,h,ch,r){
+  r=Math.max(0,Math.round(r));if(r<1)return a.slice();
+  const t=new Float32Array(a.length),o=new Float32Array(a.length),inv=1/(2*r+1);
+  for(let y=0;y<h;y++){const row=y*w*ch;
+    for(let c=0;c<ch;c++){
+      let s=0;for(let k=-r;k<=r;k++){const xx=k<0?0:k>=w?w-1:k;s+=a[row+xx*ch+c]}
+      t[row+c]=s*inv;
+      for(let x=1;x<w;x++){const ad=x+r>=w?w-1:x+r,sb=x-r-1<0?0:x-r-1;s+=a[row+ad*ch+c]-a[row+sb*ch+c];t[row+x*ch+c]=s*inv}
+    }}
+  for(let x=0;x<w;x++){
+    for(let c=0;c<ch;c++){
+      let s=0;for(let k=-r;k<=r;k++){const yy=k<0?0:k>=h?h-1:k;s+=t[(yy*w+x)*ch+c]}
+      o[x*ch+c]=s*inv;
+      for(let y=1;y<h;y++){const ad=y+r>=h?h-1:y+r,sb=y-r-1<0?0:y-r-1;s+=t[(ad*w+x)*ch+c]-t[(sb*w+x)*ch+c];o[(y*w+x)*ch+c]=s*inv}
+    }}
+  return o;
+};
+/* ガウスぼかしの近似＝箱ぼかし3回（窓の大きさは標準の式） */
+IO.boxSizes=function(sigma,n){const wi=Math.sqrt(12*sigma*sigma/n+1);let wl=Math.floor(wi);if(wl%2===0)wl--;const wu=wl+2,m=Math.round((12*sigma*sigma-n*wl*wl-4*n*wl-3*n)/(-4*wl-4)),s=[];for(let i=0;i<n;i++)s.push(i<m?wl:wu);return s};
+IO.gauss=function(a,w,h,ch,sigma){if(!(sigma>=.5))return a.slice();let o=a;for(const sz of IO.boxSizes(sigma,3))o=IO.box(o,w,h,ch,(sz-1)/2);return o===a?a.slice():o};
+/* ガイデッドフィルタ：I＝ガイド（0〜1のグレー。Float32Array w*h）、p＝入力（同じ大きさ。1チャンネル）、r＝窓の半径、eps＝縁をどれだけ守るか（小さいほど輪郭を保つ）。戻り値は同じ大きさ */
+IO.guided=function(I,p,w,h,r,eps){
+  const n=w*h,Ip=new Float32Array(n),II=new Float32Array(n);
+  for(let i=0;i<n;i++){Ip[i]=I[i]*p[i];II[i]=I[i]*I[i]}
+  const mI=IO.box(I,w,h,1,r),mp=IO.box(p,w,h,1,r),mIp=IO.box(Ip,w,h,1,r),mII=IO.box(II,w,h,1,r),a=new Float32Array(n),b=new Float32Array(n);
+  for(let i=0;i<n;i++){const v=mII[i]-mI[i]*mI[i],cv=mIp[i]-mI[i]*mp[i];a[i]=cv/(v+eps);b[i]=mp[i]-a[i]*mI[i]}
+  const ma=IO.box(a,w,h,1,r),mb=IO.box(b,w,h,1,r),q=new Float32Array(n);
+  for(let i=0;i<n;i++)q[i]=ma[i]*I[i]+mb[i];
+  return q;
+};
+/* 穴埋め（push-pull）。px＝RGBA（Uint8ClampedArray）、known＝Uint8Array（1＝色が分かっている画素、0＝穴）。
+   戻り値＝RGB（Float32Array w*h*3。分かっている画素はそのまま、穴は周りの色からなめらかに補う）。分かっている画素が1つも無ければnull。 */
+IO.pushPull=function(px,known,w,h){
+  const lv=[],n=w*h,C=new Float32Array(n*3),A=new Float32Array(n);
+  for(let i=0;i<n;i++)if(known[i]){A[i]=1;C[i*3]=px[i*4];C[i*3+1]=px[i*4+1];C[i*3+2]=px[i*4+2]}
+  lv.push({C,A,w,h});let cw=w,ch=h;
+  while(cw>1||ch>1){
+    const nw=(cw+1)>>1,nh=(ch+1)>>1,nC=new Float32Array(nw*nh*3),nA=new Float32Array(nw*nh),pc=lv[lv.length-1];
+    for(let y=0;y<nh;y++)for(let x=0;x<nw;x++){
+      let sa=0,s0=0,s1=0,s2=0,cnt=0;
+      for(let dy=0;dy<2;dy++){const yy=2*y+dy;if(yy>=ch)continue;for(let dx=0;dx<2;dx++){const xx=2*x+dx;if(xx>=cw)continue;cnt++;const i=yy*cw+xx,a=pc.A[i];if(a>0){sa+=a;s0+=a*pc.C[i*3];s1+=a*pc.C[i*3+1];s2+=a*pc.C[i*3+2]}}}
+      const j=y*nw+x;if(sa>0){nC[j*3]=s0/sa;nC[j*3+1]=s1/sa;nC[j*3+2]=s2/sa}nA[j]=sa/cnt;
+    }
+    lv.push({C:nC,A:nA,w:nw,h:nh});cw=nw;ch=nh;
+  }
+  if(lv[lv.length-1].A[0]<=0)return null;
+  for(let k=lv.length-2;k>=0;k--){
+    const f=lv[k],c=lv[k+1],cwid=c.w,chei=c.h;
+    for(let y=0;y<f.h;y++){
+      const sy=(y+.5)/2-.5,y0=Math.floor(sy),ty=sy-y0,ya=y0<0?0:y0>=chei?chei-1:y0,yb=y0+1<0?0:y0+1>=chei?chei-1:y0+1;
+      for(let x=0;x<f.w;x++){
+        const i=y*f.w+x,a=f.A[i];if(a>=1)continue;
+        const sx=(x+.5)/2-.5,x0=Math.floor(sx),tx=sx-x0,xa=x0<0?0:x0>=cwid?cwid-1:x0,xb=x0+1<0?0:x0+1>=cwid?cwid-1:x0+1;
+        const i00=(ya*cwid+xa)*3,i10=(ya*cwid+xb)*3,i01=(yb*cwid+xa)*3,i11=(yb*cwid+xb)*3;
+        for(let q=0;q<3;q++){
+          const up=(c.C[i00+q]*(1-tx)+c.C[i10+q]*tx)*(1-ty)+(c.C[i01+q]*(1-tx)+c.C[i11+q]*tx)*ty;
+          f.C[i*3+q]=a*f.C[i*3+q]+(1-a)*up;
+        }
+      }
+    }
+  }
+  return lv[0].C;
+};
+/* 乱数（mulberry32） */
+IO.rng=function(seed){let t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;let r=Math.imul(t^(t>>>15),1|t);r^=r+Math.imul(r^(r>>>7),61|r);return((r^(r>>>14))>>>0)/4294967296}};
+/* 粒状ノイズ（平均0・標準偏差1。sigma＝粒の大きさ。0.7前後が自然な写真の粒）。戻り値Float32Array w*h */
+IO.noise=function(w,h,seed,sigma){
+  const R=IO.rng(seed||1),n=w*h,a=new Float32Array(n);
+  for(let i=0;i<n;i++){const u=Math.max(1e-9,R()),v=R();a[i]=Math.sqrt(-2*Math.log(u))*Math.cos(6.283185307*v)}
+  const b=sigma>=.5?IO.gauss(a,w,h,1,sigma):a;let m=0,s=0;for(let i=0;i<n;i++)m+=b[i];m/=n;for(let i=0;i<n;i++){const d=b[i]-m;s+=d*d}s=Math.sqrt(s/n)||1;
+  const o=new Float32Array(n);for(let i=0;i<n;i++)o[i]=(b[i]-m)/s;return o;
+};
+/* 自動選択：種の画素の色に近い（Lab色距離≦tol）連結領域を広げる。lab＝Float32Array（w*h*3）。戻り値{m:Uint8Array（1＝選択）, n:画素数}。
+   基準色は種の周り3×3のメドイド（1画素の傷に引きずられず、細い線も外さない）。maxN＝上限（超えたら打ち切り＝画面全体に広がる事故を防ぐ。省略可） */
+IO.flood=function(lab,w,h,sx,sy,tol,maxN){
+  sx=Math.max(0,Math.min(w-1,sx|0));sy=Math.max(0,Math.min(h-1,sy|0));
+  /* 基準色：種の周り3×3のうち、他の8画素への距離の合計がいちばん小さい画素（メドイド）の色。平均だと、細い線の上をタップした時に周りの地の色が混ざって基準が外れる */
+  const cs=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const x=sx+dx,y=sy+dy;if(x<0||y<0||x>=w||y>=h)continue;const i=(y*w+x)*3;cs.push([lab[i],lab[i+1],lab[i+2]])}
+  let bi=0,bd=Infinity;for(let a=0;a<cs.length;a++){let s=0;for(let b=0;b<cs.length;b++){const d0=cs[a][0]-cs[b][0],d1=cs[a][1]-cs[b][1],d2=cs[a][2]-cs[b][2];s+=Math.sqrt(d0*d0+d1*d1+d2*d2)}if(s<bd){bd=s;bi=a}}
+  const r0=cs[bi][0],r1=cs[bi][1],r2=cs[bi][2];const t2=tol*tol,m=new Uint8Array(w*h),lim=maxN||w*h;let n=0;
+  const ok=i=>{const j=i*3,d0=lab[j]-r0,d1=lab[j+1]-r1,d2=lab[j+2]-r2;return d0*d0+d1*d1+d2*d2<=t2};
+  const st=[sx,sy];
+  while(st.length&&n<lim){
+    const y=st.pop(),x0=st.pop();let x=x0;
+    if(m[y*w+x]||!ok(y*w+x))continue;
+    while(x>0&&!m[y*w+x-1]&&ok(y*w+x-1))x--;
+    let up=false,dn=false;
+    while(x<w&&!m[y*w+x]&&ok(y*w+x)){
+      m[y*w+x]=1;n++;
+      if(y>0){const k=(y-1)*w+x,v=!m[k]&&ok(k);if(v&&!up){st.push(x,y-1);up=true}else if(!v)up=false}
+      if(y<h-1){const k=(y+1)*w+x,v=!m[k]&&ok(k);if(v&&!dn){st.push(x,y+1);dn=true}else if(!v)dn=false}
+      x++;
+    }
+  }
+  return{m,n};
+};
+/* 勾配の強さ（0〜1）：グレー（0〜1）を軽くぼかしてSobel。98パーセンタイルで正規化（外れ値に引きずられない） */
+IO.edge=function(gray,w,h){
+  const g=IO.gauss(gray,w,h,1,1),o=new Float32Array(w*h),at=(x,y)=>g[(y<0?0:y>=h?h-1:y)*w+(x<0?0:x>=w?w-1:x)];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const gx=-at(x-1,y-1)-2*at(x-1,y)-at(x-1,y+1)+at(x+1,y-1)+2*at(x+1,y)+at(x+1,y+1),gy=-at(x-1,y-1)-2*at(x,y-1)-at(x+1,y-1)+at(x-1,y+1)+2*at(x,y+1)+at(x+1,y+1);
+    o[y*w+x]=Math.hypot(gx,gy);
+  }
+  const s=Float32Array.from(o).sort(),p=s[Math.min(s.length-1,Math.floor(s.length*.98))]||1;
+  for(let i=0;i<o.length;i++)o[i]=Math.min(1,o[i]/p);
+  return o;
+};
+/* 最短経路（ダイクストラ法。8近傍）。cost＝画素に入る費用（Float32Array w*h）、s・e＝始点・終点の画素番号、allow＝通ってよい画素（Uint8Array。省略可＝全部）。
+   戻り値＝画素番号の配列（sからeまで）。たどり着けなければnull */
+IO.dijkstra=function(cost,w,h,s,e,allow){
+  const n=w*h,dist=new Float32Array(n).fill(Infinity),prev=new Int32Array(n).fill(-1),done=new Uint8Array(n);
+  let hk=new Float32Array(1024),hi=new Int32Array(1024),hn=0;
+  const push=(k,i)=>{if(hn>=hk.length){const k2=new Float32Array(hk.length*2),i2=new Int32Array(hi.length*2);k2.set(hk);i2.set(hi);hk=k2;hi=i2}let c=hn++;while(c>0){const p=(c-1)>>1;if(hk[p]<=k)break;hk[c]=hk[p];hi[c]=hi[p];c=p}hk[c]=k;hi[c]=i};
+  const pop=()=>{const ri=hi[0],lk=hk[--hn],li=hi[hn];let c=0;while(true){let l=2*c+1;if(l>=hn)break;if(l+1<hn&&hk[l+1]<hk[l])l++;if(hk[l]>=lk)break;hk[c]=hk[l];hi[c]=hi[l];c=l}hk[c]=lk;hi[c]=li;return ri};
+  dist[s]=0;push(0,s);
+  while(hn>0){
+    const i=pop();if(done[i])continue;done[i]=1;if(i===e)break;
+    const x=i%w,y=(i/w)|0,d=dist[i];
+    for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=h)continue;
+      for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx;if(xx<0||xx>=w)continue;const j=yy*w+xx;if(done[j]||(allow&&!allow[j]))continue;
+        const nd=d+cost[j]*(dx&&dy?1.4142:1);if(nd<dist[j]){dist[j]=nd;prev[j]=i;push(nd,j)}}}
+  }
+  if(!done[e])return null;
+  const path=[];for(let i=e;i!==-1;i=prev[i]){path.push(i);if(i===s)break}
+  return path.reverse();
+};
+/* 二値マスク（Uint8Array。0以外が内側）の外周を、頂点列（[[x,y],…]。画素の中心）にする（Moore近傍追跡）。連結成分ごとに1本。
+   minArea＝これ未満の画素数の成分は捨てる。戻り値＝配列（面積の大きい順）。穴は含めない（外周のみ）。
+   開始画素＝走査で最初に見つけた（最上段の左端）画素。その西隣は成分の外なので、そこを「来た方向」として時計回りに隣を調べ、最初に見つかった内側の画素へ進む。
+   次の「来た方向」は、いま調べていた画素の1つ前（外側）の画素。開始画素に同じ状態で戻ったら1周。 */
+IO.trace=function(m,w,h,minArea){
+  const lab=new Int32Array(w*h),polys=[],DX=[1,1,0,-1,-1,-1,0,1],DY=[0,1,1,1,0,-1,-1,-1];let nl=0;
+  const dirOf=(dx,dy)=>{for(let i=0;i<8;i++)if(DX[i]===dx&&DY[i]===dy)return i;return 0};
+  for(let y0=0;y0<h;y0++)for(let x0=0;x0<w;x0++){
+    const i0=y0*w+x0;if(!m[i0]||lab[i0])continue;
+    nl++;let area=0;const st=[i0];lab[i0]=nl;
+    while(st.length){const i=st.pop(),x=i%w,y=(i/w)|0;area++;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;const j=yy*w+xx;if(m[j]&&!lab[j]){lab[j]=nl;st.push(j)}}}
+    if(area<(minArea||1))continue;
+    const inC=(x,y)=>x>=0&&y>=0&&x<w&&y<h&&lab[y*w+x]===nl,pts=[];
+    /* 追跡は決まった手順の繰り返しなので、同じ状態（位置と来た方向）に戻ったら1周。細い成分（2画素など）でも止まる */
+    let cx=x0,cy=y0,bx=x0-1,by=y0;const seen=new Set();
+    for(;;){
+      const bd=dirOf(bx-cx,by-cy),key=(cy*w+cx)*8+bd;
+      if(seen.has(key))break;seen.add(key);
+      pts.push([cx,cy]);let moved=false;
+      for(let k=1;k<=8;k++){
+        const d=(bd+k)%8,nx=cx+DX[d],ny=cy+DY[d];
+        if(inC(nx,ny)){const pd=(d+7)%8;bx=cx+DX[pd];by=cy+DY[pd];cx=nx;cy=ny;moved=true;break}
+      }
+      if(!moved)break;
+    }
+    /* 細い成分は、行きと帰りで同じ画素が並ぶ。連続する重複と、末尾が先頭と同じ点を除く */
+    for(let i=pts.length-1;i>0;i--)if(pts[i][0]===pts[i-1][0]&&pts[i][1]===pts[i-1][1])pts.splice(i,1);
+    polys.push({pts,area});
+  }
+  polys.sort((a,b)=>b.area-a.area);
+  return polys.map(p=>p.pts);
+};
+/* 頂点列（閉じた多角形）を間引く（Douglas–Peucker）。eps＝許す誤差（画素） */
+IO.dp=function(pts,eps){
+  const n=pts.length;if(n<=3)return pts.slice();
+  /* 閉じた図形は、最も遠い2点で分けて、それぞれを開いた折れ線として間引く */
+  let a=0,b=0,best=-1;for(let j=1;j<n;j++){const d=Math.hypot(pts[j][0]-pts[0][0],pts[j][1]-pts[0][1]);if(d>best){best=d;b=j}}
+  const keep=new Uint8Array(n);keep[a]=keep[b]=1;
+  const run=(i0,i1)=>{const st=[[i0,i1]];while(st.length){const[s,e]=st.pop();if(e-s<2)continue;
+    const x1=pts[s][0],y1=pts[s][1],x2=pts[e][0],y2=pts[e][1],dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1;let md=-1,mi=-1;
+    for(let i=s+1;i<e;i++){const d=Math.abs((pts[i][0]-x1)*dy-(pts[i][1]-y1)*dx)/L;if(d>md){md=d;mi=i}}
+    if(md>eps){keep[mi]=1;st.push([s,mi],[mi,e])}}};
+  run(a,b);
+  /* 後半（b→最後→a）は、b…n−1と先頭0をつないだ折れ線として扱う */
+  const tail=pts.slice(b).concat([pts[0]]),kt=new Uint8Array(tail.length);kt[0]=kt[tail.length-1]=1;
+  const st=[[0,tail.length-1]];while(st.length){const[s,e]=st.pop();if(e-s<2)continue;
+    const x1=tail[s][0],y1=tail[s][1],x2=tail[e][0],y2=tail[e][1],dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1;let md=-1,mi=-1;
+    for(let i=s+1;i<e;i++){const d=Math.abs((tail[i][0]-x1)*dy-(tail[i][1]-y1)*dx)/L;if(d>md){md=d;mi=i}}
+    if(md>eps){kt[mi]=1;st.push([s,mi],[mi,e])}}
+  for(let i=1;i<tail.length-1;i++)if(kt[i])keep[b+i]=1;
+  const out=[];for(let i=0;i<n;i++)if(keep[i])out.push(pts[i]);return out;
+};
+/* 多角形の面積（符号つき。画面座標で時計回り＝正） */
+IO.area=function(p){let s=0;for(let i=0,n=p.length;i<n;i++){const a=p[i],b=p[(i+1)%n];s+=a[0]*b[1]-b[0]*a[1]}return s/2};
 
 /* ===== ペンの補正（台帳Z-108）=====
    手ブレしてもズレない、まっすぐな線・綺麗な曲線を引くための補正。ペン・消しゴム（描いた分／画像ごと）に効く。
@@ -1945,7 +2181,7 @@ function syncNums(){document.querySelectorAll('input[data-e]').forEach(r=>{const
 /* ===== つまみの縦距離スクラブと吸着（台帳Z-88）=====
    つまみを押したまま指（マウス）を上下に離すほど、横の動きに対する値の変化が細かくなる（動画のシークバーと同じ。段階は SCRL）。
    値は「差分を足していく」ので、段階が変わっても値は飛ばない（変える瞬間に、今の表示値から続ける）。
-   ふつうの速さ（×1）の時だけ、0・初期値・data-snap の値に吸い付く（値の空間で判定＝バーの長さに依らない）。細かい段階では吸着しない。
+   ふつうの速さ（×1）の時だけ、0・初期値・data-snap の値に吸い付く（値の空間で判定＝バーの長さに依らない）。細かい段階では吸着しない。吸い付いた時の吹き出しは出さない。
    タッチはつまみの上で始めた時だけ引き受ける（それ以外は今までどおり、縦のスクロールや横のドラッグ）。マウスは軌道のどこでも。 */
 const SCRL=[[28,1,''],[80,.25,'×1/4'],[170,.05,'×1/20'],[1e9,.01,'×1/100']];  /* [縦のずれ(px)の上限, 横の動きの倍率, 表示] */
 let _stip=null;
@@ -1962,7 +2198,11 @@ function scrubBind(r){
   let s=null;
   const set=(a,k)=>{
     let v=a,sn=false;
-    if(k===1){const Z=s.span*.012;for(const t of s.T)if(Math.abs(a-t)<=Z){v=t;sn=true;break}}
+    /* 吸着：寄せる幅は範囲の3%（旧1.2%）。いったん吸い付いたら、範囲の5.5%まで離れないと外れない（粘る＝デテントが強い。台帳Z-88の続き） */
+    if(k===1){const Zc=s.span*.03,Zr=s.span*.055;
+      if(s.hold!==undefined&&Math.abs(a-s.hold)<=Zr){v=s.hold;sn=true}
+      else{s.hold=undefined;for(const t of s.T)if(Math.abs(a-t)<=Zc){v=t;sn=true;s.hold=t;break}}}
+    else s.hold=undefined;
     if(!sn){const q=k===1?(+r.dataset.s0||1):(+r.dataset.f||.1);v=Math.round((v-s.mn)/q)*q+s.mn}
     v=+cl(v,s.mn,s.mx).toFixed(5);s.cur=v;s.sn=sn;
     if(+r.value!==v){r.value=v;if(r._n)r._n.value=r.value;r.dispatchEvent(new Event('input',{bubbles:true}))}};
@@ -1983,7 +2223,7 @@ function scrubBind(r){
     const dy=Math.abs(e.clientY-s.sy),L=SCRL.find(z=>dy<z[0]),k=L[1];
     if(k!==s.k){s.acc=s.cur;s.k=k}
     s.acc=cl(s.acc+(e.clientX-s.lx)/s.w*s.span*k,s.mn,s.mx);s.lx=e.clientX;
-    set(s.acc,k);stip(s.sn?'吸着':k<1?'微調整 '+L[2]:'',e.clientX,s.sy-34);e.preventDefault()});
+    set(s.acc,k);stip(k<1?'微調整 '+L[2]:'',e.clientX,s.sy-34);e.preventDefault()});  /* 「吸着」の吹き出しは出さない（2026-10-12ユーザー指示） */
   const fin=e=>{
     if(!s||(e&&e.pointerId!==undefined&&e.pointerId!==s.id))return;
     const ch=+r.value!==s.v0;s=null;stip('');if(ch)r.dispatchEvent(new Event('change',{bubbles:true}))};
@@ -2350,12 +2590,26 @@ function drawMask(g,m,W,H,square){
    ②縁だけを指定の幅でぼかす（f＝縁のぼかし。0＝くっきり＝約1pxだけなめらか、大きいほど広くぼける。MR=512基準で、出力が大きい絵では比例して太くする）。
    ぼかす時は画像の端を外へ延ばしてから行う（端まで囲んだ時に、端の1画素が半透明で取り残されるのを防ぐ。台帳Z-103）。 */
 let ptFeather=0;
+/* 切り取り・貼り付けの設定（UIの一時状態。作品・Undo・保存には入れない。台帳Z-91・Z-143・Z-144）
+   ptHole：切った跡の穴の空け方。'core'＝戻せる（縁のぼかし帯は穴にしない。貼ると元どおり。既定）／'soft'＝ぼかして切る（縁も薄く抜く。貼っても縁が薄い＝別の切り取りをきれいに見せたい時向け）
+   ptPos ：貼る位置。'auto'＝切り取りは元の位置・コピーは少しずらす／'orig'＝いつも元の位置／'off'＝いつも少しずらす
+   ptNow ：切り取り・コピーしたら置き場を経由せず、すぐ新しいオブジェクトにする（Z-91①）　ptInh：元の動き・物理も引き継ぐ（Z-91②）
+   ptFill：切った跡を周囲で埋める（Z-91④）。'off'／'smooth'＝なめらか／'grain'＝質感つき */
+let ptHole='core',ptPos='auto',ptNow=false,ptInh=false,ptFill='off';
+/* 縁の「ぼかしの帯」を除いた、完全に不透明な芯だけのマスク（穴用。Z-143）。貼る側の縁（a）と、残る側の縁（1）で、a＋(1−a)＝1になり、元の位置へ貼れば元どおりになる */
+function coreMask(pm){
+  const w=pm.width,h=pm.height,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});
+  g.drawImage(pm,0,0);const im=g.getImageData(0,0,w,h),d=im.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>=253?255:0;g.putImageData(im,0,0);return c;
+}
 function partMask(l,W,H,square,f){
   const L=Math.max(W,H),k=Math.min(1,2048/L),w=Math.max(1,Math.round(W*k)),h=Math.max(1,Math.round(H*k));
-  const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});
-  drawMask(g,l.sm,w,h,square);
+  let c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});
+  /* 自動選択・マグネット・輪郭編集の高解像度マスク`_hm`が最新（版smvが一致）なら、512pxのsmの代わりにそれを使う（細かい輪郭を失わない。台帳Z-87・Z-145） */
+  const hm=l._hm;if(hm&&hm.v===(l.smv|0)&&hm.sq===!!square&&l.hasSm)g.drawImage(hm.c,0,0,w,h);else drawMask(g,l.sm,w,h,square);
   const im=g.getImageData(0,0,w,h),d=im.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>=128?255:0;g.putImageData(im,0,0);
-  let o=c;
+  if(SEL.snap>0)c=selSnap(l,c,SEL.snap);
+  let o=c;  /* 輪郭に合わせる（粗い囲みを実画像の輪郭へ。台帳Z-87）。パーツと穴の両方で同じ処理＝ぴったり合う */
+  /* 縁は、ぼかし0でも約1pxだけなめらかにする（ギザギザを避ける）。穴は縁の「帯」を含まない芯だけ（coreMask）なので、貼り戻した時に帯の下に元の縁が残り、薄い線にならない（台帳Z-144） */
   if(FILT){
     const sg=Math.max(.8,f*.4*Math.max(w,h)/MR),m=Math.ceil(sg*3)+1,t=document.createElement('canvas');t.width=w+2*m;t.height=h+2*m;const tg=t.getContext('2d');
     tg.drawImage(c,m,m);
@@ -2373,7 +2627,8 @@ function boxCv(l,o){
   let W,H,dw,dh;
   if(l.wo){W=H=Math.max(1024,Math.round(Math.max(iw,ih)));dw=WX*W;dh=WX*H}
   else{
-    let L=o.full?Math.round(Math.max(iw,ih)):Math.min(1600,Math.max(512,Math.round(Math.max(iw,ih))));
+    /* o.L＝長辺をこの画素数にする（切り取り・コピー用。ペン層base/penと同じ解像度で作り、穴とパーツの解像度を揃える。台帳Z-144③） */
+    let L=o.L?Math.max(1,Math.round(o.L)):o.full?Math.round(Math.max(iw,ih)):Math.min(1600,Math.max(512,Math.round(Math.max(iw,ih))));
     if(o.full&&iw*ih>EXPORT_MAXPX)L=Math.max(1,Math.floor(L*Math.sqrt(EXPORT_MAXPX/(iw*ih))));
     const k=L/Math.max(iw,ih);W=Math.max(1,Math.round(iw*k));H=Math.max(1,Math.round(ih*k));dw=W;dh=H}
   let c;
@@ -2395,26 +2650,59 @@ function boxCv(l,o){
   }else{g.drawImage(src,ox,oy,dw,dh)}
   return{c,W,H};
 }
-function takePart(cut){
-  const l=sel;if(!l||!l.hasSm||!l.sm){note('先に「囲む」で、コピーしたい部分をなぞってください');return}
-  /* 色調整・質感を反映した絵から切り出す（台帳Z-83）。貼り付けたパーツが、元の見た目と同じ色になる。切り取りで元に残る側は元画像のままで、調整は引き続き上から掛かる（二重がけにならない） */
-  pushUndo();const{c,W,H}=boxCv(l,{adj:true}),g=c.getContext('2d');g.globalCompositeOperation='destination-in';g.drawImage(partMask(l,W,H,!!l.wo,ptFeather),0,0);
-  const d=g.getImageData(0,0,W,H).data;let x0=W,y0=H,x1=0,y1=0;
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(d[(y*W+x)*4+3]>8){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
-  if(x1<=x0||y1<=y0){note('囲んだ範囲に絵がありません');return}
+/* 絵lの、マスク（maskFn(幅,高さ)→W×Hのキャンバス。不透明度がパーツの形）で切り出したパーツ（クリップ記録）を作る。切り取り・コピー・分割（台帳Z-142）の共通部分。
+   色調整・質感を反映した絵から、ペン層（base/pen）と同じ解像度で切り出す（台帳Z-83・Z-144③）。パーツが空ならnull */
+function makeClip(l,maskFn,cut){
+  const wd=workDims(l),res=Math.max(wd.w,wd.h);
+  const{c,W:pw0,H:ph0}=boxCv(l,{adj:true,L:res}),g=c.getContext('2d');g.globalCompositeOperation='destination-in';g.drawImage(maskFn(pw0,ph0),0,0);
+  const d=g.getImageData(0,0,pw0,ph0).data;let x0=pw0,y0=ph0,x1=0,y1=0;
+  for(let y=0;y<ph0;y++)for(let x=0;x<pw0;x++)if(d[(y*pw0+x)*4+3]>2){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  if(x1<=x0||y1<=y0)return null;
   const w=x1-x0+1,h=y1-y0+1,p=document.createElement('canvas');p.width=w;p.height=h;p.getContext('2d').drawImage(c,x0,y0,w,h,0,0,w,h);
-  CL.unshift({c:p,W,H,size:l.size,src:l.name,sx:l.fx,sy:l.fy,ux:((x0+x1)/(2*W)-.5)*(W/Math.max(W,H))*l.size,uy:((y0+y1)/(2*H)-.5)*(H/Math.max(W,H))*l.size});if(CL.length>8)CL.pop();renderTray();
+  /* パーツの中心の位置（オブジェクトの中心からの、S0を単位にしたずれ）。歪み後の絵（wo）は枠がWX倍 */
+  const wxk=l.wo?WX:1,mx=Math.max(pw0,ph0),cx=(x0+x1+1)/2,cy=(y0+y1+1)/2,ux=(cx-pw0/2)/mx*l.size*wxk,uy=(cy-ph0/2)/mx*l.size*wxk;
+  /* 元の位置に貼れるよう、いまの見た目の位置（回転・反転・親についていく・ピボットを含む）を、描画行列l.Mから出しておく（台帳Z-144②） */
+  let fx0=null,fy0=null;
+  if(l.M){const t=l.M.transformPoint(new DOMPoint(ux*S0,uy*S0));fx0=((t.x/dpr-Z.x)/Z.s)/W;fy0=((t.y/dpr-Z.y)/Z.s)/H}
+  return{c:p,W:pw0,H:ph0,size:l.size,src:l.name,sx:l.fx,sy:l.fy,ux,uy,fx0,fy0,cut:!!cut,lid:l.layerId,rot:l.rot||0,face:l.face||1,wxk,
+    inh:ptInh,ch:ptInh&&l.ch?JSON.parse(JSON.stringify(l.ch)):null,phys:ptInh&&l.phys?JSON.parse(JSON.stringify(l.phys)):null,pv:l.pv||0,rr:l.rr||0};
+}
+function takePart(cut,o){
+  o=o||{};
+  const l=sel;if(!l||!l.hasSm||!l.sm){note('先に「囲む」で、コピーしたい部分をなぞってください');return}
+  pushUndo();
+  const k=makeClip(l,(pw0,ph0)=>partMask(l,pw0,ph0,!!l.wo,ptFeather),cut);
+  if(!k){note('囲んだ範囲に絵がありません');return}
+  CL.unshift(k);
+  if(CL.length>8)CL.pop();renderTray();
   if(cut){
-    ensureBase(l);const bw=l._bw,bh=l._bh,bg=l.base.getContext('2d'),pm=partMask(l,bw,bh,false,ptFeather);bg.globalCompositeOperation='destination-out';bg.drawImage(pm,0,0);bg.globalCompositeOperation='source-over';
+    ensureBase(l);const bw=l._bw,bh=l._bh,bg=l.base.getContext('2d');
+    /* 穴：'core'（既定）は、縁のぼかしの帯を穴にしない。貼る側の縁（不透明度a）の下に元の縁（1）が残るので、元の位置に貼ればa＋(1−a)＝1で元どおり戻る。
+       'soft'は縁も薄く抜く（従来。貼っても縁が薄くなるが、別の切り取り後をきれいに見せたい時に都合がよい。台帳Z-143） */
+    let pm=partMask(l,bw,bh,false,ptFeather);if(ptHole==='core')pm=coreMask(pm);
+    const a0=ptFill!=='off'?rtAlphaPlane(bg,bw,bh):null;  /* 穴を埋める時の、元の不透明度（もともと透明な所は埋めない） */
+    bg.globalCompositeOperation='destination-out';bg.drawImage(pm,0,0);bg.globalCompositeOperation='source-over';
     if(l.pen){const pgc=l.pen.getContext('2d');pgc.globalCompositeOperation='destination-out';pgc.drawImage(pm,0,0);pgc.globalCompositeOperation='source-over'}
     bumpBP(l,1,!!l.pen);recompose(l);
+    if(ptFill!=='off'){try{retouchFillHole(l,pm,ptFill,a0)}catch(e){note('切った跡を埋められませんでした')}}  /* 台帳Z-91④。穴は残したまま続ける */
   }
-  note(cut?'切り取って、画面の左下に置きました':'コピーして、画面の左下に置きました（サムネイルをタップで貼り付け）');
+  if(ptNow&&!o.noAuto)pasteClip(0,{noUndo:true});
+  else note(cut?'切り取って、画面の左下に置きました':'コピーして、画面の左下に置きました（サムネイルをタップで貼り付け）');
 }
-function pasteClip(i){
-  const k=CL[i];if(!k)return;pushUndo();
-  const R2=Math.max(k.W||512,k.H||512),id=++uid,a={id,sp:'p',name:'切り抜き'+id,img:k.c,fx:k.sx+k.ux*S0/W+.04,fy:k.sy+k.uy*S0/H+.04,size:Math.max(.04,k.size*Math.max(k.c.width,k.c.height)/R2),pv:0,face:1,rot:0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false};
-  AC.push(a);setSel(a);
+/* クリップ記録kから、新しいオブジェクトを作る（AC・選択には入れない）。o.off＝いつも少しずらす／o.exact＝元の位置に置く（分割などで強制） */
+function clipToObj(k,o){
+  o=o||{};
+  const R2=Math.max(k.W||512,k.H||512),id=++uid,exact=o.exact||(o.off?false:ptPos==='orig'||(ptPos==='auto'&&!!k.cut)),dd=exact?0:.04;
+  const fx=k.fx0!=null?k.fx0+dd:k.sx+k.ux*S0/W+dd,fy=k.fy0!=null?k.fy0+dd:k.sy+k.uy*S0/H+dd;
+  const a={id,sp:'p',name:o.name||'切り抜き'+id,img:k.c,fx,fy,size:Math.max(.04,k.size*(k.wxk||1)*Math.max(k.c.width,k.c.height)/R2),pv:0,face:k.face||1,rot:k.rot||0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false};
+  if(k.inh&&k.ch){a.ch=JSON.parse(JSON.stringify(k.ch));a.pv=k.pv||0;a.rr=k.rr||0;if(k.phys)a.phys=JSON.parse(JSON.stringify(k.phys))}  /* 動き・物理を引き継ぐ（台帳Z-91②） */
+  {const ly=k.lid!=null&&LAYERS.find(y=>y.id===k.lid);if(ly&&ly.visible&&!ly.locked)a.layerId=k.lid}  /* 元と同じレイヤーに置く（非表示・ロック中のレイヤーには置かない） */
+  return a;
+}
+/* 貼り付け。o.off＝いつも少しずらす／o.noUndo＝Undoを積まない（takePartの直後に自動で貼る時は、takePartのUndoに含める） */
+function pasteClip(i,o){
+  o=o||{};const k=CL[i];if(!k)return;if(!o.noUndo)pushUndo();
+  const a=clipToObj(k,o);AC.push(a);setSel(a);
 }
 function renderTray(){
   const t=$('tray');t.innerHTML='';
@@ -2422,7 +2710,7 @@ function renderTray(){
     th.width=th.height=S;th.getContext('2d').drawImage(k.c,(S-k.c.width*r)/2,(S-k.c.height*r)/2,k.c.width*r,k.c.height*r);
     im.src=th.toDataURL();im.alt='';b.title='タップで貼り付け（'+k.src+'より）';b.setAttribute('aria-label','切り抜きを貼り付け');b.append(im);b.onclick=()=>pasteClip(i);t.appendChild(b)});
 }
-$('pcopy').onclick=()=>takePart(false);$('pcut').onclick=()=>takePart(true);$('pdup').onclick=()=>{fillSel('sm','#ff5d8f');takePart(false);pasteClip(0)};
+$('pcopy').onclick=()=>takePart(false);$('pcut').onclick=()=>takePart(true);$('pdup').onclick=()=>{fillSel('sm','#ff5d8f');takePart(false,{noAuto:true});pasteClip(0,{off:true,noUndo:true})};
 /* このオブジェクトだけ保存（台帳Z-80で強化）：色調整・質感・ぼかし込み／原寸（上限EXPORT_MAXPX画素）／PNGまたはPDF。透明な余白は切り詰める */
 $('pexp').onclick=async()=>{
   const l=sel;if(!l)return;
@@ -2442,7 +2730,409 @@ $('pall').onclick=()=>fillSel('sm','#ff5d8f');
 $('pclr').onclick=()=>{if(sel.sm)sel.sm.getContext('2d').clearRect(0,0,MR,MR);sel.hasSm=false;sel.smv=(sel.smv||0)+1};
 $('pclrh').onclick=()=>{CL.length=0;renderTray()};
 $('ptf').oninput=e=>{ptFeather=+e.target.value;$('ptfv').textContent=ptFeather};
+$('pthl').onchange=e=>{ptHole=e.target.value};$('ppos').onchange=e=>{ptPos=e.target.value};$('ptnow').onchange=e=>{ptNow=e.target.checked};$('ptmo').onchange=e=>{ptInh=e.target.checked};$('ptfill').onchange=e=>{ptFill=e.target.value};
 $('pbs').oninput=e=>{brushParts=+e.target.value};
+
+/* ===== 選択の強化（切り抜きタブ）=====
+   台帳Z-87（自動選択・マグネット・輪郭吸着）・Z-91⑤・Z-127（明暗の傾き）・Z-129（輪郭を頂点列で持つ）・Z-142（分割）・Z-145（輪郭を掴んで編集）。部品は112-imgops.js（IO）。
+   ・選択の本体は今までどおり`l.sm`（512×512・絵は中央にレターボックス＝MR）。細かい輪郭を失わないよう、自動選択・マグネット・輪郭編集の結果は
+     **絵の作業解像度（長辺SEL.L＝800px前後）の高解像度マスク`l._hm`**にも持つ。`partMask`は、`_hm`が最新（版`smv`が一致）なら、それを優先して切り取りに使う。
+     「囲む」などで`sm`が変わると`smv`が進んで`_hm`は自動的に古くなり、`sm`（`_hm`を縮めて写したもの＋追加のなぞり）に戻る。`_hm`は`_`始まり＝保存・Undoの対象外（`sm`と同じ扱い）。
+   ・輪郭吸着（`SEL.snap`）は、`partMask`の中（切り取り時・パーツと穴の両方）で、粗い囲みを実画像の輪郭に合わせる（ガイデッドフィルタ）。UIは「輪郭に合わせる」1本。
+   ・歪み（`l.wo`）のある絵は、座標の対応が違うので新しい道具（自動選択・マグネット・輪郭編集・分割）は使えない（歪みを画像に統合してから）。
+   ・UIの一時状態（SEL）は作品・Undo・保存に入れない。 */
+let pwand=false,pmag=false,ppoly=false;
+const SEL={mode:'new',tol:18,snap:0,L:800,mgS:0,pm:'move',gdK:100,mg:null,pl:null,spl:null,gd:null,hov:null};
+
+/* ---- 絵の作業コピー（自動選択・マグネット・輪郭吸着の判定に使う絵）---- */
+function selPic(l){
+  const sig=[l.cvv|0,l.bsv|0,l.pnv|0,l._adjV|0,l.wo?1:0,l.size].join('|');let P=l._sp;
+  if(P&&P.img===l.img&&P.sig===sig)return P;
+  const wd=workDims(l),L=Math.min(SEL.L,Math.max(wd.w,wd.h)),r=boxCv(l,{adj:true,L}),c=r.c,W=c.width,H=c.height,d=c.getContext('2d',{willReadFrequently:true}).getImageData(0,0,W,H).data,n=W*H;
+  const gray=new Float32Array(n);
+  for(let i=0;i<n;i++){const a=d[i*4+3]/255;gray[i]=(.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2])/255*a+.5*(1-a)}  /* 透明な所は中間のグレー（輪郭＝絵と透明の境目も境として働く） */
+  P={img:l.img,sig,W,H,d,gray,lab:null,edge:null,cost:null};l._sp=P;return P;
+}
+function selLab(P){
+  if(P.lab)return P.lab;
+  const n=P.W*P.H,rgb=new Float32Array(n*3);for(let i=0;i<n;i++){rgb[i*3]=P.d[i*4];rgb[i*3+1]=P.d[i*4+1];rgb[i*3+2]=P.d[i*4+2]}
+  const b=IO.gauss(rgb,P.W,P.H,3,1),lab=new Float32Array(n*3);
+  for(let i=0;i<n;i++){if(P.d[i*4+3]<128){lab[i*3]=-100;continue}cmLab(Math.round(b[i*3]),Math.round(b[i*3+1]),Math.round(b[i*3+2]));lab[i*3]=_lab[0];lab[i*3+1]=_lab[1];lab[i*3+2]=_lab[2]}
+  return P.lab=lab;
+}
+function selCost(P){
+  if(P.cost)return P.cost;
+  const E=P.edge||(P.edge=IO.edge(P.gray,P.W,P.H)),c=new Float32Array(P.W*P.H);
+  for(let i=0;i<c.length;i++){const u=1-E[i];c[i]=.03+u*u}
+  return P.cost=c;
+}
+const selWarped=l=>{if(l&&(l.wo||hasWarp(l))){note('歪みを画像に統合してから使ってください（歪んだ絵では、この道具の位置が合いません）');return true}return false};
+
+/* ---- 選択マスク（高解像度`_hm`）の読み書き ---- */
+/* 今の選択を、絵の作業解像度W×Hの平面（Uint8Array。1＝選択）で返す */
+function selPlane(l,W,H){
+  const h=l._hm;if(h&&h.v===(l.smv|0)&&h.w===W&&h.h===H)return h.a.slice();
+  const a=new Uint8Array(W*H);if(!(l.sm&&l.hasSm))return a;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d',{willReadFrequently:true});drawMask(g,l.sm,W,H,!!l.wo);
+  const d=g.getImageData(0,0,W,H).data;for(let i=0;i<a.length;i++)a[i]=d[i*4+3]>=128?1:0;return a;
+}
+/* 選択を平面aに置き換える。smにも（レターボックスで）縮めて写し、版を進める */
+function selSet(l,a,W,H){
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),im=g.createImageData(W,H),d=im.data;let any=false;
+  for(let i=0;i<a.length;i++)if(a[i]){d[i*4]=255;d[i*4+1]=93;d[i*4+2]=143;d[i*4+3]=255;any=true}
+  g.putImageData(im,0,0);
+  const sm=l.sm||(l.sm=nb()),sg=sm.getContext('2d');sg.setTransform(1,0,0,1,0,0);sg.globalCompositeOperation='source-over';sg.globalAlpha=1;sg.clearRect(0,0,MR,MR);
+  if(l.wo)sg.drawImage(c,0,0,MR,MR);else{const k=Math.min(MR/W,MR/H),dw=W*k,dh=H*k;sg.drawImage(c,(MR-dw)/2,(MR-dh)/2,dw,dh)}
+  l.hasSm=any;l.smv=(l.smv|0)+1;l._hm=any?{v:l.smv,w:W,h:H,a,c,sq:!!l.wo}:null;
+}
+/* 新しい選択mを、モード（新規／追加／除外）で今の選択と合わせて置く */
+function selCombine(l,m,W,H){
+  let a=m;
+  if(SEL.mode!=='new'){const cur=selPlane(l,W,H);a=new Uint8Array(W*H);for(let i=0;i<a.length;i++)a[i]=SEL.mode==='add'?(cur[i]||m[i]?1:0):(cur[i]&&!m[i]?1:0)}
+  let n=0;for(let i=0;i<a.length;i++)if(a[i])n++;
+  selSet(l,a,W,H);return n;
+}
+/* ぼかして閾値で戻す＝ギザギザ・小さな穴・ノイズをならす */
+/* keep＞0なら、もともと選ばれていた画素は、ぼかした値がkeepを超えていれば残す（1画素幅の細い線が消えないように。穴・ギザギザはならす） */
+function selSmooth(m,W,H,r,keep){const p=new Float32Array(W*H);for(let i=0;i<p.length;i++)p[i]=m[i];const b=IO.box(p,W,H,1,r),o=new Uint8Array(W*H);for(let i=0;i<o.length;i++)o[i]=b[i]>.5||(keep&&m[i]&&b[i]>keep)?1:0;return o}
+/* 多角形（[[x,y],…]。連続座標）群を塗りつぶして平面にする */
+function selFillPoly(polys,W,H){
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d',{willReadFrequently:true});g.fillStyle='#fff';
+  for(const p of polys){if(p.length<3)continue;g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)g.lineTo(p[i][0],p[i][1]);g.closePath();g.fill()}
+  const d=g.getImageData(0,0,W,H).data,a=new Uint8Array(W*H);for(let i=0;i<a.length;i++)a[i]=d[i*4+3]>=128?1:0;return a;
+}
+
+/* ---- 輪郭吸着：粗い囲み（キャンバスc。アルファが形）を、実画像の輪郭に合わせて直す。partMaskの中から呼ぶ ----
+   囲みの縁の帯（幅＝強さ×長辺の3%）の中だけを直す。帯より内側（芯）・外側の色を、近くの平均色として集め（前景F・背景B）、
+   帯の各画素が F と B のどちらに近いかを、色の直線上の位置で決める（局所の色による分離）。F≒B（色が似ていて見分けられない所）では、元の囲みのまま。
+   ガイデッドフィルタ方式は、囲みが本当の輪郭から離れていると（囲みの縁が輪郭と別の所にあると）働かないので、これにした。帯の外（内側の芯・外側）は変えない。 */
+function selSnap(l,c,k){
+  const w=c.width,h=c.height,s=Math.min(1,1000/Math.max(w,h)),ww=Math.max(2,Math.round(w*s)),hh=Math.max(2,Math.round(h*s)),n=ww*hh;
+  const t=document.createElement('canvas');t.width=ww;t.height=hh;const tg=t.getContext('2d',{willReadFrequently:true});
+  tg.drawImage(c,0,0,ww,hh);const md=tg.getImageData(0,0,ww,hh).data,p=new Float32Array(n);for(let i=0;i<n;i++)p[i]=md[i*4+3]/255;
+  const gc=boxCv(l,{L:Math.max(ww,hh)}).c;tg.clearRect(0,0,ww,hh);tg.drawImage(gc,0,0,ww,hh);
+  const gd=tg.getImageData(0,0,ww,hh).data,rgb=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const a=gd[i*4+3]/255;for(let q=0;q<3;q++)rgb[i*3+q]=gd[i*4+q]*a+128*(1-a)}  /* 透明な所は中間のグレー（絵と透明の境目も境として働く） */
+  const I=IO.gauss(rgb,ww,hh,3,1),br=Math.max(1,Math.round(k/100*.03*Math.max(ww,hh))),Bm=IO.box(p,ww,hh,1,br),R=2*br+1;
+  /* 芯（帯より内側）と外側の色を集める（重み付きの窓平均）。4ch＝r・g・b・重み */
+  const fg=new Float32Array(n*4),bg=new Float32Array(n*4);
+  for(let i=0;i<n;i++){const f=Bm[i]>=.985?1:0,b=Bm[i]<=.015?1:0,o=i*4;if(f){fg[o]=I[i*3];fg[o+1]=I[i*3+1];fg[o+2]=I[i*3+2];fg[o+3]=1}if(b){bg[o]=I[i*3];bg[o+1]=I[i*3+1];bg[o+2]=I[i*3+2];bg[o+3]=1}}
+  const F=IO.box(fg,ww,hh,4,R),B=IO.box(bg,ww,hh,4,R),v=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    if(Bm[i]>=.985){v[i]=1;continue}if(Bm[i]<=.015){v[i]=0;continue}
+    const o=i*4,pri=Bm[i];let val=pri<.5?0:1;
+    if(F[o+3]>1e-4&&B[o+3]>1e-4){
+      const f0=F[o]/F[o+3],f1=F[o+1]/F[o+3],f2=F[o+2]/F[o+3],b0=B[o]/B[o+3],b1=B[o+1]/B[o+3],b2=B[o+2]/B[o+3],d0=f0-b0,d1=f1-b1,d2=f2-b2,dd=d0*d0+d1*d1+d2*d2;
+      if(dd>100){
+        let u=((I[i*3]-b0)*d0+(I[i*3+1]-b1)*d1+(I[i*3+2]-b2)*d2)/dd;u=u<0?0:u>1?1:u;
+        const conf=Math.min(1,Math.sqrt(dd)/60);val=conf*u+(1-conf)*pri;
+      }
+    }
+    v[i]=val;
+  }
+  const vs=IO.box(v,ww,hh,1,1),im=tg.createImageData(ww,hh),o=im.data;
+  for(let i=0;i<n;i++){o[i*4]=o[i*4+1]=o[i*4+2]=255;o[i*4+3]=vs[i]*255}
+  tg.putImageData(im,0,0);
+  const r=document.createElement('canvas');r.width=w;r.height=h;const rg=r.getContext('2d',{willReadFrequently:true});rg.imageSmoothingQuality='high';rg.drawImage(t,0,0,w,h);
+  /* 拡大でぼけた縁を、閾値で締め直す（partMaskの続きで縁はなめらかにされる） */
+  const id=rg.getImageData(0,0,w,h),d=id.data;for(let i=3;i<d.length;i+=4)d[i]=d[i]>=128?255:0;rg.putImageData(id,0,0);
+  return r;
+}
+/* 平面（Uint8。1＝選択）に、輪郭吸着を掛ける（分割で使う）。強さ0なら何もしない */
+function selSnapPlane(l,a,W,H,k){
+  if(!(k>0))return a;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),im=g.createImageData(W,H),d=im.data;
+  for(let i=0;i<a.length;i++)if(a[i]){d[i*4]=d[i*4+1]=d[i*4+2]=255;d[i*4+3]=255}g.putImageData(im,0,0);
+  const r=selSnap(l,c,k),rd=r.getContext('2d',{willReadFrequently:true}).getImageData(0,0,W,H).data,o=new Uint8Array(W*H);
+  for(let i=0;i<o.length;i++)o[i]=rd[i*4+3]>=128?1:0;return o;
+}
+
+/* ---- 自動選択（魔法の杖）：タップした所と近い色（Lab）でつながっている範囲 ---- */
+function selWand(l,q){
+  if(selWarped(l))return;
+  const P=selPic(l),a=penXY(l,q,P.W,P.H),x=Math.floor(a.x),y=Math.floor(a.y);
+  if(x<0||y<0||x>=P.W||y>=P.H){note('絵の中をタップしてください');return}
+  const r=IO.flood(selLab(P),P.W,P.H,x,y,SEL.tol,Math.floor(P.W*P.H*.97)),m=selSmooth(r.m,P.W,P.H,1,.3),n=selCombine(l,m,P.W,P.H);
+  note(n?'選びました（許容差'+SEL.tol+'）。広すぎ・狭すぎは、許容差を変えてもう一度タップ':'何も選べませんでした（許容差を大きくしてみてください）',2600);
+}
+
+/* ---- マグネット選択：輪郭に吸い付く最短経路でつないで囲む ---- */
+function magInit(l){
+  const P=selPic(l);let M=SEL.mg;
+  if(!M||M.l!==l||M.P!==P)M=SEL.mg={l,P,cost:selCost(P),anchors:[],segs:[],live:null,cur:null,down:false};
+  return M;
+}
+/* 点(x,y)の近く（半径5画素）で、いちばん輪郭らしい所へ寄せる */
+function magSnapPt(M,x,y){
+  const P=M.P,E=P.edge,W=P.W,H=P.H,cx=Math.max(0,Math.min(W-1,Math.round(x-.5))),cy=Math.max(0,Math.min(H-1,Math.round(y-.5)));
+  let bx=cx,by=cy,bv=E[cy*W+cx]-.0;
+  for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){const xx=cx+dx,yy=cy+dy;if(xx<0||yy<0||xx>=W||yy>=H)continue;const v=E[yy*W+xx]-Math.hypot(dx,dy)*.012;if(v>bv){bv=v;bx=xx;by=yy}}
+  return{x:bx,y:by};
+}
+/* 点a→点bの最短経路（画素の整数座標）。2点の周りの窓の中だけ探す */
+function magPath(M,a,b){
+  const P=M.P,W=P.W,H=P.H,mg=Math.max(30,Math.round(Math.hypot(b.x-a.x,b.y-a.y)*.5)),x0=Math.max(0,Math.min(a.x,b.x)-mg),y0=Math.max(0,Math.min(a.y,b.y)-mg),x1=Math.min(W,Math.max(a.x,b.x)+mg+1),y1=Math.min(H,Math.max(a.y,b.y)+mg+1),w=x1-x0,h=y1-y0,sub=new Float32Array(w*h);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++)sub[j*w+i]=M.cost[(y0+j)*W+x0+i];
+  const path=IO.dijkstra(sub,w,h,(a.y-y0)*w+(a.x-x0),(b.y-y0)*w+(b.x-x0));
+  return path?path.map(i=>[x0+i%w,y0+((i/w)|0)]):[[a.x,a.y],[b.x,b.y]];
+}
+const magPix=(M,q,l)=>{const a=penXY(l,q,M.P.W,M.P.H);return{x:Math.max(0,Math.min(M.P.W-1,Math.floor(a.x))),y:Math.max(0,Math.min(M.P.H-1,Math.floor(a.y))),in:a.x>=0&&a.y>=0&&a.x<M.P.W&&a.y<M.P.H}};
+function magLive(M,l,q){
+  if(!M.anchors.length){M.live=null;return}
+  const a=M.anchors[M.anchors.length-1],b=magPix(M,q,l);M.live=magPath(M,a,b);
+}
+function magClose(l){
+  const M=SEL.mg;if(!M||M.l!==l||M.anchors.length<3){note('3点以上を置いてから閉じてください');return}
+  const segs=M.segs.concat([magPath(M,M.anchors[M.anchors.length-1],M.anchors[0])]),poly=[];
+  for(const s of segs)for(const p of s)poly.push([p[0]+.5,p[1]+.5]);
+  const m=selFillPoly([poly],M.P.W,M.P.H),n=selCombine(l,m,M.P.W,M.P.H);
+  SEL.mg=null;note(n?'囲みました（切り取り・コピーで使えます）':'囲んだ範囲が空でした',2200);
+}
+function magUndo(l){const M=SEL.mg;if(!M||M.l!==l||!M.anchors.length)return;M.anchors.pop();M.segs.pop();M.live=null}
+
+/* ---- 輪郭の編集（頂点のドラッグ・追加・削除）。選択の外周を頂点列にして持ち、直したら塗り直す（穴は無くなる）---- */
+function polyLoad(l){
+  if(selWarped(l)){SEL.pl=null;return}
+  const P=selPic(l),pl=selPlane(l,P.W,P.H);let any=false;for(let i=0;i<pl.length;i++)if(pl[i]){any=true;break}
+  if(!any){note('先に囲む・自動選択・マグネットで範囲を選んでください');SEL.pl=null;return}
+  const eps=Math.max(1.2,Math.max(P.W,P.H)*.003),ps=IO.trace(pl,P.W,P.H,Math.max(20,P.W*P.H*.0003)).slice(0,8).map(p=>IO.dp(p,eps).map(v=>[v[0]+.5,v[1]+.5]));
+  SEL.pl={l,P,polys:ps,orig:pl,drag:null};
+}
+function polyRaster(){
+  const S=SEL.pl;if(!S)return;
+  selSet(S.l,selFillPoly(S.polys,S.P.W,S.P.H),S.P.W,S.P.H);
+}
+const selB2S=(l,P,x,y)=>{const k=S0*l.size/Math.max(P.W,P.H),t=l.M.transformPoint(new DOMPoint((x-P.W/2)*k,(y-P.H/2)*k));return{x:t.x/dpr,y:t.y/dpr}};
+function polyDown(q,l){
+  const S=SEL.pl;if(!S||S.l!==l){polyLoad(l);if(!SEL.pl)return false}
+  const T=SEL.pl,P=T.P;let best=null,bd=1e9;
+  /* 頂点をつかむ範囲：18px。ただし、隣の頂点が近い（辺が短い）時は、辺の4割まで（辺の上を押して頂点を足せるように） */
+  T.polys.forEach((p,pi)=>p.forEach((v,vi)=>{
+    const s=selB2S(l,P,v[0],v[1]),a=selB2S(l,P,p[(vi+p.length-1)%p.length][0],p[(vi+p.length-1)%p.length][1]),b=selB2S(l,P,p[(vi+1)%p.length][0],p[(vi+1)%p.length][1]),
+      rv=Math.max(6,Math.min(18,.4*Math.min(Math.hypot(s.x-a.x,s.y-a.y),Math.hypot(s.x-b.x,s.y-b.y)))),d=Math.hypot(q.x-s.x,q.y-s.y);
+    if(d<rv&&d<bd){bd=d;best={pi,vi}}}));
+  if(best){
+    if(SEL.pm==='del'){const p=T.polys[best.pi];if(p.length>3){p.splice(best.vi,1);polyRaster()}else note('これ以上は減らせません（最低3点）');return false}
+    T.drag=best;return true;
+  }
+  if(SEL.pm==='del')return false;
+  /* 辺の上なら、そこへ頂点を足してつかむ */
+  let eb=null,ed=12;
+  T.polys.forEach((p,pi)=>p.forEach((v,vi)=>{const w=p[(vi+1)%p.length],a=selB2S(l,P,v[0],v[1]),b=selB2S(l,P,w[0],w[1]),dx=b.x-a.x,dy=b.y-a.y,L2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((q.x-a.x)*dx+(q.y-a.y)*dy)/L2)),d=Math.hypot(q.x-(a.x+t*dx),q.y-(a.y+t*dy));if(d<ed){ed=d;eb={pi,vi,t}}}));
+  if(eb){const p=T.polys[eb.pi],v=p[eb.vi],w=p[(eb.vi+1)%p.length],nv=[v[0]+(w[0]-v[0])*eb.t,v[1]+(w[1]-v[1])*eb.t];p.splice(eb.vi+1,0,nv);T.drag={pi:eb.pi,vi:eb.vi+1};return true}
+  return false;
+}
+function polyMove(q,l){
+  const T=SEL.pl;if(!T||!T.drag||T.l!==l)return;
+  const a=penXY(l,q,T.P.W,T.P.H),v=T.polys[T.drag.pi][T.drag.vi];v[0]=Math.max(0,Math.min(T.P.W,a.x));v[1]=Math.max(0,Math.min(T.P.H,a.y));
+}
+
+/* ---- 道具の入口（pdown・pointermove・endAllから）---- */
+function selDown(q,e,l){
+  if(pwand){selWand(l,q);return false}
+  if(pmag){
+    if(selWarped(l))return false;
+    const M=magInit(l),a=magPix(M,q,l);if(!a.in){note('絵の中を押してください');return false}
+    M.cur={q:{...q}};
+    if(!M.anchors.length){const s=magSnapPt(M,a.x+.5,a.y+.5);M.anchors.push(s);M.segs.push([]);M.down=false;return false}
+    M.down=true;magLive(M,l,q);return true;
+  }
+  if(ppoly)return polyDown(q,l);
+  return false;
+}
+function selAt(q,l){
+  if(pmag){const M=SEL.mg;if(!M||M.l!==l||!M.down)return;M.cur={q:{...q}};magLive(M,l,q);return}
+  if(ppoly)polyMove(q,l);
+}
+function selEnd(ok){
+  if(pmag){
+    const M=SEL.mg;if(!M||!M.down)return;M.down=false;
+    if(!ok||!M.live||!M.cur){M.live=null;return}
+    const l=M.l,end=M.live[M.live.length-1],fs=selB2S(l,M.P,M.anchors[0].x+.5,M.anchors[0].y+.5);
+    /* 最初の点の近くで離したら、閉じる */
+    /* 閉じる範囲：16px（指の大きさ）。ただし、小さく囲んでいる時は、囲みの大きさの2割まで（始点が近すぎて、途中で勝手に閉じるのを防ぐ） */
+    let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;for(const a of M.anchors){const s2=selB2S(l,M.P,a.x+.5,a.y+.5);bx0=Math.min(bx0,s2.x);by0=Math.min(by0,s2.y);bx1=Math.max(bx1,s2.x);by1=Math.max(by1,s2.y)}
+    const cr=Math.max(6,Math.min(16,.2*Math.hypot(bx1-bx0,by1-by0)));
+    if(M.anchors.length>=3&&Math.hypot(M.cur.q.x-fs.x,M.cur.q.y-fs.y)<cr){M.live=null;magClose(l);return}
+    const s=magSnapPt(M,end[0]+.5,end[1]+.5);
+    M.segs.push(M.live);M.anchors.push(s);M.live=null;return;
+  }
+  if(ppoly){const T=SEL.pl;if(T&&T.drag){T.drag=null;polyRaster()}}
+}
+cv.addEventListener('pointermove',e=>{
+  if(!pmag||e.pointerType!=='mouse'||e.buttons)return;
+  const l=sel,M=SEL.mg;if(!l||!M||M.l!==l||!M.anchors.length||drawing)return;
+  const now=performance.now();if(now-(M._t||0)<24)return;M._t=now;magLive(M,l,sp(e));
+});
+
+/* ---- 重ね描き（画面のCSS px）：マグネットの経路・輪郭の頂点・分割の色分け ---- */
+function selOverlay(){
+  const l=sel;if(!l||!l.M||hk||adjHQ)return;
+  const sw=SEL.spl&&SEL.spl.l===l&&SEL.spl.n>0&&!l.wo,mg=pmag&&SEL.mg&&SEL.mg.l===l,pl=ppoly&&SEL.pl&&SEL.pl.l===l;
+  if(!sw&&!mg&&!pl)return;
+  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
+  const line=(pts,col,lw,dash)=>{if(pts.length<2)return;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.setLineDash(dash||[]);ctx.lineWidth=lw+2;ctx.strokeStyle='rgba(0,0,0,.4)';ctx.stroke();ctx.lineWidth=lw;ctx.strokeStyle=col;ctx.stroke();ctx.setLineDash([])};
+  const sq=(p,r,col)=>{ctx.beginPath();ctx.rect(p.x-r,p.y-r,2*r,2*r);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=1.2;ctx.strokeStyle='rgba(0,0,0,.65)';ctx.stroke()};
+  if(sw){
+    const S=SEL.spl;if(!S.cvs)S.cvs=spPaint(S);const k=S0*l.size/Math.max(S.W,S.H);
+    ctx.save();ctx.setTransform(l.M);ctx.scale(k,k);ctx.translate(-S.W/2,-S.H/2);ctx.globalAlpha=.5;ctx.drawImage(S.cvs,0,0);ctx.restore();
+    ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    S.cent.forEach((c,i)=>{if(!c)return;const p=selB2S(l,S,c[0],c[1]);ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.6)';ctx.strokeText('A'+(i+1),p.x,p.y);ctx.fillStyle='#fff';ctx.fillText('A'+(i+1),p.x,p.y)});
+  }
+  if(mg){
+    const M=SEL.mg,P=M.P,toS=pts=>pts.map(p=>selB2S(l,P,p[0]+.5,p[1]+.5));
+    for(const s of M.segs)line(toS(s),'#33d6ff',2);
+    if(M.live)line(toS(M.live),'#33d6ff',2,[5,4]);
+    M.anchors.forEach((a,i)=>{const s=selB2S(l,P,a.x+.5,a.y+.5);sq(s,i===0?6:4,i===0?'#ffd23f':'#ffffff')});
+  }
+  if(pl){
+    const T=SEL.pl,P=T.P;
+    T.polys.forEach(p=>{const pts=p.map(v=>selB2S(l,P,v[0],v[1]));pts.push(pts[0]);line(pts,'#ff5d8f',2)});
+    T.polys.forEach((p,pi)=>p.forEach((v,vi)=>{const s=selB2S(l,P,v[0],v[1]),on=T.drag&&T.drag.pi===pi&&T.drag.vi===vi;sq(s,on?7:4.5,on?'#ffd23f':'#ffffff')}));
+  }
+  ctx.restore();
+}
+
+/* ---- 分割（台帳Z-142）：囲んだ所を、先に分けたものが優先になるよう順に分け、doneで1つの新しいレイヤーのオブジェクトにする ---- */
+function spPaint(S){
+  const c=document.createElement('canvas');c.width=S.W;c.height=S.H;const g=c.getContext('2d'),im=g.createImageData(S.W,S.H),d=im.data,n=S.W*S.H,col=[];
+  for(let k=1;k<=S.n;k++){const h=((k-1)*137.5)%360,a=h/60,C=.85,X=C*(1-Math.abs(a%2-1)),m=.1,[r,gg,b]=a<1?[C,X,0]:a<2?[X,C,0]:a<3?[0,C,X]:a<4?[0,X,C]:a<5?[X,0,C]:[C,0,X];col[k]=[(r+m)*255,(gg+m)*255,(b+m)*255]}
+  const sx=new Float64Array(S.n+1),sy=new Float64Array(S.n+1),ct=new Float64Array(S.n+1);
+  for(let i=0;i<n;i++){const k=S.lab[i];if(!k)continue;const c0=col[k];d[i*4]=c0[0];d[i*4+1]=c0[1];d[i*4+2]=c0[2];d[i*4+3]=255;sx[k]+=i%S.W;sy[k]+=(i/S.W)|0;ct[k]++}
+  g.putImageData(im,0,0);S.cent=[];for(let k=1;k<=S.n;k++)S.cent.push(ct[k]?[sx[k]/ct[k]+.5,sy[k]/ct[k]+.5]:null);
+  return c;
+}
+function spUi(){
+  const S=SEL.spl&&SEL.spl.l===sel?SEL.spl:null,rem=S?S.W*S.H-S.cnt:0;
+  $('spUn').disabled=!S||!S.n;$('spDone').disabled=!S||!S.n;$('spCn').disabled=!S;
+  $('spNote').textContent=S&&S.n?'分けた：'+Array.from({length:S.n},(_,i)=>'A'+(i+1)).join('・')+'（残り＝Ac）。続けて囲んで「ここまでの1つに」を押すか、「新しいレイヤーに作る」で完成':'囲む・自動選択・マグネットなどで範囲を選び、「囲んだ所を1つに分ける」を押すと、その部分がA1になります。次に囲んだ所はA2…（残りの部分Acの中から取られます）';
+}
+function spTake(){
+  const l=sel;if(!l||blocked(l)||selWarped(l))return;
+  const P=selPic(l);let S=SEL.spl;
+  if(!S||S.l!==l||S.W!==P.W||S.H!==P.H)S=SEL.spl={l,W:P.W,H:P.H,lab:new Uint8Array(P.W*P.H),n:0,cnt:0,cvs:null,cent:[]};
+  let cur=selPlane(l,P.W,P.H);cur=selSnapPlane(l,cur,P.W,P.H,SEL.snap);
+  let c=0;for(let i=0;i<cur.length;i++)if(cur[i]&&!S.lab[i]){S.lab[i]=S.n+1;c++}
+  if(!c){note('分けられる所がありません（囲みが空か、すでに分けた所だけです）');return}
+  S.n++;S.cnt+=c;S.cvs=null;
+  selSet(l,new Uint8Array(P.W*P.H),P.W,P.H);   /* 次の囲みのために、選択を空にする */
+  spUi();note('A'+S.n+'に分けました',1600);
+}
+function spUndo(){
+  const S=SEL.spl;if(!S||S.l!==sel||!S.n)return;
+  let c=0;for(let i=0;i<S.lab.length;i++)if(S.lab[i]===S.n){S.lab[i]=0;c++}
+  S.n--;S.cnt-=c;S.cvs=null;spUi();
+}
+function spCancel(){SEL.spl=null;spUi()}
+/* 完了：分けた各部分を、元と同じ位置に、新しいレイヤーの別オブジェクトとして作る。先に分けた物ほど手前。隙間も重なりも出ないよう、境目はA1側を柔らかく・奥側は食い込ませる */
+function spDone(){
+  const l=sel,S=SEL.spl;if(!l||!S||S.l!==l||!S.n){note('先に「囲んだ所を1つに分ける」で、1つ以上分けてください');return}
+  if(blocked(l)||selWarped(l))return;
+  pushUndo();
+  const W=S.W,H=S.H,n=W*H,K=S.n,scale=Math.max(1,Math.max(l.img.naturalWidth||l.img.width||W,l.img.naturalHeight||l.img.height||H)/Math.max(W,H)),G=Math.max(2,scale*1.2);
+  let rem=0;for(let i=0;i<n;i++)if(!S.lab[i])rem++;
+  const order=[];for(let k=1;k<=K;k++)order.push(k);if(rem)order.push(0);
+  const clips=[];let band=null;
+  for(const k of order){
+    const mk=(pw0,ph0)=>{
+      /* 作業解像度でのこの部分の所属（0/1）を少しぼかし、拡大して、締め直す。ぼかしの合計は1（全部分を足すと1になる）なので、隙間も重なりも無い */
+      const p=new Float32Array(n);for(let i=0;i<n;i++)p[i]=S.lab[i]===k?1:0;
+      const b=IO.box(p,W,H,1,1),t=document.createElement('canvas');t.width=W;t.height=H;const tg=t.getContext('2d'),im=tg.createImageData(W,H);
+      for(let i=0;i<n;i++){const o=i*4;im.data[o]=im.data[o+1]=im.data[o+2]=255;im.data[o+3]=b[i]*255}
+      tg.putImageData(im,0,0);
+      const u=document.createElement('canvas');u.width=pw0;u.height=ph0;const ug=u.getContext('2d',{willReadFrequently:true});ug.imageSmoothingQuality='high';ug.drawImage(t,0,0,pw0,ph0);
+      const id=ug.getImageData(0,0,pw0,ph0),d=id.data,m=pw0*ph0;
+      if(!band)band=new Uint8Array(m);
+      for(let i=0;i<m;i++){
+        let v=(d[i*4+3]/255-.5)*G+.5;v=v<0?0:v>1?1:v;
+        const soft=v>0&&v<1,a=band[i]?1:v;
+        if(soft)band[i]=1;
+        d[i*4]=d[i*4+1]=d[i*4+2]=255;d[i*4+3]=a*255;
+      }
+      ug.putImageData(id,0,0);return u;
+    };
+    const c=makeClip(l,mk,false);if(c)clips.push({k,c});
+  }
+  if(!clips.length){note('分けた部分に絵がありませんでした');return}
+  const li=LAYERS.indexOf(layOf(l)),id=Math.max(...LAYERS.map(y=>y.id))+1,nm='分割：'+(l.name||'').slice(0,12);
+  LAYERS.splice(li+1,0,{id,name:nm,visible:true,locked:false});
+  /* 奥から手前へ積む（Acが一番奥、A1が一番手前） */
+  let last=null;
+  for(const{k,c}of clips.slice().reverse()){const a=clipToObj(c,{exact:true,name:k?'A'+k:'Ac'});a.layerId=id;AC.push(a);last=a}
+  dirtyProj=true;SEL.spl=null;setSel(last);spUi();layUi();
+  note('「'+nm+'」に'+clips.length+'個のオブジェクトを作りました。元のオブジェクトはそのまま残っています（要らなければ消してください）',4200);
+}
+
+/* ---- 明暗の傾き（台帳Z-127）：選択範囲の明るさ・色のゆるやかな傾き（面）を取り出して、引く（ムラ取り）／足す（移植）---- */
+function gdFit(){
+  const l=sel;if(!l||selWarped(l))return;
+  const wd=workDims(l),L=Math.min(400,Math.max(wd.w,wd.h)),r=boxCv(l,{L}),c=r.c,W=c.width,H=c.height,d=c.getContext('2d',{willReadFrequently:true}).getImageData(0,0,W,H).data,n=W*H;
+  let mk=null;if(l.hasSm&&l.sm){const pm=partMask(l,W,H,false,0),pd=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,W,H).data;mk=new Uint8Array(n);for(let i=0;i<n;i++)mk[i]=pd[i*4+3]>=128?1:0}
+  const rgb=new Float32Array(n*3);for(let i=0;i<n;i++){rgb[i*3]=d[i*4];rgb[i*3+1]=d[i*4+1];rgb[i*3+2]=d[i*4+2]}
+  const lo=IO.box(rgb,W,H,3,Math.max(2,Math.round(Math.max(W,H)/40))),Ls=Math.max(W,H);
+  let sw=0,sx=0,sy=0;for(let i=0;i<n;i++){if(d[i*4+3]<128||(mk&&!mk[i]))continue;sw++;sx+=i%W;sy+=(i/W)|0}
+  if(sw<50){note('傾きを取れる範囲がありません（囲みを確認してください）');return}
+  const cx=sx/sw,cy=sy/sw,out={au:[0,0,0],av:[0,0,0]};
+  for(let ch=0;ch<3;ch++){
+    /* 重み付き最小二乗：c = c0 + au*u + av*v（u,vは範囲の重心から、長辺で割った位置） */
+    let A=[[0,0,0],[0,0,0],[0,0,0]],B=[0,0,0];
+    for(let i=0;i<n;i+=2){if(d[i*4+3]<128||(mk&&!mk[i]))continue;const u=((i%W)-cx)/Ls,v=(((i/W)|0)-cy)/Ls,y=lo[i*3+ch],f=[1,u,v];for(let a=0;a<3;a++){B[a]+=f[a]*y;for(let b=0;b<3;b++)A[a][b]+=f[a]*f[b]}}
+    /* 3×3を解く（ガウスの消去） */
+    const M=A.map((r,i)=>r.concat([B[i]]));
+    for(let i=0;i<3;i++){let p=i;for(let j=i+1;j<3;j++)if(Math.abs(M[j][i])>Math.abs(M[p][i]))p=j;[M[i],M[p]]=[M[p],M[i]];const dv=M[i][i]||1e-9;for(let j=i;j<4;j++)M[i][j]/=dv;for(let j=0;j<3;j++)if(j!==i){const f=M[j][i];for(let k=i;k<4;k++)M[j][k]-=f*M[i][k]}}
+    out.au[ch]=M[1][3];out.av[ch]=M[2][3];
+  }
+  SEL.gd=out;
+  const lum=(a)=>.299*a[0]+.587*a[1]+.114*a[2];
+  $('gdNote').textContent='傾きを取りました（明るさ：右へ'+(lum(out.au)>=0?'+':'')+lum(out.au).toFixed(0)+'・下へ'+(lum(out.av)>=0?'+':'')+lum(out.av).toFixed(0)+'／絵の長辺あたり）。「引く」でムラ取り、別の範囲・オブジェクトで「足す」と移植';
+}
+/* 傾きを、選択範囲（無ければ絵全体）に引く（sign=-1）／足す（sign=+1）。画像（base）を書き換える＝Undoで戻る */
+function gdApply(sign){
+  const l=sel;if(!l||blocked(l)||selWarped(l))return;
+  if(!SEL.gd){note('先に「傾きを取る」を押してください');return}
+  pushUndo();rtFlatten(l);
+  const bw=l._bw,bh=l._bh,g=l.base.getContext('2d',{willReadFrequently:true}),im=g.getImageData(0,0,bw,bh),d=im.data;
+  let mk=null;if(l.hasSm&&l.sm){const pm=partMask(l,bw,bh,false,6),pd=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,bw,bh).data;mk=new Uint8Array(bw*bh);for(let i=0;i<mk.length;i++)mk[i]=pd[i*4+3]}
+  let sw=0,sx=0,sy=0;for(let i=0;i<bw*bh;i+=3){if(d[i*4+3]<128||(mk&&!mk[i]))continue;sw++;sx+=i%bw;sy+=(i/bw)|0}
+  if(!sw){note('傾きを掛ける範囲がありません');return}
+  const cx=sx/sw,cy=sy/sw,Ls=Math.max(bw,bh),k=sign*SEL.gdK/100,G=SEL.gd;
+  for(let y=0;y<bh;y++)for(let x=0;x<bw;x++){
+    const i=y*bw+x,m=mk?mk[i]/255:1;if(m<=0)continue;const o=i*4;if(d[o+3]===0)continue;
+    const u=(x-cx)/Ls,v=(y-cy)/Ls;
+    for(let c=0;c<3;c++){const t=d[o+c]+m*k*(G.au[c]*u+G.av[c]*v);d[o+c]=t<0?0:t>255?255:t}
+  }
+  g.putImageData(im,0,0);bumpBP(l,1,0);recompose(l);
+  note(sign<0?'傾きを引きました（ムラ取り）':'傾きを足しました',1800);
+}
+
+/* ---- 画面 ---- */
+function selUi(){
+  $('selTolRow').style.display=pwand?'':'none';$('selMagRow').style.display=pmag?'':'none';$('selPolRow').style.display=ppoly?'':'none';
+  $('selMode').parentNode.style.display=(pwand||pmag)?'':'none';
+  $('selNote').textContent=pwand?'絵の上をタップすると、そこと近い色でつながった範囲が選ばれます（許容差で広さを調整。広すぎたら下げる）':
+    pmag?'輪郭をなぞるように、押して動かし、離した所に点を置きます（押している間は、輪郭に吸い付く経路が出ます）。最初の点（黄色）の近くで離すと閉じて囲みます。「閉じて選ぶ」でも閉じられます':
+    ppoly?'頂点（白い四角）をドラッグで動かす／辺の上を押すと頂点が増える。「頂点を消す」にすると、頂点をタップで消せます。直した形が、そのまま選択範囲になります（穴は無くなります）':'';
+  $('selPolDel').classList.toggle('on',SEL.pm==='del');
+  spUi();
+}
+function selTool(t){
+  if(t!=='pmag')SEL.mg=null;
+  if(t==='ppoly'){const l=sel;if(l)polyLoad(l)}else SEL.pl=null;
+  if(typeof selUi==='function'&&$('selTolRow'))selUi();
+}
+$('selMode').onchange=e=>{SEL.mode=e.target.value};
+$('selTol').oninput=e=>{SEL.tol=+e.target.value};
+$('selSnap').oninput=e=>{SEL.snap=+e.target.value};
+$('selMagCl').onclick=()=>{if(sel)magClose(sel)};
+$('selMagUn').onclick=()=>{if(sel)magUndo(sel)};
+$('selMagCn').onclick=()=>{SEL.mg=null};
+$('selPolDel').onclick=()=>{SEL.pm=SEL.pm==='del'?'move':'del';selUi()};
+$('selPolRs').onclick=()=>{const T=SEL.pl,l=sel;if(!l||!T||T.l!==l)return;selSet(l,T.orig.slice(),T.P.W,T.P.H);polyLoad(l);note('元の形に戻しました',1500)};
+$('spTake').onclick=spTake;$('spUn').onclick=spUndo;$('spDone').onclick=spDone;$('spCn').onclick=spCancel;
+$('gdFit').onclick=gdFit;$('gdSub').onclick=()=>gdApply(-1);$('gdAdd').onclick=()=>gdApply(1);$('gdK').oninput=e=>{SEL.gdK=+e.target.value};
+HT.pwand='絵をタップすると、近い色でつながった範囲が選ばれます（許容差で調整）';
+HT.pmag='輪郭をなぞるように点を置くと、輪郭に吸い付いて囲めます';
+HT.ppoly='選んだ範囲の輪郭の頂点をドラッグして、形を直せます';
 
 /* ===== 確定／レイヤーとして保存／色を合わせる（台帳Z-83・Z-84・Z-85。AGENTS §3.6）=====
    確定＝いまの色調整・質感（範囲指定も込み）を絵に焼き込み、調整の強さを0に戻す。取り消しは「元に戻す」だけ。
@@ -2481,6 +3171,15 @@ function cmSetImage(l,c){
   l.img=c;l.cv=null;l.base=null;l.pen=null;l.sd=null;l._adjC=null;l._adjJob=null;l._raw=null;l._adjRef=null;adjDirty(l);
 }
 function cmResetAdj(l){const a=ensureAdj(l);COLK.forEach(k=>a[k]=0);const f=ensureLF(l);LFK.forEach(k=>f[k].amount=0)}
+/* 確定のあと、範囲指定（色調整・質感の両方）も初期状態＝「全体」・塗った範囲なしに戻す。残したままだと、新しい調整が古い範囲にしか掛からず、
+   焼き込んだ後でまた一部だけ微調整することができなかった（台帳Z-92。2026-10-12ユーザー確認：確定したら範囲もリセットしてほしい） */
+function cmResetRange(l){
+  for(const[k,m,h,vv]of[['adj','adjm','hasAdjM','adjmv'],['lf','lfm','hasLFM','lfmv']]){
+    if(l[m]){const g=l[m].getContext('2d');g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.clearRect(0,0,l[m].width,l[m].height)}
+    l[h]=false;l[vv]=(l[vv]||0)+1;l[k+'Rng']=false;
+  }
+  adjMode='';
+}
 /* シート＝元のオブジェクトの複製（位置・大きさ・向き・動き・歪み・ぼかし・マスク関係はそのまま）に、絵だけ差し替えたもの。物理と範囲・調整値は引き継がない */
 function cmSheet(l,c){
   const o=JSON.parse(JSON.stringify(l,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v));
@@ -2512,8 +3211,8 @@ async function cmCommit(){
     if(asLy&&cov&&!cov.n){note('範囲が塗られていないので、何も変わりません');return}
     const A=cmAdjusted(l);if(!A){note('確定できませんでした');return}
     pushUndo();
-    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);adjDirty(l);note('調整した'+(cov?'範囲':'絵')+'を、新しいレイヤー「'+nm+'」に切り離しました。元の絵は調整前に戻っています')}
-    else{cmSetImage(l,A);cmResetAdj(l);note('確定しました（取り消しは「元に戻す」）',1500)}  /* 成功の通知だけ1.5秒で自動的に消す（台帳Z-116） */
+    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);cmResetRange(l);adjDirty(l);note('調整した'+(cov?'範囲':'絵')+'を、新しいレイヤー「'+nm+'」に切り離しました。元の絵は調整前に戻っています')}
+    else{cmSetImage(l,A);cmResetAdj(l);cmResetRange(l);adjDirty(l);note('確定しました（取り消しは「元に戻す」）',1500)}  /* 成功の通知だけ1.5秒で自動的に消す（台帳Z-116） */
     paintFrame();adjUi();chips();
   }catch(e){note('確定できませんでした：'+((e&&e.message)||e))}
   finally{cmBusy=false}
@@ -2575,8 +3274,8 @@ async function cmMatch(){
       g.putImageData(id,0,y0);if(big)await cmFrame();
     }
     pushUndo();
-    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);adjDirty(l);note('「'+r.name+'」に合わせた絵を、新しいレイヤー「'+nm+'」に置きました。元の絵は調整前に戻っています')}
-    else{cmSetImage(l,A);cmResetAdj(l);note('「'+r.name+'」の色に合わせました（取り消しは「元に戻す」）')}
+    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);cmResetRange(l);adjDirty(l);note('「'+r.name+'」に合わせた絵を、新しいレイヤー「'+nm+'」に置きました。元の絵は調整前に戻っています')}
+    else{cmSetImage(l,A);cmResetAdj(l);cmResetRange(l);adjDirty(l);note('「'+r.name+'」の色に合わせました（取り消しは「元に戻す」）')}
     paintFrame();adjUi();chips();
   }catch(e){note('色を合わせられませんでした：'+((e&&e.message)||e))}
   finally{cmBusy=false}
@@ -2711,6 +3410,398 @@ function crdTick(){
 }
 $('crdb').onclick=()=>{CRD.on=!CRD.on;$('crdb').classList.toggle('on',CRD.on);$('crdb').setAttribute('aria-pressed',CRD.on?'true':'false');if(!CRD.on)crdHide()};
 
+/* ===== 修整ツール（クローン・ヒーリング・埋める・滑らかに・ぼかす・くっきり・スマッジ・覆い焼き・焼き込み・スポンジ）=====
+   台帳Z-86（クローン）・Z-120（周波数分離クローン）・Z-138（修整・インペイント）・Z-121（ぼかしの派生）・Z-141（質感の移植・シワを弱める）・Z-91④（切り取り跡の穴埋め）。
+   **1つの道具＝「ブラシで画素を書き換える」共通の仕組み**。違いは、1回の打ち（dab）で何を計算するかだけ（表 RTM）。方式を足す時は、RTMに1行と、rtApplyDabの分岐を足す。
+   ・書き込み先は画像本体（base）。ペン層（pen）に線が残っていたら、使い始めに画像へ焼き込む（rtFlatten）。ペン線ごと加工でき、アルファの二重がけも起きない。
+     取り消しはUndo（pushUndoはpdownで済み）。
+   ・1回のなぞりの間、元の絵（src）は固定コピー、書き込み先（work）は現在の状態。「元の絵から計算 → 今の絵へ重み付きで混ぜる」ので、
+     重なる打ちが積み重なっても帯・縞が出ず、同じなぞりの中で結果が元へ戻ることもない（上限＝その方式の結果）。埋める・スマッジだけは、今の絵から計算する（なぞった跡を次の打ちが使う）。
+   ・座標は画像（base）の画素。画面→画素は penXY（ペンと同じ。非正方形でもずれない＝台帳Z-124）。
+   ・太さは「画像の短辺の何分の1」（ペンと同じ単位。ズームしても画像に対して同じ太さ）。画面での実寸は rtBrushPx。
+   ・基準点（クローン・ヒーリング）：📍で決める／マウスはAlt＋クリック／まだ無い時の最初のタップ。「連続」ならずれを保ち、そうでなければ毎回、基準点から始める。
+     スタンプ＝押している間は結果が仮表示で動き、離した所に1回写す（2本指になったら取り消し）。ブラシ＝なぞった所に続けて写す。
+   ・UIの一時状態（RT）は作品・Undo・保存に入れない。 */
+const RTM={
+  clone :{n:'クローン（そのまま写す）',src:1,g:100,sp:.2,tip:'基準点の絵を、なぞった所へそのまま写します'},
+  heal  :{n:'ヒーリング（明るさを周りに合わせて写す）',src:1,g:100,pl:'なじませる幅',p:35,sp:.2,tip:'基準点の肌理（細かい模様）だけを写し、明るさと色は写し先の周りに合わせます。継ぎ接ぎの明るさの違いが出にくい'},
+  fill  :{n:'周りで埋める（インペイント）',g:100,pl:'粒状感',p:50,sp:.3,tip:'なぞった円の周りの色で、中をなめらかに埋めます。粒状感で、周りの細かい粒を足して不自然な平らさを隠します'},
+  smooth:{n:'滑らかにする（輪郭は保つ）',g:70,pl:'滑らかさ',p:50,sp:.25,tip:'輪郭は保ったまま、肌理・ノイズ・しわを弱めます（普通のぼかしと違い、境目はぼやけません）'},
+  blur  :{n:'ぼかす',g:70,pl:'ぼかす広さ',p:40,sp:.25,tip:'なぞった所をぼかします（縁もぼかすので、輪郭も溶けます）'},
+  sharp :{n:'くっきりさせる',g:60,pl:'くっきり量',p:50,sp:.25,tip:'細かい所を強調して、くっきりさせます'},
+  smudge:{n:'指でにじませる（スマッジ）',g:60,sp:.12,tip:'指でこするように、色を引きずってにじませます。強いほど遠くまで引きずります'},
+  dodge :{n:'覆い焼き（明るく）',g:30,sp:.25,tip:'なぞった所を明るくします。重ねてなぞるほど明るくなります'},
+  burn  :{n:'焼き込み（暗く）',g:30,sp:.25,tip:'なぞった所を暗くします。重ねてなぞるほど暗くなります'},
+  vivid :{n:'スポンジ（鮮やかに）',g:30,sp:.25,tip:'なぞった所の色を鮮やかにします'},
+  dull  :{n:'スポンジ（くすませる）',g:30,sp:.25,tip:'なぞった所の色を落ち着かせます（白黒に近づく）'}
+};
+const RT={mode:'clone',style:'brush',s:12,h:50,al:true,flip:false,rot:0,sc:100,useSel:false,gs:{},ps:{},src:null,off:null,setting:false,hov:null,last:null,st:null,pv:null,pvc:null};
+for(const k in RTM){RT.gs[k]=RTM[k].g/100;RT.ps[k]=(RTM[k].p===undefined?50:RTM[k].p)/100}
+const rtM=()=>RTM[RT.mode];
+
+/* ---- 寸法 ---- */
+const rtDia=(bw,bh)=>Math.max(1,RT.s*Math.min(bw,bh)/128);   /* 太さ（画像の画素での直径）。ペンと同じ式 */
+function rtBrushPx(l){
+  const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512,S=S0*l.size;
+  return Math.max(1,rtDia(bw,bh)*Math.min(S/bw,S/bh)*Math.hypot(l.M.a,l.M.b)/dpr);
+}
+/* 画像の画素 → 画面（CSS px）。歪みは考えない（目安の表示用） */
+function rtB2S(l,bx,by,bw,bh){const k=S0*l.size/Math.max(bw,bh),t=l.M.transformPoint(new DOMPoint((bx-bw/2)*k,(by-bh/2)*k));return{x:t.x/dpr,y:t.y/dpr}}
+
+/* ---- 部品：画素の混ぜ・取り出し・補間 ---- */
+/* d（Uint8ClampedArray）の画素pに、結果の色（r,g,b,a。0〜255、非アルファ掛け）を重みm（0〜1）で混ぜる。アルファ掛け済みの空間で線形に混ぜる */
+function rtMix(d,p,r,g,b,a,m){
+  const a0=d[p+3];if(a0===0&&a===0)return;
+  const A0=a0/255,A1=a/255,k0=A0*(1-m),k1=A1*m,A=k0+k1;
+  if(A<=.0005){d[p+3]=0;return}
+  const inv=1/A;d[p]=(d[p]*k0+r*k1)*inv;d[p+1]=(d[p+1]*k0+g*k1)*inv;d[p+2]=(d[p+2]*k0+b*k1)*inv;d[p+3]=A*255;
+}
+/* 窓の画素を、アルファ掛け済みのFloat32Array（RGBA。色は0〜255×α、aは0〜255）にする */
+function rtPre(d,bw,x0,y0,w,h){
+  const o=new Float32Array(w*h*4);
+  for(let j=0;j<h;j++){let p=((y0+j)*bw+x0)*4,q=j*w*4;for(let i=0;i<w;i++,p+=4,q+=4){const a=d[p+3];if(a===0)continue;const k=a/255;o[q]=d[p]*k;o[q+1]=d[p+1]*k;o[q+2]=d[p+2]*k;o[q+3]=a}}
+  return o;
+}
+const RTO=new Float64Array(4);
+/* 双一次補間（アルファで重み付け）。x,yは画素の中心を+.5とする連続座標。結果はRTO＝[r,g,b,a]（非アルファ掛け） */
+function rtBil(d,bw,bh,x,y){
+  const u=x-.5,v=y-.5,x0=Math.floor(u),y0=Math.floor(v),fx=u-x0,fy=v-y0;
+  const xa=x0<0?0:x0>=bw?bw-1:x0,xb=x0+1<0?0:x0+1>=bw?bw-1:x0+1,ya=y0<0?0:y0>=bh?bh-1:y0,yb=y0+1<0?0:y0+1>=bh?bh-1:y0+1;
+  const p00=(ya*bw+xa)*4,p10=(ya*bw+xb)*4,p01=(yb*bw+xa)*4,p11=(yb*bw+xb)*4,w00=(1-fx)*(1-fy),w10=fx*(1-fy),w01=(1-fx)*fy,w11=fx*fy;
+  const a00=d[p00+3]*w00,a10=d[p10+3]*w10,a01=d[p01+3]*w01,a11=d[p11+3]*w11,A=a00+a10+a01+a11;
+  RTO[3]=A;if(A<=0){RTO[0]=RTO[1]=RTO[2]=0;return}
+  RTO[0]=(d[p00]*a00+d[p10]*a10+d[p01]*a01+d[p11]*a11)/A;RTO[1]=(d[p00+1]*a00+d[p10+1]*a10+d[p01+1]*a01+d[p11+1]*a11)/A;RTO[2]=(d[p00+2]*a00+d[p10+2]*a10+d[p01+2]*a01+d[p11+2]*a11)/A;
+}
+
+/* ---- なぞりの準備・書き出し ---- */
+/* ペン層に線があれば、画像へ焼き込む（使い始め）。以降の加工はbaseだけを見ればよい */
+function rtFlatten(l){
+  ensureBase(l);
+  if(l.pen){const g=l.base.getContext('2d');g.globalCompositeOperation='source-over';g.globalAlpha=1;g.drawImage(l.pen,0,0);l.pen=null;bumpBP(l,1,1);recompose(l)}
+  else if(!l.cv||l.img!==l.cv)recompose(l);
+}
+/* 1回のなぞり（または1回のスタンプ）の状態を作る。a＝始点（画像の画素） */
+function rtBegin(l,a){
+  const M=rtM(),bw=l._bw,bh=l._bh;rtFlatten(l);
+  const g=l.base.getContext('2d',{willReadFrequently:true}),work=g.getImageData(0,0,bw,bh);
+  const st={l,bw,bh,g,work,mode:RT.mode,M,R:rtDia(bw,bh)/2,hd:RT.h/100,gs:RT.gs[RT.mode],ps:RT.ps[RT.mode],sp:M.sp,
+    src:(M.src||RT.mode==='smooth'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
+    selA:null,lx:a.x,ly:a.y,cx:a.x,cy:a.y,acc:0,carry:null,off:null,stamp:false,cos:Math.cos(RT.rot*Math.PI/180),sin:Math.sin(RT.rot*Math.PI/180),fl:RT.flip?-1:1,isc:100/Math.max(5,RT.sc),seed:(Math.random()*1e9)|0};
+  if(RT.useSel&&l.hasSm&&l.sm){
+    const pm=partMask(l,bw,bh,false,2),d=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,bw,bh).data,sa=new Uint8Array(bw*bh);
+    for(let i=0;i<sa.length;i++)sa[i]=d[i*4+3];st.selA=sa;
+  }
+  if(M.src){
+    if(!RT.off||!RT.al)RT.off={dx:RT.src.x-a.x,dy:RT.src.y-a.y};
+    st.off=RT.off;st.stamp=RT.style==='stamp';
+  }
+  RT.st=st;return st;
+}
+/* 打ち1回の範囲（円＋余白。画像の中に切り詰め） */
+function rtFoot(st,cx,cy){
+  const R=st.R,x0=Math.max(0,Math.floor(cx-R)-1),y0=Math.max(0,Math.floor(cy-R)-1),x1=Math.min(st.bw,Math.ceil(cx+R)+2),y1=Math.min(st.bh,Math.ceil(cy+R)+2);
+  return{x:x0,y:y0,w:x1-x0,h:y1-y0};
+}
+/* 重み（0〜1）：硬さ＝内側は全力、外へなめらかに0へ。強さと、囲み（あれば）を掛ける */
+function rtWeights(st,cx,cy,f,sMul){
+  const R=st.R,hd=st.hd,w=f.w,h=f.h,W=new Float32Array(w*h),sel=st.selA,bw=st.bw,s=sMul===undefined?st.gs:sMul;
+  for(let j=0;j<h;j++){const dy=f.y+j+.5-cy;for(let i=0;i<w;i++){
+    const dx=f.x+i+.5-cx,d=Math.sqrt(dx*dx+dy*dy);let m;
+    if(hd>=.995){m=R-d+.5}else{const t=d/R;if(t>=1)continue;if(t<=hd)m=1;else{const u=(1-t)/(1-hd);m=u*u*(3-2*u)}}
+    if(m<=0)continue;if(m>1)m=1;m*=s;
+    if(sel)m*=sel[(f.y+j)*bw+f.x+i]/255;
+    W[j*w+i]=m;
+  }}
+  return W;
+}
+const rtLum=(r,g,b)=>.299*r+.587*g+.114*b;
+const rtC=v=>v<0?0:v>255?255:v;
+
+/* 打ち1回：結果をst.workに書く。戻り値＝変えた範囲（無ければnull） */
+function rtApplyDab(st,cx,cy){
+  const md=st.mode,f=rtFoot(st,cx,cy);if(f.w<=0||f.h<=0)return null;
+  const bw=st.bw,bh=st.bh,D=st.work.data,S=st.src,R=st.R;
+  if(md==='smudge')return rtSmudge(st,cx,cy,f);
+  const W=rtWeights(st,cx,cy,f);
+  if(md==='clone'){
+    const sx0=cx+st.off.dx,sy0=cy+st.off.dy,ca=st.cos,sa=st.sin,fl=st.fl,isc=st.isc;
+    for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
+      const m=W[j*f.w+i];if(m<=0)continue;
+      const vx=(f.x+i+.5-cx)*fl*isc,vy=(f.y+j+.5-cy)*isc,sx=sx0+ca*vx-sa*vy,sy=sy0+sa*vx+ca*vy;
+      if(sx<0||sy<0||sx>=bw||sy>=bh)continue;
+      rtBil(S,bw,bh,sx,sy);rtMix(D,((f.y+j)*bw+f.x+i)*4,RTO[0],RTO[1],RTO[2],RTO[3],m);
+    }
+    return f;
+  }
+  if(md==='heal')return rtHeal(st,cx,cy,f,W);
+  if(md==='fill')return rtFillDab(st,cx,cy,f,W);
+  if(md==='smooth'||md==='blur'||md==='sharp')return rtFilter(st,cx,cy,f,W);
+  /* 覆い焼き・焼き込み・スポンジ：画素ごと */
+  for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
+    const m=W[j*f.w+i];if(m<=0)continue;
+    const p=((f.y+j)*bw+f.x+i)*4,a=S[p+3];if(a===0)continue;let r=S[p],g=S[p+1],b=S[p+2];
+    if(md==='dodge'){const e=1/1.9;r=255*Math.pow(r/255,e);g=255*Math.pow(g/255,e);b=255*Math.pow(b/255,e)}
+    else if(md==='burn'){r=255*Math.pow(r/255,1.9);g=255*Math.pow(g/255,1.9);b=255*Math.pow(b/255,1.9)}
+    else{const y=rtLum(r,g,b),k=md==='vivid'?1.8:.2;r=rtC(y+(r-y)*k);g=rtC(y+(g-y)*k);b=rtC(y+(b-y)*k)}
+    rtMix(D,p,r,g,b,a,m);
+  }
+  return f;
+}
+/* 窓（打ちの範囲に余白mgを足した範囲）を画像の中に切り詰めて返す */
+function rtWin(st,f,mg){
+  const x0=Math.max(0,f.x-mg),y0=Math.max(0,f.y-mg),x1=Math.min(st.bw,f.x+f.w+mg),y1=Math.min(st.bh,f.y+f.h+mg);
+  return{x:x0,y:y0,w:x1-x0,h:y1-y0};
+}
+/* 大きなσのぼかしは、小さく縮めてぼかし、双一次で戻す（見た目はほぼ同じで、窓が大きくても速い）。a＝アルファ掛け済みRGBA（Float32Array w*h*4） */
+function rtLowpass(a,w,h,sg){
+  const k=Math.floor(sg/3);if(k<2)return IO.gauss(a,w,h,4,sg);
+  const sw=Math.ceil(w/k),sh=Math.ceil(h/k),S=new Float32Array(sw*sh*4),cn=new Float32Array(sw*sh);
+  for(let y=0;y<h;y++){const sy=(y/k)|0;for(let x=0;x<w;x++){const sx=(x/k)|0,i=sy*sw+sx,p=(y*w+x)*4;S[i*4]+=a[p];S[i*4+1]+=a[p+1];S[i*4+2]+=a[p+2];S[i*4+3]+=a[p+3];cn[i]++}}
+  for(let i=0;i<sw*sh;i++){const c=cn[i]||1;S[i*4]/=c;S[i*4+1]/=c;S[i*4+2]/=c;S[i*4+3]/=c}
+  const G=IO.gauss(S,sw,sh,4,sg/k),o=new Float32Array(w*h*4);
+  for(let y=0;y<h;y++){
+    const fy=(y+.5)/k-.5,y0=Math.floor(fy),ty=fy-y0,ya=y0<0?0:y0>=sh?sh-1:y0,yb=y0+1<0?0:y0+1>=sh?sh-1:y0+1;
+    for(let x=0;x<w;x++){
+      const fx=(x+.5)/k-.5,x0=Math.floor(fx),tx=fx-x0,xa=x0<0?0:x0>=sw?sw-1:x0,xb=x0+1<0?0:x0+1>=sw?sw-1:x0+1;
+      const i00=(ya*sw+xa)*4,i10=(ya*sw+xb)*4,i01=(yb*sw+xa)*4,i11=(yb*sw+xb)*4,q=(y*w+x)*4;
+      for(let c=0;c<4;c++)o[q+c]=(G[i00+c]*(1-tx)+G[i10+c]*tx)*(1-ty)+(G[i01+c]*(1-tx)+G[i11+c]*tx)*ty;
+    }}
+  return o;
+}
+/* ヒーリング：書き込み先の低周波（明るさ・色のゆるやかな変化）＋基準の高周波（肌理）。res＝S＋(G(D)−G(S)) */
+function rtHeal(st,cx,cy,f,W){
+  const bw=st.bw,bh=st.bh,R=st.R,sg=Math.max(1.5,R*(.1+.8*st.ps)),mg=Math.ceil(sg*2.5)+1,win=rtWin(st,f,mg),w2=win.w,h2=win.h;
+  const Pd=rtPre(st.src,bw,win.x,win.y,w2,h2),Ps=new Float32Array(w2*h2*4);
+  const sx0=cx+st.off.dx,sy0=cy+st.off.dy,ca=st.cos,sa=st.sin,fl=st.fl,isc=st.isc;
+  for(let j=0;j<h2;j++)for(let i=0;i<w2;i++){
+    const vx=(win.x+i+.5-cx)*fl*isc,vy=(win.y+j+.5-cy)*isc,sx=sx0+ca*vx-sa*vy,sy=sy0+sa*vx+ca*vy;
+    if(sx<0||sy<0||sx>=bw||sy>=bh)continue;
+    rtBil(st.src,bw,bh,sx,sy);const k=RTO[3]/255,q=(j*w2+i)*4;Ps[q]=RTO[0]*k;Ps[q+1]=RTO[1]*k;Ps[q+2]=RTO[2]*k;Ps[q+3]=RTO[3];
+  }
+  const Ld=rtLowpass(Pd,w2,h2,sg),Ls=rtLowpass(Ps,w2,h2,sg),D=st.work.data;
+  for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
+    const m=W[j*f.w+i];if(m<=0)continue;
+    const q=((f.y+j-win.y)*w2+(f.x+i-win.x))*4,a=Ps[q+3];if(a<=0)continue;
+    const k=255/a;let r=Ps[q]*k,g=Ps[q+1]*k,b=Ps[q+2]*k;
+    const ad=Ld[q+3],as=Ls[q+3];
+    if(ad>2&&as>2){const kd=255/ad,ks=255/as;r=rtC(r+Ld[q]*kd-Ls[q]*ks);g=rtC(g+Ld[q+1]*kd-Ls[q+1]*ks);b=rtC(b+Ld[q+2]*kd-Ls[q+2]*ks)}
+    rtMix(D,((f.y+j)*bw+f.x+i)*4,r,g,b,a,m);
+  }
+  return f;
+}
+/* 滑らかにする（ガイデッドフィルタ＝輪郭を保つ）／ぼかす（ガウス）／くっきり（アンシャープ） */
+function rtFilter(st,cx,cy,f,W){
+  const md=st.mode,bw=st.bw,R=st.R,p=st.ps,L=Math.max(st.bw,st.bh);
+  let sg=0,rg=0,eps=0;
+  if(md==='blur')sg=Math.max(1,R*(.03+.25*p));
+  else if(md==='sharp')sg=Math.max(1,L/1000*1.2);
+  else{rg=Math.max(2,Math.round(R*(.1+.3*p)));eps=Math.pow(.02+.2*p,2)}
+  const mg=md==='smooth'?rg+1:Math.ceil(sg*2.5)+1,win=rtWin(st,f,mg),w2=win.w,h2=win.h,n=w2*h2,P=rtPre(st.src,bw,win.x,win.y,w2,h2),D=st.work.data;
+  let F=null;
+  if(md==='smooth'){
+    const I=new Float32Array(n),ch=[new Float32Array(n),new Float32Array(n),new Float32Array(n),new Float32Array(n)];
+    for(let i=0;i<n;i++){const q=i*4,a=P[q+3];I[i]=a>0?rtLum(P[q],P[q+1],P[q+2])/a:0;ch[0][i]=P[q]/255;ch[1][i]=P[q+1]/255;ch[2][i]=P[q+2]/255;ch[3][i]=P[q+3]/255}
+    const o=ch.map(c=>IO.guided(I,c,w2,h2,rg,eps));F=new Float32Array(n*4);
+    for(let i=0;i<n;i++){const q=i*4;F[q]=o[0][i]*255;F[q+1]=o[1][i]*255;F[q+2]=o[2][i]*255;F[q+3]=o[3][i]*255}
+  }else F=IO.gauss(P,w2,h2,4,sg);
+  for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
+    const m=W[j*f.w+i];if(m<=0)continue;
+    const q=((f.y+j-win.y)*w2+(f.x+i-win.x))*4,pp=((f.y+j)*bw+f.x+i)*4,a0=st.src[pp+3];
+    if(md==='blur'){const a=F[q+3];if(a<=.5&&a0===0)continue;const k=a>0?255/a:0;rtMix(D,pp,rtC(F[q]*k),rtC(F[q+1]*k),rtC(F[q+2]*k),rtC(a),m);continue}
+    if(a0===0)continue;
+    const fa=F[q+3];if(fa<=2)continue;const k=255/fa;let r=F[q]*k,g=F[q+1]*k,b=F[q+2]*k;
+    if(md==='sharp'){const amt=p*3,r0=st.src[pp],g0=st.src[pp+1],b0=st.src[pp+2];r=rtC(r0+amt*(r0-r));g=rtC(g0+amt*(g0-g));b=rtC(b0+amt*(b0-b))}
+    rtMix(D,pp,rtC(r),rtC(g),rtC(b),a0,m);
+  }
+  return f;
+}
+/* 周りで埋める（打ち1回）：円の外側の色（今の絵）から、円の中をなめらかに補う。粒状感＝周りの細かい粒の強さに合わせたノイズ */
+function rtFillDab(st,cx,cy,f,W){
+  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,px=new Uint8ClampedArray(w2*h2*4),known=new Uint8Array(w2*h2);
+  let nk=0;
+  for(let j=0;j<h2;j++)for(let i=0;i<w2;i++){
+    const p=((win.y+j)*bw+win.x+i)*4,q=(j*w2+i)*4,dx=win.x+i+.5-cx,dy=win.y+j+.5-cy;
+    px[q]=D[p];px[q+1]=D[p+1];px[q+2]=D[p+2];px[q+3]=D[p+3];
+    if(dx*dx+dy*dy>R*R*.9&&D[p+3]>=128){known[j*w2+i]=1;nk++}
+  }
+  if(nk<8)return null;
+  const F=IO.pushPull(px,known,w2,h2);if(!F)return null;
+  const nz=rtGrain(px,known,w2,h2,st.ps,st.seed+((cx*7+cy*13)|0));
+  for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
+    const m=W[j*f.w+i];if(m<=0)continue;
+    const q=(f.y+j-win.y)*w2+(f.x+i-win.x),z=nz?nz[q]:0;
+    rtMix(D,((f.y+j)*bw+f.x+i)*4,rtC(F[q*3]+z),rtC(F[q*3+1]+z),rtC(F[q*3+2]+z),255,m);
+  }
+  return f;
+}
+/* 周りの細かい粒（高周波）の強さを測り、同じ強さの粒状ノイズ（窓の大きさ）を返す。gain＝0〜1（粒状感）。粒が無い（なめらかな）絵・gain0ならnull */
+function rtGrain(px,known,w,h,gain,seed){
+  if(!(gain>0))return null;
+  const n=w*h,lum=new Float32Array(n);for(let i=0;i<n;i++)lum[i]=rtLum(px[i*4],px[i*4+1],px[i*4+2]);
+  const bl=IO.box(lum,w,h,1,2),dv=[];
+  for(let i=0;i<n;i+=3)if(known[i])dv.push(Math.abs(lum[i]-bl[i]));
+  if(dv.length<20)return null;
+  dv.sort((a,b)=>a-b);const sd=1.4826*dv[dv.length>>1]*1.6;   /* 中央絶対偏差から標準偏差の見積り（輪郭の外れ値に強い。box平均との差の分を補正） */
+  const amp=sd*gain*2;if(amp<.3)return null;
+  const z=IO.noise(w,h,seed,.7);for(let i=0;i<n;i++)z[i]*=amp;return z;
+}
+/* スマッジ：筆の下の絵を「持ち運ぶ」。最初の打ちは拾うだけ。次からは、持っている絵を今の位置へ置き、持っている絵を今の絵へ少し入れ替える */
+function rtSmudge(st,cx,cy,f){
+  const R=st.R,rc=Math.ceil(R)+1,side=rc*2+1,D=st.work.data,bw=st.bw,bh=st.bh;
+  const cxi=Math.round(cx),cyi=Math.round(cy);
+  const grab=()=>{const c=new Float32Array(side*side*4);
+    for(let j=0;j<side;j++){const y=cyi-rc+j;if(y<0||y>=bh)continue;for(let i=0;i<side;i++){const x=cxi-rc+i;if(x<0||x>=bw)continue;
+      const p=(y*bw+x)*4,a=D[p+3],q=(j*side+i)*4;if(a===0)continue;const k=a/255;c[q]=D[p]*k;c[q+1]=D[p+1]*k;c[q+2]=D[p+2]*k;c[q+3]=a}}
+    return c};
+  if(!st.carry){st.carry=grab();st.carryAt={x:cxi,y:cyi};return null}
+  const C=st.carry,W=rtWeights(st,cx,cy,f,1),dep=.55,keep=.5+.48*st.gs;
+  /* 持っている絵（筆の中心基準）を、今の位置の画素へ。筆の中心からのずれ(ox,oy)で引く */
+  const nc=new Float32Array(C.length);nc.set(C);
+  for(let j=0;j<f.h;j++){const y=f.y+j,oy=y-cyi+rc;if(oy<0||oy>=side)continue;
+    for(let i=0;i<f.w;i++){
+      const m=W[j*f.w+i];if(m<=0)continue;const x=f.x+i,ox=x-cxi+rc;if(ox<0||ox>=side)continue;
+      const q=(oy*side+ox)*4,p=(y*bw+x)*4,ca=C[q+3];
+      /* 今の絵（前）をアルファ掛けで読む */
+      const a0=D[p+3],k0=a0/255,pr=D[p]*k0,pg=D[p+1]*k0,pb=D[p+2]*k0;
+      if(ca>0){const k=255/ca;rtMix(D,p,C[q]*k,C[q+1]*k,C[q+2]*k,ca,m*dep)}
+      else if(a0>0)rtMix(D,p,0,0,0,0,m*dep);
+      const t=(1-keep)*m;nc[q]=C[q]*(1-t)+pr*t;nc[q+1]=C[q+1]*(1-t)+pg*t;nc[q+2]=C[q+2]*(1-t)+pb*t;nc[q+3]=C[q+3]*(1-t)+a0*t;
+    }}
+  st.carry=nc;return f;
+}
+
+/* ---- 書き出し（base→画面）---- */
+function rtFlush(st,r){
+  if(!r||r.w<=0||r.h<=0)return;
+  st.g.putImageData(st.work,0,0,r.x,r.y,r.w,r.h);bumpBP(st.l,1,0);recompose(st.l,r);
+}
+const rtUnion=(a,b)=>{if(!a)return b;if(!b)return a;const x0=Math.min(a.x,b.x),y0=Math.min(a.y,b.y),x1=Math.max(a.x+a.w,b.x+b.w),y1=Math.max(a.y+a.h,b.y+b.h);return{x:x0,y:y0,w:x1-x0,h:y1-y0}};
+
+/* ---- なぞり（pdown・pointermove・endAllから）---- */
+function rtDown(q,e,l){
+  RT.st=null;RT.pv=null;
+  const M=rtM();ensureBase(l);const bw=l._bw,bh=l._bh,a=penXY(l,q,bw,bh);
+  RT.last={x:q.x,y:q.y};
+  if(M.src){
+    const have=RT.src&&RT.src.l===l&&RT.src.bw===bw&&RT.src.bh===bh;
+    if(e.altKey||RT.setting||!have){
+      if(!(a.x>=0&&a.y>=0&&a.x<bw&&a.y<bh)){note('絵の中をタップして、基準点を決めてください');return false}
+      RT.src={l,x:a.x,y:a.y,bw,bh};RT.off=null;RT.setting=false;rtUi();
+      note('基準点を決めました。写したい所を'+(RT.style==='stamp'?'押して離す':'なぞる')+'と、ここの絵が写ります',2600);return false;
+    }
+  }
+  let st;try{st=rtBegin(l,a)}catch(err){RT.st=null;note('修整を始められませんでした：'+((err&&err.message)||err));return false}
+  if(st.stamp){rtPv(st);return true}
+  const r=rtApplyDab(st,a.x,a.y);rtFlush(st,r);return true;
+}
+function rtAt(q,l){
+  const st=RT.st;if(!st||st.l!==l)return;
+  RT.last={x:q.x,y:q.y};
+  const a=penXY(l,q,st.bw,st.bh);
+  if(st.stamp){st.cx=a.x;st.cy=a.y;rtPv(st);return}
+  const dx=a.x-st.lx,dy=a.y-st.ly,len=Math.hypot(dx,dy);if(len<1e-6)return;
+  let step=Math.max(1,st.R*st.sp);if(len/step>60)step=len/60;
+  let t=step-st.acc,r=null;
+  while(t<=len+1e-9){r=rtUnion(r,rtApplyDab(st,st.lx+dx*t/len,st.ly+dy*t/len));t+=step}
+  st.acc=len-(t-step);st.lx=a.x;st.ly=a.y;st.cx=a.x;st.cy=a.y;
+  rtFlush(st,r);
+}
+/* スタンプの仮表示：今の位置に打った結果を計算して、いったん元へ戻す */
+function rtPv(st){
+  const f=rtFoot(st,st.cx,st.cy);if(f.w<=0||f.h<=0){RT.pv=null;return}
+  const D=st.work.data,bw=st.bw,bak=new Uint8ClampedArray(f.w*f.h*4);
+  for(let j=0;j<f.h;j++)bak.set(D.subarray(((f.y+j)*bw+f.x)*4,((f.y+j)*bw+f.x+f.w)*4),j*f.w*4);
+  rtApplyDab(st,st.cx,st.cy);
+  const im=new ImageData(f.w,f.h);
+  for(let j=0;j<f.h;j++)im.data.set(D.subarray(((f.y+j)*bw+f.x)*4,((f.y+j)*bw+f.x+f.w)*4),j*f.w*4);
+  for(let j=0;j<f.h;j++)D.set(bak.subarray(j*f.w*4,(j+1)*f.w*4),((f.y+j)*bw+f.x)*4);
+  const c=RT.pvc||(RT.pvc=document.createElement('canvas'));if(c.width!==f.w||c.height!==f.h){c.width=f.w;c.height=f.h}
+  c.getContext('2d').putImageData(im,0,0);RT.pv={x:f.x,y:f.y,w:f.w,h:f.h,cx:st.cx,cy:st.cy};
+}
+/* 指を離した時（endAllの先頭から）。ok＝まだ操作が続いていた（2本指などで取り消されていない） */
+function rtEnd(ok){
+  const st=RT.st;RT.st=null;RT.pv=null;RT.last=null;if(!st)return;
+  if(st.stamp&&ok){const r=rtApplyDab(st,st.cx,st.cy);rtFlush(st,r)}
+  if(st.l)st.l.wd=true;
+}
+
+/* ---- 画面の重ね描き：筆の輪・基準点・スタンプの仮表示 ---- */
+function rtOverlay(){
+  if(tool!=='clone'||!sel||!sel.M||hk||adjHQ||!AC.includes(sel))return;
+  const l=sel,M=rtM(),st=RT.st,now=performance.now(),bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512,dia=rtBrushPx(l);
+  let hp=null;if(st&&RT.last)hp=RT.last;else if(RT.hov&&RT.hov.m&&now-RT.hov.t<10000)hp=RT.hov;
+  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
+  const ring=(x,y,d,col,dash,lw)=>{ctx.beginPath();ctx.arc(x,y,d/2,0,6.2832);ctx.setLineDash(dash||[]);ctx.lineWidth=(lw||1.5)+1.5;ctx.strokeStyle='rgba(0,0,0,.4)';ctx.stroke();ctx.lineWidth=lw||1.5;ctx.strokeStyle=col;ctx.stroke();ctx.setLineDash([])};
+  /* スタンプの仮表示（結果の見た目）。円の中だけ */
+  if(RT.pv&&st&&st.stamp&&RT.pvc){
+    const k=S0*l.size/Math.max(bw,bh);ctx.save();ctx.setTransform(l.M);ctx.scale(k,k);ctx.translate(-bw/2,-bh/2);
+    ctx.beginPath();ctx.arc(RT.pv.cx,RT.pv.cy,st.R,0,6.2832);ctx.clip();ctx.globalAlpha=.92;ctx.drawImage(RT.pvc,RT.pv.x,RT.pv.y);ctx.restore();
+  }
+  if(hp)ring(hp.x,hp.y,dia,'#ffffff');
+  /* 基準点：十字＋輪。なぞっている間は、いま写している位置（写し元）に出る */
+  if(M.src&&RT.src&&RT.src.l===l&&RT.src.bw===bw&&RT.src.bh===bh){
+    let bx=RT.src.x,by=RT.src.y;
+    if(st&&st.off){bx=st.cx+st.off.dx;by=st.cy+st.off.dy}
+    else if(hp&&RT.off&&RT.al){const a=penXY(l,hp,bw,bh);bx=a.x+RT.off.dx;by=a.y+RT.off.dy}
+    const s=rtB2S(l,bx,by,bw,bh);
+    ring(s.x,s.y,dia,'#ffd23f',[5,4],1.5);
+    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.moveTo(s.x-9,s.y);ctx.lineTo(s.x+9,s.y);ctx.moveTo(s.x,s.y-9);ctx.lineTo(s.x,s.y+9);ctx.stroke();
+    ctx.lineWidth=1.4;ctx.strokeStyle='#ffd23f';ctx.stroke();
+    if(RT.setting&&!st){ctx.font='bold 12px sans-serif';ctx.textAlign='left';ctx.fillStyle='#ffd23f';ctx.fillText('基準点',s.x+11,s.y-8)}
+  }
+  ctx.restore();
+}
+cv.addEventListener('pointermove',e=>{if(tool==='clone'){const q=sp(e);RT.hov={x:q.x,y:q.y,t:performance.now(),m:e.pointerType==='mouse'}}});
+cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')RT.hov=null});
+
+/* ---- 切り取り跡の穴埋め（台帳Z-91④。takePartから）：穴の外側の色でなめらかに埋め、粒状感で平らさを隠す ---- */
+function rtAlphaPlane(g,w,h){const d=g.getImageData(0,0,w,h).data,a=new Uint8Array(w*h);for(let i=0;i<a.length;i++)a[i]=d[i*4+3];return a}
+function retouchFillHole(l,pm,mode,a0){
+  const bw=l._bw,bh=l._bh,g=l.base.getContext('2d',{willReadFrequently:true}),mk=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,pm.width,pm.height).data;
+  if(pm.width!==bw||pm.height!==bh)throw new Error('mask size');
+  let x0=bw,y0=bh,x1=-1,y1=-1;
+  for(let y=0;y<bh;y++)for(let x=0;x<bw;x++)if(mk[(y*bw+x)*4+3]>0){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+  if(x1<x0||y1<y0)return;
+  const mg=Math.max(8,Math.round(.25*Math.max(x1-x0+1,y1-y0+1))),X0=Math.max(0,x0-mg),Y0=Math.max(0,y0-mg),X1=Math.min(bw,x1+1+mg),Y1=Math.min(bh,y1+1+mg),w2=X1-X0,h2=Y1-Y0;
+  const im=g.getImageData(X0,Y0,w2,h2),px=im.data,known=new Uint8Array(w2*h2);
+  for(let j=0;j<h2;j++)for(let i=0;i<w2;i++){const k=j*w2+i,mm=mk[((Y0+j)*bw+X0+i)*4+3];if(mm===0&&px[k*4+3]>=200)known[k]=1}
+  const F=IO.pushPull(px,known,w2,h2);if(!F)return;
+  const nz=mode==='grain'?rtGrain(px,known,w2,h2,.5,(Math.random()*1e9)|0):null;
+  for(let j=0;j<h2;j++)for(let i=0;i<w2;i++){
+    const idx=(Y0+j)*bw+X0+i,mm=mk[idx*4+3];if(mm===0)continue;
+    const A=a0?a0[idx]:255;if(A===0)continue;const k=j*w2+i,z=nz?nz[k]:0;
+    rtMix(px,k*4,rtC(F[k*3]+z),rtC(F[k*3+1]+z),rtC(F[k*3+2]+z),A,mm/255);
+  }
+  g.putImageData(im,X0,Y0);bumpBP(l,1,0);recompose(l);
+}
+
+/* ---- 画面（操作窓）---- */
+function rtUi(){
+  const M=rtM(),has=!!M.src;
+  $('rtMode').value=RT.mode;$('rtStyleRow').style.display=has?'':'none';$('rtSrcBox').style.display=has?'':'none';
+  $('rtStyle').value=RT.style;$('rtAl').checked=RT.al;$('rtFlip').checked=RT.flip;$('rtSel').checked=RT.useSel;
+  const set=(id,v)=>{const e=$(id);e.value=v;if(e._n)e._n.value=e.value};
+  set('rtRot',RT.rot);set('rtSc',RT.sc);set('rtS',RT.s);set('rtH',RT.h);set('rtG',Math.round(RT.gs[RT.mode]*100));
+  $('rtPRow').style.display=M.pl?'':'none';if(M.pl){$('rtPL').textContent=M.pl;set('rtP',Math.round(RT.ps[RT.mode]*100))}
+  const s=RT.src&&sel&&RT.src.l===sel;
+  $('rtSrcSt').textContent=RT.setting?'基準点にする所を、絵の上でタップしてください':s?'基準点：決めてあります（Alt＋クリックでも置き直せます）':'基準点：まだ決めていません';
+  $('rtSet').classList.toggle('on',RT.setting);
+  $('rtNote').textContent=M.tip||'';
+}
+$('rtMode').onchange=e=>{RT.mode=e.target.value;RT.st=null;rtUi()};
+$('rtStyle').onchange=e=>{RT.style=e.target.value};
+$('rtAl').onchange=e=>{RT.al=e.target.checked;RT.off=null};
+$('rtFlip').onchange=e=>{RT.flip=e.target.checked};
+$('rtSel').onchange=e=>{RT.useSel=e.target.checked;if(RT.useSel&&sel&&!sel.hasSm)note('「切り抜き」タブの「囲む」で範囲を指定すると、その中だけに効きます')};
+$('rtSet').onclick=()=>{RT.setting=!RT.setting;rtUi();if(RT.setting)note('絵の上で、写し元にしたい所をタップしてください',2600)};
+$('rtRot').oninput=e=>{RT.rot=+e.target.value};
+$('rtSc').oninput=e=>{RT.sc=+e.target.value};
+$('rtS').oninput=e=>{RT.s=+e.target.value};
+$('rtH').oninput=e=>{RT.h=+e.target.value};
+$('rtG').oninput=e=>{RT.gs[RT.mode]=+e.target.value/100};
+$('rtP').oninput=e=>{RT.ps[RT.mode]=+e.target.value/100};
+HT.clone='写し元（📍基準点）の絵を、なぞった所へ写します。方式で、直す・ぼかす・明るさを変えるなども選べます';
+
 /* ===== 手元の拡大窓（台帳Z-109）=====
    ペン・切り抜き（囲む）・ぼかしと色調整の範囲・歪みのピン位置合わせで、指の下（手元）を、邪魔にならない隅へ拡大して見せる別窓。
    ・👁メニューの「手元の拡大窓」でオン／オフ（既定オフ）。UIの一時状態なので、作品・Undo・保存には入れない。
@@ -2739,12 +3830,14 @@ const LUM=[
   {id:'bpn',want:()=>!!bpn,ring:l=>maskBrushPx(l,brushBlur),zoom:3},
   {id:'adj',want:()=>!!adjMode,ring:l=>maskBrushPx(l,adjBrush),zoom:3},
   {id:'paint',want:()=>!!paint,ring:l=>maskBrushPx(l,brushMask),zoom:3},
-  {id:'pin',want:()=>tool==='warp'&&wmode!=='brush',ring:()=>0,zoom:4}
+  {id:'rt',want:()=>tool==='clone',ring:l=>rtBrushPx(l),zoom:4},
+  {id:'pin',want:()=>tool==='warp'&&wmode!=='brush',ring:()=>0,zoom:4},
+  {id:'sel',want:()=>!!(pwand||pmag||ppoly),ring:()=>0,zoom:3}  /* 自動選択・マグネット・輪郭編集（223-selection.js） */
 ];
 /* いま拡大窓の対象になる道具（表の最初に当てはまる行）。道具の優先は、pdownの分岐と同じ順（paint→adj→box→bpn/psn→ペン→歪み）に合わせる */
 function lupeMode(){
   if(!sel)return null;
-  const order=['paint','adj','box','bpn','psn','pen','pin'];
+  const order=['paint','adj','box','bpn','psn','pen','rt','pin'];
   for(const id of order){const m=LUM.find(x=>x.id===id);if(m&&m.want())return m}
   return LUM.find(m=>!order.includes(m.id)&&m.want())||null;  /* 表に足した道具 */
 }
@@ -2804,6 +3897,50 @@ $('lpF').oninput=e=>{LUP.fz=+e.target.value;lupeUi()};
 $('lpR').oninput=e=>{LUP.R=+e.target.value};
 $('lpS').oninput=e=>{LUP.sz=+e.target.value};
 lupeUi();
+
+/* ===== 太さの目安表示（2026-10-12ユーザー依頼。台帳Z-146）=====
+   「太さ」「サイズ」のバーを動かしている間と、離してから1秒足らずの間、その太さが画面でどれくらいかを、ビューワーの中央に輪で示す。
+   ・輪の直径は、実際にそのブラシで描く時の画面上の実寸（CSS px）。輪の中の絵と見比べれば、どれくらいの太さで塗れるかが分かる。
+   ・対象のバーは下の表（SZH.map）に1行。新しい太さのバーを足したら、ここに1行足す（クローン・修整ブラシの`rtS`は表に入れてある）。
+   ・UIの一時状態（作品・Undo・保存には入れない）。書き出し中（hk）・高画質表示（adjHQ）・オブジェクト0個の時は出さない。
+   ・入力は、バーの値が変わった（input）と、バーを押している間（pointerdown〜up）で拾う。キーボード・数値窓・縦距離スクラブのどれでも出る。 */
+const SZH={id:null,t:0,down:false,HOLD:700,FADE:250,
+  /* バーのid → (オブジェクトl)＝画面上の直径px。0以下なら出さない */
+  map:{
+    ps:l=>paBrushPx(l),
+    adjBs:l=>maskBrushPx(l,+$('adjBs').value),
+    bs:l=>maskBrushPx(l,+$('bs').value),
+    bbs:l=>maskBrushPx(l,+$('bbs').value),
+    pbs:l=>maskBrushPx(l,+$('pbs').value),
+    wbS:()=>+$('wbS').value,
+    rtS:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0
+  }};
+function szhTouch(id){if(!SZH.map[id])return;SZH.id=id;SZH.t=performance.now()}
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.id)szhTouch(t.id)});
+document.addEventListener('pointerdown',e=>{const t=e.target;if(t&&t.id&&SZH.map[t.id]){SZH.down=true;szhTouch(t.id)}},true);
+const szhUp=()=>{if(SZH.down){SZH.down=false;SZH.t=performance.now()}};
+addEventListener('pointerup',szhUp);addEventListener('pointercancel',szhUp);
+/* 今この瞬間に出す輪：{d:直径(CSS px),a:濃さ0〜1}。出さない時はnull */
+function szhState(now){
+  if(!SZH.id||hk||adjHQ||!sel)return null;
+  const age=SZH.down?0:now-SZH.t;if(age>SZH.HOLD+SZH.FADE)return null;
+  const l=sel;if(!l.M)return null;
+  let d=0;try{d=SZH.map[SZH.id](l)}catch(_){}
+  if(!(d>0))return null;
+  return{d,a:age<=SZH.HOLD?1:1-(age-SZH.HOLD)/SZH.FADE,id:SZH.id};
+}
+/* paintFrameの最後で呼ぶ：ビューワー（キャンバスの枠）の中央に、画面の実寸の輪を描く */
+function sizeHintDraw(){
+  const s=szhState(performance.now());if(!s)return;
+  const cx=W/2,cy=H/2,r=s.d/2;
+  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=s.a;
+  /* 白い輪の下に黒い影を引く（明るい絵でも暗い絵でも見える）。輪の中は、ごく薄く暗くして、絵との境を分かりやすくする */
+  ctx.beginPath();ctx.arc(cx,cy,r,0,6.2832);ctx.fillStyle='rgba(255,255,255,.10)';ctx.fill();
+  ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();
+  ctx.lineWidth=1.6;ctx.strokeStyle='#ffffff';ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,2,0,6.2832);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.stroke();
+  ctx.restore();
+}
 let strokeActor=null;
 let tipEl=null,tipTo=0;
 const TIPMS=4000;  /* 説明文は、指を離す・動かす・一定時間のどれかで必ず消える（台帳Z-95） */
@@ -2836,11 +3973,13 @@ function armTips(root){root.querySelectorAll('[aria-label]').forEach(armTip)}
 const HINT=$('ht').textContent;
 let lastPen='pen',lastMask='mouth',lastPart='psel';
 const seen={};let hto=null;
-function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bpn=t==='bpaint'||t==='bpaintx';berase=t==='bpaintx';pbox=t==='pbox';psn=t==='psel'||t==='pselx';serase=t==='pselx';
-  if(t==='pen'||t==='eraser'||t==='ieraser')lastPen=t;if(paint||bpn)lastMask=t;if(psn||pbox)lastPart=t;
+function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bpn=t==='bpaint'||t==='bpaintx';berase=t==='bpaintx';pbox=t==='pbox';psn=t==='psel'||t==='pselx';serase=t==='pselx';pwand=t==='pwand';pmag=t==='pmag';ppoly=t==='ppoly';
+  if(t==='pen'||t==='eraser'||t==='ieraser'||t==='clone')lastPen=t;if(paint||bpn)lastMask=t;if(psn||pbox||pwand||pmag||ppoly)lastPart=t;
   const on=new Set([lastPen,lastMask,lastPart,t]);document.querySelectorAll('#tp [data-tool]').forEach(b=>b.classList.toggle('on',on.has(b.dataset.tool)));
   $('ht').textContent=HT[t]||HINT;
   $('es2').style.display=(t==='eraser'||t==='ieraser')?'':'none';
+  $('rtBox').style.display=t==='clone'?'':'none';$('pn').style.display=$('paBox').style.display=t==='clone'?'none':'';if(t==='clone')rtUi();else{RT.setting=false;RT.pv=null}  /* 修整の窓。ペンの色・太さ・補正は隠す */
+  selTool(t);  /* 自動選択・マグネット・輪郭編集の窓と状態（223-selection.js） */
   const pcolEl=$('pcol'),pcolPk=document.querySelector('.pk[data-for="pcol"]');
   if(pcolEl)pcolEl.style.display=t==='pen'?'':'none';
   if(pcolPk)pcolPk.style.display=t==='pen'?'':'none';

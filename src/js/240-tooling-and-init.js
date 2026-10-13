@@ -30,11 +30,13 @@ function armTips(root){root.querySelectorAll('[aria-label]').forEach(armTip)}
 const HINT=$('ht').textContent;
 let lastPen='pen',lastMask='mouth',lastPart='psel';
 const seen={};let hto=null;
-function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bpn=t==='bpaint'||t==='bpaintx';berase=t==='bpaintx';pbox=t==='pbox';psn=t==='psel'||t==='pselx';serase=t==='pselx';
-  if(t==='pen'||t==='eraser'||t==='ieraser')lastPen=t;if(paint||bpn)lastMask=t;if(psn||pbox)lastPart=t;
+function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bpn=t==='bpaint'||t==='bpaintx';berase=t==='bpaintx';pbox=t==='pbox';psn=t==='psel'||t==='pselx';serase=t==='pselx';pwand=t==='pwand';pmag=t==='pmag';ppoly=t==='ppoly';
+  if(t==='pen'||t==='eraser'||t==='ieraser'||t==='clone')lastPen=t;if(paint||bpn)lastMask=t;if(psn||pbox||pwand||pmag||ppoly)lastPart=t;
   const on=new Set([lastPen,lastMask,lastPart,t]);document.querySelectorAll('#tp [data-tool]').forEach(b=>b.classList.toggle('on',on.has(b.dataset.tool)));
   $('ht').textContent=HT[t]||HINT;
   $('es2').style.display=(t==='eraser'||t==='ieraser')?'':'none';
+  $('rtBox').style.display=t==='clone'?'':'none';$('pn').style.display=$('paBox').style.display=t==='clone'?'none':'';if(t==='clone')rtUi();else{RT.setting=false;RT.pv=null}  /* 修整の窓。ペンの色・太さ・補正は隠す */
+  selTool(t);  /* 自動選択・マグネット・輪郭編集の窓と状態（223-selection.js） */
   const pcolEl=$('pcol'),pcolPk=document.querySelector('.pk[data-for="pcol"]');
   if(pcolEl)pcolEl.style.display=t==='pen'?'':'none';
   if(pcolPk)pcolPk.style.display=t==='pen'?'':'none';
