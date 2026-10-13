@@ -20,7 +20,7 @@ function syncNums(){document.querySelectorAll('input[data-e]').forEach(r=>{const
 /* ===== つまみの縦距離スクラブと吸着（台帳Z-88）=====
    つまみを押したまま指（マウス）を上下に離すほど、横の動きに対する値の変化が細かくなる（動画のシークバーと同じ。段階は SCRL）。
    値は「差分を足していく」ので、段階が変わっても値は飛ばない（変える瞬間に、今の表示値から続ける）。
-   ふつうの速さ（×1）の時だけ、0・初期値・data-snap の値に吸い付く（値の空間で判定＝バーの長さに依らない）。細かい段階では吸着しない。
+   ふつうの速さ（×1）の時だけ、0・初期値・data-snap の値に吸い付く（値の空間で判定＝バーの長さに依らない）。細かい段階では吸着しない。吸い付いた時の吹き出しは出さない。
    タッチはつまみの上で始めた時だけ引き受ける（それ以外は今までどおり、縦のスクロールや横のドラッグ）。マウスは軌道のどこでも。 */
 const SCRL=[[28,1,''],[80,.25,'×1/4'],[170,.05,'×1/20'],[1e9,.01,'×1/100']];  /* [縦のずれ(px)の上限, 横の動きの倍率, 表示] */
 let _stip=null;
@@ -37,7 +37,11 @@ function scrubBind(r){
   let s=null;
   const set=(a,k)=>{
     let v=a,sn=false;
-    if(k===1){const Z=s.span*.012;for(const t of s.T)if(Math.abs(a-t)<=Z){v=t;sn=true;break}}
+    /* 吸着：寄せる幅は範囲の3%（旧1.2%）。いったん吸い付いたら、範囲の5.5%まで離れないと外れない（粘る＝デテントが強い。台帳Z-88の続き） */
+    if(k===1){const Zc=s.span*.03,Zr=s.span*.055;
+      if(s.hold!==undefined&&Math.abs(a-s.hold)<=Zr){v=s.hold;sn=true}
+      else{s.hold=undefined;for(const t of s.T)if(Math.abs(a-t)<=Zc){v=t;sn=true;s.hold=t;break}}}
+    else s.hold=undefined;
     if(!sn){const q=k===1?(+r.dataset.s0||1):(+r.dataset.f||.1);v=Math.round((v-s.mn)/q)*q+s.mn}
     v=+cl(v,s.mn,s.mx).toFixed(5);s.cur=v;s.sn=sn;
     if(+r.value!==v){r.value=v;if(r._n)r._n.value=r.value;r.dispatchEvent(new Event('input',{bubbles:true}))}};
@@ -58,7 +62,7 @@ function scrubBind(r){
     const dy=Math.abs(e.clientY-s.sy),L=SCRL.find(z=>dy<z[0]),k=L[1];
     if(k!==s.k){s.acc=s.cur;s.k=k}
     s.acc=cl(s.acc+(e.clientX-s.lx)/s.w*s.span*k,s.mn,s.mx);s.lx=e.clientX;
-    set(s.acc,k);stip(s.sn?'吸着':k<1?'微調整 '+L[2]:'',e.clientX,s.sy-34);e.preventDefault()});
+    set(s.acc,k);stip(k<1?'微調整 '+L[2]:'',e.clientX,s.sy-34);e.preventDefault()});  /* 「吸着」の吹き出しは出さない（2026-10-12ユーザー指示） */
   const fin=e=>{
     if(!s||(e&&e.pointerId!==undefined&&e.pointerId!==s.id))return;
     const ch=+r.value!==s.v0;s=null;stip('');if(ch)r.dispatchEvent(new Event('change',{bubbles:true}))};

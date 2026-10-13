@@ -19,6 +19,7 @@
 | `src/js/90-ui.js` | 動きUI、選択 `setSel`、チップ、フレーム、配置UIのイベント |
 | `src/js/100-background-and-export.js` | 背景 `BG`、録画・通常書き出し |
 | `src/js/110-pen-and-text.js` | ペン `base`/`pen`、画面→ペン層の位置対応`penXY`（台帳Z-124）、文字、調整・質感UIイベント |
+| `src/js/112-imgops.js` | 画素処理の部品`IO`（Canvas・状態に触れない純粋関数）：箱ぼかし・ガウス`IO.box`/`IO.gauss`、ガイデッドフィルタ`IO.guided`、押し引き法の穴埋め`IO.pushPull`、粒状ノイズ`IO.noise`、自動選択の連結成長`IO.flood`（Lab・メドイド色）、輪郭の強さ`IO.edge`、最短経路`IO.dijkstra`、外周の頂点列化`IO.trace`・間引き`IO.dp`（台帳Z-86・Z-87・Z-138・Z-142・Z-145） |
 | `src/js/115-pen-assist.js` | ペンの補正（台帳Z-108）：点列の当てはめ（直線`paFitLine`・円弧`paFitArc`・始点終点固定のベジェ`paFitBez`、形の選択`paShape`）、なぞり中の仮表示`paPreview`（ペン層の解像度で描く`paRasterPreview`）、離した時に一度だけ描く`paCommit`。始点は固定。`PA`（強さ・曲線の種類）、`paOn()`（0なら従来経路） |
 | `src/js/120-warp.js` | 歪みの処理・焼き込み、歪み用定数`WBC`、ブラシのメッシュ`wbDab`/`meshWarp`/`warpInc`、ピン`pinPass`、ブラシ操作`wbDown`/`wbMove`/`drawBrushRing` |
 | `src/js/130-gif.js` | GIFエンコーダ、GIF/テキスト/ぼかしイベント |
@@ -30,11 +31,14 @@
 | `src/js/190-hints-and-demos.js` | ヒント、サンプル生成 `demoA`/`demoB` |
 | `src/js/200-warp-ui.js` | 歪み選択・歪みUI（ブラシ/ピンの切替`wmUi`、ブラシ設定`wbUi`）、エフェクト全消去 |
 | `src/js/210-performance.js` | 処理品質の自動調整 `perfTick`/`setLvl` |
-| `src/js/220-parts.js` | パーツのコピー・切り取り・貼り付け（調整込み。Z-83）、トレイ、切り出し用Canvas`boxCv(l,{adj,full})`、「このオブジェクトだけ保存」`pexp`（PNG/PDF） |
+| `src/js/220-parts.js` | 切り抜きのコピー・切り取り・貼り付け（調整込み。Z-83。共通部品`makeClip`/`clipToObj`、穴の空け方`ptHole`・貼る位置`ptPos`・切った跡の穴埋め`ptFill`。Z-143・Z-144）、範囲マスク`partMask`（高解像度`_hm`優先・輪郭に合わせる）、トレイ、切り出し用Canvas`boxCv(l,{adj,full})`、「このオブジェクトだけ保存」`pexp`（PNG/PDF） |
+| `src/js/223-selection.js` | 選択の強化（台帳Z-87・Z-127・Z-142・Z-145）：作業コピー`selPic`、高解像度選択マスク`l._hm`（`selSet`/`selPlane`/`selCombine`）、自動選択`selWand`、マグネット`magInit`/`magPath`/`magClose`、輪郭に合わせる`selSnap`（`partMask`から）、輪郭の編集`polyLoad`/`polyDown`/`polyMove`/`polyRaster`、分割`spTake`/`spDone`、明暗の傾き`gdFit`/`gdApply`、重ね描き`selOverlay`、状態`SEL`・道具フラグ`pwand`/`pmag`/`ppoly` |
 | `src/js/225-commit.js` | 確定`cmCommit`（色調整・質感を絵に焼き込み）、レイヤーとして保存（シート`cmSheet`・`cmPlace`・範囲の切り抜き`cmCover`/`cmClip`）、色を合わせる`cmMatch`（Lab・Reinhard法）、UI`cmUi`（台帳Z-83〜Z-85） |
 | `src/js/230-color-picker.js` | スポイト |
 | `src/js/235-canvas-coords.js` | キャンバスのpx`setCanvasSize`/`canvasUi`/`fitCanvasToImage`（`DOC`）、「＋画像」の段`addRowUi`、オブジェクト0個の案内`noObjUi`、座標の表示`CRD`/`crdPointer`/`crdTick`（台帳Z-96〜Z-98） |
+| `src/js/236-retouch.js` | 修整ツール（台帳Z-86・Z-120・Z-121・Z-138・Z-141）：方式の表`RTM`、状態`RT`、1回の打ち`rtApplyDab`（ヒーリング`rtHeal`・フィルタ系`rtFilter`・埋める`rtFillDab`・スマッジ`rtSmudge`）、入口`rtDown`/`rtAt`/`rtEnd`、仮表示`rtPv`/`rtOverlay`、画像への焼き込み`rtFlatten`、切り取り跡の穴埋め`retouchFillHole`、窓`rtUi` |
 | `src/js/237-loupe.js` | 手元の拡大窓（台帳Z-109）：`LUP`（状態・設定）、対象の道具の表`LUM`（マグネット選択などは1行足すだけ）、`lupeMode`/`lupeZoom`（倍率は道具の太さに合わせる自動／固定）、`lupeTick`（loopから毎フレーム）、`lupePin`（ピン微調整の連携） |
+| `src/js/238-size-hint.js` | 太さの目安表示（台帳Z-146）：バーを触っている間・直後にビューワー中央へ実寸の輪。表`SZH`、`sizeHintDraw`（`paintFrame`から） |
 | `src/js/240-tooling-and-init.js` | ツール・タブ、メニュー、枠3段`setFrame`、操作窓`UIS`/`tpClamp`/`tpApply`（上下2つの持ち手・四辺へ掃ける・透過オン/オフ）、画像追加`pickImages`/`addImages`、初期化、ロック用ラッパー |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 

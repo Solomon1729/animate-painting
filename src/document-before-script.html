@@ -97,8 +97,26 @@
   </div></div>
 
   <div class="tab" data-tab="dr">
-    <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button></div>
+    <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button><button data-tool="clone">🩹 修整</button></div>
     <div class="row" id="es2" style="display:none"><span class="lab">消し具合</span><input id="es" type="range" min="0.01" max="1" step="0.05" value="1" aria-label="消しゴムの強さ（弱いほど半透明に残る）"></div>
+    <div class="grp alt" id="rtBox" style="display:none"><div class="gh">🩹 修整（写す・直す・ぼかす）</div>
+    <div class="row"><span class="lab">方式</span><select id="rtMode" aria-label="修整の方式">
+      <optgroup label="写す（基準点が要る）"><option value="clone">クローン（そのまま写す）</option><option value="heal">ヒーリング（明るさを周りに合わせて写す）</option></optgroup>
+      <optgroup label="直す"><option value="fill">周りで埋める（インペイント）</option><option value="smooth">滑らかにする（輪郭は保つ）</option><option value="blur">ぼかす</option><option value="sharp">くっきりさせる</option><option value="smudge">指でにじませる（スマッジ）</option></optgroup>
+      <optgroup label="明るさ・色"><option value="dodge">覆い焼き（明るく）</option><option value="burn">焼き込み（暗く）</option><option value="vivid">スポンジ（鮮やかに）</option><option value="dull">スポンジ（くすませる）</option></optgroup></select></div>
+    <div class="row" id="rtStyleRow"><span class="lab">打ち方</span><select id="rtStyle" aria-label="写し方"><option value="brush">ブラシ（なぞって写す）</option><option value="stamp">スタンプ（押して離すと1回写す）</option></select></div>
+    <div id="rtSrcBox">
+      <div class="row"><button id="rtSet" aria-label="写し元にする所（基準点）を決める">📍 基準点を決める</button><span class="note" id="rtSrcSt" style="margin:0"></span></div>
+      <div class="row"><label class="opt"><input type="checkbox" id="rtAl" checked aria-label="基準点との位置のずれを、なぞり直しても保つ">基準を連続させる</label><label class="opt"><input type="checkbox" id="rtFlip" aria-label="写し元を左右反転する">左右反転</label></div>
+      <div class="row"><span class="lab">回転</span><input id="rtRot" type="range" min="-180" max="180" step="1" value="0" data-snap="0" aria-label="写し元の回転（度）"></div>
+      <div class="row"><span class="lab">拡大</span><input id="rtSc" type="range" min="25" max="400" step="1" value="100" data-snap="100" aria-label="写し元の拡大・縮小（%）"></div>
+    </div>
+    <div class="row"><span class="lab">太さ</span><input id="rtS" type="range" min="1" max="60" step="0.5" value="12" aria-label="修整ブラシの太さ"></div>
+    <div class="row"><span class="lab">硬さ</span><input id="rtH" type="range" min="0" max="100" step="1" value="50" aria-label="修整ブラシの硬さ（高いほど縁までしっかり効く）"></div>
+    <div class="row"><span class="lab">強さ</span><input id="rtG" type="range" min="1" max="100" step="1" value="100" aria-label="修整の強さ"></div>
+    <div class="row" id="rtPRow"><span class="lab" id="rtPL">なじませる幅</span><input id="rtP" type="range" min="0" max="100" step="1" value="35" aria-label="方式ごとの調整（なじませる幅・滑らかさなど）"></div>
+    <div class="row"><label class="opt"><input type="checkbox" id="rtSel" aria-label="切り抜きタブで囲んだ範囲の中だけに効かせる">囲んだ範囲の中だけ</label></div>
+    <div class="note" id="rtNote"></div></div>
     <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0.1" max="40" value="10" aria-label="ペンの太さ"></div>
     <div class="grp alt" id="paBox"><div class="gh">📏 ペンの補正（0＝補正なし。ペン・消しゴムに効く）</div>
     <div class="row"><span class="lab">直線補正</span><input id="paL" type="range" min="0" max="100" step="1" value="0" aria-label="直線補正の強さ（0で補正なし。強いほど、まっすぐな線に直します）"></div>
@@ -177,10 +195,30 @@
 
   <div class="tab" data-tab="pt">
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
+    <div class="row tools"><button data-tool="pwand" aria-label="自動選択（タップした所と近い色でつながった範囲を選ぶ）">✨ 自動選択</button><button data-tool="pmag" aria-label="マグネット選択（輪郭に吸い付く線で囲む）">🧲 マグネット</button><button data-tool="ppoly" aria-label="輪郭を編集（選んだ範囲の輪郭の頂点を動かして直す）">◇ 輪郭を編集</button></div>
     <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
+    <div class="grp alt" id="selBox"><div class="gh">選び方の設定</div>
+      <div class="row"><span class="lab">今の選択と</span><select id="selMode" aria-label="新しく選んだ範囲を、今の選択とどう合わせるか"><option value="new" selected>置き換える</option><option value="add">足す</option><option value="sub">引く</option></select></div>
+      <div class="row" id="selTolRow"><span class="lab">許容差</span><input id="selTol" type="range" min="2" max="60" step="1" value="18" aria-label="自動選択の許容差（大きいほど、違う色まで同じ範囲として選ぶ）"></div>
+      <div class="row" id="selMagRow"><button id="selMagCl">閉じて選ぶ</button><button id="selMagUn">1点戻す</button><button id="selMagCn">やり直し</button></div>
+      <div class="row" id="selPolRow"><button id="selPolDel">頂点を消す</button><button id="selPolRs">元の形に戻す</button></div>
+      <div class="row"><span class="lab">輪郭に合わせる</span><input id="selSnap" type="range" min="0" max="100" step="1" value="0" aria-label="粗い囲みを、絵の輪郭に合わせて直す強さ（0＝そのまま。切り取り・コピー・分割に効く）"></div>
+      <div class="note" id="selNote"></div></div>
     <div class="row"><span class="lab">縁のぼかし</span><input id="ptf" type="range" min="0" max="40" step="1" value="0" aria-label="切り抜きの縁のぼかし（0＝くっきり。大きいほど縁が自然にぼける。境界がはっきりしない絵向け）"><b class="v" id="ptfv">0</b></div>
+    <div class="row"><span class="lab">穴の空け方</span><select id="pthl" aria-label="切り取った跡の穴の空け方（戻せる＝縁のぼかしの帯は穴にしない。貼り戻すと元どおり／ぼかして切る＝縁も薄く抜く）"><option value="core" selected>戻せる（貼ると元どおり）</option><option value="soft">ぼかして切る（縁も薄く抜く）</option></select></div>
+    <div class="row"><span class="lab">貼る位置</span><select id="ppos" aria-label="貼り付ける位置"><option value="auto" selected>自動（切り取り＝元の位置／コピー＝少しずらす）</option><option value="orig">いつも元の位置</option><option value="off">いつも少しずらす</option></select></div>
+    <div class="row"><label class="opt"><input type="checkbox" id="ptnow" aria-label="切り取り・コピーしたら、置き場を経由せず、すぐ新しいオブジェクトにする">すぐ新しいオブジェクトにする</label><label class="opt"><input type="checkbox" id="ptmo" aria-label="元のオブジェクトの動き・物理の設定も引き継ぐ">動き・物理も引き継ぐ</label></div>
+    <div class="row"><span class="lab">切った跡</span><select id="ptfill" aria-label="切り取った跡を周囲で埋める"><option value="off" selected>穴のまま</option><option value="smooth">周囲でなめらかに埋める</option><option value="grain">周囲で質感つきに埋める</option></select></div>
      <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
     <div class="row"><button id="pexp">📷 このオブジェクトだけ保存（色調整・質感・ぼかし込み／原寸）</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
+    <div class="grp alt" id="spBox"><div class="gh">✂ 分割（1枚の絵を、いくつかの部分に分ける）</div>
+      <div class="row"><button id="spTake">囲んだ所を1つに分ける</button><button id="spUn">1つ戻す</button></div>
+      <div class="row"><button id="spDone">新しいレイヤーに作る</button><button id="spCn">やめる</button></div>
+      <div class="note" id="spNote"></div></div>
+    <div class="grp alt" id="gdBox"><div class="gh">🌗 明暗の傾き（ムラ取り・移植）</div>
+      <div class="row"><button id="gdFit">傾きを取る（選択範囲）</button><button id="gdSub">引く</button><button id="gdAdd">足す</button></div>
+      <div class="row"><span class="lab">強さ</span><input id="gdK" type="range" min="0" max="200" step="5" value="100" data-snap="100" aria-label="傾きを引く・足す強さ（100＝取った分ちょうど）"></div>
+      <div class="note" id="gdNote">選んだ範囲の明るさ・色のゆるやかな傾き（面）を取り出します。「引く」でムラ取り、別の範囲や別のオブジェクトで「足す」と移植になります。</div></div>
     <div class="note">選んでいるオブジェクトの一部を囲んでコピー（または切り取り）すると、画面の左下に置かれます。サムネイルをタップすると、新しいオブジェクトとして貼り付けます。「縁のぼかし」が0だと縁はくっきり、大きくすると縁がぼけて、境界がはっきりしない絵（毛・煙・髪など）でもなじみます。コピーと切り取りの両方に同じ幅で効くので、切り取った跡と切り抜きがぴったり合います。</div>
   </div>
 

@@ -10,7 +10,7 @@
   3 一度ピンを置いた後などで、✋・ピンチが効かなくなる状態の自己修復（Z-102）
   4 オブジェクト0個で壊れない（Z-97）      5 キャンバスの大きさ・画像に合わせる・書き出しのpx・Undo・保存（Z-96・Z-98）
   6 座標の表示（Z-98）                     7 レイヤー／オブジェクトの並べ替え：すき間の点線（Z-99）
-  8 バーの縦距離スクラブ・吸着・ラベルの段分け（Z-88）
+  8 バーの縦距離スクラブ・吸着（デテント強化）・ラベルの段分け（Z-88）   9 太さの目安表示（Z-146）
 """
 import sys, os, re, json, struct, zlib, tempfile
 from playwright.sync_api import sync_playwright
@@ -400,6 +400,18 @@ def g_slider(p):
     v = info('rt')['v']; chk('細かい段では吸い付かない（89付近をゆっくり動く）', v != 90 and abs(v - 89) < 1, v); pg.mouse.up()
     setv('rt', 0); pg.evaluate("document.getElementById('rt').focus()"); pg.keyboard.press('ArrowRight')
     chk('キーボードの矢印は今までどおり効く', info('rt')['v'] > 0, info('rt')['v'])
+    # --- デテントの強化（2026-10-12）：範囲の3%で吸い付き、いったん吸い付いたら5.5%まで粘る。吹き出し（「吸着」）は出さない
+    setv('rt', 0); x, y = thumb('rt'); k = px('rt'); sp = 360.0
+    pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x + 2, y)
+    chk('吸着中も、吹き出しは出ない', info('rt')['tip'] is None, info('rt')['tip'])
+    pg.mouse.move(x + (.045 * sp) / k, y); v = info('rt')['v']
+    chk('いったん吸い付くと、範囲の4.5%離れても0のまま（粘る）', v == 0, v)
+    pg.mouse.move(x + (.07 * sp) / k, y); v = info('rt')['v']
+    chk('範囲の7%まで離すと外れて、そこの値へ（約25）', abs(v - .07 * sp) <= 5.01, v)
+    pg.mouse.move(x + (.045 * sp) / k, y); v = info('rt')['v']
+    chk('外れた後は、4.5%の位置では吸い付かない（ふつうに追従）', v != 0 and abs(v - .045 * sp) <= 5.01, v); pg.mouse.up()
+    setv('rt', 0); x, y = thumb('rt'); pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x + (.026 * sp) / k, y); v = info('rt')['v']
+    chk('3%以内（2.6%）なら、最初からでも吸い付く', v == 0, v); pg.mouse.up()
     # --- 軌道を直接押す（マウス）：その位置へ
     setv('rt', 0); a = info('rt'); pg.mouse.move(a['l'] + 10 + .75 * (a['w'] - 20), a['t'] + a['h'] / 2); pg.mouse.down(); pg.mouse.up()
     chk('マウスで軌道を押すと、その位置へ（約+90度）', abs(info('rt')['v'] - 90) <= 6, info('rt')['v'])
@@ -415,9 +427,55 @@ def g_slider(p):
     chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
 
 
+# ---------------------------------------------------------------- 9 太さの目安表示（2026-10-12。台帳Z-146）
+def g_sizehint(p):
+    print('--- 9 太さの目安表示（Z-146）')
+    s = Sess(p); pg = s.pg
+    pg.evaluate("""(()=>{const c=document.createElement('canvas');c.width=c.height=200;const g=c.getContext('2d');g.fillStyle='#223';g.fillRect(0,0,200,200);add(null,c,{size:1})})()"""); pg.wait_for_timeout(500)
+    st = lambda: pg.evaluate("szhState(performance.now())")
+    fire = lambda i, v: pg.evaluate("([id,v])=>{const r=document.getElementById(id);r.value=v;r.dispatchEvent(new Event('input',{bubbles:true}))}", [i, v])
+    chk('何もしていない時は出ない', st() is None, st())
+    for i, v, fn in [('ps', 20, 'paBrushPx(sel)'), ('adjBs', 40, "maskBrushPx(sel,40)"), ('bs', 20, "maskBrushPx(sel,20)"), ('bbs', 30, "maskBrushPx(sel,30)"), ('pbs', 25, "maskBrushPx(sel,25)"), ('wbS', 150, '150')]:
+        fire(i, v); pg.wait_for_timeout(60)
+        r = st(); want = pg.evaluate(fn)
+        chk(i + ' を動かすと輪が出る（直径＝実際の太さ%.1fpx）' % want, bool(r) and abs(r['d'] - want) < .6 and r['a'] == 1, r)
+    # 値が大きいほど大きい（太さに比例）
+    fire('ps', 10); a = st()['d']; fire('ps', 30); b = st()['d']
+    chk('ペンの太さを3倍にすると輪も約3倍', abs(b / a - 3) < .05, (a, b))
+    # ズームすると、画面の実寸も変わる（輪＝実際に塗れる太さ）
+    pg.evaluate("zoomBy(1.35)"); pg.wait_for_timeout(100); fire('ps', 30); c = st()['d']
+    chk('画面を拡大すると、同じ太さでも輪は大きい（画面の実寸）', c > b * 1.2, (b, c))
+    pg.evaluate("Z.s=1;Z.x=0;Z.y=0")
+    # 時間：離してから1秒足らずで消える
+    fire('ps', 12); pg.wait_for_timeout(400); r1 = st(); pg.wait_for_timeout(450); r2 = st(); pg.wait_for_timeout(300); r3 = st()
+    chk('0.4秒後はまだ濃く出ている', bool(r1) and r1['a'] == 1, r1)
+    chk('0.85秒後は薄くなっていく途中', bool(r2) and 0 < r2['a'] < 1, r2)
+    chk('1.15秒後（<1秒＋α）には消えている', r3 is None, r3)
+    # 押している間は出続ける（バーを押したまま止まっても）
+    pg.evaluate("document.getElementById('ps').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:7}))"); pg.wait_for_timeout(1500)
+    r = st(); chk('バーを押している間は、1.5秒止めても出ている', bool(r) and r['a'] == 1, r)
+    pg.evaluate("dispatchEvent(new PointerEvent('pointerup',{pointerId:7}))"); pg.wait_for_timeout(300); r = st(); chk('離した0.3秒後はまだ出ている', bool(r), r)
+    pg.wait_for_timeout(900); chk('離してから1.2秒で消える', st() is None, st())
+    # 描画：輪の縁の画素が変わる（出ている間と消えた後の差）
+    fire('ps', 30); pg.wait_for_timeout(50)
+    dr = pg.evaluate("""(()=>{const r=szhState(performance.now()).d/2;paintFrame();const x=Math.round((W/2+r)*dpr),y=Math.round(H/2*dpr),g=cv.getContext('2d'),a=[...g.getImageData(x-2,y,5,1).data];
+      SZH.t=performance.now()-5000;SZH.down=false;paintFrame();const b=[...g.getImageData(x-2,y,5,1).data];let df=0;for(let i=0;i<a.length;i++)df=Math.max(df,Math.abs(a[i]-b[i]));return{df}})()""")
+    chk('出ている間だけ、輪の縁の画素が変わる（暗い絵に白い輪）', dr['df'] > 60, dr)
+    # 出さない場面
+    fire('ps', 30); r = pg.evaluate("(()=>{const o=sel;sel=null;const a=szhState(performance.now());sel=o;const h=hk;hk=1;const b=szhState(performance.now());hk=h;return{a,b}})()")
+    chk('オブジェクト0個（選択なし）・書き出し中は出さない', r['a'] is None and r['b'] is None, r)
+    # 関係ない入力では出ない
+    pg.wait_for_timeout(1200); pg.evaluate("document.getElementById('es').value=.5;document.getElementById('es').dispatchEvent(new Event('input',{bubbles:true}))"); pg.wait_for_timeout(50)
+    chk('太さ以外のバー（消し具合）では出ない', st() is None, st())
+    # 縦距離スクラブ・キーボードでも出る
+    pg.evaluate("setTab('dr')"); pg.wait_for_timeout(300); pg.evaluate("document.getElementById('ps').focus()"); pg.keyboard.press('ArrowRight'); pg.wait_for_timeout(50)
+    chk('キーボードの矢印でも出る', bool(st()), st())
+    chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp, sync_playwright() as p:
-        for g in (g_tip, g_win, g_heal, g_zero, lambda p: g_canvas(p, tmp), g_coords, g_drag, g_slider):
+        for g in (g_tip, g_win, g_heal, g_zero, lambda p: g_canvas(p, tmp), g_coords, g_drag, g_slider, g_sizehint):
             try: g(p)
             except Exception as e: chk('検査が途中で止まった：' + getattr(g, '__name__', 'canvas'), False, str(e)[:200])
     print('OK %d  NG %d' % tuple(OKN))

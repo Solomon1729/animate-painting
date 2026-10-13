@@ -36,6 +36,15 @@ function cmSetImage(l,c){
   l.img=c;l.cv=null;l.base=null;l.pen=null;l.sd=null;l._adjC=null;l._adjJob=null;l._raw=null;l._adjRef=null;adjDirty(l);
 }
 function cmResetAdj(l){const a=ensureAdj(l);COLK.forEach(k=>a[k]=0);const f=ensureLF(l);LFK.forEach(k=>f[k].amount=0)}
+/* 確定のあと、範囲指定（色調整・質感の両方）も初期状態＝「全体」・塗った範囲なしに戻す。残したままだと、新しい調整が古い範囲にしか掛からず、
+   焼き込んだ後でまた一部だけ微調整することができなかった（台帳Z-92。2026-10-12ユーザー確認：確定したら範囲もリセットしてほしい） */
+function cmResetRange(l){
+  for(const[k,m,h,vv]of[['adj','adjm','hasAdjM','adjmv'],['lf','lfm','hasLFM','lfmv']]){
+    if(l[m]){const g=l[m].getContext('2d');g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.clearRect(0,0,l[m].width,l[m].height)}
+    l[h]=false;l[vv]=(l[vv]||0)+1;l[k+'Rng']=false;
+  }
+  adjMode='';
+}
 /* シート＝元のオブジェクトの複製（位置・大きさ・向き・動き・歪み・ぼかし・マスク関係はそのまま）に、絵だけ差し替えたもの。物理と範囲・調整値は引き継がない */
 function cmSheet(l,c){
   const o=JSON.parse(JSON.stringify(l,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v));
@@ -67,8 +76,8 @@ async function cmCommit(){
     if(asLy&&cov&&!cov.n){note('範囲が塗られていないので、何も変わりません');return}
     const A=cmAdjusted(l);if(!A){note('確定できませんでした');return}
     pushUndo();
-    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);adjDirty(l);note('調整した'+(cov?'範囲':'絵')+'を、新しいレイヤー「'+nm+'」に切り離しました。元の絵は調整前に戻っています')}
-    else{cmSetImage(l,A);cmResetAdj(l);note('確定しました（取り消しは「元に戻す」）',1500)}  /* 成功の通知だけ1.5秒で自動的に消す（台帳Z-116） */
+    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);cmResetRange(l);adjDirty(l);note('調整した'+(cov?'範囲':'絵')+'を、新しいレイヤー「'+nm+'」に切り離しました。元の絵は調整前に戻っています')}
+    else{cmSetImage(l,A);cmResetAdj(l);cmResetRange(l);adjDirty(l);note('確定しました（取り消しは「元に戻す」）',1500)}  /* 成功の通知だけ1.5秒で自動的に消す（台帳Z-116） */
     paintFrame();adjUi();chips();
   }catch(e){note('確定できませんでした：'+((e&&e.message)||e))}
   finally{cmBusy=false}
@@ -130,8 +139,8 @@ async function cmMatch(){
       g.putImageData(id,0,y0);if(big)await cmFrame();
     }
     pushUndo();
-    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);adjDirty(l);note('「'+r.name+'」に合わせた絵を、新しいレイヤー「'+nm+'」に置きました。元の絵は調整前に戻っています')}
-    else{cmSetImage(l,A);cmResetAdj(l);note('「'+r.name+'」の色に合わせました（取り消しは「元に戻す」）')}
+    if(asLy){const nm=cmPlace(l,cmSheet(l,cmClip(A,cov)));cmResetAdj(l);cmResetRange(l);adjDirty(l);note('「'+r.name+'」に合わせた絵を、新しいレイヤー「'+nm+'」に置きました。元の絵は調整前に戻っています')}
+    else{cmSetImage(l,A);cmResetAdj(l);cmResetRange(l);adjDirty(l);note('「'+r.name+'」の色に合わせました（取り消しは「元に戻す」）')}
     paintFrame();adjUi();chips();
   }catch(e){note('色を合わせられませんでした：'+((e&&e.message)||e))}
   finally{cmBusy=false}

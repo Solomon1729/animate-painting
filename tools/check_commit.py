@@ -77,7 +77,7 @@ with sync_playwright() as p:
       return{d:T.diff(before,after),left:T.diff(raw,after,0,.45),right:T.diff(raw,after,.55,1),adjA:adjActive(l),rng:l.adjRng,hasM:l.hasAdjM}}""")
     rep('範囲指定の確定でも、焼き込み前後で見た目が同じ（最大差≤3）',r['d']['max']<=3,r['d'])
     rep('塗った左側だけが変わり、右側は元のまま',r['left']['mean']>8 and r['right']['max']<=1,{'left':r['left'],'right':r['right']})
-    rep('範囲の指定と塗った範囲は残り、強さだけ0（続けて同じ範囲を調整できる）',(not r['adjA']) and r['rng'] and r['hasM'])
+    rep('確定すると強さも範囲の指定・塗った範囲もリセットされる（また新しく一部だけ微調整できる。2026-10-12）',(not r['adjA']) and (not r['rng']) and (not r['hasM']),{'adjA':r['adjA'],'rng':r['rng'],'hasM':r['hasM']})
     rep('エラーなし',not errs,errs);b.close()
 
     # ---------- 3 レイヤーとして保存 ----------
