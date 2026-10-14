@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""選択の強化（自動選択・マグネット・輪郭に合わせる・輪郭の編集・分割・明暗の傾き）の検査（台帳Z-87・Z-91⑤・Z-127・Z-142・Z-145。2026-10-12）。
+"""選択の強化（自動選択・マグネット・輪郭に合わせる・輪郭の編集・分割・明暗の傾き）の検査（台帳Z-87・Z-91⑤・Z-127・Z-142・Z-145・Z-151。2026-10-12〜14）。
 
 使い方：  python3 tools/check_select.py <HTMLの絶対パス>
   ヘッドレスChromium（Playwright）で、実際のマウス（page.mouse）を使って確かめる。全項目 OK が正常（最後に `OK n  NG 0`）。**ヘッドレスのみ。実機（スマホ）では未確認**。
@@ -8,7 +8,7 @@
 群：
   1 自動選択：形（円・四角・細い線）が正しく選べる／許容差／足す・引く／絵の外／切り取りで高解像度マスクが使われる
   2 輪郭に合わせる：粗い囲みが実際の輪郭へ寄る（0なら変わらない）
-  3 マグネット：点を置いて閉じると輪郭どおりに囲める／押している間の経路／1点戻す・やり直し
+  3 マグネット：点を置いて閉じると輪郭どおりに囲める／押している間の経路／1点戻す・やり直し／経路の探索（再開できる最短経路IO.liveWire＝毎回解き直した結果と同じ費用・時間予算で細切れでも同じ・始点を替えると前の探索が残らない・動かした時は記録だけ・離した瞬間の点）／輪郭の強さIO.edgeの正規化
   4 輪郭の編集：頂点のドラッグ・辺から頂点を足す・頂点を消す・元に戻す
   5 分割：隙間も重なりも出ない・新しいレイヤーの別オブジェクト・Undoで戻る
   6 明暗の傾き：傾きを正しく取れる・引くと平らになる・足すと移植できる
@@ -231,6 +231,48 @@ def g_magnet(p):
     # 道具を替えると経路は消える
     s.tap(*pts[0]); s.tool('psel')
     chk('道具を替えると、途中のマグネットの点は消える', pg.evaluate("SEL.mg===null"))
+    # 経路の探索（台帳Z-151）：再開できる最短経路は、毎回解き直した結果と同じ費用になる
+    r = pg.evaluate("""(()=>{
+      const w=120,h=90,c=new Float32Array(w*h);let q=12345;const rnd=()=>(q=(q*1103515245+12345)&0x7fffffff)/0x7fffffff;for(let i=0;i<c.length;i++)c[i]=.03+rnd();
+      const S=5*w+5,costOf=p=>{let t=0;for(let k=1;k<p.length;k++){const a=p[k-1],b=p[k],dx=a%w!==b%w,dy=((a/w)|0)!==((b/w)|0);t+=c[b]*(dx&&dy?1.4142:1)}return t};
+      const lw=IO.liveWire(c,w,h);lw.start(S);let bad=0,n=0;
+      /* 遠い→近い→遠い…の順で指す（確定済みの画素を指す・先へ広げる・また戻る） */
+      for(const e of [w*h-1,60*w+100,20*w+30,80*w+10,w*h-1,3*w+110,45*w+60,S]){lw.run(e,1e9);const p1=lw.path(e),p2=IO.dijkstra(c,w,h,S,e);n++;
+        const a=costOf(p1),b=costOf(p2);if(!(p1[0]===S&&p1[p1.length-1]===e)||Math.abs(a-b)>1e-3*(b||1))bad++}
+      /* 時間予算で細切れに進めても（毎回最初の128画素ぶんだけ）、同じ結果になる */
+      const lw2=IO.liveWire(c,w,h);lw2.start(S);let it=0;const E=w*h-1;while(!lw2.run(E,0.001)&&it<1e5)it++;
+      const a2=costOf(lw2.path(E)),b2=costOf(IO.dijkstra(c,w,h,S,E));
+      /* 始点を変えて広げ直しても、前の探索が残らない */
+      lw.start(E);lw.run(S,1e9);const p3=lw.path(S),a3=costOf(p3),b3=costOf(IO.dijkstra(c,w,h,E,S));
+      return{bad,n,it,slice:Math.abs(a2-b2)<=1e-3*b2,restart:p3[0]===E&&p3[p3.length-1]===S&&Math.abs(a3-b3)<=1e-3*b3}})()""")
+    chk('再開できる最短経路（IO.liveWire）：指す順を変えても、毎回解き直した結果と同じ費用（%d/%d）' % (r['n'] - r['bad'], r['n']), r['bad'] == 0, r)
+    chk('時間予算で細切れに進めても同じ結果になる（%d回に分けた）' % r['it'], r['slice'] and r['it'] > 3, r)
+    chk('始点を替えて広げ直すと、前の探索は残らない', r['restart'], r)
+    r = pg.evaluate("""(()=>{
+      const w=64,h=48,g=new Float32Array(w*h);let q=777;for(let y=0;y<h;y++)for(let x=0;x<w;x++){q=(q*1103515245+12345)&0x7fffffff;g[y*w+x]=.5+.4*Math.sin(x/5)*Math.cos(y/7)+(q/0x7fffffff-.5)*.1}
+      const e=IO.edge(g,w,h),f=IO.edge(new Float32Array(w*h).fill(.5),w,h);let mx=0,mn=9,sat=0,nan=0;for(const v of e){if(v>mx)mx=v;if(v<mn)mn=v;if(v>=1)sat++;if(v!==v)nan++}
+      return{mx,mn,sat:sat/e.length,nan,flat:Math.max(...f),flatNaN:f.some(v=>v!==v)}})()""")
+    chk('輪郭の強さ（IO.edge）：0〜1に収まり、上位約2%が1に張り付く（度数から求めた98パーセンタイル）', r['mn'] >= 0 and r['mx'] <= 1 and r['nan'] == 0 and .005 <= r['sat'] <= .0225, r)
+    chk('平らな絵でも、輪郭の強さは0でNaNにならない', r['flat'] == 0 and not r['flatNaN'], r)
+    # 画面：動かしても重くならない／離した瞬間のカーソルで点が決まる
+    s.setup(tool='pmag')
+    r = pg.evaluate("""(()=>{
+      const l=sel,P=selPic(l),M=magInit(l),a=magSnapPt(M,P.W*.1,P.H*.1);M.anchors.push(a);M.segs.push([]);
+      const T=[],N=40;M.down=true;
+      for(let i=0;i<N;i++){const q=selB2S(l,P,P.W*(.1+.7*i/(N-1)),P.H*(.1+.6*i/(N-1)));const t0=performance.now();selAt(q,l);T.push(performance.now()-t0)}
+      const pendingAfterMoves=M.pending,cheap=Math.max(...T);  /* 動かした時は記録だけ（探索はしない） */
+      return{pendingAfterMoves,cheap}})()""")
+    chk('カーソルを動かした時は、探索せず行き先を記録するだけ（最大%.2fms）' % r['cheap'], r['pendingAfterMoves'] and r['cheap'] < 5, r)
+    pg.wait_for_timeout(250)
+    r = pg.evaluate("({p:SEL.mg.pending,n:SEL.mg.live&&SEL.mg.live.length})")
+    chk('次のフレームで探索が進み、経路が出る（経路 %s 点）' % r['n'], (not r['p']) and r['n'] and r['n'] > 20, r)
+    r = pg.evaluate("""(()=>{
+      /* 1フレームも挟まず、遠い所へ動かしてすぐ離す＝離した時のカーソルまで最後まで解いて、点がそこに置かれる */
+      const l=sel,P=selPic(l),M=SEL.mg,q=selB2S(l,P,P.W*.85,P.H*.2),px=magPix(M,q,l);
+      selAt(q,l);selEnd(true);
+      const seg=M.segs[M.segs.length-1],end=seg&&seg[seg.length-1],an=M.anchors[M.anchors.length-1];
+      return{n:M.anchors.length,end,px:[px.x,px.y],snap:an&&Math.max(Math.abs(an.x-px.x),Math.abs(an.y-px.y)),pending:M.pending,want:M.want}})()""")
+    chk('離した瞬間のカーソルで点が決まる（フレームを待たない）', r['n'] == 2 and r['end'] == r['px'] and r['snap'] <= 5 and not r['pending'] and r['want'] is None, r)
     chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
 
 
