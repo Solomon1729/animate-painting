@@ -75,7 +75,7 @@ function rtBegin(l,a){
   const g=l.base.getContext('2d',{willReadFrequently:true}),work=g.getImageData(0,0,bw,bh);
   const st={l,bw,bh,g,work,mode:RT.mode,M,R:rtDia(bw,bh)/2,hd:RT.h/100,gs:RT.gs[RT.mode],ps:RT.ps[RT.mode],sp:M.sp,
     src:(M.src||RT.mode==='smooth'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
-    selA:null,lx:a.x,ly:a.y,cx:a.x,cy:a.y,acc:0,carry:null,off:null,stamp:false,cos:Math.cos(RT.rot*Math.PI/180),sin:Math.sin(RT.rot*Math.PI/180),fl:RT.flip?-1:1,isc:100/Math.max(5,RT.sc),seed:(Math.random()*1e9)|0};
+    selA:null,tc:{},fm:null,amp:0,nzx:(Math.random()*512)|0,nzy:(Math.random()*512)|0,lx:a.x,ly:a.y,cx:a.x,cy:a.y,acc:0,carry:null,off:null,stamp:false,cos:Math.cos(RT.rot*Math.PI/180),sin:Math.sin(RT.rot*Math.PI/180),fl:RT.flip?-1:1,isc:100/Math.max(5,RT.sc),seed:(Math.random()*1e9)|0};
   if(RT.useSel&&l.hasSm&&l.sm){
     const pm=partMask(l,bw,bh,false,2),d=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,bw,bh).data,sa=new Uint8Array(bw*bh);
     for(let i=0;i<sa.length;i++)sa[i]=d[i*4+3];st.selA=sa;
@@ -157,71 +157,181 @@ function rtLowpass(a,w,h,sg){
     }}
   return o;
 }
-/* ヒーリング：書き込み先の低周波（明るさ・色のゆるやかな変化）＋基準の高周波（肌理）。res＝S＋(G(D)−G(S)) */
+/* ---- 計算の使い回し（台帳Z-156）----
+   滑らか・ぼかす・くっきり・ヒーリングは「元の絵（st.src。1回のなぞりの間は変わらない）から決まる結果」を混ぜるだけ。以前は、1回の打ちごとに筆の周りの広い窓を丸ごと計算し直しており、
+   打ちは重なる（間隔＝半径×0.2〜0.3）ので、同じ画素を1回のなぞりで約10回計算していた（実測：3000×2000・太さ24で、1打ち70〜190ms。クローンは6ms）。
+   そこで、絵をタイル（64・128・256画素四方）に分け、打ちが触れたタイルだけを、必要になった時に1回だけ（余白つきの窓で）計算して、なぞりの間は使い回す（st.tc。指を離すと捨てる）。
+   タイルの中身はアルファ掛け済みRGBAのFloat32（色は0〜255×α、aは0〜255）。 */
+function rtTiles(st,key,mg,fn){
+  let c=st.tc[key];if(c)return c;
+  const R=st.R,sh=R<56?6:R<300?7:8,TS=1<<sh;
+  return st.tc[key]=c={sh,TS,nx:Math.ceil(st.bw/TS),ny:Math.ceil(st.bh/TS),bw:st.bw,bh:st.bh,mg,fn,t:[]};
+}
+/* 画素の範囲[x0,x1)×[y0,y1)にかかるタイルのうち、まだ無いものを計算する（範囲は画像の中に切り詰め） */
+function rtTEnsure(st,c,x0,y0,x1,y1){
+  const sh=c.sh,TS=c.TS,bw=st.bw,bh=st.bh;
+  x0=Math.max(0,x0);y0=Math.max(0,y0);x1=Math.min(bw,x1);y1=Math.min(bh,y1);if(x1<=x0||y1<=y0)return;
+  for(let ty=y0>>sh;ty<=(y1-1)>>sh;ty++)for(let tx=x0>>sh;tx<=(x1-1)>>sh;tx++){
+    const k=ty*c.nx+tx;if(c.t[k])continue;
+    const rx=tx<<sh,ry=ty<<sh,rw=Math.min(TS,bw-rx),rh=Math.min(TS,bh-ry),win=rtWin(st,{x:rx,y:ry,w:rw,h:rh},c.mg);
+    const F=c.fn(rtPre(st.src,bw,win.x,win.y,win.w,win.h),win.w,win.h),T=new Float32Array(rw*rh*4);
+    for(let j=0;j<rh;j++){const s0=((ry-win.y+j)*win.w+(rx-win.x))*4;T.set(F.subarray(s0,s0+rw*4),j*rw*4)}
+    c.t[k]={F:T,w:rw};
+  }
+}
+/* タイルの中の連続座標(x,y)（画素の中心＝+.5）を双一次で読む。結果はRTT（アルファ掛け済みRGBA）。読む範囲のタイルは先にrtTEnsureしておく */
+const RTT=new Float64Array(4);
+function rtTBil(c,x,y){
+  const bw=c.bw,bh=c.bh,u=x-.5,v=y-.5,x0=Math.floor(u),y0=Math.floor(v),fx=u-x0,fy=v-y0,
+    xa=x0<0?0:x0>=bw?bw-1:x0,xb=x0+1<0?0:x0+1>=bw?bw-1:x0+1,ya=y0<0?0:y0>=bh?bh-1:y0,yb=y0+1<0?0:y0+1>=bh?bh-1:y0+1,
+    sh=c.sh,mk=c.TS-1,nx=c.nx,T=c.t,
+    t00=T[(ya>>sh)*nx+(xa>>sh)],t10=T[(ya>>sh)*nx+(xb>>sh)],t01=T[(yb>>sh)*nx+(xa>>sh)],t11=T[(yb>>sh)*nx+(xb>>sh)],
+    o00=((ya&mk)*t00.w+(xa&mk))*4,o10=((ya&mk)*t10.w+(xb&mk))*4,o01=((yb&mk)*t01.w+(xa&mk))*4,o11=((yb&mk)*t11.w+(xb&mk))*4,
+    w00=(1-fx)*(1-fy),w10=fx*(1-fy),w01=(1-fx)*fy,w11=fx*fy,F00=t00.F,F10=t10.F,F01=t01.F,F11=t11.F;
+  RTT[0]=F00[o00]*w00+F10[o10]*w10+F01[o01]*w01+F11[o11]*w11;RTT[1]=F00[o00+1]*w00+F10[o10+1]*w10+F01[o01+1]*w01+F11[o11+1]*w11;
+  RTT[2]=F00[o00+2]*w00+F10[o10+2]*w10+F01[o01+2]*w01+F11[o11+2]*w11;RTT[3]=F00[o00+3]*w00+F10[o10+3]*w10+F01[o01+3]*w01+F11[o11+3]*w11;
+}
+/* 画素(x,y)（整数）の値をRTTへ */
+function rtTAt(c,x,y){const sh=c.sh,mk=c.TS-1,t=c.t[(y>>sh)*c.nx+(x>>sh)],o=((y&mk)*t.w+(x&mk))*4,F=t.F;RTT[0]=F[o];RTT[1]=F[o+1];RTT[2]=F[o+2];RTT[3]=F[o+3]}
+/* 幅σが大きい（σ≧12）低周波は、タイルにすると余白（2.5σ）が大きすぎて、最初の打ちが重い（実測：太さ24のヒーリングで約560ms）。
+   そこで、k＝σ/3画素を1つにまとめた粗い格子（セル）で持つ：セルの平均（BA）→ガウス（LL）を、必要になったセルの塊（16×16セル）だけ計算する。
+   画素の読み込みは、必要な範囲を1回ずつだけ（太さ24で約540k画素＝数ms）。LLは小さいので、双一次で読むのも速い。 */
+function rtLowCache(st,sg){
+  const key='lo'+sg.toFixed(3);let c=st.tc[key];if(c)return c;
+  const k=Math.floor(sg/3),bw=st.bw,bh=st.bh,gw=Math.ceil(bw/k),gh=Math.ceil(bh/k),ST=16;
+  return st.tc[key]=c={low:true,k,sg,gw,gh,ST,mc:Math.ceil(2.5*sg/k)+1,bw,bh,BA:new Float32Array(gw*gh*4),haveBA:new Uint8Array(gw*gh),LL:new Float32Array(gw*gh*4),sx:Math.ceil(gw/ST),haveLL:new Uint8Array(Math.ceil(gw/ST)*Math.ceil(gh/ST))};
+}
+function rtLowEnsure(st,c,x0,y0,x1,y1){
+  const k=c.k,gw=c.gw,gh=c.gh,ST=c.ST,bw=c.bw,bh=c.bh,d=st.src;
+  x0=Math.max(0,x0);y0=Math.max(0,y0);x1=Math.min(bw,x1);y1=Math.min(bh,y1);if(x1<=x0||y1<=y0)return;
+  const cx0=Math.max(0,Math.floor(x0/k)-1),cy0=Math.max(0,Math.floor(y0/k)-1),cx1=Math.min(gw,Math.ceil(x1/k)+1),cy1=Math.min(gh,Math.ceil(y1/k)+1);
+  for(let ty=(cy0/ST)|0;ty<=((cy1-1)/ST)|0;ty++)for(let tx=(cx0/ST)|0;tx<=((cx1-1)/ST)|0;tx++){
+    if(c.haveLL[ty*c.sx+tx])continue;
+    const ax0=tx*ST,ay0=ty*ST,ax1=Math.min(gw,ax0+ST),ay1=Math.min(gh,ay0+ST),bx0=Math.max(0,ax0-c.mc),by0=Math.max(0,ay0-c.mc),bx1=Math.min(gw,ax1+c.mc),by1=Math.min(gh,ay1+c.mc);
+    for(let cy=by0;cy<by1;cy++)for(let cx=bx0;cx<bx1;cx++){
+      const ci=cy*gw+cx;if(c.haveBA[ci])continue;c.haveBA[ci]=1;
+      const px0=cx*k,py0=cy*k,px1=Math.min(bw,px0+k),py1=Math.min(bh,py0+k);let r=0,g=0,b=0,a=0;
+      for(let y=py0;y<py1;y++){let p=(y*bw+px0)*4;for(let x=px0;x<px1;x++,p+=4){const al=d[p+3];if(al===0)continue;const m=al/255;r+=d[p]*m;g+=d[p+1]*m;b+=d[p+2]*m;a+=al}}
+      const inv=1/((px1-px0)*(py1-py0));c.BA[ci*4]=r*inv;c.BA[ci*4+1]=g*inv;c.BA[ci*4+2]=b*inv;c.BA[ci*4+3]=a*inv;
+    }
+    const w3=bx1-bx0,h3=by1-by0,sub=new Float32Array(w3*h3*4);
+    for(let j=0;j<h3;j++){const s0=((by0+j)*gw+bx0)*4;sub.set(c.BA.subarray(s0,s0+w3*4),j*w3*4)}
+    const G=IO.gauss(sub,w3,h3,4,c.sg/k);
+    for(let cy=ay0;cy<ay1;cy++){const s0=((cy-by0)*w3+(ax0-bx0))*4;c.LL.set(G.subarray(s0,s0+(ax1-ax0)*4),(cy*gw+ax0)*4)}
+    c.haveLL[ty*c.sx+tx]=1;
+  }
+}
+/* 粗い格子の低周波を、画素の連続座標(x,y)（中心＝+.5）で双一次に読む（結果はRTT） */
+function rtLowBil(c,x,y){
+  const k=c.k,gw=c.gw,gh=c.gh,L=c.LL,u=x/k-.5,v=y/k-.5,x0=Math.floor(u),y0=Math.floor(v),fx=u-x0,fy=v-y0,
+    xa=x0<0?0:x0>=gw?gw-1:x0,xb=x0+1<0?0:x0+1>=gw?gw-1:x0+1,ya=y0<0?0:y0>=gh?gh-1:y0,yb=y0+1<0?0:y0+1>=gh?gh-1:y0+1,
+    o00=(ya*gw+xa)*4,o10=(ya*gw+xb)*4,o01=(yb*gw+xa)*4,o11=(yb*gw+xb)*4,w00=(1-fx)*(1-fy),w10=fx*(1-fy),w01=(1-fx)*fy,w11=fx*fy;
+  RTT[0]=L[o00]*w00+L[o10]*w10+L[o01]*w01+L[o11]*w11;RTT[1]=L[o00+1]*w00+L[o10+1]*w10+L[o01+1]*w01+L[o11+1]*w11;
+  RTT[2]=L[o00+2]*w00+L[o10+2]*w10+L[o01+2]*w01+L[o11+2]*w11;RTT[3]=L[o00+3]*w00+L[o10+3]*w10+L[o01+3]*w01+L[o11+3]*w11;
+}
+/* 2種類の持ち方（タイル／粗い格子）を同じ呼び方で使う */
+const rtCEns=(st,c,x0,y0,x1,y1)=>c.low?rtLowEnsure(st,c,x0,y0,x1,y1):rtTEnsure(st,c,x0,y0,x1,y1);
+const rtCAt=(c,x,y)=>c.low?rtLowBil(c,x+.5,y+.5):rtTAt(c,x,y);
+const rtCBil=(c,x,y)=>c.low?rtLowBil(c,x,y):rtTBil(c,x,y);
+/* 元の絵のガウス低周波（σ） */
+const rtLPT=(st,sg)=>Math.floor(sg/3)>=4?rtLowCache(st,sg):rtTiles(st,'lp'+sg.toFixed(3),Math.ceil(sg*2.5)+1,(P,w,h)=>rtLowpass(P,w,h,sg));
+
+/* ヒーリング：書き込み先の低周波（明るさ・色のゆるやかな変化）＋基準の高周波（肌理）。res＝S＋(G(D)−G(S))。
+   G(D)＝写し先の元の絵の低周波、G(S)＝写し元の低周波。どちらも元の絵（st.src）の低周波で、位置だけで決まるので、タイルから読む。
+   写し元の低周波は「写し元の絵の低周波を、写す変換で読む」（回転・拡大でも、等方なガウスなので写してから低周波にしたものとほぼ同じ。拡大の時は幅σを写し元の画素に換算）。 */
 function rtHeal(st,cx,cy,f,W){
-  const bw=st.bw,bh=st.bh,R=st.R,sg=Math.max(1.5,R*(.1+.8*st.ps)),mg=Math.ceil(sg*2.5)+1,win=rtWin(st,f,mg),w2=win.w,h2=win.h;
-  const Pd=rtPre(st.src,bw,win.x,win.y,w2,h2),Ps=new Float32Array(w2*h2*4);
-  const sx0=cx+st.off.dx,sy0=cy+st.off.dy,ca=st.cos,sa=st.sin,fl=st.fl,isc=st.isc;
-  for(let j=0;j<h2;j++)for(let i=0;i<w2;i++){
-    const vx=(win.x+i+.5-cx)*fl*isc,vy=(win.y+j+.5-cy)*isc,sx=sx0+ca*vx-sa*vy,sy=sy0+sa*vx+ca*vy;
-    if(sx<0||sy<0||sx>=bw||sy>=bh)continue;
-    rtBil(st.src,bw,bh,sx,sy);const k=RTO[3]/255,q=(j*w2+i)*4;Ps[q]=RTO[0]*k;Ps[q+1]=RTO[1]*k;Ps[q+2]=RTO[2]*k;Ps[q+3]=RTO[3];
-  }
-  const Ld=rtLowpass(Pd,w2,h2,sg),Ls=rtLowpass(Ps,w2,h2,sg),D=st.work.data;
-  for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
+  const bw=st.bw,bh=st.bh,R=st.R,sg=Math.max(1.5,R*(.1+.8*st.ps)),isc=st.isc,sgs=Math.max(.5,sg*isc),LD=rtLPT(st,sg),LS=Math.abs(sgs-sg)<.01?LD:rtLPT(st,sgs);
+  const sx0=cx+st.off.dx,sy0=cy+st.off.dy,ca=st.cos,sa=st.sin,fl=st.fl,D=st.work.data,S=st.src;
+  rtCEns(st,LD,f.x,f.y,f.x+f.w,f.y+f.h);
+  let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;
+  for(let k=0;k<4;k++){const px=f.x+(k&1?f.w:0),py=f.y+(k&2?f.h:0),vx=(px-cx)*fl*isc,vy=(py-cy)*isc,sx=sx0+ca*vx-sa*vy,sy=sy0+sa*vx+ca*vy;
+    if(sx<mnx)mnx=sx;if(sx>mxx)mxx=sx;if(sy<mny)mny=sy;if(sy>mxy)mxy=sy}
+  rtCEns(st,LS,Math.floor(mnx)-2,Math.floor(mny)-2,Math.ceil(mxx)+3,Math.ceil(mxy)+3);
+  for(let j=0;j<f.h;j++){const y=f.y+j;for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
-    const q=((f.y+j-win.y)*w2+(f.x+i-win.x))*4,a=Ps[q+3];if(a<=0)continue;
-    const k=255/a;let r=Ps[q]*k,g=Ps[q+1]*k,b=Ps[q+2]*k;
-    const ad=Ld[q+3],as=Ls[q+3];
-    if(ad>2&&as>2){const kd=255/ad,ks=255/as;r=rtC(r+Ld[q]*kd-Ls[q]*ks);g=rtC(g+Ld[q+1]*kd-Ls[q+1]*ks);b=rtC(b+Ld[q+2]*kd-Ls[q+2]*ks)}
-    rtMix(D,((f.y+j)*bw+f.x+i)*4,r,g,b,a,m);
-  }
+    const x=f.x+i,vx=(x+.5-cx)*fl*isc,vy=(y+.5-cy)*isc,sx=sx0+ca*vx-sa*vy,sy=sy0+sa*vx+ca*vy;
+    if(sx<0||sy<0||sx>=bw||sy>=bh)continue;
+    rtBil(S,bw,bh,sx,sy);const a=RTO[3];if(a<=0)continue;
+    let r=RTO[0],g=RTO[1],b=RTO[2];
+    rtCAt(LD,x,y);const ad=RTT[3];
+    if(ad>2){const dr=RTT[0],dg=RTT[1],db=RTT[2];rtCBil(LS,sx,sy);const as=RTT[3];
+      if(as>2){const kd=255/ad,ks=255/as;r=rtC(r+dr*kd-RTT[0]*ks);g=rtC(g+dg*kd-RTT[1]*ks);b=rtC(b+db*kd-RTT[2]*ks)}}
+    rtMix(D,(y*bw+x)*4,r,g,b,a,m);
+  }}
   return f;
 }
-/* 滑らかにする（ガイデッドフィルタ＝輪郭を保つ）／ぼかす（ガウス）／くっきり（アンシャープ） */
+/* 滑らかにする（ガイデッドフィルタ＝輪郭を保つ）／ぼかす（ガウス）／くっきり（アンシャープ）。結果は元の絵だけから決まるので、タイルから読む */
 function rtFilter(st,cx,cy,f,W){
   const md=st.mode,bw=st.bw,R=st.R,p=st.ps,L=Math.max(st.bw,st.bh);
-  let sg=0,rg=0,eps=0;
-  if(md==='blur')sg=Math.max(1,R*(.03+.25*p));
-  else if(md==='sharp')sg=Math.max(1,L/1000*1.2);
-  else{rg=Math.max(2,Math.round(R*(.1+.3*p)));eps=Math.pow(.02+.2*p,2)}
-  const mg=md==='smooth'?rg+1:Math.ceil(sg*2.5)+1,win=rtWin(st,f,mg),w2=win.w,h2=win.h,n=w2*h2,P=rtPre(st.src,bw,win.x,win.y,w2,h2),D=st.work.data;
-  let F=null;
-  if(md==='smooth'){
-    const I=new Float32Array(n),ch=[new Float32Array(n),new Float32Array(n),new Float32Array(n),new Float32Array(n)];
-    for(let i=0;i<n;i++){const q=i*4,a=P[q+3];I[i]=a>0?rtLum(P[q],P[q+1],P[q+2])/a:0;ch[0][i]=P[q]/255;ch[1][i]=P[q+1]/255;ch[2][i]=P[q+2]/255;ch[3][i]=P[q+3]/255}
-    const o=ch.map(c=>IO.guided(I,c,w2,h2,rg,eps));F=new Float32Array(n*4);
-    for(let i=0;i<n;i++){const q=i*4;F[q]=o[0][i]*255;F[q+1]=o[1][i]*255;F[q+2]=o[2][i]*255;F[q+3]=o[3][i]*255}
-  }else F=IO.gauss(P,w2,h2,4,sg);
-  for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
+  let tc;
+  if(md==='smooth'){const rg=Math.max(2,Math.round(R*(.1+.3*p))),eps=Math.pow(.02+.2*p,2);tc=rtTiles(st,'sm',rg+2,(P,w,h)=>IO.guidedRGBA(P,w,h,rg,eps))}
+  else tc=rtLPT(st,md==='blur'?Math.max(1,R*(.03+.25*p)):Math.max(1,L/1000*1.2));
+  rtCEns(st,tc,f.x,f.y,f.x+f.w,f.y+f.h);
+  const D=st.work.data,S=st.src;
+  for(let j=0;j<f.h;j++){const y=f.y+j;for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
-    const q=((f.y+j-win.y)*w2+(f.x+i-win.x))*4,pp=((f.y+j)*bw+f.x+i)*4,a0=st.src[pp+3];
-    if(md==='blur'){const a=F[q+3];if(a<=.5&&a0===0)continue;const k=a>0?255/a:0;rtMix(D,pp,rtC(F[q]*k),rtC(F[q+1]*k),rtC(F[q+2]*k),rtC(a),m);continue}
-    if(a0===0)continue;
-    const fa=F[q+3];if(fa<=2)continue;const k=255/fa;let r=F[q]*k,g=F[q+1]*k,b=F[q+2]*k;
-    if(md==='sharp'){const amt=p*3,r0=st.src[pp],g0=st.src[pp+1],b0=st.src[pp+2];r=rtC(r0+amt*(r0-r));g=rtC(g0+amt*(g0-g));b=rtC(b0+amt*(b0-b))}
+    const x=f.x+i,pp=(y*bw+x)*4,a0=S[pp+3];
+    if(md!=='blur'&&a0===0)continue;
+    rtCAt(tc,x,y);const F0=RTT[0],F1=RTT[1],F2=RTT[2],fa=RTT[3];
+    if(md==='blur'){if(fa<=.5&&a0===0)continue;const k=fa>0?255/fa:0;rtMix(D,pp,rtC(F0*k),rtC(F1*k),rtC(F2*k),rtC(fa),m);continue}
+    if(fa<=2)continue;const k=255/fa;let r=F0*k,g=F1*k,b=F2*k;
+    if(md==='sharp'){const amt=p*3,r0=S[pp],g0=S[pp+1],b0=S[pp+2];r=rtC(r0+amt*(r0-r));g=rtC(g0+amt*(g0-g));b=rtC(b0+amt*(b0-b))}
     rtMix(D,pp,rtC(r),rtC(g),rtC(b),a0,m);
-  }
+  }}
   return f;
 }
-/* 周りで埋める（打ち1回）：円の外側の色（今の絵）から、円の中をなめらかに補う。粒状感＝周りの細かい粒の強さに合わせたノイズ */
+/* 周りで埋める（打ち1回）：円の外側の色（今の絵）から、円の中をなめらかに補う。粒状感＝周りの細かい粒の強さに合わせたノイズ。
+   今の絵（なぞった跡を含む）から計算するので、使い回しはできない。代わりに、補う色は粗い解像度で解く（窓が大きい時だけ。k画素を1つにまとめ、長辺が約96になるように）：
+   補う色はなめらかなので、粗くて十分。円の外の色が分かっている画素はそのまま使い、円の中だけ、粗い解を双一次で細かく戻す（以前は窓の全画素でpush-pullを解いていた：太さ24で約190ms）。
+   粒は、窓の全画素の乱数を毎回作るのをやめ、位置で決まる乱数の表（RTN）から読む（重なる打ちでも同じ位置は同じ粒＝縞にならない）。強さは円の外をまばらに測って決める。 */
+const RT_FILL_LOW=96;
+let RTN=null;
+const rtNoiseTile=()=>RTN||(RTN=IO.noise(512,512,90210,.7));
 function rtFillDab(st,cx,cy,f,W){
-  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,px=new Uint8ClampedArray(w2*h2*4),known=new Uint8Array(w2*h2);
+  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,R2=R*R*.9;
+  const k=Math.max(1,Math.ceil(Math.max(w2,h2)/RT_FILL_LOW)),lw=Math.ceil(w2/k),lh=Math.ceil(h2/k),C=new Float32Array(lw*lh*3),A=new Float32Array(lw*lh),sd=Math.max(1,Math.floor(k/3));
   let nk=0;
-  for(let j=0;j<h2;j++)for(let i=0;i<w2;i++){
-    const p=((win.y+j)*bw+win.x+i)*4,q=(j*w2+i)*4,dx=win.x+i+.5-cx,dy=win.y+j+.5-cy;
-    px[q]=D[p];px[q+1]=D[p+1];px[q+2]=D[p+2];px[q+3]=D[p+3];
-    if(dx*dx+dy*dy>R*R*.9&&D[p+3]>=128){known[j*w2+i]=1;nk++}
-  }
+  /* 粗い格子の1セルは、k×k画素の平均。k≧3なら、画素を間引いて（sd画素おき）集める（円の外の色はなめらかなので十分）。 */
+  for(let j=0;j<h2;j+=sd){const y=win.y+j,dy=y+.5-cy,ly=((j/k)|0)*lw,dy2=dy*dy;
+    for(let i=0;i<w2;i+=sd){const x=win.x+i,dx=x+.5-cx;if(dx*dx+dy2<=R2)continue;const p=(y*bw+x)*4;if(D[p+3]<128)continue;
+      const li=ly+((i/k)|0);C[li*3]+=D[p];C[li*3+1]+=D[p+1];C[li*3+2]+=D[p+2];A[li]++;nk++}}
   if(nk<8)return null;
-  const F=IO.pushPull(px,known,w2,h2);if(!F)return null;
-  const nz=rtGrain(px,known,w2,h2,st.ps,st.seed+((cx*7+cy*13)|0));
-  for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
+  const cntP=(lo,hi)=>Math.ceil(hi/sd)-Math.ceil(lo/sd);   /* [lo,hi)にある、sdの倍数の個数 */
+  for(let ly=0;ly<lh;ly++){const ny=cntP(ly*k,Math.min(h2,ly*k+k));for(let lx=0;lx<lw;lx++){const li=ly*lw+lx,a=A[li];if(a>0){C[li*3]/=a;C[li*3+1]/=a;C[li*3+2]/=a;A[li]=Math.min(1,a/(cntP(lx*k,Math.min(w2,lx*k+k))*ny))}}}
+  const F=IO.pullPush(C,A,lw,lh);if(!F)return null;
+  if(!st.fm)st.fm=new Uint8Array(bw*st.bh);
+  const fm=st.fm;let amp=rtGrainAmp(D,bw,st.bh,win,cx,cy,R2,st.ps,fm);if(amp<0)amp=st.amp;else st.amp=amp;
+  const nz=amp>0?rtNoiseTile():null,ox=st.nzx,oy=st.nzy;
+  for(let j=0;j<f.h;j++){const y=f.y+j,dy=y+.5-cy;for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
-    const q=(f.y+j-win.y)*w2+(f.x+i-win.x),z=nz?nz[q]:0;
-    rtMix(D,((f.y+j)*bw+f.x+i)*4,rtC(F[q*3]+z),rtC(F[q*3+1]+z),rtC(F[q*3+2]+z),255,m);
-  }
+    const x=f.x+i,p=(y*bw+x)*4,dx=x+.5-cx;let r,g,b;
+    if(dx*dx+dy*dy>R2&&D[p+3]>=128)continue;   /* 円の外で色が分かっている画素は、そのまま（粒を足すと、前の打ちの粒と重なって縁に輪が出る） */
+    if(k===1){const q=((y-win.y)*lw+(x-win.x))*3;r=F[q];g=F[q+1];b=F[q+2]}
+    else{
+      const fx=(x-win.x+.5)/k-.5,fy=(y-win.y+.5)/k-.5,x0=Math.floor(fx),y0=Math.floor(fy),tx=fx-x0,ty=fy-y0,
+        xa=x0<0?0:x0>=lw?lw-1:x0,xb=x0+1<0?0:x0+1>=lw?lw-1:x0+1,ya=y0<0?0:y0>=lh?lh-1:y0,yb=y0+1<0?0:y0+1>=lh?lh-1:y0+1,
+        q00=(ya*lw+xa)*3,q10=(ya*lw+xb)*3,q01=(yb*lw+xa)*3,q11=(yb*lw+xb)*3,w00=(1-tx)*(1-ty),w10=tx*(1-ty),w01=(1-tx)*ty,w11=tx*ty;
+      r=F[q00]*w00+F[q10]*w10+F[q01]*w01+F[q11]*w11;g=F[q00+1]*w00+F[q10+1]*w10+F[q01+1]*w01+F[q11+1]*w11;b=F[q00+2]*w00+F[q10+2]*w10+F[q01+2]*w01+F[q11+2]*w11;
+    }
+    const z=nz?nz[(((y+oy)&511)<<9)|((x+ox)&511)]*amp:0;
+    rtMix(D,p,rtC(r+z),rtC(g+z),rtC(b+z),255,m);fm[p>>2]=1;
+  }}
   return f;
+}
+/* 円の外（色が分かっている所）の細かい粒の強さを、まばらに（約1500点）測って、粒状ノイズの振幅を返す。gain＝0〜1（粒状感）。粒が無い（なめらかな）絵・gain0なら0。
+   粒＝その画素の輝度と、周り5×5の平均との差の絶対値の中央値（輪郭の外れ値に強い）から標準偏差を見積る（rtGrainと同じ式）。
+   fm＝このなぞりで埋め済みの画素（1）。そこは測らない（自分が足した粒を「周りの粒」と数えて、なぞるほど粒が強くなるのを防ぐ）。測れる点が足りない時は-1（呼ぶ側が前回の値を使う） */
+function rtGrainAmp(D,bw,bh,win,cx,cy,R2,gain,fm){
+  if(!(gain>0))return 0;
+  const step=Math.max(1,Math.ceil(Math.sqrt(win.w*win.h/1500))),dv=[];
+  const lumAt=(x,y)=>{x=x<0?0:x>=bw?bw-1:x;y=y<0?0:y>=bh?bh-1:y;const p=(y*bw+x)*4;return .299*D[p]+.587*D[p+1]+.114*D[p+2]};
+  for(let y=win.y;y<win.y+win.h;y+=step)for(let x=win.x;x<win.x+win.w;x+=step){
+    const dx=x+.5-cx,dy=y+.5-cy;if(dx*dx+dy*dy<=R2)continue;if(D[(y*bw+x)*4+3]<128||(fm&&fm[y*bw+x]))continue;
+    let s=0;for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++)s+=lumAt(x+a,y+b);
+    dv.push(Math.abs(lumAt(x,y)-s/25));
+  }
+  if(dv.length<20)return -1;
+  dv.sort((a,b)=>a-b);const sd=1.4826*dv[dv.length>>1]*1.6,amp=sd*gain*2;return amp<.3?0:amp;
 }
 /* 周りの細かい粒（高周波）の強さを測り、同じ強さの粒状ノイズ（窓の大きさ）を返す。gain＝0〜1（粒状感）。粒が無い（なめらかな）絵・gain0ならnull */
 function rtGrain(px,known,w,h,gain,seed){

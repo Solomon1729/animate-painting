@@ -31,6 +31,7 @@
     "js/220-parts.js",
     "js/223-selection.js",
     "js/225-commit.js",
+    "js/226-merge.js",
     "js/230-color-picker.js",
     "js/235-canvas-coords.js",
     "js/236-retouch.js",

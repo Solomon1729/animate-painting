@@ -3,8 +3,9 @@
    Canvasにもアプリの状態にも触れない純粋関数。配列（Float32Array／Uint8Array／Uint8ClampedArray）と幅・高さだけで動くので、検査しやすい（tools/check_clone.py）。
    使うのは、修整ブラシ（236-retouch.js）と選択（223-selection.js）、切り取り跡の穴埋め（220-parts.js）。
    ・IO.box／IO.gauss ：ぼかし（端は延長）。複数チャンネル（ch）の並びは画素ごとに交互（RGBRGB…）
-   ・IO.guided        ：ガイデッドフィルタ（He 2010）。輪郭を保つぼかし（滑らかにする）に使う（輪郭吸着は、囲みが輪郭から離れていると働かないので、223-selection.jsの`selSnap`は色の局所平均による分類にした）
-   ・IO.pushPull      ：穴の周りの色で、穴をなめらかに埋める（ピラミッドで粗い→細かいへ。Gortlerのpush-pull）
+   ・IO.guided        ：ガイデッドフィルタ（He 2010）。輪郭を保つぼかし（輪郭吸着は、囲みが輪郭から離れていると働かないので、223-selection.jsの`selSnap`は色の局所平均による分類にした）
+   ・IO.guidedRGBA    ：同じフィルタを、アルファ掛け済みのRGBA（4チャンネル）に一度に掛ける速い版（滑らかにする修整ブラシ用。係数を粗い格子で求めて細かく戻す＝He & Sun 2015。台帳Z-156）
+   ・IO.pushPull／IO.pullPush ：穴の周りの色で、穴をなめらかに埋める（ピラミッドで粗い→細かいへ。Gortlerのpush-pull）。pullPushは色(3ch)と「分かっている度合い(0〜1)」の浮動小数版（修整の「埋める」が粗い解像度で解くのに使う）
    ・IO.noise         ：粒状ノイズ（σ=1に正規化。埋めた所の質感づけ）
    ・IO.flood         ：自動選択（Lab色距離の連結成長）
    ・IO.edge／IO.dijkstra／IO.liveWire ：マグネット（輪郭に吸い付く最短経路）。liveWireは、始点から外へ広げる探索を「カーソルが指した所まで」だけ進め、動くたびに解き直さない（再開できる。台帳Z-151）
@@ -41,11 +42,49 @@ IO.guided=function(I,p,w,h,r,eps){
   for(let i=0;i<n;i++)q[i]=ma[i]*I[i]+mb[i];
   return q;
 };
+/* ガイデッドフィルタ（4チャンネルを一度に・速い版。台帳Z-156）。P＝アルファ掛け済みのRGBA（Float32Array w*h*4。色は0〜255×α、aは0〜255）。
+   ガイド＝輝度（色÷アルファ→0〜1）。r＝窓の半径、eps＝縁をどれだけ守るか（IO.guidedと同じ意味）。戻り値＝同じ並びのRGBA（フィルタ後。Float32Array）。
+   速さの工夫（He & Sun 2015）：窓の統計（平均・分散・共分散）は、画素をs×sのブロックに平均してから粗い格子で求める
+   （「積の平均」を取ってから縮めるので、細い線のコントラストは落ちない）。係数a,bだけを粗い格子で求めて双一次で細かく戻し、q=a*I+bを全画素で掛ける。
+   旧版（チャンネルごとにIO.guided）は、同じ平均・分散を4回求め、全画素で6回箱ぼかしをしていた。 */
+IO.guidedRGBA=function(P,w,h,r,eps){
+  const n=w*h,s=Math.max(1,Math.min(8,Math.floor(r/3))),gw=Math.ceil(w/s),gh=Math.ceil(h/s),rr=Math.max(1,Math.round(r/s)),NC=10;
+  const G=new Float32Array(gw*gh*NC),I=new Float32Array(n),k255=1/255;
+  for(let y=0;y<h;y++){const gy=(y/s)|0;for(let x=0;x<w;x++){
+    const i=y*w+x,q=i*4,a=P[q+3],Iv=a>0?(.299*P[q]+.587*P[q+1]+.114*P[q+2])/a:0,g=(gy*gw+((x/s)|0))*NC;
+    I[i]=Iv;G[g]+=Iv;G[g+1]+=Iv*Iv;
+    for(let c=0;c<4;c++){const pc=P[q+c]*k255;G[g+2+c]+=pc;G[g+6+c]+=Iv*pc}
+  }}
+  for(let gy=0;gy<gh;gy++){const bh=Math.min(s,h-gy*s);for(let gx=0;gx<gw;gx++){const inv=1/(Math.min(s,w-gx*s)*bh),g=(gy*gw+gx)*NC;for(let c=0;c<NC;c++)G[g+c]*=inv}}
+  const B=IO.box(G,gw,gh,NC,rr),AB=new Float32Array(gw*gh*8);
+  for(let i=0;i<gw*gh;i++){
+    const g=i*NC,mI=B[g],vr=B[g+1]-mI*mI+eps;
+    for(let c=0;c<4;c++){const a=(B[g+6+c]-mI*B[g+2+c])/vr;AB[i*8+c]=a;AB[i*8+4+c]=B[g+2+c]-a*mI}
+  }
+  const M=IO.box(AB,gw,gh,8,rr),o=new Float32Array(n*4),XA=new Int32Array(w),XB=new Int32Array(w),TX=new Float32Array(w);
+  for(let x=0;x<w;x++){const fx=(x+.5)/s-.5,x0=Math.floor(fx);TX[x]=fx-x0;XA[x]=x0<0?0:x0>=gw?gw-1:x0;XB[x]=x0+1<0?0:x0+1>=gw?gw-1:x0+1}
+  for(let y=0;y<h;y++){
+    const fy=(y+.5)/s-.5,y0=Math.floor(fy),ty=fy-y0,ya=(y0<0?0:y0>=gh?gh-1:y0)*gw,yb=(y0+1<0?0:y0+1>=gh?gh-1:y0+1)*gw;
+    for(let x=0;x<w;x++){
+      const tx=TX[x],w00=(1-tx)*(1-ty),w10=tx*(1-ty),w01=(1-tx)*ty,w11=tx*ty,o00=(ya+XA[x])*8,o10=(ya+XB[x])*8,o01=(yb+XA[x])*8,o11=(yb+XB[x])*8,Iv=I[y*w+x],q=(y*w+x)*4;
+      for(let c=0;c<4;c++){
+        const a=M[o00+c]*w00+M[o10+c]*w10+M[o01+c]*w01+M[o11+c]*w11,b=M[o00+4+c]*w00+M[o10+4+c]*w10+M[o01+4+c]*w01+M[o11+4+c]*w11;
+        o[q+c]=(a*Iv+b)*255;
+      }
+    }
+  }
+  return o;
+};
 /* 穴埋め（push-pull）。px＝RGBA（Uint8ClampedArray）、known＝Uint8Array（1＝色が分かっている画素、0＝穴）。
    戻り値＝RGB（Float32Array w*h*3。分かっている画素はそのまま、穴は周りの色からなめらかに補う）。分かっている画素が1つも無ければnull。 */
 IO.pushPull=function(px,known,w,h){
-  const lv=[],n=w*h,C=new Float32Array(n*3),A=new Float32Array(n);
+  const n=w*h,C=new Float32Array(n*3),A=new Float32Array(n);
   for(let i=0;i<n;i++)if(known[i]){A[i]=1;C[i*3]=px[i*4];C[i*3+1]=px[i*4+1];C[i*3+2]=px[i*4+2]}
+  return IO.pullPush(C,A,w,h);
+};
+/* 核：C＝色（w*h*3）、A＝その画素の色が分かっている度合い（0〜1。w*h）。Cは書き換える（呼ぶ側は渡した配列をもう使わない）。戻り値＝穴を補った色（w*h*3）。分かっている画素が1つも無ければnull */
+IO.pullPush=function(C,A,w,h){
+  const lv=[];
   lv.push({C,A,w,h});let cw=w,ch=h;
   while(cw>1||ch>1){
     const nw=(cw+1)>>1,nh=(ch+1)>>1,nC=new Float32Array(nw*nh*3),nA=new Float32Array(nw*nh),pc=lv[lv.length-1];
