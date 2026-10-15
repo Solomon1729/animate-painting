@@ -267,8 +267,9 @@
 <div id="lypop" class="lypop" hidden role="dialog" aria-label="レイヤーとオブジェクト">
   <div class="lyhd"><b>レイヤーとオブジェクト</b><button id="lyx" aria-label="閉じる">✕</button></div>
   <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd3" aria-label="サンプル絵文字のオブジェクトを追加">＋絵文字</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
+  <div class="lytb"><button id="lymg" aria-label="今のレイヤーの、表示中のオブジェクトを1つの画像にする">レイヤー内を統合</button><button id="lymd" aria-label="今のレイヤーと、その1つ下のレイヤーを、1つの画像にする">下のレイヤーと統合</button><button id="lyma" aria-label="表示中のレイヤーすべてを1つの画像にする">表示中を全部統合</button></div>
   <div id="lyl"></div>
   <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="lyphx" checked>非表示レイヤーを物理の計算から除外する</label>
-  <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。行は長押し（マウスはドラッグ）で並べ替え。入れたい行と行のすき間に点線が出るので、そこで離します（オブジェクトは別レイヤーのすき間にも入れられます。外で離すと取り消し）。上ほど手前。</div>
+  <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。統合＝見えている通り（位置・歪み・ぼかし・マスク・色調整込み）に1つの画像にします（動き・物理は絵に焼き込まれて静止画になります。取り消しは「元に戻す」）。くっついたオブジェクトは一緒に統合され、非表示のものは対象外です。行は長押し（マウスはドラッグ）で並べ替え。入れたい行と行のすき間に点線が出るので、そこで離します（オブジェクトは別レイヤーのすき間にも入れられます。外で離すと取り消し）。上ほど手前。</div>
 </div>
 <script>

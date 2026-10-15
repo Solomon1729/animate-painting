@@ -13,6 +13,8 @@ const Z={s:1,x:0,y:0};
 const foldSet=new Set(),lyPop=document.getElementById('lypop');
 let LAYERS=[{id:1,name:'レイヤー1',visible:true,locked:false}],curLid=1,physHideEx=true,noFrame=false,wAct=false,tgtBak=null;
 let hk=0,fc=0,warpMs=0,dirtyProj=false,bpn=false,berase=false,psn=false,serase=false,pbox=false,showBm=false,cmp=false,wmode='brush',wTouch=0,wbg=null,wHov=null,dragOff=null,eraseStrength=1,showBounds=false,tool='move',wt='b',wg=null,pl=null,tm=null,pw=10,pcol='#e0245e',AC=[],sel=null,uid=0,last=0,paused=false,gs=1,guide=false,editing=false,tgt=null,paint=false,erase=false,brushMask=14,brushBlur=14,brushParts=14,adjMode='',adjBrush=20,adjShow=false,lp=null,drawing=false,pid=-1,pan=null,pz0=null,zshown=false,boxStart=null,boxEnd=null;
+/* 統合（226-merge.js。台帳Z-157）：drawOnly＝描く対象のSet（nullなら通常）、MGR＝書き出し先の大きさと倍率{d,w,h}（nullなら通常） */
+let drawOnly=null,MGR=null;
 const ptrs=new Map();
 const byId=id=>AC.find(a=>a.id===id);
 const EPAL=['🐻','🐥','🧒','🐱','🐶','🍎','🍜','🥤','🥄','🛏️','🎩','⚽'];
