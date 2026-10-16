@@ -27,7 +27,7 @@
 | `src/js/150-blur.js` | 範囲ぼかし・範囲選択、マスク表示、ピン描画 |
 | `src/js/160-still-export.js` | 高解像度静止画書き出し `snapImg`（PNG/JPEG/PDF）、PDF生成（外部ライブラリなし）`pdfFromCanvas`/`zlibDeflate`/`outPdf` |
 | `src/js/170-undo.js` | Undo/Redo `snap`/`restore`/`pushUndo`、`SKIP` |
-| `src/js/180-project-io.js` | 保存・読込 `ser`/`loadProj`/`saveProj`、自動保存 |
+| `src/js/180-project-io.js` | 保存・読込 `ser`/`loadProj`/`saveProj`、自動保存、**版番号・移行・未知のキーの保持`PROJ`/`projMigrate`/`projUnknown`/`projReset`**（五基盤P0。台帳Z-166。新しい版の自動保存は`am_auto_newer`） |
 | `src/js/190-hints-and-demos.js` | ヒント、サンプル生成 `demoA`/`demoB` |
 | `src/js/200-warp-ui.js` | 歪み選択・歪みUI（ブラシ/ピンの切替`wmUi`、ブラシ設定`wbUi`）、エフェクト全消去 |
 | `src/js/210-performance.js` | 処理品質の自動調整 `perfTick`/`setLvl` |
@@ -60,6 +60,7 @@
 | `tools/check_fixes.py` | `python3 tools/check_fixes.py <HTMLの絶対パス>`。2026-10-08の修正の検査（ぼかし境界の不透明度／色調整の範囲の座標（縦長・横長・正方形）／操作窓の四辺クランプ・下の持ち手・透過／ビューワーのボタンと↩↪／オブジェクト22個／PDF出力）に、2026-10-11に群7（boxCvのぼかし幅。Z-111）・群8（白紙の範囲表示。Z-118）・群9（白紙の大きさ。Z-117・Z-126）を追加。全項目`OK`が正常（台帳Z-90） |
 | `tools/check_commit.py` | `python3 tools/check_commit.py <HTMLの絶対パス>`。確定（全体・範囲）／レイヤーとして保存／断る場合／シートの引き継ぎ／色合わせ／パーツの調整反映／保存読込／実ボタン・タブ（9群56項目）。全項目`OK`が正常（台帳Z-93） |
 | `tools/check_merge.py` | `python3 tools/check_merge.py <HTMLの絶対パス>`。統合（レイヤー内／下のレイヤーと／表示中を全部）：統合前後の見た目の一致（位置・大きさ・回転・歪み・ぼかし・マスク・色調整・重なり）／親子／非表示・ロック／Undo／保存読込／実ボタン（6群48項目）。全項目`OK`が正常（台帳Z-157）。ヘッドレスのみ・実機未確認 |
+| `tools/check_foundation.py` | `python3 tools/check_foundation.py <HTMLの絶対パス>`。五基盤の検査（今はP0の6群50項目）：見本（`tools/fixtures/v1-sample.json`。旧ビルドが書いたv1）の読み書き／`v`なし・壊れたファイル／未知のキー（トップレベル・LAY・DOC・アクター）の保持／新しい版（v99）／移行の枠（`PROJ.MIG`）／書き出しの形。全項目`OK`が正常（台帳Z-166）。P1以降の基盤は、ここに群を足す。ヘッドレスのみ・実機未確認 |
 | `tools/check_assist.py` | `python3 tools/check_assist.py <HTMLの絶対パス>`。ペン補正（直線・円・曲線・消しゴム・Undo・取り残し・歪み・ロック）／拡大窓（既定オフ・対象の道具・隅へ逃げる・中身の一致・倍率の自動/固定・道具の表への追加）／ピンの微調整（刻み・長押し・Undo・動き量・ロック・拡大窓連携）の4群70項目（台帳Z-108〜Z-110・Z-124。始点固定・仮表示の一致・非正方形の位置を含む）。ヘッドレスのみ・実機未確認 |
 | `tools/check_ui.py` | `python3 tools/check_ui.py <HTMLの絶対パス>`。画面まわり8群133項目（持ち手の説明が消える／操作窓の大きさ・重ならない／✋・ピンチの自己修復／オブジェクト0個／キャンバスのpx・画像に合わせる・書き出しpx／座標の表示／並べ替えの点線／バーの縦距離スクラブ・吸着）。実際のタッチ（CDP）とマウス。全項目`OK`で`OK 133  NG 0`（台帳Z-95〜Z-99・Z-102・Z-106・Z-107・Z-88・Z-114） |
 | `tools/ledger.py` | `python3 tools/ledger.py`＝台帳（`roadmap.md`§Z）を状態ごとの表に振り分け、全文を`archive/ledger-detail.md`に無損失で保管する（台帳Z-101）。`--check`で整理済みか確認。 |
