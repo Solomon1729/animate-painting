@@ -1,0 +1,183 @@
+{
+ "id": "orig-charged-in-B",
+ "title": "一様な磁場に入る荷電粒子",
+ "tags": [
+  "電磁気",
+  "荷電粒子",
+  "円運動"
+ ],
+ "source": "オリジナル（磁場領域への入射の型）",
+ "level": "standard",
+ "problem": "質量{m}kg・電荷{q}Cの粒子を、速さ{v}m/sで、磁束密度{B}Tの一様な磁場の領域（x≧0）に垂直に入射させる。重力は無視する。",
+ "params": {
+  "m": {
+   "v": 0.01,
+   "min": 0.002,
+   "max": 0.05,
+   "step": 0.002,
+   "unit": "kg",
+   "label": "質量"
+  },
+  "q": {
+   "v": 0.1,
+   "min": 0.02,
+   "max": 0.5,
+   "step": 0.01,
+   "unit": "C",
+   "label": "電荷"
+  },
+  "v": {
+   "v": 5,
+   "min": 1,
+   "max": 8,
+   "step": 0.5,
+   "unit": "m/s",
+   "label": "入射の速さ"
+  },
+  "B": {
+   "v": 0.5,
+   "min": 0.2,
+   "max": 1.5,
+   "step": 0.05,
+   "unit": "T",
+   "label": "磁束密度（紙面の手前向きが正）"
+  }
+ },
+ "vars": {
+  "R": "m*v/(q*B)",
+  "T": "2*pi*m/(q*B)",
+  "x_in": "-1.0"
+ },
+ "world": {
+  "g": 0
+ },
+ "view": {
+  "x0": -2.0,
+  "y0": -3.6,
+  "w": 7.0
+ },
+ "fields": [
+  {
+   "type": "B",
+   "bz": "B",
+   "region": {
+    "rect": [
+     0,
+     -6,
+     8,
+     6
+    ]
+   },
+   "label": "磁場"
+  }
+ ],
+ "bodies": [
+  {
+   "id": "p",
+   "type": "dynamic",
+   "m": "m",
+   "q": "q",
+   "mu": 0,
+   "pos": [
+    "x_in",
+    0
+   ],
+   "vel": [
+    "v",
+    0
+   ],
+   "label": "粒子",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": 0.05
+    }
+   ]
+  }
+ ],
+ "probes": {
+  "ymin": {
+   "expr": "p.y",
+   "reduce": "min",
+   "unit": "m",
+   "label": "最も低い位置"
+  },
+  "y_end": {
+   "expr": "p.y",
+   "reduce": "last",
+   "unit": "m",
+   "label": "領域を出た後の高さ"
+  },
+  "t_quarter": {
+   "expr": "p.vx",
+   "reduce": "zero",
+   "unit": "s",
+   "label": "vxが0になる時刻"
+  },
+  "speed_end": {
+   "expr": "p.speed",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "出るときの速さ"
+  },
+  "vx_end": {
+   "expr": "p.vx",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "出るときのvx"
+  },
+  "E": {
+   "expr": "KE",
+   "reduce": "last",
+   "unit": "J",
+   "label": "運動エネルギー"
+  }
+ },
+ "run": {
+  "t": 1.2
+ },
+ "ask": [
+  {
+   "q": "半径 R=mv/(qB) だけ下がって折り返す（最下点は −2R）",
+   "probe": "ymin",
+   "theory": "-2*R",
+   "unit": "m",
+   "tol": 0.005
+  },
+  {
+   "q": "領域から出た後の高さ −2R",
+   "probe": "y_end",
+   "theory": "-2*R",
+   "unit": "m",
+   "tol": 0.005
+  },
+  {
+   "q": "vx=0 になる時刻（入るまでの時間＋四分の一周期）",
+   "probe": "t_quarter",
+   "theory": "-x_in/v+T/4",
+   "unit": "s",
+   "tol": 0.003
+  },
+  {
+   "q": "出るときの速さは入るときと同じ（磁場は仕事をしない）",
+   "probe": "speed_end",
+   "theory": "v",
+   "unit": "m/s",
+   "tol": 0.001
+  },
+  {
+   "q": "出るときの向きは逆向き",
+   "probe": "vx_end",
+   "theory": "-v",
+   "unit": "m/s",
+   "tol": 0.01
+  }
+ ],
+ "checks": [
+  {
+   "name": "運動エネルギー保存",
+   "probe": "E",
+   "conserved": 0.001
+  }
+ ]
+}

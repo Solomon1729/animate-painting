@@ -1,0 +1,202 @@
+{
+ "id": "orig-collision-1d",
+ "title": "なめらかな床での正面衝突（反発係数e）",
+ "tags": [
+  "力学",
+  "運動量",
+  "衝突"
+ ],
+ "source": "オリジナル（一直線の衝突の型）",
+ "level": "basic",
+ "problem": "なめらかな水平面上で、質量{m1}kgの小球Aが速さ{v1}m/s、質量{m2}kgの小球Bが速さ{v2}m/s（右向き正）で正面衝突する。反発係数は{e}。",
+ "params": {
+  "m1": {
+   "v": 2,
+   "min": 0.5,
+   "max": 5,
+   "step": 0.5,
+   "unit": "kg",
+   "label": "Aの質量"
+  },
+  "m2": {
+   "v": 1,
+   "min": 0.5,
+   "max": 5,
+   "step": 0.5,
+   "unit": "kg",
+   "label": "Bの質量"
+  },
+  "v1": {
+   "v": 3,
+   "min": 0,
+   "max": 6,
+   "step": 0.5,
+   "unit": "m/s",
+   "label": "Aの速度"
+  },
+  "v2": {
+   "v": -1,
+   "min": -4,
+   "max": 2,
+   "step": 0.5,
+   "unit": "m/s",
+   "label": "Bの速度"
+  },
+  "e": {
+   "v": 0.6,
+   "min": 0,
+   "max": 1,
+   "step": 0.05,
+   "label": "反発係数"
+  }
+ },
+ "vars": {
+  "r": "0.1",
+  "u1": "((m1-e*m2)*v1+(1+e)*m2*v2)/(m1+m2)",
+  "u2": "((m2-e*m1)*v2+(1+e)*m1*v1)/(m1+m2)",
+  "mred": "m1*m2/(m1+m2)"
+ },
+ "view": {
+  "x0": -1.0,
+  "y0": -0.3,
+  "w": 8.0
+ },
+ "bodies": [
+  {
+   "id": "floor",
+   "type": "static",
+   "mu": 0,
+   "shapes": [
+    {
+     "t": "plane",
+     "normal": [
+      0,
+      1
+     ],
+     "d": 0
+    }
+   ]
+  },
+  {
+   "id": "A",
+   "type": "dynamic",
+   "m": "m1",
+   "mu": 0,
+   "fixedRot": true,
+   "pos": [
+    0,
+    "r"
+   ],
+   "vel": [
+    "v1",
+    0
+   ],
+   "label": "A",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": "r"
+    }
+   ]
+  },
+  {
+   "id": "B",
+   "type": "dynamic",
+   "m": "m2",
+   "mu": 0,
+   "fixedRot": true,
+   "pos": [
+    3,
+    "r"
+   ],
+   "vel": [
+    "v2",
+    0
+   ],
+   "label": "B",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": "r"
+    }
+   ]
+  }
+ ],
+ "pairs": [
+  {
+   "a": "A",
+   "b": "B",
+   "e": "e",
+   "mu": 0
+  }
+ ],
+ "probes": {
+  "uA": {
+   "expr": "A.vx",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "衝突後のAの速度"
+  },
+  "uB": {
+   "expr": "B.vx",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "衝突後のBの速度"
+  },
+  "Px": {
+   "expr": "Px",
+   "reduce": "last",
+   "unit": "kg·m/s",
+   "label": "全運動量"
+  },
+  "dKE": {
+   "expr": "KE",
+   "reduce": "first",
+   "unit": "J",
+   "label": "はじめの運動エネルギー"
+  },
+  "KEe": {
+   "expr": "KE",
+   "reduce": "last",
+   "unit": "J",
+   "label": "あとの運動エネルギー"
+  }
+ },
+ "run": {
+  "t": 2.0
+ },
+ "ask": [
+  {
+   "q": "衝突後のAの速度 u1",
+   "probe": "uA",
+   "theory": "u1",
+   "unit": "m/s",
+   "tol": 0.002,
+   "abs": 0.002
+  },
+  {
+   "q": "衝突後のBの速度 u2",
+   "probe": "uB",
+   "theory": "u2",
+   "unit": "m/s",
+   "tol": 0.002,
+   "abs": 0.002
+  },
+  {
+   "q": "失われた運動エネルギー ½μ(1−e²)(v1−v2)²",
+   "expr": "dKE-KEe",
+   "theory": "0.5*mred*(1-e^2)*(v1-v2)^2",
+   "unit": "J",
+   "tol": 0.005,
+   "abs": 0.002
+  }
+ ],
+ "checks": [
+  {
+   "name": "全運動量の保存",
+   "probe": "Px",
+   "conserved": 1e-06,
+   "scale": 1
+  }
+ ]
+}

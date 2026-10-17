@@ -46,7 +46,7 @@ console.log('4) 棒の単振り子（L=1m、小振幅0.1rad）');
 
 console.log('5) ばねの単振動（k=40, m=1）');
 {const W=PHE.create({g:[0,0],bodies:[ball({x:1.2,y:0})],joints:[{type:'spring',k:40,len:1,anchors:[{wx:0,wy:0},{body:0,x:0,y:0}]}]});
- let t1=null,t2=null,prev=W.bodies[0].px-1;run(W,3,(W)=>{const x=W.bodies[0].px-1;if(prev>0&&x<=0){if(t1===null)t1=W.t;else if(t2===null)t2=W.t}prev=x});
+ let t1=null,t2=null,prev=W.bodies[0].px-1,tp=0;run(W,3,(W)=>{const x=W.bodies[0].px-1;if(prev>0&&x<=0){const tc=tp+(W.t-tp)*prev/(prev-x);if(t1===null)t1=tc;else if(t2===null)t2=tc}prev=x;tp=W.t});
  chk('周期 2π√(m/k)',t2-t1,2*Math.PI*Math.sqrt(1/40),.003,true);
  const e=PHE.energy(W);chk('力学的エネルギー保存',e.e,.5*40*.04,.01,true)}
 

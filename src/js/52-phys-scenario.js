@@ -130,7 +130,7 @@ const KEYS={
   world:['g','gdir','maxStep','cfg','canvas','note'],
   view:['x0','y0','w','grid','ruler','follow'],
   body:['id','type','pos','angle','vel','omega','m','I','shapes','mu','mus','muk','e','q','fixedRot','collide','group','gs','dragLin','dragQuad','dampLin','dampAng','kin','label','color','img','style','note','show','trail'],
-  shape:['t','r','w','h','ox','oy','angle','pts','normal','d','through','slope','c','from','to','side','m','x','y','a0','a1','cx','cy'],
+  shape:['t','r','w','h','ox','oy','angle','pts','normal','d','through','slope','c','from','to','side','m','x','y','a0','a1','cx','cy','thick'],
   joint:['id','type','a','b','via','path','len','k','c','collide','label','color','style','note','show'],
   anchor:['body','at'],
   field:['type','ax','ay','g','fx','fy','ex','ey','bz','cx','cy','k','n','lin','quad','wx','wy','G','region','targets','label','color','style','note','show'],
@@ -139,7 +139,7 @@ const KEYS={
   probe:['expr','reduce','when','after','at','unit','label','note'],
   event:['when','first','label','note'],
   ask:['q','probe','expr','theory','tol','abs','unit','label','note'],
-  check:['name','expr','probe','conserved','min','max','tol','note'],
+  check:['name','expr','probe','conserved','min','max','scale','tol','note'],
   run:['t','stop','sample','note'],
   sweep:['param','values','from','to','n','probes','fit','note'],
   graph:['title','x','y','xlabel','ylabel','label']
@@ -198,7 +198,7 @@ function validate(scn){
   if(scn.world)checkKeys(scn.world,'world','world',V);
   if(scn.view)checkKeys(scn.view,'view','view',V);
   if(scn.run)checkKeys(scn.run,'run','run',V);
-  if(scn.run&&scn.run.t!==undefined&&!(isNum(scn.run.t)&&scn.run.t>0))V.err('run.t: 実行する秒数（正の数）が必要です');
+  if(scn.run&&scn.run.t!==undefined&&!(isNum(scn.run.t)&&scn.run.t>0)&&typeof scn.run.t!=='string')V.err('run.t: 実行する秒数（正の数）か、式が必要です');
   const pn=Object.keys(scn.probes||{});for(const k of pn){checkKeys(scn.probes[k],'probe','probes.'+k,V);const p=scn.probes[k];
     if(!p||typeof p.expr!=='string')V.err('probes.'+k+'.expr: 式の文字列が必要です');if(p&&p.reduce&&!RED[p.reduce])V.err('probes.'+k+'.reduce: 未知の集計「'+p.reduce+'」'+suggest(p.reduce,Object.keys(RED)))}
   for(const k of Object.keys(scn.events||{}))checkKeys(scn.events[k],'event','events.'+k,V);
@@ -240,7 +240,7 @@ function build(scn,over){
           if(!PHE.isConvex(pts))throw new Error(Q+'.pts: 凸多角形だけ使えます。凹んだ形は、複数のshapesに分けてください');return{t:'poly',pts,m:s.m!==undefined?num(s.m,Q+'.m'):undefined}}
         case 'plane':{let nx,ny,d;if(s.slope!==undefined){const th=num(s.slope,Q+'.slope')*D2R,th0=vec(s.through,Q+'.through',[0,0]);nx=-Math.sin(th);ny=Math.cos(th);d=nx*th0[0]+ny*th0[1]}
           else{const n=vec(s.normal,Q+'.normal');nx=n[0];ny=n[1];d=num(s.d,Q+'.d',0)}return{t:'plane',nx,ny,d}}
-        case 'arc':{const c=vec(s.c,Q+'.c');return{t:'arc',cx:c[0],cy:c[1],r:num(s.r,Q+'.r'),a0:num(s.from,Q+'.from')*D2R,a1:num(s.to,Q+'.to')*D2R,side:s.side==='out'?'out':'in'}}}});
+        case 'arc':{const c=vec(s.c,Q+'.c');return{t:'arc',cx:c[0],cy:c[1],r:num(s.r,Q+'.r'),a0:num(s.from,Q+'.from')*D2R,a1:num(s.to,Q+'.to')*D2R,side:s.side==='out'?'out':'in',thick:s.thick!==undefined?num(s.thick,Q+'.thick'):undefined}}}});
     let vel=[0,0];if(b.vel!==undefined){if(Array.isArray(b.vel))vel=vec(b.vel,P+'.vel');else if(typeof b.vel==='object'){const sp=num(b.vel.speed,P+'.vel.speed',0),an=num(b.vel.angle,P+'.vel.angle',0)*D2R;vel=[sp*Math.cos(an),sp*Math.sin(an)]}}
     const e={id:b.id,type,x:pos[0],y:pos[1],a:num(b.angle,P+'.angle',0)*D2R,vx:vel[0],vy:vel[1],w:num(b.omega,P+'.omega',0),shapes:sh,
       m:num(b.m,P+'.m',1),e:num(b.e,P+'.e',0),q:num(b.q,P+'.q',0),fixedRot:!!b.fixedRot,collide:b.collide!==false,group:num(b.group,P+'.group',0),gs:num(b.gs,P+'.gs',1),
@@ -296,12 +296,12 @@ installExtras();
 function run(scn,opt){
   opt=opt||{};
   const B=opt.built||build(scn,opt.params);const W=B.W,acc=mkAccess(B);EXTRA._W=W;
-  const T=num0(opt.t!==undefined?opt.t:(scn.run&&scn.run.t),5),every=Math.max(1,Math.round(((scn.run&&scn.run.sample)||0)/(1/120))||1);
+  const T=num0(opt.t!==undefined?opt.t:runT(B,scn),5),every=Math.max(1,Math.round(((scn.run&&scn.run.sample)||0)/(1/120))||1);
   const comp=(src,what)=>{try{return compile(src,acc.resolve)}catch(e){throw new Error(what+': '+e.message)}};
   const probes=Object.entries(scn.probes||{}).map(([k,p])=>({k,p,f:comp(p.expr,'probes.'+k+'.expr'),w:p.when?comp(p.when,'probes.'+k+'.when'):null}));
   const events=Object.entries(scn.events||{}).map(([k,e])=>({k,e,w:comp(e.when||e.first,'events.'+k+'.when'),t:NaN,i:-1}));
   const stop=scn.run&&scn.run.stop?comp(scn.run.stop,'run.stop'):null;
-  const extra=(opt.series||[]).map(s=>({k:s,f:comp(s,'series「'+s+'」'),w:null}));
+  const extra=(opt.series||[]).filter(s=>!(scn.probes&&s in scn.probes)).map(s=>({k:s,f:comp(s,'series「'+s+'」'),w:null}));
   const all=probes.concat(extra);
   const ts=[],ser={};for(const p of all)ser[p.k]=[];
   const DT=1/120,n=Math.round(T/DT);
@@ -325,7 +325,7 @@ function run(scn,opt){
       res[p.k]=ser[p.k][bi];continue}
     const rd=sp.reduce||'last';res[p.k]=RED[rd](tt,vs)}
   /* 答え合わせ */
-  const asks=(scn.ask||[]).map((a,i)=>{const env2=Object.assign({},B.env,res,{t_end:W.t});
+  const asks=(scn.ask||[]).map((a,i)=>{const env2=Object.assign({},B.env,res,{t:W.t,t_end:W.t});
     let val;if(a.probe!==undefined)val=res[a.probe];else{const r2=name=>{if(name in env2){const k=name;return()=>env2[k]}return acc.resolve(name)};val=compile(a.expr,r2)()}
     const th=compile(a.theory,name=>{if(name in env2){const k=name;return()=>env2[k]}throw new Error('ask['+i+'].theory: 未知の名前「'+name+'」'+suggest(name,Object.keys(env2)))})();
     const tol=a.tol!==undefined?a.tol:.02,ab=a.abs!==undefined?a.abs:0,err=Math.abs(val-th),lim=Math.max(tol*Math.abs(th),ab);
@@ -338,11 +338,12 @@ function run(scn,opt){
       if(!vs){/* 式の時系列は run 中に取っていないので、最終値だけ */vs=[c._f()]}
       const mx=RED.max(ts,vs),mn=RED.min(ts,vs),sc=Math.max(Math.abs(mx),Math.abs(mn),1e-12);
       let okc=true,msg='';
-      if(c.conserved!==undefined){const dev=(mx-mn)/(c.scale!==undefined?c.scale:sc);okc=dev<=c.conserved;msg='変動 '+(dev*100).toFixed(3)+'%（許容 '+(c.conserved*100)+'%）'}
+      if(c.conserved!==undefined){const scl=typeof c.scale==='string'?comp(c.scale,'checks['+i+'].scale')():c.scale,dev=(mx-mn)/(scl!==undefined?scl:sc);okc=dev<=c.conserved;msg='変動 '+(dev*100).toFixed(3)+'%（許容 '+(c.conserved*100)+'%）'}
       if(c.min!==undefined&&mn<c.min){okc=false;msg+=' 最小値 '+mn+' < '+c.min}
       if(c.max!==undefined&&mx>c.max){okc=false;msg+=' 最大値 '+mx+' > '+c.max}
       return{name:c.name||'check'+i,ok:okc,msg}});
   return{ts,series:ser,probes:res,events:evt,ask:asks,checks,world:W,built:B,t:W.t,stopped}}
+function runT(B,scn){const t=scn.run&&scn.run.t;if(typeof t==='string'){try{return compile(t,B.resolve)()}catch(e){throw new Error('run.t: '+e.message)}}return t}
 function num0(v,d){return isNum(v)?v:d}
 
 /* ---------- 掃引・あてはめ・CSV ---------- */

@@ -1,0 +1,135 @@
+{
+ "id": "orig-projectile",
+ "title": "高さh0からの斜方投射",
+ "tags": [
+  "力学",
+  "放物運動"
+ ],
+ "source": "オリジナル（斜方投射の型）",
+ "level": "basic",
+ "problem": "高さ{h0}mの地点から、水平から{th}°上向きに、速さ{v0}m/sで小球を投げ出す。空気の抵抗は無視する。",
+ "params": {
+  "v0": {
+   "v": 10,
+   "min": 3,
+   "max": 20,
+   "step": 1,
+   "unit": "m/s",
+   "label": "初速"
+  },
+  "th": {
+   "v": 40,
+   "min": 0,
+   "max": 80,
+   "step": 5,
+   "unit": "°",
+   "label": "投射角"
+  },
+  "h0": {
+   "v": 1.5,
+   "min": 0,
+   "max": 5,
+   "step": 0.5,
+   "unit": "m",
+   "label": "投げる高さ"
+  }
+ },
+ "vars": {
+  "r": "0.05",
+  "vx0": "v0*cosd(th)",
+  "vy0": "v0*sind(th)",
+  "tf": "(vy0+sqrt(vy0^2+2*g*h0))/g",
+  "hmax": "h0+vy0^2/(2*g)",
+  "Rng": "vx0*tf"
+ },
+ "view": {
+  "x0": -1.0,
+  "y0": -0.5,
+  "w": 14.0
+ },
+ "bodies": [
+  {
+   "id": "floor",
+   "type": "static",
+   "mu": 2,
+   "shapes": [
+    {
+     "t": "plane",
+     "normal": [
+      0,
+      1
+     ],
+     "d": 0
+    }
+   ]
+  },
+  {
+   "id": "ball",
+   "type": "dynamic",
+   "m": 0.1,
+   "mu": 2,
+   "fixedRot": true,
+   "pos": [
+    0,
+    "h0+r"
+   ],
+   "vel": {
+    "speed": "v0",
+    "angle": "th"
+   },
+   "label": "小球",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": "r"
+    }
+   ]
+  }
+ ],
+ "probes": {
+  "ytop": {
+   "expr": "ball.y-r",
+   "reduce": "max",
+   "unit": "m",
+   "label": "最高点の高さ"
+  },
+  "t_top": {
+   "expr": "ball.vy",
+   "reduce": "zero",
+   "unit": "s",
+   "label": "最高点に達する時刻"
+  },
+  "xend": {
+   "expr": "ball.x",
+   "reduce": "last",
+   "unit": "m",
+   "label": "着地点（水平距離）"
+  }
+ },
+ "run": {
+  "t": "tf+0.6"
+ },
+ "ask": [
+  {
+   "q": "最高点の高さ h0+(v0 sinθ)²/2g",
+   "probe": "ytop",
+   "theory": "hmax",
+   "unit": "m",
+   "tol": 0.002
+  },
+  {
+   "q": "最高点に達する時刻 v0 sinθ/g",
+   "probe": "t_top",
+   "theory": "vy0/g",
+   "unit": "s",
+   "tol": 0.002
+  },
+  {
+   "q": "到達距離（着地後は摩擦で止まる）",
+   "probe": "xend",
+   "theory": "Rng",
+   "unit": "m",
+   "tol": 0.02
+  }
+ ]
+}

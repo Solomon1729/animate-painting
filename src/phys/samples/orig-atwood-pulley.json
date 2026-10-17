@@ -1,0 +1,186 @@
+{
+ "id": "orig-atwood-pulley",
+ "title": "定滑車でつながれた2物体（アトウッドの装置）",
+ "tags": [
+  "力学",
+  "滑車",
+  "張力"
+ ],
+ "source": "オリジナル（定滑車＋軽い紐型）",
+ "level": "basic",
+ "problem": "質量{m1}kgの物体Aと質量{m2}kgの物体Bを、軽い紐で定滑車にかけて静かに放す。滑車と紐の質量・摩擦は無視する。",
+ "params": {
+  "m1": {
+   "v": 2,
+   "min": 0.5,
+   "max": 5,
+   "step": 0.5,
+   "unit": "kg",
+   "label": "Aの質量"
+  },
+  "m2": {
+   "v": 1,
+   "min": 0.5,
+   "max": 5,
+   "step": 0.5,
+   "unit": "kg",
+   "label": "Bの質量"
+  }
+ },
+ "vars": {
+  "a": "(m1-m2)*g/(m1+m2)",
+  "T": "2*m1*m2*g/(m1+m2)"
+ },
+ "world": {
+  "g": 9.8
+ },
+ "view": {
+  "x0": -1.6,
+  "y0": -0.2,
+  "w": 3.2
+ },
+ "bodies": [
+  {
+   "id": "floor",
+   "type": "static",
+   "shapes": [
+    {
+     "t": "plane",
+     "normal": [
+      0,
+      1
+     ],
+     "d": 0
+    }
+   ]
+  },
+  {
+   "id": "A",
+   "type": "dynamic",
+   "m": "m1",
+   "pos": [
+    -0.3,
+    1.4
+   ],
+   "label": "A",
+   "shapes": [
+    {
+     "t": "box",
+     "w": 0.2,
+     "h": 0.2
+    }
+   ]
+  },
+  {
+   "id": "B",
+   "type": "dynamic",
+   "m": "m2",
+   "pos": [
+    0.3,
+    1.4
+   ],
+   "label": "B",
+   "shapes": [
+    {
+     "t": "box",
+     "w": 0.2,
+     "h": 0.2
+    }
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "id": "rope",
+   "type": "rope",
+   "path": [
+    {
+     "body": "A",
+     "at": [
+      0,
+      0.1
+     ]
+    },
+    {
+     "at": [
+      -0.3,
+      2.6
+     ]
+    },
+    {
+     "at": [
+      0.3,
+      2.6
+     ]
+    },
+    {
+     "body": "B",
+     "at": [
+      0,
+      0.1
+     ]
+    }
+   ]
+  }
+ ],
+ "probes": {
+  "vA": {
+   "expr": "A.vy",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "Aの速度（鉛直成分）"
+  },
+  "T": {
+   "expr": "rope.T",
+   "reduce": "mean",
+   "unit": "N",
+   "label": "紐の張力"
+  },
+  "yA": {
+   "expr": "A.y",
+   "reduce": "last",
+   "unit": "m",
+   "label": "Aの高さ"
+  },
+  "E": {
+   "expr": "E",
+   "reduce": "last",
+   "unit": "J",
+   "label": "全エネルギー（時系列の変動を検査）"
+  }
+ },
+ "run": {
+  "t": 0.6
+ },
+ "ask": [
+  {
+   "q": "Aの加速度（速度÷時間）",
+   "expr": "-A.vy/t",
+   "theory": "a",
+   "unit": "m/s²",
+   "tol": 0.01
+  },
+  {
+   "q": "紐の張力",
+   "probe": "T",
+   "theory": "T",
+   "unit": "N",
+   "tol": 0.01
+  },
+  {
+   "q": "Aの下降距離",
+   "expr": "1.4-yA",
+   "theory": "0.5*a*t*t",
+   "unit": "m",
+   "tol": 0.01
+  }
+ ],
+ "checks": [
+  {
+   "name": "力学的エネルギー保存",
+   "expr": "E",
+   "probe": "E",
+   "conserved": 0.001
+  }
+ ]
+}

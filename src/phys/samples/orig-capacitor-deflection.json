@@ -1,0 +1,202 @@
+{
+ "id": "orig-capacitor-deflection",
+ "title": "一様な電場で曲げられる荷電粒子",
+ "tags": [
+  "電磁気",
+  "荷電粒子",
+  "電場"
+ ],
+ "source": "オリジナル（極板間の偏向の型）",
+ "level": "standard",
+ "problem": "質量{m}kg・電荷{q}Cの粒子を、電場の強さ{E}V/mの領域（0≦x≦{L}m）に、x軸方向の速さ{v0}m/sで入射させる。重力は無視する。",
+ "params": {
+  "m": {
+   "v": 0.01,
+   "min": 0.002,
+   "max": 0.05,
+   "step": 0.002,
+   "unit": "kg",
+   "label": "質量"
+  },
+  "q": {
+   "v": 0.002,
+   "min": 0.0005,
+   "max": 0.01,
+   "step": 0.0005,
+   "unit": "C",
+   "label": "電荷"
+  },
+  "E": {
+   "v": 250,
+   "min": 50,
+   "max": 600,
+   "step": 10,
+   "unit": "V/m",
+   "label": "電場の強さ（+y向き）"
+  },
+  "v0": {
+   "v": 12,
+   "min": 4,
+   "max": 20,
+   "step": 1,
+   "unit": "m/s",
+   "label": "入射の速さ"
+  },
+  "L": {
+   "v": 1.2,
+   "min": 0.6,
+   "max": 2.0,
+   "step": 0.1,
+   "unit": "m",
+   "label": "極板の長さ"
+  }
+ },
+ "vars": {
+  "a": "q*E/m",
+  "t1": "L/v0",
+  "x_in": "-0.6",
+  "tin": "-x_in/v0",
+  "gap": "0.55"
+ },
+ "world": {
+  "g": 0
+ },
+ "view": {
+  "x0": -1.0,
+  "y0": -0.9,
+  "w": 5.0
+ },
+ "fields": [
+  {
+   "type": "E",
+   "ex": 0,
+   "ey": "E",
+   "region": {
+    "rect": [
+     0,
+     "-gap",
+     "L",
+     "gap"
+    ]
+   },
+   "label": "電場"
+  }
+ ],
+ "bodies": [
+  {
+   "id": "plateU",
+   "type": "static",
+   "collide": false,
+   "pos": [
+    "L/2",
+    "gap+0.02"
+   ],
+   "shapes": [
+    {
+     "t": "box",
+     "w": "L",
+     "h": 0.04
+    }
+   ],
+   "label": "極板（＋）"
+  },
+  {
+   "id": "plateL",
+   "type": "static",
+   "collide": false,
+   "pos": [
+    "L/2",
+    "-gap-0.02"
+   ],
+   "shapes": [
+    {
+     "t": "box",
+     "w": "L",
+     "h": 0.04
+    }
+   ],
+   "label": "極板（−）"
+  },
+  {
+   "id": "p",
+   "type": "dynamic",
+   "m": "m",
+   "q": "q",
+   "mu": 0,
+   "pos": [
+    "x_in",
+    0
+   ],
+   "vel": [
+    "v0",
+    0
+   ],
+   "label": "粒子",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": 0.04
+    }
+   ]
+  }
+ ],
+ "probes": {
+  "y_end": {
+   "expr": "p.y",
+   "reduce": "last",
+   "unit": "m",
+   "label": "終了時の高さ"
+  },
+  "vy_end": {
+   "expr": "p.vy",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "終了時のvy"
+  },
+  "vx_end": {
+   "expr": "p.vx",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "終了時のvx"
+  },
+  "ang": {
+   "expr": "atan2d(p.vy,p.vx)",
+   "reduce": "last",
+   "unit": "°",
+   "label": "進む向き（x軸から）"
+  }
+ },
+ "run": {
+  "t": 0.25
+ },
+ "ask": [
+  {
+   "q": "終了時の高さ ½a·t1²＋a·t1·(t−tin−t1)",
+   "probe": "y_end",
+   "theory": "0.5*a*t1^2+a*t1*(t-tin-t1)",
+   "unit": "m",
+   "tol": 0.003
+  },
+  {
+   "q": "終了時のvy a·t1（電場を出た後は一定）",
+   "probe": "vy_end",
+   "theory": "a*t1",
+   "unit": "m/s",
+   "tol": 0.003
+  },
+  {
+   "q": "vxは変わらない",
+   "probe": "vx_end",
+   "theory": "v0",
+   "unit": "m/s",
+   "tol": 0.001
+  },
+  {
+   "q": "進む向き tanφ = a·t1/v0",
+   "probe": "ang",
+   "theory": "atand(a*t1/v0)",
+   "unit": "°",
+   "tol": 0.003
+  }
+ ]
+}

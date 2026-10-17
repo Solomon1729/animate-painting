@@ -1,0 +1,196 @@
+{
+ "id": "orig-spring-oscillator",
+ "title": "なめらかな床の上のばね振動",
+ "tags": [
+  "力学",
+  "単振動",
+  "ばね"
+ ],
+ "source": "オリジナル（水平ばね振り子の型）",
+ "level": "basic",
+ "problem": "なめらかな水平面上で、質量{m}kgの物体が、ばね定数{k}N/mのばね（自然の長さ{l0}m）で壁につながれている。ばねを{A}mだけ伸ばして静かに放す。",
+ "params": {
+  "m": {
+   "v": 0.5,
+   "min": 0.1,
+   "max": 2,
+   "step": 0.1,
+   "unit": "kg",
+   "label": "質量"
+  },
+  "k": {
+   "v": 20,
+   "min": 5,
+   "max": 60,
+   "step": 1,
+   "unit": "N/m",
+   "label": "ばね定数"
+  },
+  "A": {
+   "v": 0.3,
+   "min": 0.05,
+   "max": 0.6,
+   "step": 0.05,
+   "unit": "m",
+   "label": "はじめの伸び"
+  }
+ },
+ "vars": {
+  "l0": "1.0",
+  "hb": "0.15",
+  "T": "2*pi*sqrt(m/k)",
+  "w": "sqrt(k/m)"
+ },
+ "view": {
+  "x0": -0.3,
+  "y0": -0.25,
+  "w": 3.0
+ },
+ "bodies": [
+  {
+   "id": "floor",
+   "type": "static",
+   "mu": 0,
+   "shapes": [
+    {
+     "t": "plane",
+     "normal": [
+      0,
+      1
+     ],
+     "d": 0
+    }
+   ]
+  },
+  {
+   "id": "wall",
+   "type": "static",
+   "pos": [
+    0,
+    0
+   ],
+   "shapes": [
+    {
+     "t": "box",
+     "w": 0.06,
+     "h": 0.6,
+     "ox": -0.03,
+     "oy": 0.3
+    }
+   ],
+   "mu": 0
+  },
+  {
+   "id": "blk",
+   "type": "dynamic",
+   "m": "m",
+   "mu": 0,
+   "fixedRot": true,
+   "pos": [
+    "l0+A+hb",
+    "hb"
+   ],
+   "label": "物体",
+   "shapes": [
+    {
+     "t": "box",
+     "w": 0.3,
+     "h": 0.3
+    }
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "id": "sp",
+   "type": "spring",
+   "a": {
+    "at": [
+     0,
+     "hb"
+    ]
+   },
+   "b": {
+    "body": "blk",
+    "at": [
+     -0.15,
+     0
+    ]
+   },
+   "k": "k",
+   "len": "l0"
+  }
+ ],
+ "probes": {
+  "T": {
+   "expr": "blk.x",
+   "reduce": "period",
+   "unit": "s",
+   "label": "周期"
+  },
+  "xamp": {
+   "expr": "blk.x",
+   "reduce": "amp",
+   "unit": "m",
+   "label": "振幅"
+  },
+  "vmax": {
+   "expr": "blk.speed",
+   "reduce": "max",
+   "unit": "m/s",
+   "label": "最大の速さ"
+  },
+  "Fmax": {
+   "expr": "abs(sp.F)",
+   "reduce": "max",
+   "unit": "N",
+   "label": "ばねの力の最大値"
+  },
+  "E": {
+   "expr": "E",
+   "reduce": "last",
+   "unit": "J",
+   "label": "力学的エネルギー"
+  }
+ },
+ "run": {
+  "t": 4.0
+ },
+ "ask": [
+  {
+   "q": "周期 2π√(m/k)",
+   "probe": "T",
+   "theory": "T",
+   "unit": "s",
+   "tol": 0.003
+  },
+  {
+   "q": "振幅 A",
+   "probe": "xamp",
+   "theory": "A",
+   "unit": "m",
+   "tol": 0.002
+  },
+  {
+   "q": "最大の速さ A√(k/m)",
+   "probe": "vmax",
+   "theory": "A*w",
+   "unit": "m/s",
+   "tol": 0.003
+  },
+  {
+   "q": "ばねの力の最大値 kA",
+   "probe": "Fmax",
+   "theory": "k*A",
+   "unit": "N",
+   "tol": 0.003
+  }
+ ],
+ "checks": [
+  {
+   "name": "力学的エネルギー保存",
+   "probe": "E",
+   "conserved": 0.003
+  }
+ ]
+}
