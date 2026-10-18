@@ -46,7 +46,7 @@ function drawBlankHint(l,S){
 function attach(l){if(l.toType==='layer')return;const c=byId(l.to);if(!c)return;const u=S0*c.size;l.ox=(l.fx*W-c.fx*W)/u*c.face;l.oy=(l.fy*H-c.fy*H)/u;l.att=true}
 function detach(l){const c=byId(l.to);if(c){const u=S0*c.size;l.fx=(c.fx*W+l.ox*u*c.face)/W;l.fy=(c.fy*H+l.oy*u)/H}l.att=false}
 /* aを消す前に、aを指している他のオブジェクトの参照（くっつき・マスク・歪みの同期）を外す。del()と統合（226-merge.js）が使う */
-function unlinkRefs(a){AC.forEach(x=>{if(x.to===a.id&&x.toType!=='layer'){if(x.att){x.fx=x.wx/W;x.fy=x.wy/H}x.att=false;x.to=null;x.maskTo=false}if(x.syncTo===a.id){x.pins=x.pins.slice();x.syncTo=null}})}
+function unlinkRefs(a){scnUnlinkActor(a.id);AC.forEach(x=>{if(x.to===a.id&&x.toType!=='layer'){if(x.att){x.fx=x.wx/W;x.fy=x.wy/H}x.att=false;x.to=null;x.maskTo=false}if(x.syncTo===a.id){x.pins=x.pins.slice();x.syncTo=null}})}
 function del(){
   if(!sel)return;if(blocked(sel))return;const a=sel;  /* 最後の1個も消せる（オブジェクト0個を許可：台帳Z-97） */
   unlinkRefs(a);

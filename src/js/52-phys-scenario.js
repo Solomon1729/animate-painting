@@ -293,10 +293,12 @@ function installExtras(){
   EXTRA.dist=(args)=>{const A=args[0].str,B=args[1].str;return()=>{const W=EXTRA._W;const a=W.byId.get(A),b=W.byId.get(B);if(!a||!b)return NaN;const p=PHE.origin(a),q=PHE.origin(b);return Math.hypot(p[0]-q[0],p[1]-q[1])}}}
 installExtras();
 
-function run(scn,opt){
+/* 実行の本体：1刻みずつ進められる「セッション」。アプリ（53-phys-run.js）は毎フレーム step() を呼び、run() は最後まで回して finish() する。
+   opt: params（上書き）・t（終わりの時刻）・series（グラフ用に追加で取る式）・every（何刻みごとに記録するか。既定は run.sample）・built（作成済みの世界）・onSample */
+function session(scn,opt){
   opt=opt||{};
   const B=opt.built||build(scn,opt.params);const W=B.W,acc=mkAccess(B);EXTRA._W=W;
-  const T=num0(opt.t!==undefined?opt.t:runT(B,scn),5),every=Math.max(1,Math.round(((scn.run&&scn.run.sample)||0)/(1/120))||1);
+  const T=num0(opt.t!==undefined?opt.t:runT(B,scn),5),every=Math.max(1,Math.round(opt.every||(((scn.run&&scn.run.sample)||0)/(1/120)))||1);
   const comp=(src,what)=>{try{return compile(src,acc.resolve)}catch(e){throw new Error(what+': '+e.message)}};
   const probes=Object.entries(scn.probes||{}).map(([k,p])=>({k,p,f:comp(p.expr,'probes.'+k+'.expr'),w:p.when?comp(p.when,'probes.'+k+'.when'):null}));
   const events=Object.entries(scn.events||{}).map(([k,e])=>({k,e,w:comp(e.when||e.first,'events.'+k+'.when'),t:NaN,i:-1}));
@@ -311,11 +313,14 @@ function run(scn,opt){
   /* t=0の力・加速度は、1刻み試しに進めて戻して求める（戻しても状態は変わらない） */
   {const sn=PHE.snapshot(W),v0=W.bodies.map(b=>[b.vx,b.vy]);PHE.advance(W,DT);
    W.bodies.forEach((b,k)=>{acc.ctx.acc[k][0]=(b.vx-v0[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-v0[k][1])/DT});PHE.restore(W,sn)}
-  sample(0);let stopped=false;
-  for(let i=1;i<=n&&!stopped;i++){
+  sample(0);let stopped=false,i=0;
+  const step=()=>{
+    if(stopped||i>=n)return false;i++;
     PHE.advance(W,DT);
     for(let k=0;k<nb;k++){const b=W.bodies[k];acc.ctx.acc[k][0]=(b.vx-prevV[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-prevV[k][1])/DT;prevV[k][0]=b.vx;prevV[k][1]=b.vy}
-    if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}}
+    if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}
+    return !(stopped||i>=n)};
+  const finish=()=>{
   /* 集計 */
   const res={},evt={};for(const e of events)evt[e.k]=e.t;
   const ctxAt=(i)=>i;
@@ -343,6 +348,8 @@ function run(scn,opt){
       if(c.max!==undefined&&mx>c.max){okc=false;msg+=' 最大値 '+mx+' > '+c.max}
       return{name:c.name||'check'+i,ok:okc,msg}});
   return{ts,series:ser,probes:res,events:evt,ask:asks,checks,world:W,built:B,t:W.t,stopped}}
+  return{B,W,ts,series:ser,T,n,DT,acc:acc.ctx.acc,step,finish,get i(){return i},get stopped(){return stopped},get done(){return stopped||i>=n}}}
+function run(scn,opt){const S=session(scn,opt);while(S.step());return S.finish()}
 function runT(B,scn){const t=scn.run&&scn.run.t;if(typeof t==='string'){try{return compile(t,B.resolve)()}catch(e){throw new Error('run.t: '+e.message)}}return t}
 function num0(v,d){return isNum(v)?v:d}
 
@@ -373,5 +380,5 @@ function template(){return{id:'my-scenario',title:'題名',tags:['力学'],sourc
   probes:{t_end:{expr:'t',reduce:'last'},vmax:{expr:'blk.speed',reduce:'max'}},
   run:{t:1.5},ask:[],checks:[]}}
 
-return{FN,BP,JP,WP,RED,KEYS,compile,validate,build,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
+return{FN,BP,JP,WP,RED,KEYS,compile,validate,build,session,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
 })();

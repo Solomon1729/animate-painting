@@ -223,6 +223,32 @@
   </div>
 
   <div class="tab" data-tab="ph">
+    <div class="grp" id="scGrp"><div class="gh">📐 物理シナリオ（問題づくり・実験）</div>
+    <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="雛形から新しいシナリオを作る">＋雛形</button><button id="scOff" aria-label="シナリオを閉じる（自動で作った絵も消えます）" hidden>閉じる</button></div>
+    <div class="note" id="scHelp">サンプルを選ぶと、物体・糸・力の場がキャンバスに現れ、実行すると物理の法則どおりに動きます。条件（質量・角度など）のスライダーで、すぐ作り直せます。自分の絵につなぐと、絵がその物体として動きます。「＋雛形」から自作もできます。</div>
+    <div id="scBody" hidden>
+      <div class="note" id="scTitle" style="font-weight:900;opacity:1"></div>
+      <div class="note" id="scProb" style="opacity:.85"></div>
+      <div class="row"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
+      <div class="row"><span class="lab">時刻</span><input id="scT" type="range" min="0" max="1" step="0.0083333" value="0" aria-label="時刻（動かすと、その時刻の姿になります）"><b class="v" id="scTv" style="min-width:7em">0.00 s</b></div>
+      <div class="row" id="scLive"></div>
+      <div id="scParams"></div>
+      <div class="gh" style="margin-top:8px">見せるもの</div>
+      <div class="row" id="scVec"></div>
+      <div class="row" id="scDisp"></div>
+      <div class="row"><span class="lab">グラフ</span><input id="scGx" type="text" placeholder="例: blk.speed, blk.y" aria-label="グラフに出す式（カンマ区切り。物体のid.量、時刻t など）" style="flex:1;min-width:8em"></div>
+      <canvas id="scGraph" style="width:100%;height:150px;display:none" aria-label="時系列のグラフ"></canvas>
+      <div id="scAns"></div>
+      <div class="gh" style="margin-top:8px">絵とつなぐ</div>
+      <div id="scLink"></div>
+      <div class="row"><button id="scPull" aria-label="つないだ絵の今の位置・向きを、シナリオの初期位置にする">絵の位置を初期位置に</button><button id="scCommit" aria-label="いまの物理の姿を絵の位置として確定し、物理を閉じる">いまの姿で確定</button></div>
+      <details><summary style="font-weight:900;cursor:pointer;margin-top:8px">シナリオ（JSON）を見る・直す・貼る</summary>
+        <textarea id="scJson" rows="14" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace" spellcheck="false" aria-label="シナリオのJSON"></textarea>
+        <div class="row"><button id="scApply">読み込む</button><button id="scCheck" aria-label="最後まで計算して、答え合わせと保存則の検査をする">検査する</button><button id="scCopy">コピー</button></div>
+      </details>
+    </div>
+    <div class="note" id="scErr" style="color:#b91c1c;opacity:1"></div>
+    </div>
     <div class="grp"><div class="gh">全体</div>
     <div class="row"><button id="pOn">物理を有効にする</button><button id="pFloor" class="on">床</button><button id="pWall" class="on">壁</button><button id="pCol" class="on">当たり判定</button></div>
     <div class="row"><span class="lab">重力</span><input id="pG" type="range" min="0" max="3" step="0.05" value="1" aria-label="重力の強さ（1で現実の重力相当。単位を設定していない場合は目安）"></div>
