@@ -7,7 +7,7 @@
 const PHE=(function(){
 'use strict';
 const PI=Math.PI,abs=Math.abs,sqrt=Math.sqrt,hypot=Math.hypot,min=Math.min,max=Math.max,cos=Math.cos,sin=Math.sin;
-const DEF={maxStep:1/240,iters:12,piters:4,jiters:4,restThr:.3,wh:.02,maxSub:600,slop:.0003,beta:.2,margin:.004,vStick:.02,warm:1,maxCorr:.2,events:24};
+const DEF={maxStep:1/240,iters:12,piters:4,jiters:4,restThr:.3,wh:.02,maxSub:600,slop:.0003,beta:.2,margin:.004,vStick:.02,warm:1,maxCorr:.2,events:24,waves:24,waveV:1};
 let LW=1;   /* 力のログの重み（小刻みの長さ／1刻みの長さ）。advanceが設定する */
 const num=(v,d)=>(typeof v==='number'&&isFinite(v))?v:d;
 
@@ -338,7 +338,7 @@ function contactPre(W,m,h){
     const impact=vn<-W.cfg.restThr&&(p.sep<=0||-vn*h>=p.sep)&&!p.persist&&!m.shadow;   /* 前の刻みから続いている接触は、衝突ではなく「支え」 */
     /* 反発：力が働く前の速さ（vn0）から跳ね返り、その後の刻みの残りで力が働く分（vn−vn0）を足す。床に静止する場合は0 */
     const a0=pv0(A,p.rax,p.ray),b0=pv0(B,p.rbx,p.rby),vn0=(b0[0]-a0[0])*m.nx+(b0[1]-a0[1])*m.ny;
-    p.imp=impact;
+    p.imp=impact;p.vnp=vn;
     p.bounce=impact?(vn0<-W.cfg.restThr?Math.max(0,-m.e*vn0+(vn-vn0)):-m.e*vn):0;p.vtar=p.sep>0&&!impact?-p.sep/h:p.bounce;
     if(!impact&&m.rho){   /* 曲がった道（円弧）の上：まっすぐ進むと壁に食い込む分（kap）を、先に速度の目標に入れる。台形の位置更新と合わせて、円運動の向心力が途切れない */
       const tx2=-m.ny,ty2=m.nx,vt=abs((b0[0]-a0[0])*tx2+(b0[1]-a0[1])*ty2),kap=m.sgn*(vt*h)*(vt*h)/(2*m.rho),s0=Math.max(p.sep,0);
@@ -381,10 +381,44 @@ function posForces(W,h){
   dyn.forEach((b,i)=>{b.pa=b.im&&!b.hold?[b.ax+b.fx*b.im,b.ay+b.fy*b.im,b.tq*b.iI]:[0,0,0];const q=sv[i];b.ax=q[0];b.ay=q[1];b.fx=q[2];b.fy=q[3];b.tq=q[4];b.vf=q[5];b.npe=q[6];b.diss=q[7]});
   W.joints.forEach((j,i)=>{j.F=js[i][0];j.pe0=js[i][1]});
   LOGOFF=false}
+/* 衝突の伝わり（ニュートンのゆりかご・玉の列）。
+   触れて並んだ動く物どうしの新しい接触を、ぶつかった瞬間に全部いっせいに解くと、玉の列は1つの固まりのように動き（非弾性）、端の玉だけが飛び出さない。
+   本物は「ぶつかった玉→次の玉→…」の順に伝わる。そこで、前の刻みから続いていない動く物どうしの接触（pool）は、いったん解から外し、
+   ぶつかって近づき始めた（近づく速さが restThr 以上の）ものから順に、衝突（反発つき）として解く。
+   使った接触は中立（反発なし・力積0）に戻し、最後のふつうの反復に任せる。連鎖の可能性がなければ（ぶつかる物が、新しい接触を持たなければ）何もしない */
+function impactWaves(W,ms,h){
+  const cfg=W.cfg,isImp=m=>m.pts.some(p=>p.imp);
+  const pool=ms.filter(m=>m.A.im>0&&m.B.im>0&&!m.shadow&&!m.pts.some(p=>p.persist));
+  if(!pool.length)return;
+  const imps=ms.filter(isImp);if(!imps.length)return;
+  if(!imps.some(m=>m.pts.some(p=>p.imp&&-p.vnp>=cfg.waveV)))return;   /* ゆっくりした接触（積み木が積み重なる、すき間がわずかに落ちるなど）は、まとめて解くほうが安定する */
+  const tied=new Set();for(const m of imps){tied.add(m.A);tied.add(m.B)}
+  if(!pool.some(m=>!isImp(m)&&(tied.has(m.A)||tied.has(m.B))))return;
+  /* 安全装置：衝突は運動エネルギーを増やさない（e≦1）。このあとの反復まで解いた結果が増えていたら（山積みなどで、順番に解いた結果が荒れた場合）、取り消して元の「いっせいに解く」方式に戻す（step が呼ぶ） */
+  const dyn=W.dyn,ke=()=>{let k=0;for(const b of dyn)k+=.5*b.m*(b.vx*b.vx+b.vy*b.vy)+.5*b.I*b.w*b.w;return k},
+    sv=dyn.map(b=>[b.vx,b.vy,b.w]),sp=ms.map(m=>m.pts.map(p=>[p.imp,p.vtar,p.bounce,p.jn,p.jt])),sj=W.joints.map(j=>Array.isArray(j.acc)?j.acc.slice():j.acc),ke0=ke();
+  const guard={bad:()=>ke()>ke0*(1+2e-3)+1e-9,
+    undo(){dyn.forEach((b,i)=>{b.vx=sv[i][0];b.vy=sv[i][1];b.w=sv[i][2]});ms.forEach((m,i)=>m.pts.forEach((p,k)=>{const q=sp[i][k];p.imp=q[0];p.vtar=q[1];p.bounce=q[2];p.jn=q[3];p.jt=q[4]}));
+      W.joints.forEach((j,i)=>{j.acc=Array.isArray(sj[i])?sj[i].slice():sj[i]});W.waveBack=(W.waveBack||0)+1}};
+  const inPool=new Set(pool),base=ms.filter(m=>!inPool.has(m)),neutral=m=>{for(const p of m.pts){p.vtar=p.sep>0?-p.sep/h:0;p.bounce=0;p.jn=0;p.jt=0}};
+  let cur=pool.filter(isImp);
+  for(let r=0;r<cfg.waves&&cur.length;r++){
+    const set=base.concat(cur);
+    for(let it=0;it<cfg.iters;it++){for(const j of W.joints){const J=JNT[j.type];if(J.vel)J.vel(W,j,h)}for(const m of set)contactVel(m)}
+    for(const m of cur)neutral(m);
+    if(!r)for(const m of base)if(isImp(m))neutral(m);   /* 台や壁にぶつかった分も、使い終えたら中立に（使い終えた反発の目標を、後の伝わりで何度も押し戻さない＝エネルギーが増えない） */
+    const nx=[];
+    for(const m of pool){const A=m.A,B=m.B;let hit=false;
+      for(const p of m.pts){
+        const vn=((B.vx-B.w*p.rby)-(A.vx-A.w*p.ray))*m.nx+((B.vy+B.w*p.rbx)-(A.vy+A.w*p.rax))*m.ny;
+        if(vn<-cfg.restThr&&(p.sep<=0||-vn*h>=p.sep)){p.imp=true;p.bounce=-m.e*vn;p.vtar=p.bounce;hit=true}}
+      if(hit)nx.push(m)}
+    cur=nx}
+  return guard}
 function step(W,h){
   const cfg=W.cfg,bs=W.bodies,dyn=W.dyn;
   /* 0) 準備：ログ・つかまれた物（hold）・動かす台（kin）の速度 */
-  W.wr=W.hp?h/W.hp:1;
+  W.wr=W.hp?Math.min(h/W.hp,1):1;   /* 前の刻みが短いとき、力積を刻みの比で大きくして引き継ぐと、衝突の力積（刻みに比例しない）が千倍にふくらんで爆発する。引き継ぎは大きくしない */
   for(const b of bs){b.ax=0;b.ay=0;b.fx=0;b.fy=0;b.tq=0;b.Bz=0;b.vf=0;b.vB=0;b.cons=0;b.npe=0;b.diss=0;b.sv=[b.vx,b.vy,b.w];
     b.im=b.im0;b.iI=b.iI0}
   for(const b of bs){
@@ -417,10 +451,13 @@ function step(W,h){
   for(const j of W.joints){const J=JNT[j.type];if(J.prep)J.prep(W,j,h)}
   for(const m of ms)contactWarm(m);
   for(const j of W.joints){const J=JNT[j.type];if(J.warm)J.warm(W,j)}
+  const wv=impactWaves(W,ms,h);
   /* 4) 速度の拘束を反復で解く */
-  for(let it=0;it<cfg.iters;it++){
+  const solveVel=()=>{for(let it=0;it<cfg.iters;it++){
     for(const j of W.joints){const J=JNT[j.type];if(J.vel)J.vel(W,j,h)}
-    for(const m of ms)contactVel(m)}
+    for(const m of ms)contactVel(m)}};
+  solveVel();
+  if(wv&&wv.bad()){wv.undo();solveVel()}
   for(const m of ms){const a=W.prevC.get(m.key);if(a)m.pts.forEach((p,i)=>{if(a[i]){a[i].jn=p.jn;a[i].jt=p.jt}})}   /* 解いた力積を、次の刻みのウォームスタートと「続いている接触」の判定に引き継ぐ */
   /* 5) 位置の更新 */
   /* 5) 位置の更新：速さに応じた力が無く衝突も無い群れは、台形（平均の速度）で進める＝等加速度なら厳密。それ以外は半陰的オイラー（安定） */

@@ -11,7 +11,7 @@
    ・シナリオの物体に img（絵文字）があれば、読み込み時にアクターを自動で作ってつなぐ（scnAuto。シナリオを閉じる・替える時に消す）。
    ・旧：50-physics.js（アクターごとの簡易物理）は、シナリオが開いている間は止める。 */
 const TIME={DT:1/120,MAXSTEP:16,BUDGET:10};
-const scnOpt0=()=>({grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,hit:false,labels:true,contacts:false,energy:false,trail:false,strobe:false,vec:{}});
+const scnOpt0=()=>({grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,jointsBelow:false,hit:false,labels:true,contacts:false,energy:false,trail:false,strobe:false,vec:{}});
 const SCN={on:false,src:null,params:{},opt:scnOpt0(),link:{},speed:1,graph:'',auto:true};
 const RUN={sess:null,R:null,playing:false,acc:0,err:'',warns:[],res:null,al:new Map(),key:'',rev:0,uiRev:-1,acKey:'',dirty:false,a0:[],p0:[],view:{x0:0,y0:0,w:6},fr:0};
 const scnLive=()=>!!(SCN.on&&RUN.sess&&RUN.R);
@@ -24,7 +24,7 @@ const scnROpt=()=>Object.assign({},PHR.DEFOPT,SCN.opt,{vec:SCN.opt.vec||{}});
 
 /* ---------- 作る・やり直す ---------- */
 function scnBuild(){
-  RUN.sess=null;RUN.R=null;RUN.res=null;RUN.err='';RUN.warns=[];RUN.al=new Map();RUN.acc=0;
+  RUN.sess=null;RUN.R=null;RUN.res=null;RUN.err='';RUN.warns=[];RUN.al=new Map();RUN.acc=0;RUN.logI=0;RUN.quiet=false;
   RUN.key=JSON.stringify([SCN.src,SCN.params,SCN.graph]);
   if(!SCN.src)return;
   try{
@@ -83,6 +83,20 @@ function scnLinkBody(bodyId,a,o){
   SCN.link[bodyId]={a:a.id,bx:(bb.x0+bb.x1)/2,by:(bb.y0+bb.y1)/2,fx:((v.x0+v.x1)/2-v.iw/2)/im,fy:((v.y0+v.y1)/2-v.ih/2)/im,w0:blong*im/vlong,k:o.k||1,rot0:a.rot||0};
   scnBindLinks();scnSyncLinks();RUN.rev++;dirtyProj=true;return true}
 function scnUnlinkBody(bodyId){const L=SCN.link[bodyId];if(!L)return;const a=byId(L.a);delete SCN.link[bodyId];if(a&&a.scnAuto){unlinkRefs(a);AC=AC.filter(x=>x!==a);if(sel===a)setSel(AC[0]||null)}scnBindLinks();RUN.rev++;dirtyProj=true}
+/* シナリオを書き換える（fnがSCN.srcを直接直す）。検証に通らなければ元に戻す。つなぎ（link）は保つ。デモ・絵から作る機能が使う */
+function scnEdit(fn){
+  if(!SCN.src)return false;pushUndo();const bak=scnClone(SCN.src);fn(SCN.src);const V=PHS.validate(SCN.src);
+  if(V.errors.length){SCN.src=bak;note('シナリオを直せませんでした：'+V.errors.slice(0,2).join(' / '));return false}
+  RUN.playing=false;scnBuild();RUN.dirty=false;scnSyncLinks();RUN.rev++;dirtyProj=true;scnUi();return true}
+/* 物体をシナリオから外す（それを使う糸・力場・対も外す）。絵から作った物体の削除に使う */
+function scnRemoveBody(id){
+  if(!SCN.src)return;pushUndo();const s=SCN.src,uses=x=>x===id||(x&&typeof x==='object'&&x.body===id);
+  s.bodies=s.bodies.filter(b=>b.id!==id);if(s.params)delete s.params['m_'+id];delete SCN.link[id];
+  s.joints=(s.joints||[]).filter(j=>![j.a,j.b].concat(j.via||[],j.path||[]).some(uses));
+  for(const f of s.fields||[])if(f.targets)f.targets=f.targets.filter(t=>t!==id);
+  s.pairs=(s.pairs||[]).filter(p=>p.a!==id&&p.b!==id);
+  if(!s.bodies.length){scnClose();return}
+  RUN.playing=false;scnBuild();scnBindLinks();RUN.rev++;dirtyProj=true;scnUi()}
 function scnUnlinkActor(id){for(const k of Object.keys(SCN.link))if(SCN.link[k].a===id)delete SCN.link[k];RUN.al.delete(id)}
 function scnBindLinks(){
   RUN.al=new Map();if(!RUN.sess||!RUN.R)return;const ns=new Set();
@@ -104,7 +118,9 @@ function scnClearAuto(){
   del.forEach(a=>{unlinkRefs(a);scnUnlinkActor(a.id)});AC=AC.filter(a=>!a.scnAuto);if(sel&&!AC.includes(sel))setSel(AC[0]||null)}
 
 /* ---------- 時計：固定刻みで進める ---------- */
-function scnAfter(){const R=scnFrame();PHR.pushTrail(R);PHR.pushStrobe(R)}
+function scnAfter(){const R=scnFrame();PHR.pushTrail(R);PHR.pushStrobe(R);scnLogs()}
+/* ルール（条件→動作）の note を、実行中に出す。巻き戻して再実行する間（quiet）は出さない */
+function scnLogs(){const L=RUN.sess&&RUN.sess.log;if(!L)return;while(RUN.logI<L.length){const e=L[RUN.logI++];if(RUN.quiet)continue;if(e.text)note(e.text,5000);if(typeof PHAPI!=='undefined')PHAPI.emit(Object.assign({kind:e.stop?'stop':'rule'},e))}}
 function scnEnd(){RUN.playing=false;RUN.acc=0;try{RUN.res=RUN.sess.finish()}catch(e){RUN.err=String(e&&e.message||e)}RUN.uiAns=1}
 function scnTick(dt){
   if(RUN.dirty){RUN.dirty=false;const was=RUN.playing;scnBuild();scnSyncLinks();RUN.playing=false;if(was)RUN.acc=0;RUN.rev++;scnUi();return}
@@ -122,8 +138,9 @@ function scnStepN(n){if(!RUN.sess)return;RUN.playing=false;const S=RUN.sess;for(
 function scnSeek(t){   /* その時刻へ。進むだけなら今の状態から、戻るなら作り直して進める */
   if(!RUN.sess)return;RUN.playing=false;
   if(t<RUN.sess.W.t-1e-9){scnBuild();scnSyncLinks()}
-  const S=RUN.sess,n=Math.round((t-S.W.t)/TIME.DT),t0=performance.now();
+  const S=RUN.sess,n=Math.round((t-S.W.t)/TIME.DT),t0=performance.now();RUN.quiet=true;
   for(let i=0;i<n&&!S.done;i++){S.step();scnAfter();if((i&63)===63&&performance.now()-t0>500)break}
+  RUN.quiet=false;
   if(S.done)scnEnd();else{RUN.res=null;RUN.uiAns=1}scnUiTime()}
 
 /* ---------- 描く（paintFrameから）---------- */
@@ -204,6 +221,7 @@ function scnUiBuild(){
     for(const a of AC){const o=scnEl('option');o.value=a.id;o.textContent=a.name;sl.append(o)}sl.value=L?String(L.a):'';sl.setAttribute('aria-label','「'+(b.label||b.id)+'」につなぐ絵');
     sl.onchange=()=>{pushUndo();const v=sl.value;if(v)scnLinkBody(b.id,byId(+v));else scnUnlinkBody(b.id);scnUi()};row.append(lab,sl);
     if(L){const r=scnEl('input'),v=scnEl('b');r.type='range';r.min=.3;r.max=3;r.step=.05;r.value=L.k;r.setAttribute('aria-label','絵の大きさの倍率');v.className='v';v.textContent='×'+L.k.toFixed(2);r.oninput=()=>{L.k=+r.value;v.textContent='×'+L.k.toFixed(2);scnBindLinks();scnSyncLinks();dirtyProj=true};row.append(r,v)}
+    if(/^art_/.test(b.id)){const x=scnEl('button');x.textContent='×';x.setAttribute('aria-label','「'+(b.label||b.id)+'」を物理から外す（絵は残ります）');x.onclick=()=>scnRemoveBody(b.id);row.append(x)}
     lb.append(row)}
   /* JSON */
   if(document.activeElement!==$('scJson'))$('scJson').value=scnJson();

@@ -22,7 +22,7 @@ const VEC=[
   ['Ff','場の力（電場・磁場など）','N','F',(S,b)=>b.lg.fld],
   ['net','合力','N','F',(S,b)=>{const L=b.lg;return[L.grav[0]+L.norm[0]+L.fric[0]+L.tens[0]+L.spr[0]+L.fld[0],L.grav[1]+L.norm[1]+L.fric[1]+L.tens[1]+L.spr[1]+L.fld[1]]}]
 ];
-const DEFOPT={grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,hit:false,labels:true,contacts:false,vec:{},vecLabels:true,trail:false,strobe:false,energy:false,tick:true};
+const DEFOPT={grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,jointsBelow:false,hit:false,labels:true,contacts:false,vec:{},vecLabels:true,trail:false,strobe:false,energy:false,tick:true};
 
 /* ---------- 座標変換：view={x0,y0,w}（左下の座標と、画面の横幅[m]）、cw×chピクセル ---------- */
 function mkT(view,cw,ch){const k=cw/view.w;return{k,cw,ch,view,X:x=>(x-view.x0)*k,Y:y=>ch-(y-view.y0)*k,
@@ -238,6 +238,7 @@ function bodyLabel(ctx,S,b){const u=S.px,T=S.T,m=S.meta[b.idx];if(m&&m.label==='
 function under(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W;ctx.save();
   if(S.opt.grid)drawGrid(ctx,S);
   if(S.opt.fields)for(const f of W.fields){const d=FDRAW[f.type];if(d)d(ctx,S,f)}
+  if(S.opt.joints&&S.opt.jointsBelow)for(const j of W.joints){const d=JDRAW[j.type];if(d)d(ctx,S,j)}   /* 糸・ばねを絵の後ろに描く（jointsBelow。お絵かき×物理では、絵が糸の上に見える） */
   if(S.opt.statics!==false)for(const b of W.bodies)if(b.type==='static'&&!(S.noShape&&S.noShape.has(b.idx)))drawStatic(ctx,S,b);   /* noShape＝アクターの絵がかわりに見せている物体 */
   ctx.restore()}
 /* 上の層：アクターの絵より手前 */
@@ -249,7 +250,7 @@ function over(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W,u=S.px;ctx.sav
     ctx.beginPath();ctx.arc(T.X(b.px),T.Y(b.py),2*u,0,2*PI);ctx.fillStyle=COL.ink;ctx.fill()}
   /* 当たり判定の線：絵（noShape）に重ねて、物理の形を細線で見せる（絵と当たりがずれていないかの確認用） */
   if(S.opt.hit&&S.noShape)for(const b of W.bodies)if(S.noShape.has(b.idx))drawShapes(ctx,S,b,pose(b),{fill:null,stroke:'rgba(220,38,38,.85)',alpha:1,lw:1.4*u});
-  if(S.opt.joints)for(const j of W.joints){const d=JDRAW[j.type];if(d)d(ctx,S,j)}
+  if(S.opt.joints&&!S.opt.jointsBelow)for(const j of W.joints){const d=JDRAW[j.type];if(d)d(ctx,S,j)}
   if(S.opt.trail)drawTrails(ctx,S);
   if(S.opt.contacts&&W.lastC){ctx.fillStyle='#ef4444';for(const c of W.lastC)for(const p of c.pts){ctx.beginPath();ctx.arc(T.X(p.x),T.Y(p.y),3*u,0,2*PI);ctx.fill()}}
   if(S.opt.labels)for(const b of W.bodies)if(b.type!=='static')bodyLabel(ctx,S,b);

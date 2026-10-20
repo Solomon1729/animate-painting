@@ -17,6 +17,9 @@
   S8 画面：描いて空白でない・ベクトル・軌跡・当たり線・エネルギーを全部オンにしても例外が出ない
   S9 旧物理（50-physics.js）はシナリオが開いている間は止まる／既存の画面の壊れ（ページエラー）が無い
   S10 JSONの貼り付け：誤り（構文・検証）を日本語で返す／正しいものは読める
+  S11 絵→物理（56-phys-art.js）：描いた線が凸の地形になる／円・四角・多角形の物体／つなぎ／平らな地形に球を落とすと乗る
+  S12 お絵かき×物理のサンプル（57-phys-demos.js、c〜h）：開ける・最後まで走る・答え合わせと検査がすべて合う・シーンの外へ出ない
+  S13 窓口（58-phys-api.js・台帳Z-178）：命令で組み立て→再生→読む→答え合わせ／ルールは巻き戻しても同じ・巻き戻しの再実行中は知らせない／Undo・保存に乗る／誤りを返す
 """
 import sys, os, json
 from playwright.sync_api import sync_playwright
@@ -96,12 +99,11 @@ def main():
         r = ev("""()=>{const a=window._a,m={x:0,y:0,r:0,s:0},q=scnPose(a,m),o=RUN.al.get(a.id),b=RUN.sess.W.bodies[o.i];
           const k=W/RUN.view.w,cx=b.px+o.ox*b.cs-o.oy*b.sn,cy=b.py+o.ox*b.sn+o.oy*b.cs;
           return {x:q&&q.x,y:q&&q.y,ex:(cx-RUN.view.x0)*k,ey:H-(cy-RUN.view.y0)*k,mr:m.r,t:RUN.sess.W.t,moved:q&&Math.hypot(q.x-a.fx*W,q.y-a.fy*H)}}""")
-        chk('S4 描画の姿勢が物体の位置に追従し、初期位置から動いている', r['q'] is None if False else (abs(r['x'] - r['ex']) < 1e-6 and abs(r['y'] - r['ey']) < 1e-6 and r['moved'] > 1), r)
+        chk('S4 描画の姿勢が物体の位置に追従し、初期位置から動いている', abs(r['x'] - r['ex']) < 1e-6 and abs(r['y'] - r['ey']) < 1e-6 and r['moved'] > 1, r)
         r = ev("""()=>{scnReset();const a=window._a,m={x:0,y:0,r:0,s:0},q=scnPose(a,m);return {dx:Math.abs(q.x-a.fx*W),dy:Math.abs(q.y-a.fy*H),mr:m.r}}""")
         chk('S4 最初へ戻すと、描画の姿勢＝配置（飛び跳ねない）', r['dx'] < 1e-6 and r['dy'] < 1e-6 and abs(r['mr']) < 1e-9, r)
         r = ev("""()=>{const a=window._a;const k=W/RUN.view.w;scnLinkBody(window._bid,a);const L=SCN.link[window._bid];L.k=2;scnBindLinks();scnSyncLinks();const s2=a.size;L.k=1;scnBindLinks();scnSyncLinks();return {ratio:s2/a.size}}""")
         chk('S4 絵の大きさの倍率（k）が効く', abs(r['ratio'] - 2) < 1e-9, r)
-        r = ev("""()=>{const a=window._a;const del=AC.indexOf(a);sel=a;del_();return 0}""") if False else None
         ev("()=>{sel=window._a;del()}")
         r = ev("()=>({link:Object.keys(SCN.link).length,al:RUN.al.size})")
         chk('S4 つないだアクターを消すと、つなぎも消える', r['link'] == 0 and r['al'] == 0, r)
@@ -183,8 +185,6 @@ def main():
 
         # ---------- S9 旧物理 ----------
         ev("resetAll()")
-        r = ev("""()=>{const a=add('🍎');a.phys={on:true,m:1,e:.5,vx:0,vy:0,fixed:false,rs:.8};physOn=true;const y0=a.fy;
-          scnLoadSample('orig-projectile');const y1=a.fy;for(let i=0;i<60;i++)loopStepOnce();return {y0,y1,y2:a.fy}}""") if False else None
         r = ev("""()=>{const a=add('🍎');a.phys={on:true,m:1,e:.5,vx:0,vy:0,fixed:false,rs:.8};physOn=true;a.fy=.3;const y0=a.fy;
           scnLoadSample('orig-projectile');window._a2=a;return y0}""")
         pg.wait_for_timeout(800)
@@ -207,6 +207,90 @@ def main():
         pg.fill('#scJson', json.dumps(j, ensure_ascii=False))
         pg.click('#scApply')
         chk('S10 正しいJSONを貼ると読み込まれる', ev("SCN.src.title")=='編集後')
+        ev("scnClose()")
+
+
+        # ---------- S11 絵→物理 ----------
+        ev("resetAll()")
+        r = ev("""()=>{const a=addSpecial('d');a.name='線';dmPut(a,4,4,ART.W);
+          dmPaintLine(a.cv,[[0,3],[3,3],[5,4],[8,4]],.4,'#8a5a2b','#4b2e14');a.cvv=(a.cvv||0)+1;
+          const ok=artTerrain(a,{quiet:1});const ts=SCN.src.bodies.filter(b=>b.id.startsWith('art_t'));
+          const cvx=P=>{let s=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length],r=P[(i+2)%P.length],c=(q[0]-p[0])*(r[1]-q[1])-(q[1]-p[1])*(r[0]-q[0]);if(Math.abs(c)<1e-9)continue;if(s&&c*s<0)return false;s=c>0?1:-1}return true};
+          const polys=ts.flatMap(b=>b.shapes.filter(h=>h.t==='poly'));
+          return {ok:!!ok,n:ts.length,polys:polys.length,convex:polys.every(h=>cvx(h.pts)),stat:ts.every(b=>b.type==='static'),open:!!SCN.src,err:RUN.err}}""")
+        chk('S11 描いた線から、静的な凸の多角形の地形が作られる', r['ok'] and r['n'] >= 1 and r['polys'] >= 3 and r['convex'] and r['stat'] and not r['err'], r)
+        r = ev("""()=>{const a=dmActor('⚽','球',3.5,6.5,1.0);const id=artBody(a,{shape:'circle',quiet:1});const b=SCN.src.bodies.find(x=>x.id===id);
+          return {id,t:b&&b.shapes[0].t,r:b&&b.shapes[0].r,m:!!SCN.src.params['m_'+id],link:!!SCN.link[id]}}""")
+        chk('S11 絵が円の物体になる（半径≒絵の半径・質量のスライダー・絵とのつなぎ）', r['t'] == 'circle' and 0.4 < r['r'] < 0.6 and r['m'] and r['link'], r)
+        bid = r['id']
+        r = ev("""()=>{const a=dmActor(dmDominoCv('#ef6a6a'),'ドミノ',6.2,6.5,.92);const id=artBody(a,{shape:'box',quiet:1});const b=SCN.src.bodies.find(x=>x.id===id);const s=b.shapes[0];
+          const h=dmActor(blob('#7be0a4'),'ぐにゃ',1.5,6.5,1.2);const id2=artBody(h,{shape:'hull',quiet:1});const s2=SCN.src.bodies.find(x=>x.id===id2).shapes[0];
+          return {t:s.t,ratio:s.w/s.h,t2:s2.t,n2:s2.pts&&s2.pts.length}}""")
+        chk('S11 縦長の絵は四角（縦横比≒90:450）、ぐにゃは多角形（12角形以下）の物体になる', r['t'] == 'box' and 0.15 < r['ratio'] < 0.25 and r['t2'] == 'poly' and 3 <= r['n2'] <= 12, r)
+        ev("(id)=>{window._bid=id}", bid)
+        r = ev("""()=>{scnEdit(s=>{s.params.e.v=0;s.params.mu.v=.5});const S=RUN.sess;while(S.W.t<3)S.step();const b=S.W.bodies.find(x=>x.id===window._bid),cx=b.px;
+          return {x:b.px,y:b.py,vy:b.vy}}""")
+        chk('S11 落とした球が、描いた線の上に止まる（地面を通りぬけない・y≒線の上面＋半径）', 3.0 + .2 < r['y'] < 3.0 + .2 + .6 and abs(r['vy']) < .5, r)
+        ev("scnClose()")
+
+        # ---------- S12 お絵かき×物理のサンプル ----------
+        for d in 'cdefgh':
+            r = ev("""(d)=>{try{ARTDEMOS[d]()}catch(e){return {exc:e.message}}
+              if(RUN.err)return {err:RUN.err};const S=RUN.sess;while(!S.done)S.step();const res=S.finish();
+              const ng=res.ask.filter(a=>!a.ok).map(a=>a.q+':'+(+a.value).toPrecision(4)+'/'+(+a.theory).toPrecision(4)).concat(res.checks.filter(c=>!c.ok).map(c=>c.name+':'+c.msg));
+              let out=0;for(const b of S.W.bodies){if(b.type==='dynamic'&&(b.px<-.5||b.px>ART.W+.5||b.py<-1))out++}
+              return {n:SCN.src.bodies.length,links:Object.keys(SCN.link).length,asks:res.ask.length,ng,out,title:SCN.src.title}}""", d)
+            chk('S12 デモ %s：開く・最後まで走る・答え合わせと検査がすべて合う・物体が場外へ出ない' % d,
+                'exc' not in r and 'err' not in r and not r['ng'] and r['out'] == 0 and r['n'] >= 2 and r['links'] >= 1, r)
+        ev("scnClose()")
+
+        # ---------- S13 窓口（PHAPI） ----------
+        ev("resetAll()")
+        ev("()=>{US.length=0;RS.length=0}")
+        r = ev("""()=>{const o={};const X=PHAPI.exec;
+          o.new=X({op:'newScenario',title:'窓口の試験',width:6});
+          o.b1=X({op:'addBody',id:'ball',shape:{t:'circle',r:.1},pos:[0,3],set:{m:1,e:.3,img:'⚽'}});
+          o.p=X({op:'addProbe',id:'vmax',expr:'ball.vx',reduce:'last'});
+          o.r=X({op:'addRule',id:'kick',when:'t>0.3',mode:'once',do:[{op:'kick',body:'ball',vx:1.5},{op:'note',text:'キック'}]});
+          o.run=X({op:'setRun',t:1.2});
+          o.n=SCN.src.bodies.length;o.rules=(SCN.src.rules||[]).length;o.auto=AC.filter(a=>a.scnAuto).length;return o}""")
+        chk('S13 命令で、新しいシナリオ・物体・測定・ルールが作れる', r['new']['ok'] and r['b1']['ok'] and r['p']['ok'] and r['r']['ok'] and r['run']['ok'] and r['n'] == 2 and r['rules'] == 1, r)
+        chk('S13 絵文字つきの物体には、絵（アクター）が自動で付く', r['auto'] >= 1, r)
+        r = ev("""()=>{const o={ev:[]};const off=PHAPI.listen(e=>o.ev.push(e));
+          PHAPI.exec({op:'reset'});
+          PHAPI.exec({op:'step',n:30});o.before=o.ev.length;o.t1=RUN.sess.W.t;PHAPI.exec({op:'step',n:20});o.after=o.ev.length;o.t2=RUN.sess.W.t;
+          o.vx=PHAPI.exec({op:'read',expr:'ball.vx'}).value;
+          const bb=()=>RUN.sess.W.bodies.find(b=>b.id==='ball');
+          PHAPI.exec({op:'seek',t:.9});const A=[bb().px,bb().py,bb().vx,bb().vy];
+          PHAPI.exec({op:'seek',t:.1});o.back=RUN.sess.W.t;o.vx_back=PHAPI.exec({op:'read',expr:'ball.vx'}).value;
+          PHAPI.exec({op:'seek',t:.9});const B=[bb().px,bb().py,bb().vx,bb().vy];
+          o.same=JSON.stringify(A)===JSON.stringify(B);o.evAfterSeek=o.ev.length;o.A=A;
+          off();return o}""")
+        chk('S13 ルールの知らせ（note）は、条件が成り立った時に1回出る', r['before'] == 0 and r['after'] == 1 and r['t2'] > .3, r)
+        chk('S13 ルールが効く（キック後の速度 1.5）／戻すと元の状態（vx=0）', abs(r['vx'] - 1.5) < 1e-9 and abs(r['vx_back']) < 1e-9 and abs(r['back'] - .1) < .01, r)
+        chk('S13 巻き戻して進め直しても同じ状態になり、再実行中は知らせを出さない', r['same'] and r['evAfterSeek'] == 1, r)
+        r = ev("""()=>{const o={};const X=PHAPI.exec;
+          o.res=X({op:'result'});
+          X({op:'setParam',name:'vk',v:1});X({op:'addRule',id:'k2',when:'t>0.2',mode:'once',do:[{op:'kick',body:'ball',vx:'vk'}]});o.sw2=X({op:'sweep',param:'vk',values:[1,2]});
+          o.bad=X({op:'setBody',id:'ball',set:{zzz:1}});o.bad2=X({op:'zzz'});o.bad3=X({op:'addBody',shape:{t:'circle'}});o.nbody=SCN.src.bodies.length;
+          o.open=X({op:'open',id:'orig-spring-oscillator'});o.id=SCN.src.id;X({op:'close'});o.closed=!SCN.src;o.noscn=X({op:'play'});return o}""")
+        chk('S13 いまの結果を読める', r['res']['ok'] and 'vmax' in r['res']['value']['probes'], r['res'])
+        chk('S13 条件を足して掃引できる（2点）', r['sw2']['ok'] and len(r['sw2']['value']['rows']) == 2, r['sw2'])
+        chk('S13 誤りは ok:false と日本語の理由で返り、シナリオは壊れない', (not r['bad']['ok']) and 'zzz' in r['bad']['errors'][0] and (not r['bad2']['ok']) and (not r['bad3']['ok']) and r['nbody'] == 2, r)
+        chk('S13 サンプルを開く・閉じる・開いていないと誤り', r['open']['ok'] and r['id'] == 'orig-spring-oscillator' and r['closed'] and not r['noscn']['ok'], r)
+        ev("resetAll()")
+        ev("()=>{US.length=0;RS.length=0}")
+        ev("""()=>{PHAPI.exec({op:'newScenario',title:'u'});PHAPI.exec({op:'addBody',id:'b',shape:{t:'circle',r:.1},pos:[0,1],set:{m:1}})}""")
+        n1 = ev("SCN.src.bodies.length")
+        ev("()=>{PHAPI.exec({op:'addRule',when:'t>.1',do:[{op:'stop'}]})}")
+        chk('S13 ルールを足した', ev("SCN.src.rules.length") == 1)
+        ev("undo()")
+        chk('S13 Undoで、命令で足したルールが戻る（物体は残る）', ev("(SCN.src.rules||[]).length") == 0 and ev("SCN.src.bodies.length") == n1)
+        ev("redo()")
+        d = json.loads(ev("ser()"))
+        chk('S13 ルールは保存に乗り、読み込みで戻る', d['SCN']['src']['rules'][0]['do'][0]['op'] == 'stop')
+        ev("(s)=>loadProj(s)", ev("ser()"))
+        chk('S13 読み込み後も実行できる（止める条件のルールで途中で止まる）', ev("()=>{PHAPI.exec({op:'reset'});const S=RUN.sess;while(!S.done)S.step();return S.stopped&&S.W.t<.2}"))
         ev("scnClose()")
 
         chk('ページエラーが一度も出ていない', not errs, errs[:3])

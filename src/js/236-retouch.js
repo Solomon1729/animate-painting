@@ -1,6 +1,6 @@
 
-/* ===== 修整ツール（クローン・ヒーリング・埋める・滑らかに・ぼかす・くっきり・スマッジ・覆い焼き・焼き込み・スポンジ）=====
-   台帳Z-86（クローン）・Z-120（周波数分離クローン）・Z-138（修整・インペイント）・Z-121（ぼかしの派生）・Z-141（質感の移植・シワを弱める）・Z-91④（切り取り跡の穴埋め）。
+/* ===== 修整ツール（クローン・ヒーリング・埋める・滑らかに・ジャギーをなめらかに・ぼかす・くっきり・スマッジ・覆い焼き・焼き込み・スポンジ）=====
+   台帳Z-86（クローン）・Z-180（ジャギーをなめらかに）・Z-120（周波数分離クローン）・Z-138（修整・インペイント）・Z-121（ぼかしの派生）・Z-141（質感の移植・シワを弱める）・Z-91④（切り取り跡の穴埋め）。
    **1つの道具＝「ブラシで画素を書き換える」共通の仕組み**。違いは、1回の打ち（dab）で何を計算するかだけ（表 RTM）。方式を足す時は、RTMに1行と、rtApplyDabの分岐を足す。
    ・書き込み先は画像本体（base）。ペン層（pen）に線が残っていたら、使い始めに画像へ焼き込む（rtFlatten）。ペン線ごと加工でき、アルファの二重がけも起きない。
      取り消しはUndo（pushUndoはpdownで済み）。
@@ -16,6 +16,7 @@ const RTM={
   heal  :{n:'ヒーリング（明るさを周りに合わせて写す）',src:1,g:100,pl:'なじませる幅',p:35,sp:.2,tip:'基準点の肌理（細かい模様）だけを写し、明るさと色は写し先の周りに合わせます。継ぎ接ぎの明るさの違いが出にくい'},
   fill  :{n:'周りで埋める（インペイント）',g:100,pl:'粒状感',p:50,sp:.3,tip:'なぞった円の周りの色で、中をなめらかに埋めます。粒状感で、周りの細かい粒を足して不自然な平らさを隠します'},
   smooth:{n:'滑らかにする（輪郭は保つ）',g:70,pl:'滑らかさ',p:50,sp:.25,tip:'輪郭は保ったまま、肌理・ノイズ・しわを弱めます（普通のぼかしと違い、境目はぼやけません）'},
+  jaggy :{n:'ジャギーをなめらかに（輪郭のギザギザ）',g:100,pl:'ギザの長さ',p:25,sp:.25,tip:'輪郭のギザギザ（階段）だけを、輪郭に沿ってなめらかにします。縁はぼやけず、細い線も消えません。広い面・ノイズ・角は変えません。ギザが長い（傾きが浅い）所は「ギザの長さ」を上げます（上げすぎると小さな丸が少し縮みます）'},
   blur  :{n:'ぼかす',g:70,pl:'ぼかす広さ',p:40,sp:.25,tip:'なぞった所をぼかします（縁もぼかすので、輪郭も溶けます）'},
   sharp :{n:'くっきりさせる',g:60,pl:'くっきり量',p:50,sp:.25,tip:'細かい所を強調して、くっきりさせます'},
   smudge:{n:'指でにじませる（スマッジ）',g:60,sp:.12,tip:'指でこするように、色を引きずってにじませます。強いほど遠くまで引きずります'},
@@ -74,7 +75,7 @@ function rtBegin(l,a){
   const M=rtM(),bw=l._bw,bh=l._bh;rtFlatten(l);
   const g=l.base.getContext('2d',{willReadFrequently:true}),work=g.getImageData(0,0,bw,bh);
   const st={l,bw,bh,g,work,mode:RT.mode,M,R:rtDia(bw,bh)/2,hd:RT.h/100,gs:RT.gs[RT.mode],ps:RT.ps[RT.mode],sp:M.sp,
-    src:(M.src||RT.mode==='smooth'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
+    src:(M.src||RT.mode==='smooth'||RT.mode==='jaggy'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
     selA:null,tc:{},fm:null,amp:0,nzx:(Math.random()*512)|0,nzy:(Math.random()*512)|0,lx:a.x,ly:a.y,cx:a.x,cy:a.y,acc:0,carry:null,off:null,stamp:false,cos:Math.cos(RT.rot*Math.PI/180),sin:Math.sin(RT.rot*Math.PI/180),fl:RT.flip?-1:1,isc:100/Math.max(5,RT.sc),seed:(Math.random()*1e9)|0};
   if(RT.useSel&&l.hasSm&&l.sm){
     const pm=partMask(l,bw,bh,false,2),d=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,bw,bh).data,sa=new Uint8Array(bw*bh);
@@ -124,7 +125,7 @@ function rtApplyDab(st,cx,cy){
   }
   if(md==='heal')return rtHeal(st,cx,cy,f,W);
   if(md==='fill')return rtFillDab(st,cx,cy,f,W);
-  if(md==='smooth'||md==='blur'||md==='sharp')return rtFilter(st,cx,cy,f,W);
+  if(md==='smooth'||md==='jaggy'||md==='blur'||md==='sharp')return rtFilter(st,cx,cy,f,W);
   /* 覆い焼き・焼き込み・スポンジ：画素ごと */
   for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
@@ -265,15 +266,16 @@ function rtFilter(st,cx,cy,f,W){
   const md=st.mode,bw=st.bw,R=st.R,p=st.ps,L=Math.max(st.bw,st.bh);
   let tc;
   if(md==='smooth'){const rg=Math.max(2,Math.round(R*(.1+.3*p))),eps=Math.pow(.02+.2*p,2);tc=rtTiles(st,'sm',rg+2,(P,w,h)=>IO.guidedRGBA(P,w,h,rg,eps))}
+  else if(md==='jaggy'){const q=p;tc=rtTiles(st,'jg'+q.toFixed(3),IO.jaggyScale(q).mg,(P,w,h)=>IO.jaggy(P,w,h,q))}
   else tc=rtLPT(st,md==='blur'?Math.max(1,R*(.03+.25*p)):Math.max(1,L/1000*1.2));
   rtCEns(st,tc,f.x,f.y,f.x+f.w,f.y+f.h);
   const D=st.work.data,S=st.src;
   for(let j=0;j<f.h;j++){const y=f.y+j;for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
     const x=f.x+i,pp=(y*bw+x)*4,a0=S[pp+3];
-    if(md!=='blur'&&a0===0)continue;
+    if(md!=='blur'&&md!=='jaggy'&&a0===0)continue;
     rtCAt(tc,x,y);const F0=RTT[0],F1=RTT[1],F2=RTT[2],fa=RTT[3];
-    if(md==='blur'){if(fa<=.5&&a0===0)continue;const k=fa>0?255/fa:0;rtMix(D,pp,rtC(F0*k),rtC(F1*k),rtC(F2*k),rtC(fa),m);continue}
+    if(md==='blur'||md==='jaggy'){if(fa<=.5&&a0===0)continue;const k=fa>0?255/fa:0;rtMix(D,pp,rtC(F0*k),rtC(F1*k),rtC(F2*k),rtC(fa),m);continue}
     if(fa<=2)continue;const k=255/fa;let r=F0*k,g=F1*k,b=F2*k;
     if(md==='sharp'){const amt=p*3,r0=S[pp],g0=S[pp+1],b0=S[pp+2];r=rtC(r0+amt*(r0-r));g=rtC(g0+amt*(g0-g));b=rtC(b0+amt*(b0-b))}
     rtMix(D,pp,rtC(r),rtC(g),rtC(b),a0,m);

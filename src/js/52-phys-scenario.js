@@ -126,7 +126,7 @@ const RED={
 
 /* ---------- 検証：日本語のエラー（パス付き）。errors＝直す必要がある、warns＝たぶん間違い ---------- */
 const KEYS={
-  top:['id','title','tags','source','level','problem','notes','params','vars','world','bodies','joints','fields','pairs','probes','events','graphs','ask','checks','run','view','sweep','style','solution','hint'],
+  top:['id','title','tags','source','level','problem','notes','params','vars','world','bodies','joints','fields','pairs','probes','events','graphs','ask','checks','run','view','sweep','rules','style','solution','hint'],
   world:['g','gdir','maxStep','cfg','canvas','note'],
   view:['x0','y0','w','grid','ruler','follow'],
   body:['id','type','pos','angle','vel','omega','m','I','shapes','mu','mus','muk','e','q','fixedRot','collide','group','gs','dragLin','dragQuad','dampLin','dampAng','kin','label','color','img','style','note','show','trail'],
@@ -138,6 +138,8 @@ const KEYS={
   param:['v','min','max','step','unit','label','note'],
   probe:['expr','reduce','when','after','at','unit','label','note'],
   event:['when','first','label','note'],
+  rule:['id','when','mode','do','label','note'],
+  act:['op','body','vx','vy','text','note'],
   ask:['q','probe','expr','theory','tol','abs','unit','label','note'],
   check:['name','expr','probe','conserved','min','max','scale','tol','note'],
   run:['t','stop','sample','note'],
@@ -146,6 +148,8 @@ const KEYS={
 };
 function checkKeys(o,type,path,V){if(!o||typeof o!=='object'||Array.isArray(o)){V.err(path+': オブジェクト（{…}）で書いてください');return}
   for(const k of Object.keys(o))if(!KEYS[type].includes(k))V.warn(path+'.'+k+': 未知のキーです（無視されます）'+suggest(k,KEYS[type]))}
+/* ルール（条件→動作）の動作。エンジンの時間の中で実行されるので、巻き戻して再実行しても同じ結果になる。kick＝速度に足す／setVel＝速度を決める／stop＝実行を終える／note＝メッセージを出す（記録するだけ。表示はアプリ） */
+const RULE_OPS={kick:{body:1,v:1},setVel:{body:1,v:1},stop:{},note:{text:1}};
 const SHAPE_NEED={circle:['r'],box:['w','h'],poly:['pts'],plane:[],arc:['r']};
 function validate(scn){
   const V={errors:[],warns:[],err(m){this.errors.push(m)},warn(m){this.warns.push(m)}};
@@ -202,6 +206,15 @@ function validate(scn){
   const pn=Object.keys(scn.probes||{});for(const k of pn){checkKeys(scn.probes[k],'probe','probes.'+k,V);const p=scn.probes[k];
     if(!p||typeof p.expr!=='string')V.err('probes.'+k+'.expr: 式の文字列が必要です');if(p&&p.reduce&&!RED[p.reduce])V.err('probes.'+k+'.reduce: 未知の集計「'+p.reduce+'」'+suggest(p.reduce,Object.keys(RED)))}
   for(const k of Object.keys(scn.events||{}))checkKeys(scn.events[k],'event','events.'+k,V);
+  if(scn.rules!==undefined&&!Array.isArray(scn.rules))V.err('rules: ルールの配列で書いてください');
+  (Array.isArray(scn.rules)?scn.rules:[]).forEach((r,i)=>{const P='rules['+i+']';checkKeys(r,'rule',P,V);if(!r||typeof r!=='object')return;
+    if(typeof r.when!=='string')V.err(P+'.when: 条件の式の文字列が必要です（例 "ball.y<0.3"）');
+    if(r.mode!==undefined&&!['once','rise'].includes(r.mode))V.err(P+'.mode: "once"（最初の1回）か "rise"（成り立った瞬間ごと。既定）');
+    if(!Array.isArray(r.do)||!r.do.length)V.err(P+'.do: 動作の配列が必要です（例 [{"op":"note","text":"着地"}]）');
+    else r.do.forEach((a,k)=>{const Q=P+'.do['+k+']';checkKeys(a,'act',Q,V);if(!a||typeof a!=='object')return;
+      if(!RULE_OPS[a.op])return V.err(Q+'.op: 未知の動作「'+a.op+'」'+suggest(String(a.op),Object.keys(RULE_OPS)));
+      if(RULE_OPS[a.op].body&&!bodyIds.has(a.body))V.err(Q+'.body: 物体「'+a.body+'」がありません'+suggest(String(a.body),[...bodyIds]));
+      if(a.op==='note'&&typeof a.text!=='string')V.err(Q+'.text: 文字列が必要です')})});
   (scn.ask||[]).forEach((a,i)=>{const P='ask['+i+']';checkKeys(a,'ask',P,V);if(!a)return;
     if(a.theory===undefined)V.err(P+'.theory: 理論値の式が必要です');if(a.probe===undefined&&a.expr===undefined)V.err(P+': probe（測定の名前）か expr（式）が必要です');
     if(a.probe!==undefined&&!(scn.probes||{})[a.probe])V.err(P+'.probe: 測定「'+a.probe+'」がありません'+suggest(String(a.probe),pn))});
@@ -303,6 +316,9 @@ function session(scn,opt){
   const probes=Object.entries(scn.probes||{}).map(([k,p])=>({k,p,f:comp(p.expr,'probes.'+k+'.expr'),w:p.when?comp(p.when,'probes.'+k+'.when'):null}));
   const events=Object.entries(scn.events||{}).map(([k,e])=>({k,e,w:comp(e.when||e.first,'events.'+k+'.when'),t:NaN,i:-1}));
   const stop=scn.run&&scn.run.stop?comp(scn.run.stop,'run.stop'):null;
+  const rules=(Array.isArray(scn.rules)?scn.rules:[]).map((r,i)=>({id:r.id||('rule'+(i+1)),w:comp(r.when,'rules['+i+'].when'),once:r.mode==='once',prev:false,fired:false,
+    acts:r.do.map((a,k)=>({op:a.op,body:a.body,text:a.text,vx:a.vx!==undefined?comp(String(a.vx),'rules['+i+'].do['+k+'].vx'):null,vy:a.vy!==undefined?comp(String(a.vy),'rules['+i+'].do['+k+'].vy'):null}))}));
+  const log=[],cache=new Map();
   const extra=(opt.series||[]).filter(s=>!(scn.probes&&s in scn.probes)).map(s=>({k:s,f:comp(s,'series「'+s+'」'),w:null}));
   const all=probes.concat(extra);
   const ts=[],ser={};for(const p of all)ser[p.k]=[];
@@ -317,6 +333,12 @@ function session(scn,opt){
   const step=()=>{
     if(stopped||i>=n)return false;i++;
     PHE.advance(W,DT);
+    if(rules.length)for(const r of rules){const c=!!r.w(),go=r.once?(c&&!r.fired):(c&&!r.prev);r.prev=c;if(!go)continue;r.fired=true;
+      for(const a of r.acts){if(a.op==='note')log.push({t:W.t,rule:r.id,text:a.text});
+        else if(a.op==='stop'){stopped=true;log.push({t:W.t,rule:r.id,text:null,stop:true})}
+        else{const b=W.bodies.find(x=>x.id===a.body);if(!b)continue;const vx=a.vx?a.vx():0,vy=a.vy?a.vy():0;
+          const k0=W.bodies.indexOf(b),ox=b.vx,oy=b.vy;if(a.op==='kick'){b.vx+=vx;b.vy+=vy}else{b.vx=vx;b.vy=vy}
+          prevV[k0][0]+=b.vx-ox;prevV[k0][1]+=b.vy-oy}}}   /* 速度を変えた分は、加速度の記録に入れない */
     for(let k=0;k<nb;k++){const b=W.bodies[k];acc.ctx.acc[k][0]=(b.vx-prevV[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-prevV[k][1])/DT;prevV[k][0]=b.vx;prevV[k][1]=b.vy}
     if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}
     return !(stopped||i>=n)};
@@ -348,7 +370,9 @@ function session(scn,opt){
       if(c.max!==undefined&&mx>c.max){okc=false;msg+=' 最大値 '+mx+' > '+c.max}
       return{name:c.name||'check'+i,ok:okc,msg}});
   return{ts,series:ser,probes:res,events:evt,ask:asks,checks,world:W,built:B,t:W.t,stopped}}
-  return{B,W,ts,series:ser,T,n,DT,acc:acc.ctx.acc,step,finish,get i(){return i},get stopped(){return stopped},get done(){return stopped||i>=n}}}
+  /* いまの状態で式を評価する（ビジュアルプログラミングの「条件を見る」・画面の読み出し用）。式は使い回す */
+  const ev=(src)=>{let f=cache.get(src);if(!f){f=compile(src,acc.resolve);cache.set(src,f)}return f()};
+  return{B,W,ts,series:ser,T,n,DT,acc:acc.ctx.acc,step,finish,ev,log,get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get done(){return stopped||i>=n}}}
 function run(scn,opt){const S=session(scn,opt);while(S.step());return S.finish()}
 function runT(B,scn){const t=scn.run&&scn.run.t;if(typeof t==='string'){try{return compile(t,B.resolve)()}catch(e){throw new Error('run.t: '+e.message)}}return t}
 function num0(v,d){return isNum(v)?v:d}
@@ -380,5 +404,5 @@ function template(){return{id:'my-scenario',title:'題名',tags:['力学'],sourc
   probes:{t_end:{expr:'t',reduce:'last'},vmax:{expr:'blk.speed',reduce:'max'}},
   run:{t:1.5},ask:[],checks:[]}}
 
-return{FN,BP,JP,WP,RED,KEYS,compile,validate,build,session,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
+return{FN,BP,JP,WP,RED,KEYS,RULE_OPS,compile,validate,build,session,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
 })();

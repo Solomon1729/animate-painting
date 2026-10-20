@@ -169,4 +169,28 @@ console.log('21) 大振幅の単振り子（90°から）：周期をRK4の参�
  const e0=PHE.energy(W).e;const b=W.bodies[0];let t1=null,t2=null,pv=b.px;run(W,8,(W)=>{const x=b.px;if(pv<0&&x>=0){if(t1===null)t1=W.t;else if(t2===null)t2=W.t}pv=x});
  chk('周期（大振幅）',t2-t1,Tref,.004,true);chk('エネルギー保存（8秒）',PHE.energy(W).e,e0,.005*9.8*L)}
 
+console.log('22) ニュートンのゆりかご（同じ質量の玉5個、ひもでつるす、e=1）：左の玉を引いて放すと、右の端の玉だけが同じ高さまで上がる');
+{const N=5,R=2.8,r=.5,gap=.004,th=25*Math.PI/180,sp=2*r+gap,bodies=[],joints=[];
+ for(let i=0;i<N;i++){const x=(i-(N-1)/2)*sp,px=i===0?x-R*Math.sin(th):x,py=-(i===0?R*Math.cos(th):R);bodies.push({type:'dynamic',m:1,e:1,mu:0,x:px,y:py,shapes:[{t:'circle',r}]});
+  joints.push({type:'rod',anchors:[{wx:x,wy:0},{body:i,x:0,y:0}]})}
+ const W=PHE.create({bodies,joints}),e0=PHE.energy(W).e;let hmax=-1e9;run(W,3,(W)=>{hmax=Math.max(hmax,W.bodies[N-1].py)});
+ chk('右の玉の最高点＝左の玉のはじめの高さ',hmax,-R*Math.cos(th),2e-3);chk('エネルギー保存',PHE.energy(W).e,e0,.01)}
+
+console.log('23) 水平面の上の球の列（なめらか・e=1）：1個がぶつかると、端の1個だけが同じ速さで出ていく／運動量とエネルギー保存');
+{const N=6,r=.1,bodies=[floor({e:1,mu:0})];
+ for(let i=0;i<N;i++)bodies.push({type:'dynamic',m:1,e:1,mu:0,x:i*(2*r+.002),y:r+.0005,vx:i===0?3:0,shapes:[{t:'circle',r}]});
+ const W=PHE.create({bodies}),P0=PHE.momentum(W),e0=PHE.energy(W).e;run(W,.5);
+ chk('先頭の玉は止まる',W.bodies[1].vx,0,.02);chk('最後の玉の速さ',W.bodies[N].vx,3,.02);chk('運動量',PHE.momentum(W)[0],P0[0],.006);chk('エネルギー',PHE.energy(W).e,e0,.01,true)}
+
+console.log('24) 質量のちがう玉の列の衝突（e=1）：運動量とエネルギーが保存し、玉どうしは離れていく');
+{const W=PHE.create({g:[0,0],bodies:[0,1,2].map(i=>({type:'dynamic',m:[2,1,.5][i],e:1,mu:0,x:i*.2002,y:0,vx:i===0?2:0,shapes:[{t:'circle',r:.1}]}))});
+ const P0=PHE.momentum(W),e0=PHE.energy(W).e;run(W,1);const v=W.bodies.map(b=>b.vx);
+ chk('運動量',PHE.momentum(W)[0],P0[0],1e-6);chk('エネルギー',PHE.energy(W).e,e0,.01,true);
+ chk('v1≦v2（もう近づかない）',Math.max(0,v[0]-v[1]),0,.02);chk('v2≦v3',Math.max(0,v[1]-v[2]),0,.02)}
+
+console.log('25) 積み木の山（すき間が少しある）をそっと置く：崩れず、エネルギーも増えない');
+{const B=.7,bodies=[floor({e:.2,mu:.6})];for(let r=0;r<4;r++)for(let c=0;c<4-r;c++)bodies.push({type:'dynamic',m:1,e:.2,mu:.6,x:(c+r/2)*(B+.004),y:B/2+r*(B+.003)+.003,shapes:[{t:'box',w:B,h:B}]});
+ const W=PHE.create({bodies});run(W,2);let dx=0;W.bodies.slice(1).forEach((b,i)=>{const r=i<4?0:i<7?1:i<9?2:3,c=i<4?i:i<7?i-4:i<9?i-7:0;dx=Math.max(dx,Math.abs(b.px-(c+r/2)*(B+.004)))});
+ chk('横へのずれ（m）',dx,0,.01);chk('速さ（止まっている）',Math.max(...W.bodies.slice(1).map(b=>Math.hypot(b.vx,b.vy))),0,.02)}
+
 console.log('\n合計 OK='+ok+' NG='+ng);process.exit(ng?1:0);

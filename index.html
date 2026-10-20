@@ -148,7 +148,7 @@ body.noobj .tab:not([data-tab="bg"]){display:none!important}
 </head>
 <body>
 <h1>アクションメーカー</h1>
-<div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option></select></div>
+<div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option><option value="c">描いた丘をボールが転がる（お絵かき×物理）</option><option value="d">絵がふりこ（周期の理論値つき）</option><option value="e">ばねにぶら下がる絵（周期の理論値つき）</option><option value="f">ドミノ倒し（描いた坂）</option><option value="g">ニュートンのゆりかご</option><option value="h">鉄球で積み木をこわす</option></select></div>
 <div id="wrap"><canvas id="cv"></canvas><div class="crdl" id="crdp" hidden></div><div class="crdl o" id="crdo" hidden></div><canvas class="lupe" id="lupe" width="132" height="132" hidden aria-hidden="true"></canvas>
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
@@ -248,7 +248,7 @@ body.noobj .tab:not([data-tab="bg"]){display:none!important}
     <div class="grp alt" id="rtBox" style="display:none"><div class="gh">🩹 修整（写す・直す・ぼかす）</div>
     <div class="row"><span class="lab">方式</span><select id="rtMode" aria-label="修整の方式">
       <optgroup label="写す（基準点が要る）"><option value="clone">クローン（そのまま写す）</option><option value="heal">ヒーリング（明るさを周りに合わせて写す）</option></optgroup>
-      <optgroup label="直す"><option value="fill">周りで埋める（インペイント）</option><option value="smooth">滑らかにする（輪郭は保つ）</option><option value="blur">ぼかす</option><option value="sharp">くっきりさせる</option><option value="smudge">指でにじませる（スマッジ）</option></optgroup>
+      <optgroup label="直す"><option value="fill">周りで埋める（インペイント）</option><option value="smooth">滑らかにする（輪郭は保つ）</option><option value="jaggy">ジャギーをなめらかに（輪郭のギザギザ）</option><option value="blur">ぼかす</option><option value="sharp">くっきりさせる</option><option value="smudge">指でにじませる（スマッジ）</option></optgroup>
       <optgroup label="明るさ・色"><option value="dodge">覆い焼き（明るく）</option><option value="burn">焼き込み（暗く）</option><option value="vivid">スポンジ（鮮やかに）</option><option value="dull">スポンジ（くすませる）</option></optgroup></select></div>
     <div class="row" id="rtStyleRow"><span class="lab">打ち方</span><select id="rtStyle" aria-label="写し方"><option value="brush">ブラシ（なぞって写す）</option><option value="stamp">スタンプ（押して離すと1回写す）</option></select></div>
     <div id="rtSrcBox">
@@ -372,6 +372,10 @@ body.noobj .tab:not([data-tab="bg"]){display:none!important}
     <div class="grp" id="scGrp"><div class="gh">📐 物理シナリオ（問題づくり・実験）</div>
     <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="雛形から新しいシナリオを作る">＋雛形</button><button id="scOff" aria-label="シナリオを閉じる（自動で作った絵も消えます）" hidden>閉じる</button></div>
     <div class="note" id="scHelp">サンプルを選ぶと、物体・糸・力の場がキャンバスに現れ、実行すると物理の法則どおりに動きます。条件（質量・角度など）のスライダーで、すぐ作り直せます。自分の絵につなぐと、絵がその物体として動きます。「＋雛形」から自作もできます。</div>
+    <div class="grp alt" id="scArt"><div class="gh">🎨 選んでいる絵を物理に使う</div>
+      <div class="row"><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">🏔 地形にする</button><button id="scArtB" aria-label="選んでいる絵を、物理の物体（絵の輪郭が当たり判定）にする">🏀 物体にする</button><select id="scArtS" aria-label="物体の形"><option value="auto">形：自動</option><option value="circle">形：丸</option><option value="box">形：四角</option><option value="hull">形：輪郭</option><option value="static">固定の障害物</option></select></div>
+      <div class="note">絵を描く（または画像を入れる）→ 選ぶ → 「地形にする」「物体にする」。見えている輪郭がそのまま当たり判定になり、▶で動きます。地形は、上から乗る物が対象です。</div>
+    </div>
     <div id="scBody" hidden>
       <div class="note" id="scTitle" style="font-weight:900;opacity:1"></div>
       <div class="note" id="scProb" style="opacity:.85"></div>
@@ -1007,7 +1011,7 @@ function loop(ts){
 const PHE=(function(){
 'use strict';
 const PI=Math.PI,abs=Math.abs,sqrt=Math.sqrt,hypot=Math.hypot,min=Math.min,max=Math.max,cos=Math.cos,sin=Math.sin;
-const DEF={maxStep:1/240,iters:12,piters:4,jiters:4,restThr:.3,wh:.02,maxSub:600,slop:.0003,beta:.2,margin:.004,vStick:.02,warm:1,maxCorr:.2,events:24};
+const DEF={maxStep:1/240,iters:12,piters:4,jiters:4,restThr:.3,wh:.02,maxSub:600,slop:.0003,beta:.2,margin:.004,vStick:.02,warm:1,maxCorr:.2,events:24,waves:24,waveV:1};
 let LW=1;   /* 力のログの重み（小刻みの長さ／1刻みの長さ）。advanceが設定する */
 const num=(v,d)=>(typeof v==='number'&&isFinite(v))?v:d;
 
@@ -1338,7 +1342,7 @@ function contactPre(W,m,h){
     const impact=vn<-W.cfg.restThr&&(p.sep<=0||-vn*h>=p.sep)&&!p.persist&&!m.shadow;   /* 前の刻みから続いている接触は、衝突ではなく「支え」 */
     /* 反発：力が働く前の速さ（vn0）から跳ね返り、その後の刻みの残りで力が働く分（vn−vn0）を足す。床に静止する場合は0 */
     const a0=pv0(A,p.rax,p.ray),b0=pv0(B,p.rbx,p.rby),vn0=(b0[0]-a0[0])*m.nx+(b0[1]-a0[1])*m.ny;
-    p.imp=impact;
+    p.imp=impact;p.vnp=vn;
     p.bounce=impact?(vn0<-W.cfg.restThr?Math.max(0,-m.e*vn0+(vn-vn0)):-m.e*vn):0;p.vtar=p.sep>0&&!impact?-p.sep/h:p.bounce;
     if(!impact&&m.rho){   /* 曲がった道（円弧）の上：まっすぐ進むと壁に食い込む分（kap）を、先に速度の目標に入れる。台形の位置更新と合わせて、円運動の向心力が途切れない */
       const tx2=-m.ny,ty2=m.nx,vt=abs((b0[0]-a0[0])*tx2+(b0[1]-a0[1])*ty2),kap=m.sgn*(vt*h)*(vt*h)/(2*m.rho),s0=Math.max(p.sep,0);
@@ -1381,10 +1385,44 @@ function posForces(W,h){
   dyn.forEach((b,i)=>{b.pa=b.im&&!b.hold?[b.ax+b.fx*b.im,b.ay+b.fy*b.im,b.tq*b.iI]:[0,0,0];const q=sv[i];b.ax=q[0];b.ay=q[1];b.fx=q[2];b.fy=q[3];b.tq=q[4];b.vf=q[5];b.npe=q[6];b.diss=q[7]});
   W.joints.forEach((j,i)=>{j.F=js[i][0];j.pe0=js[i][1]});
   LOGOFF=false}
+/* 衝突の伝わり（ニュートンのゆりかご・玉の列）。
+   触れて並んだ動く物どうしの新しい接触を、ぶつかった瞬間に全部いっせいに解くと、玉の列は1つの固まりのように動き（非弾性）、端の玉だけが飛び出さない。
+   本物は「ぶつかった玉→次の玉→…」の順に伝わる。そこで、前の刻みから続いていない動く物どうしの接触（pool）は、いったん解から外し、
+   ぶつかって近づき始めた（近づく速さが restThr 以上の）ものから順に、衝突（反発つき）として解く。
+   使った接触は中立（反発なし・力積0）に戻し、最後のふつうの反復に任せる。連鎖の可能性がなければ（ぶつかる物が、新しい接触を持たなければ）何もしない */
+function impactWaves(W,ms,h){
+  const cfg=W.cfg,isImp=m=>m.pts.some(p=>p.imp);
+  const pool=ms.filter(m=>m.A.im>0&&m.B.im>0&&!m.shadow&&!m.pts.some(p=>p.persist));
+  if(!pool.length)return;
+  const imps=ms.filter(isImp);if(!imps.length)return;
+  if(!imps.some(m=>m.pts.some(p=>p.imp&&-p.vnp>=cfg.waveV)))return;   /* ゆっくりした接触（積み木が積み重なる、すき間がわずかに落ちるなど）は、まとめて解くほうが安定する */
+  const tied=new Set();for(const m of imps){tied.add(m.A);tied.add(m.B)}
+  if(!pool.some(m=>!isImp(m)&&(tied.has(m.A)||tied.has(m.B))))return;
+  /* 安全装置：衝突は運動エネルギーを増やさない（e≦1）。このあとの反復まで解いた結果が増えていたら（山積みなどで、順番に解いた結果が荒れた場合）、取り消して元の「いっせいに解く」方式に戻す（step が呼ぶ） */
+  const dyn=W.dyn,ke=()=>{let k=0;for(const b of dyn)k+=.5*b.m*(b.vx*b.vx+b.vy*b.vy)+.5*b.I*b.w*b.w;return k},
+    sv=dyn.map(b=>[b.vx,b.vy,b.w]),sp=ms.map(m=>m.pts.map(p=>[p.imp,p.vtar,p.bounce,p.jn,p.jt])),sj=W.joints.map(j=>Array.isArray(j.acc)?j.acc.slice():j.acc),ke0=ke();
+  const guard={bad:()=>ke()>ke0*(1+2e-3)+1e-9,
+    undo(){dyn.forEach((b,i)=>{b.vx=sv[i][0];b.vy=sv[i][1];b.w=sv[i][2]});ms.forEach((m,i)=>m.pts.forEach((p,k)=>{const q=sp[i][k];p.imp=q[0];p.vtar=q[1];p.bounce=q[2];p.jn=q[3];p.jt=q[4]}));
+      W.joints.forEach((j,i)=>{j.acc=Array.isArray(sj[i])?sj[i].slice():sj[i]});W.waveBack=(W.waveBack||0)+1}};
+  const inPool=new Set(pool),base=ms.filter(m=>!inPool.has(m)),neutral=m=>{for(const p of m.pts){p.vtar=p.sep>0?-p.sep/h:0;p.bounce=0;p.jn=0;p.jt=0}};
+  let cur=pool.filter(isImp);
+  for(let r=0;r<cfg.waves&&cur.length;r++){
+    const set=base.concat(cur);
+    for(let it=0;it<cfg.iters;it++){for(const j of W.joints){const J=JNT[j.type];if(J.vel)J.vel(W,j,h)}for(const m of set)contactVel(m)}
+    for(const m of cur)neutral(m);
+    if(!r)for(const m of base)if(isImp(m))neutral(m);   /* 台や壁にぶつかった分も、使い終えたら中立に（使い終えた反発の目標を、後の伝わりで何度も押し戻さない＝エネルギーが増えない） */
+    const nx=[];
+    for(const m of pool){const A=m.A,B=m.B;let hit=false;
+      for(const p of m.pts){
+        const vn=((B.vx-B.w*p.rby)-(A.vx-A.w*p.ray))*m.nx+((B.vy+B.w*p.rbx)-(A.vy+A.w*p.rax))*m.ny;
+        if(vn<-cfg.restThr&&(p.sep<=0||-vn*h>=p.sep)){p.imp=true;p.bounce=-m.e*vn;p.vtar=p.bounce;hit=true}}
+      if(hit)nx.push(m)}
+    cur=nx}
+  return guard}
 function step(W,h){
   const cfg=W.cfg,bs=W.bodies,dyn=W.dyn;
   /* 0) 準備：ログ・つかまれた物（hold）・動かす台（kin）の速度 */
-  W.wr=W.hp?h/W.hp:1;
+  W.wr=W.hp?Math.min(h/W.hp,1):1;   /* 前の刻みが短いとき、力積を刻みの比で大きくして引き継ぐと、衝突の力積（刻みに比例しない）が千倍にふくらんで爆発する。引き継ぎは大きくしない */
   for(const b of bs){b.ax=0;b.ay=0;b.fx=0;b.fy=0;b.tq=0;b.Bz=0;b.vf=0;b.vB=0;b.cons=0;b.npe=0;b.diss=0;b.sv=[b.vx,b.vy,b.w];
     b.im=b.im0;b.iI=b.iI0}
   for(const b of bs){
@@ -1417,10 +1455,13 @@ function step(W,h){
   for(const j of W.joints){const J=JNT[j.type];if(J.prep)J.prep(W,j,h)}
   for(const m of ms)contactWarm(m);
   for(const j of W.joints){const J=JNT[j.type];if(J.warm)J.warm(W,j)}
+  const wv=impactWaves(W,ms,h);
   /* 4) 速度の拘束を反復で解く */
-  for(let it=0;it<cfg.iters;it++){
+  const solveVel=()=>{for(let it=0;it<cfg.iters;it++){
     for(const j of W.joints){const J=JNT[j.type];if(J.vel)J.vel(W,j,h)}
-    for(const m of ms)contactVel(m)}
+    for(const m of ms)contactVel(m)}};
+  solveVel();
+  if(wv&&wv.bad()){wv.undo();solveVel()}
   for(const m of ms){const a=W.prevC.get(m.key);if(a)m.pts.forEach((p,i)=>{if(a[i]){a[i].jn=p.jn;a[i].jt=p.jt}})}   /* 解いた力積を、次の刻みのウォームスタートと「続いている接触」の判定に引き継ぐ */
   /* 5) 位置の更新 */
   /* 5) 位置の更新：速さに応じた力が無く衝突も無い群れは、台形（平均の速度）で進める＝等加速度なら厳密。それ以外は半陰的オイラー（安定） */
@@ -1677,7 +1718,7 @@ const RED={
 
 /* ---------- 検証：日本語のエラー（パス付き）。errors＝直す必要がある、warns＝たぶん間違い ---------- */
 const KEYS={
-  top:['id','title','tags','source','level','problem','notes','params','vars','world','bodies','joints','fields','pairs','probes','events','graphs','ask','checks','run','view','sweep','style','solution','hint'],
+  top:['id','title','tags','source','level','problem','notes','params','vars','world','bodies','joints','fields','pairs','probes','events','graphs','ask','checks','run','view','sweep','rules','style','solution','hint'],
   world:['g','gdir','maxStep','cfg','canvas','note'],
   view:['x0','y0','w','grid','ruler','follow'],
   body:['id','type','pos','angle','vel','omega','m','I','shapes','mu','mus','muk','e','q','fixedRot','collide','group','gs','dragLin','dragQuad','dampLin','dampAng','kin','label','color','img','style','note','show','trail'],
@@ -1689,6 +1730,8 @@ const KEYS={
   param:['v','min','max','step','unit','label','note'],
   probe:['expr','reduce','when','after','at','unit','label','note'],
   event:['when','first','label','note'],
+  rule:['id','when','mode','do','label','note'],
+  act:['op','body','vx','vy','text','note'],
   ask:['q','probe','expr','theory','tol','abs','unit','label','note'],
   check:['name','expr','probe','conserved','min','max','scale','tol','note'],
   run:['t','stop','sample','note'],
@@ -1697,6 +1740,8 @@ const KEYS={
 };
 function checkKeys(o,type,path,V){if(!o||typeof o!=='object'||Array.isArray(o)){V.err(path+': オブジェクト（{…}）で書いてください');return}
   for(const k of Object.keys(o))if(!KEYS[type].includes(k))V.warn(path+'.'+k+': 未知のキーです（無視されます）'+suggest(k,KEYS[type]))}
+/* ルール（条件→動作）の動作。エンジンの時間の中で実行されるので、巻き戻して再実行しても同じ結果になる。kick＝速度に足す／setVel＝速度を決める／stop＝実行を終える／note＝メッセージを出す（記録するだけ。表示はアプリ） */
+const RULE_OPS={kick:{body:1,v:1},setVel:{body:1,v:1},stop:{},note:{text:1}};
 const SHAPE_NEED={circle:['r'],box:['w','h'],poly:['pts'],plane:[],arc:['r']};
 function validate(scn){
   const V={errors:[],warns:[],err(m){this.errors.push(m)},warn(m){this.warns.push(m)}};
@@ -1753,6 +1798,15 @@ function validate(scn){
   const pn=Object.keys(scn.probes||{});for(const k of pn){checkKeys(scn.probes[k],'probe','probes.'+k,V);const p=scn.probes[k];
     if(!p||typeof p.expr!=='string')V.err('probes.'+k+'.expr: 式の文字列が必要です');if(p&&p.reduce&&!RED[p.reduce])V.err('probes.'+k+'.reduce: 未知の集計「'+p.reduce+'」'+suggest(p.reduce,Object.keys(RED)))}
   for(const k of Object.keys(scn.events||{}))checkKeys(scn.events[k],'event','events.'+k,V);
+  if(scn.rules!==undefined&&!Array.isArray(scn.rules))V.err('rules: ルールの配列で書いてください');
+  (Array.isArray(scn.rules)?scn.rules:[]).forEach((r,i)=>{const P='rules['+i+']';checkKeys(r,'rule',P,V);if(!r||typeof r!=='object')return;
+    if(typeof r.when!=='string')V.err(P+'.when: 条件の式の文字列が必要です（例 "ball.y<0.3"）');
+    if(r.mode!==undefined&&!['once','rise'].includes(r.mode))V.err(P+'.mode: "once"（最初の1回）か "rise"（成り立った瞬間ごと。既定）');
+    if(!Array.isArray(r.do)||!r.do.length)V.err(P+'.do: 動作の配列が必要です（例 [{"op":"note","text":"着地"}]）');
+    else r.do.forEach((a,k)=>{const Q=P+'.do['+k+']';checkKeys(a,'act',Q,V);if(!a||typeof a!=='object')return;
+      if(!RULE_OPS[a.op])return V.err(Q+'.op: 未知の動作「'+a.op+'」'+suggest(String(a.op),Object.keys(RULE_OPS)));
+      if(RULE_OPS[a.op].body&&!bodyIds.has(a.body))V.err(Q+'.body: 物体「'+a.body+'」がありません'+suggest(String(a.body),[...bodyIds]));
+      if(a.op==='note'&&typeof a.text!=='string')V.err(Q+'.text: 文字列が必要です')})});
   (scn.ask||[]).forEach((a,i)=>{const P='ask['+i+']';checkKeys(a,'ask',P,V);if(!a)return;
     if(a.theory===undefined)V.err(P+'.theory: 理論値の式が必要です');if(a.probe===undefined&&a.expr===undefined)V.err(P+': probe（測定の名前）か expr（式）が必要です');
     if(a.probe!==undefined&&!(scn.probes||{})[a.probe])V.err(P+'.probe: 測定「'+a.probe+'」がありません'+suggest(String(a.probe),pn))});
@@ -1854,6 +1908,9 @@ function session(scn,opt){
   const probes=Object.entries(scn.probes||{}).map(([k,p])=>({k,p,f:comp(p.expr,'probes.'+k+'.expr'),w:p.when?comp(p.when,'probes.'+k+'.when'):null}));
   const events=Object.entries(scn.events||{}).map(([k,e])=>({k,e,w:comp(e.when||e.first,'events.'+k+'.when'),t:NaN,i:-1}));
   const stop=scn.run&&scn.run.stop?comp(scn.run.stop,'run.stop'):null;
+  const rules=(Array.isArray(scn.rules)?scn.rules:[]).map((r,i)=>({id:r.id||('rule'+(i+1)),w:comp(r.when,'rules['+i+'].when'),once:r.mode==='once',prev:false,fired:false,
+    acts:r.do.map((a,k)=>({op:a.op,body:a.body,text:a.text,vx:a.vx!==undefined?comp(String(a.vx),'rules['+i+'].do['+k+'].vx'):null,vy:a.vy!==undefined?comp(String(a.vy),'rules['+i+'].do['+k+'].vy'):null}))}));
+  const log=[],cache=new Map();
   const extra=(opt.series||[]).filter(s=>!(scn.probes&&s in scn.probes)).map(s=>({k:s,f:comp(s,'series「'+s+'」'),w:null}));
   const all=probes.concat(extra);
   const ts=[],ser={};for(const p of all)ser[p.k]=[];
@@ -1868,6 +1925,12 @@ function session(scn,opt){
   const step=()=>{
     if(stopped||i>=n)return false;i++;
     PHE.advance(W,DT);
+    if(rules.length)for(const r of rules){const c=!!r.w(),go=r.once?(c&&!r.fired):(c&&!r.prev);r.prev=c;if(!go)continue;r.fired=true;
+      for(const a of r.acts){if(a.op==='note')log.push({t:W.t,rule:r.id,text:a.text});
+        else if(a.op==='stop'){stopped=true;log.push({t:W.t,rule:r.id,text:null,stop:true})}
+        else{const b=W.bodies.find(x=>x.id===a.body);if(!b)continue;const vx=a.vx?a.vx():0,vy=a.vy?a.vy():0;
+          const k0=W.bodies.indexOf(b),ox=b.vx,oy=b.vy;if(a.op==='kick'){b.vx+=vx;b.vy+=vy}else{b.vx=vx;b.vy=vy}
+          prevV[k0][0]+=b.vx-ox;prevV[k0][1]+=b.vy-oy}}}   /* 速度を変えた分は、加速度の記録に入れない */
     for(let k=0;k<nb;k++){const b=W.bodies[k];acc.ctx.acc[k][0]=(b.vx-prevV[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-prevV[k][1])/DT;prevV[k][0]=b.vx;prevV[k][1]=b.vy}
     if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}
     return !(stopped||i>=n)};
@@ -1899,7 +1962,9 @@ function session(scn,opt){
       if(c.max!==undefined&&mx>c.max){okc=false;msg+=' 最大値 '+mx+' > '+c.max}
       return{name:c.name||'check'+i,ok:okc,msg}});
   return{ts,series:ser,probes:res,events:evt,ask:asks,checks,world:W,built:B,t:W.t,stopped}}
-  return{B,W,ts,series:ser,T,n,DT,acc:acc.ctx.acc,step,finish,get i(){return i},get stopped(){return stopped},get done(){return stopped||i>=n}}}
+  /* いまの状態で式を評価する（ビジュアルプログラミングの「条件を見る」・画面の読み出し用）。式は使い回す */
+  const ev=(src)=>{let f=cache.get(src);if(!f){f=compile(src,acc.resolve);cache.set(src,f)}return f()};
+  return{B,W,ts,series:ser,T,n,DT,acc:acc.ctx.acc,step,finish,ev,log,get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get done(){return stopped||i>=n}}}
 function run(scn,opt){const S=session(scn,opt);while(S.step());return S.finish()}
 function runT(B,scn){const t=scn.run&&scn.run.t;if(typeof t==='string'){try{return compile(t,B.resolve)()}catch(e){throw new Error('run.t: '+e.message)}}return t}
 function num0(v,d){return isNum(v)?v:d}
@@ -1931,7 +1996,7 @@ function template(){return{id:'my-scenario',title:'題名',tags:['力学'],sourc
   probes:{t_end:{expr:'t',reduce:'last'},vmax:{expr:'blk.speed',reduce:'max'}},
   run:{t:1.5},ask:[],checks:[]}}
 
-return{FN,BP,JP,WP,RED,KEYS,compile,validate,build,session,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
+return{FN,BP,JP,WP,RED,KEYS,RULE_OPS,compile,validate,build,session,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
 })();
 /* ===== 物理シナリオの実行層 SCN／RUN（台帳Z-172。roadmap C-0 の「アプリの層」）=====
    エンジンPHE・シナリオPHS・描画PHRを、アプリ（アクター・保存・Undo・物理タブ）につなぐ。物理の計算そのものはここに書かない。
@@ -1946,7 +2011,7 @@ return{FN,BP,JP,WP,RED,KEYS,compile,validate,build,session,run,sweep,fit,toCSV,s
    ・シナリオの物体に img（絵文字）があれば、読み込み時にアクターを自動で作ってつなぐ（scnAuto。シナリオを閉じる・替える時に消す）。
    ・旧：50-physics.js（アクターごとの簡易物理）は、シナリオが開いている間は止める。 */
 const TIME={DT:1/120,MAXSTEP:16,BUDGET:10};
-const scnOpt0=()=>({grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,hit:false,labels:true,contacts:false,energy:false,trail:false,strobe:false,vec:{}});
+const scnOpt0=()=>({grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,jointsBelow:false,hit:false,labels:true,contacts:false,energy:false,trail:false,strobe:false,vec:{}});
 const SCN={on:false,src:null,params:{},opt:scnOpt0(),link:{},speed:1,graph:'',auto:true};
 const RUN={sess:null,R:null,playing:false,acc:0,err:'',warns:[],res:null,al:new Map(),key:'',rev:0,uiRev:-1,acKey:'',dirty:false,a0:[],p0:[],view:{x0:0,y0:0,w:6},fr:0};
 const scnLive=()=>!!(SCN.on&&RUN.sess&&RUN.R);
@@ -1959,7 +2024,7 @@ const scnROpt=()=>Object.assign({},PHR.DEFOPT,SCN.opt,{vec:SCN.opt.vec||{}});
 
 /* ---------- 作る・やり直す ---------- */
 function scnBuild(){
-  RUN.sess=null;RUN.R=null;RUN.res=null;RUN.err='';RUN.warns=[];RUN.al=new Map();RUN.acc=0;
+  RUN.sess=null;RUN.R=null;RUN.res=null;RUN.err='';RUN.warns=[];RUN.al=new Map();RUN.acc=0;RUN.logI=0;RUN.quiet=false;
   RUN.key=JSON.stringify([SCN.src,SCN.params,SCN.graph]);
   if(!SCN.src)return;
   try{
@@ -2018,6 +2083,20 @@ function scnLinkBody(bodyId,a,o){
   SCN.link[bodyId]={a:a.id,bx:(bb.x0+bb.x1)/2,by:(bb.y0+bb.y1)/2,fx:((v.x0+v.x1)/2-v.iw/2)/im,fy:((v.y0+v.y1)/2-v.ih/2)/im,w0:blong*im/vlong,k:o.k||1,rot0:a.rot||0};
   scnBindLinks();scnSyncLinks();RUN.rev++;dirtyProj=true;return true}
 function scnUnlinkBody(bodyId){const L=SCN.link[bodyId];if(!L)return;const a=byId(L.a);delete SCN.link[bodyId];if(a&&a.scnAuto){unlinkRefs(a);AC=AC.filter(x=>x!==a);if(sel===a)setSel(AC[0]||null)}scnBindLinks();RUN.rev++;dirtyProj=true}
+/* シナリオを書き換える（fnがSCN.srcを直接直す）。検証に通らなければ元に戻す。つなぎ（link）は保つ。デモ・絵から作る機能が使う */
+function scnEdit(fn){
+  if(!SCN.src)return false;pushUndo();const bak=scnClone(SCN.src);fn(SCN.src);const V=PHS.validate(SCN.src);
+  if(V.errors.length){SCN.src=bak;note('シナリオを直せませんでした：'+V.errors.slice(0,2).join(' / '));return false}
+  RUN.playing=false;scnBuild();RUN.dirty=false;scnSyncLinks();RUN.rev++;dirtyProj=true;scnUi();return true}
+/* 物体をシナリオから外す（それを使う糸・力場・対も外す）。絵から作った物体の削除に使う */
+function scnRemoveBody(id){
+  if(!SCN.src)return;pushUndo();const s=SCN.src,uses=x=>x===id||(x&&typeof x==='object'&&x.body===id);
+  s.bodies=s.bodies.filter(b=>b.id!==id);if(s.params)delete s.params['m_'+id];delete SCN.link[id];
+  s.joints=(s.joints||[]).filter(j=>![j.a,j.b].concat(j.via||[],j.path||[]).some(uses));
+  for(const f of s.fields||[])if(f.targets)f.targets=f.targets.filter(t=>t!==id);
+  s.pairs=(s.pairs||[]).filter(p=>p.a!==id&&p.b!==id);
+  if(!s.bodies.length){scnClose();return}
+  RUN.playing=false;scnBuild();scnBindLinks();RUN.rev++;dirtyProj=true;scnUi()}
 function scnUnlinkActor(id){for(const k of Object.keys(SCN.link))if(SCN.link[k].a===id)delete SCN.link[k];RUN.al.delete(id)}
 function scnBindLinks(){
   RUN.al=new Map();if(!RUN.sess||!RUN.R)return;const ns=new Set();
@@ -2039,7 +2118,9 @@ function scnClearAuto(){
   del.forEach(a=>{unlinkRefs(a);scnUnlinkActor(a.id)});AC=AC.filter(a=>!a.scnAuto);if(sel&&!AC.includes(sel))setSel(AC[0]||null)}
 
 /* ---------- 時計：固定刻みで進める ---------- */
-function scnAfter(){const R=scnFrame();PHR.pushTrail(R);PHR.pushStrobe(R)}
+function scnAfter(){const R=scnFrame();PHR.pushTrail(R);PHR.pushStrobe(R);scnLogs()}
+/* ルール（条件→動作）の note を、実行中に出す。巻き戻して再実行する間（quiet）は出さない */
+function scnLogs(){const L=RUN.sess&&RUN.sess.log;if(!L)return;while(RUN.logI<L.length){const e=L[RUN.logI++];if(RUN.quiet)continue;if(e.text)note(e.text,5000);if(typeof PHAPI!=='undefined')PHAPI.emit(Object.assign({kind:e.stop?'stop':'rule'},e))}}
 function scnEnd(){RUN.playing=false;RUN.acc=0;try{RUN.res=RUN.sess.finish()}catch(e){RUN.err=String(e&&e.message||e)}RUN.uiAns=1}
 function scnTick(dt){
   if(RUN.dirty){RUN.dirty=false;const was=RUN.playing;scnBuild();scnSyncLinks();RUN.playing=false;if(was)RUN.acc=0;RUN.rev++;scnUi();return}
@@ -2057,8 +2138,9 @@ function scnStepN(n){if(!RUN.sess)return;RUN.playing=false;const S=RUN.sess;for(
 function scnSeek(t){   /* その時刻へ。進むだけなら今の状態から、戻るなら作り直して進める */
   if(!RUN.sess)return;RUN.playing=false;
   if(t<RUN.sess.W.t-1e-9){scnBuild();scnSyncLinks()}
-  const S=RUN.sess,n=Math.round((t-S.W.t)/TIME.DT),t0=performance.now();
+  const S=RUN.sess,n=Math.round((t-S.W.t)/TIME.DT),t0=performance.now();RUN.quiet=true;
   for(let i=0;i<n&&!S.done;i++){S.step();scnAfter();if((i&63)===63&&performance.now()-t0>500)break}
+  RUN.quiet=false;
   if(S.done)scnEnd();else{RUN.res=null;RUN.uiAns=1}scnUiTime()}
 
 /* ---------- 描く（paintFrameから）---------- */
@@ -2139,6 +2221,7 @@ function scnUiBuild(){
     for(const a of AC){const o=scnEl('option');o.value=a.id;o.textContent=a.name;sl.append(o)}sl.value=L?String(L.a):'';sl.setAttribute('aria-label','「'+(b.label||b.id)+'」につなぐ絵');
     sl.onchange=()=>{pushUndo();const v=sl.value;if(v)scnLinkBody(b.id,byId(+v));else scnUnlinkBody(b.id);scnUi()};row.append(lab,sl);
     if(L){const r=scnEl('input'),v=scnEl('b');r.type='range';r.min=.3;r.max=3;r.step=.05;r.value=L.k;r.setAttribute('aria-label','絵の大きさの倍率');v.className='v';v.textContent='×'+L.k.toFixed(2);r.oninput=()=>{L.k=+r.value;v.textContent='×'+L.k.toFixed(2);scnBindLinks();scnSyncLinks();dirtyProj=true};row.append(r,v)}
+    if(/^art_/.test(b.id)){const x=scnEl('button');x.textContent='×';x.setAttribute('aria-label','「'+(b.label||b.id)+'」を物理から外す（絵は残ります）');x.onclick=()=>scnRemoveBody(b.id);row.append(x)}
     lb.append(row)}
   /* JSON */
   if(document.activeElement!==$('scJson'))$('scJson').value=scnJson();
@@ -2220,7 +2303,7 @@ const VEC=[
   ['Ff','場の力（電場・磁場など）','N','F',(S,b)=>b.lg.fld],
   ['net','合力','N','F',(S,b)=>{const L=b.lg;return[L.grav[0]+L.norm[0]+L.fric[0]+L.tens[0]+L.spr[0]+L.fld[0],L.grav[1]+L.norm[1]+L.fric[1]+L.tens[1]+L.spr[1]+L.fld[1]]}]
 ];
-const DEFOPT={grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,hit:false,labels:true,contacts:false,vec:{},vecLabels:true,trail:false,strobe:false,energy:false,tick:true};
+const DEFOPT={grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,jointsBelow:false,hit:false,labels:true,contacts:false,vec:{},vecLabels:true,trail:false,strobe:false,energy:false,tick:true};
 
 /* ---------- 座標変換：view={x0,y0,w}（左下の座標と、画面の横幅[m]）、cw×chピクセル ---------- */
 function mkT(view,cw,ch){const k=cw/view.w;return{k,cw,ch,view,X:x=>(x-view.x0)*k,Y:y=>ch-(y-view.y0)*k,
@@ -2436,6 +2519,7 @@ function bodyLabel(ctx,S,b){const u=S.px,T=S.T,m=S.meta[b.idx];if(m&&m.label==='
 function under(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W;ctx.save();
   if(S.opt.grid)drawGrid(ctx,S);
   if(S.opt.fields)for(const f of W.fields){const d=FDRAW[f.type];if(d)d(ctx,S,f)}
+  if(S.opt.joints&&S.opt.jointsBelow)for(const j of W.joints){const d=JDRAW[j.type];if(d)d(ctx,S,j)}   /* 糸・ばねを絵の後ろに描く（jointsBelow。お絵かき×物理では、絵が糸の上に見える） */
   if(S.opt.statics!==false)for(const b of W.bodies)if(b.type==='static'&&!(S.noShape&&S.noShape.has(b.idx)))drawStatic(ctx,S,b);   /* noShape＝アクターの絵がかわりに見せている物体 */
   ctx.restore()}
 /* 上の層：アクターの絵より手前 */
@@ -2447,7 +2531,7 @@ function over(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W,u=S.px;ctx.sav
     ctx.beginPath();ctx.arc(T.X(b.px),T.Y(b.py),2*u,0,2*PI);ctx.fillStyle=COL.ink;ctx.fill()}
   /* 当たり判定の線：絵（noShape）に重ねて、物理の形を細線で見せる（絵と当たりがずれていないかの確認用） */
   if(S.opt.hit&&S.noShape)for(const b of W.bodies)if(S.noShape.has(b.idx))drawShapes(ctx,S,b,pose(b),{fill:null,stroke:'rgba(220,38,38,.85)',alpha:1,lw:1.4*u});
-  if(S.opt.joints)for(const j of W.joints){const d=JDRAW[j.type];if(d)d(ctx,S,j)}
+  if(S.opt.joints&&!S.opt.jointsBelow)for(const j of W.joints){const d=JDRAW[j.type];if(d)d(ctx,S,j)}
   if(S.opt.trail)drawTrails(ctx,S);
   if(S.opt.contacts&&W.lastC){ctx.fillStyle='#ef4444';for(const c of W.lastC)for(const p of c.pts){ctx.beginPath();ctx.arc(T.X(p.x),T.Y(p.y),3*u,0,2*PI);ctx.fill()}}
   if(S.opt.labels)for(const b of W.bodies)if(b.type!=='static')bodyLabel(ctx,S,b);
@@ -2500,6 +2584,458 @@ const PHYS_SAMPLES=[
 {"id":"orig-rolling-incline","title":"斜面をすべらずに転がる物体","tags":["力学","剛体","転がり"],"source":"オリジナル（斜面の転がりの型。慣性モーメントを I=k·m·r² で指定）","level":"standard","problem":"傾き{th}°の粗い斜面に、半径{r}m・質量{m}kgの物体（慣性モーメント {kI}·m·r²）を静かに置くと、すべらずに転がり始めた。","params":{"th":{"v":30,"min":10,"max":50,"step":5,"unit":"°","label":"斜面の角度"},"kI":{"v":0.5,"min":0.4,"max":1,"step":0.1,"label":"慣性モーメントの係数 I/(m r²)（円板0.5・輪1・球0.4）"},"m":{"v":1,"min":0.5,"max":3,"step":0.5,"unit":"kg","label":"質量"},"r":{"v":0.1,"min":0.05,"max":0.2,"step":0.05,"unit":"m","label":"半径"}},"vars":{"H":"2.0","a":"g*sind(th)/(1+kI)","ffr":"m*g*sind(th)*kI/(1+kI)"},"view":{"x0":-0.5,"y0":-0.3,"w":6.5},"bodies":[{"id":"ramp","type":"static","mu":1.5,"shapes":[{"t":"plane","through":[0,"H"],"slope":"-th"}]},{"id":"disc","type":"dynamic","m":"m","mu":1.5,"I":"kI*m*r*r","pos":["r*sind(th)","H+r*cosd(th)"],"label":"物体","shapes":[{"t":"circle","r":"r"}]}],"probes":{"v1":{"expr":"disc.speed","reduce":"last","unit":"m/s","label":"終了時の速さ"},"fr":{"expr":"disc.fr","when":"t>0.1","reduce":"mean","unit":"N","label":"静止摩擦力"},"slip":{"expr":"abs(disc.speed-r*abs(disc.omega))","reduce":"max","unit":"m/s","label":"すべり（接点の速さ）の最大"},"E":{"expr":"E","reduce":"last","unit":"J","label":"力学的エネルギー"}},"run":{"t":1},"ask":[{"q":"速さ a·t, a=g sinθ/(1+k)","probe":"v1","theory":"a*t","unit":"m/s","tol":0.01},{"q":"静止摩擦力 m g sinθ·k/(1+k)","probe":"fr","theory":"ffr","unit":"N","tol":0.015},{"q":"すべりがない（接点の速さ≒0）","probe":"slip","theory":"0","unit":"m/s","abs":0.02}],"checks":[{"name":"力学的エネルギー保存","probe":"E","conserved":0.005}]},
 {"id":"orig-spring-oscillator","title":"なめらかな床の上のばね振動","tags":["力学","単振動","ばね"],"source":"オリジナル（水平ばね振り子の型）","level":"basic","problem":"なめらかな水平面上で、質量{m}kgの物体が、ばね定数{k}N/mのばね（自然の長さ{l0}m）で壁につながれている。ばねを{A}mだけ伸ばして静かに放す。","params":{"m":{"v":0.5,"min":0.1,"max":2,"step":0.1,"unit":"kg","label":"質量"},"k":{"v":20,"min":5,"max":60,"step":1,"unit":"N/m","label":"ばね定数"},"A":{"v":0.3,"min":0.05,"max":0.6,"step":0.05,"unit":"m","label":"はじめの伸び"}},"vars":{"l0":"1.0","hb":"0.15","T":"2*pi*sqrt(m/k)","w":"sqrt(k/m)"},"view":{"x0":-0.3,"y0":-0.25,"w":3},"bodies":[{"id":"floor","type":"static","mu":0,"shapes":[{"t":"plane","normal":[0,1],"d":0}]},{"id":"wall","type":"static","pos":[0,0],"shapes":[{"t":"box","w":0.06,"h":0.6,"ox":-0.03,"oy":0.3}],"mu":0},{"id":"blk","type":"dynamic","m":"m","mu":0,"fixedRot":true,"pos":["l0+A+hb","hb"],"label":"物体","shapes":[{"t":"box","w":0.3,"h":0.3}]}],"joints":[{"id":"sp","type":"spring","a":{"at":[0,"hb"]},"b":{"body":"blk","at":[-0.15,0]},"k":"k","len":"l0"}],"probes":{"T":{"expr":"blk.x","reduce":"period","unit":"s","label":"周期"},"xamp":{"expr":"blk.x","reduce":"amp","unit":"m","label":"振幅"},"vmax":{"expr":"blk.speed","reduce":"max","unit":"m/s","label":"最大の速さ"},"Fmax":{"expr":"abs(sp.F)","reduce":"max","unit":"N","label":"ばねの力の最大値"},"E":{"expr":"E","reduce":"last","unit":"J","label":"力学的エネルギー"}},"run":{"t":4},"ask":[{"q":"周期 2π√(m/k)","probe":"T","theory":"T","unit":"s","tol":0.003},{"q":"振幅 A","probe":"xamp","theory":"A","unit":"m","tol":0.002},{"q":"最大の速さ A√(k/m)","probe":"vmax","theory":"A*w","unit":"m/s","tol":0.003},{"q":"ばねの力の最大値 kA","probe":"Fmax","theory":"k*A","unit":"N","tol":0.003}],"checks":[{"name":"力学的エネルギー保存","probe":"E","conserved":0.003}]}
 ];
+/* ===== お絵かき×物理（台帳Z-177。roadmap C-0）=====
+   絵（アクター）の「見えているとおりの形」から、物理の地形・物体を作る。作った物体はシナリオ（SCN.src）に書き足され、その絵につながる（53-phys-run.js）。
+   物理タブの「選んでいる絵を物理に使う」（#scArt）と、サンプル（demoC〜）が使う。物理の計算はPHE、ここは絵→形の変換だけ。
+   ・地形（artTerrain）：絵を、画面に見えているとおり（位置・大きさ・回転・反転）に、画面と同じ比のラスターへ描き、各列の「一番上の不透明な線」を上面とする。
+       折れ線を間引き（Douglas–Peucker）、隣り合う2頂点ごとに台形（縦の辺が平行＝凸）にして、静止物体（static）のshapesにする。
+       下面は、その列の不透明な厚み（細い線なら細く、塗りつぶした丘なら深く）。＝丘・坂・ペンの線のレール・床が作れる。ひさし・ループ（上面が1つに決まらない形）は表せない。
+   ・物体（artBody）：絵の見えている輪郭の凸包（頂点は12個まで）。丸に近ければ円（転がる）。凹んだ形は凹みが埋まる。
+   ・縮尺：キャンバスの横幅＝view.w[m]（新しいシーンは8m）。絵の位置・大きさは、その縮尺でメートルになる。
+   ・物体のidは art_t<アクターid>（地形）・art_b<アクターid>（物体）。同じ絵でもう一度作ると置き換わる。質量は params の m_<id> のスライダー、反発・摩擦はシーン共通の e・mu。 */
+const ART={W:8,MAXR:320,TOL_M:.02,MINTH_M:.04,HULL_N:12,CIRC:.9,RECT:.93,last:null};
+
+function artNewScene(){const w=ART.W;
+  return{id:'art-scene',title:'お絵かき×物理',tags:['お絵かき'],source:'お絵かき（このアプリで作ったシーン）',level:'basic',problem:'',
+    params:{gacc:{v:9.8,min:0,max:30,step:.1,unit:'m/s²',label:'重力の強さ'},e:{v:.5,min:0,max:1,step:.05,label:'反発係数'},mu:{v:.4,min:0,max:1.5,step:.05,label:'摩擦係数'}},
+    world:{g:'gacc'},view:{x0:0,y0:0,w},
+    bodies:[{id:'frame',type:'static',mu:'mu',e:1,label:'',shapes:[{t:'plane',normal:[0,1],d:0},{t:'plane',normal:[1,0],d:0},{t:'plane',normal:[-1,0],d:-w}]}],
+    probes:{},run:{t:15}}}
+function artEnsure(){
+  if(SCN.src)return true;
+  const r=scnSetSource(artNewScene());if(!r.ok){note('シーンを作れませんでした：'+r.errors.join(' / '));return false}
+  Object.assign(SCN.opt,{statics:false,grid:false,axes:false,labels:false,jointsBelow:true});RUN.rev++;return true}
+
+/* 絵を、画面に見えているとおりにラスターへ。戻り値{w,h,k,al}：k＝ラスター1画素あたりの、画面(CSS px)に対する倍率（ラスター座標＝画面座標×k） */
+function artRaster(a){
+  const k=Math.min(1,ART.MAXR/Math.max(W,H)),w=Math.max(8,Math.round(W*k)),h=Math.max(8,Math.round(H*k)),c=document.createElement('canvas');c.width=w;c.height=h;
+  const g=c.getContext('2d',{willReadFrequently:true}),im=a.img,iw=im.naturalWidth||im.width||1,ih=im.naturalHeight||im.height||1,S=S0*a.size,s=Math.min(S/iw,S/ih),dw=iw*s,dh=ih*s;
+  g.scale(k,k);g.translate(a.fx*W,a.fy*H);g.rotate((a.rot||0)*Math.PI/180);g.scale(a.face||1,1);g.drawImage(im,-dw/2,-dh/2,dw,dh);
+  const d=g.getImageData(0,0,w,h).data,al=new Uint8Array(w*h);for(let i=0;i<w*h;i++)al[i]=d[i*4+3]>40?1:0;
+  return{w,h,k,al}}
+/* ラスター座標（画素の角）→ 世界(m)。kpm＝画面1mあたりのCSS px */
+const artToWorld=(R,kpm,v,xr,yr)=>[v.x0+xr/R.k/kpm,v.y0+(H-yr/R.k)/kpm];
+function artDP(P,tol){   /* Douglas–Peucker（開いた折れ線） */
+  if(P.length<3)return P.slice();const keep=new Uint8Array(P.length);keep[0]=keep[P.length-1]=1;const st=[[0,P.length-1]];
+  while(st.length){const[i,j]=st.pop();const ax=P[i][0],ay=P[i][1],bx=P[j][0],by=P[j][1],dx=bx-ax,dy=by-ay,L=Math.hypot(dx,dy)||1e-9;let m=-1,mi=-1;
+    for(let q=i+1;q<j;q++){const d=Math.abs((P[q][0]-ax)*dy-(P[q][1]-ay)*dx)/L;if(d>m){m=d;mi=q}}
+    if(m>tol&&mi>0){keep[mi]=1;st.push([i,mi],[mi,j])}}
+  return P.filter((_,i)=>keep[i])}
+function artHull(P){   /* 凸包（単調鎖）。反時計回り（y上向きの座標で） */
+  const p=P.slice().sort((u,v)=>u[0]-v[0]||u[1]-v[1]);if(p.length<3)return p;
+  const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),lo=[],up=[];
+  for(const q of p){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}
+  for(let i=p.length-1;i>=0;i--){const q=p[i];while(up.length>=2&&cr(up[up.length-2],up[up.length-1],q)<=0)up.pop();up.push(q)}
+  lo.pop();up.pop();return lo.concat(up)}
+function artReduce(H_,n){   /* 凸多角形の頂点を、三角形の面積が最小のものから外して n 個以下にする（凸のまま） */
+  let h=H_.slice();while(h.length>n){let mi=0,ma=1e18;for(let i=0;i<h.length;i++){const a=h[(i+h.length-1)%h.length],b=h[i],c=h[(i+1)%h.length],ar=Math.abs((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]))/2;if(ar<ma){ma=ar;mi=i}}h.splice(mi,1)}return h}
+function artArea(P){let s=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length];s+=a[0]*b[1]-b[0]*a[1]}return s/2}
+function artCentroid(P){let A=0,sx=0,sy=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length],c=p[0]*q[1]-q[0]*p[1];A+=c;sx+=(p[0]+q[0])*c;sy+=(p[1]+q[1])*c}return A?[sx/(3*A),sy/(3*A)]:[P[0][0],P[0][1]]}
+const artId=(kind,a)=>'art_'+kind+a.id;
+const artR=x=>+x.toFixed(4);
+function artRemove(id){if(!SCN.src)return;SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);delete(SCN.src.params||{})['m_'+id];delete SCN.link[id]}
+/* 作ったシーンに物体を足して、世界を作り直し、絵につなぐ（原点＝絵の中心） */
+function artCommit(a,body,massParam,rot0){
+  pushUndo();const id=body.id;artRemove(id);
+  SCN.src.bodies.push(body);
+  if(massParam){SCN.src.params=SCN.src.params||{};SCN.src.params['m_'+id]={v:1,min:.1,max:20,step:.1,unit:'kg',label:a.name+'の質量'}}
+  const V=PHS.validate(SCN.src);if(V.errors.length){note('物体を足せませんでした：'+V.errors.slice(0,2).join(' / '));SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);return false}
+  RUN.playing=false;scnBuild();RUN.dirty=false;
+  const b=RUN.sess&&RUN.sess.W.byId.get(id);if(!b){note('物体を作れませんでした：'+(RUN.err||'不明'));return false}
+  const iw=a.img.naturalWidth||a.img.width||1,ih=a.img.naturalHeight||a.img.height||1,kpm=W/RUN.view.w,Lm=S0*a.size/kpm;
+  SCN.link[id]={a:a.id,bx:-b.c[0],by:-b.c[1],fx:0,fy:0,w0:Lm,k:1,rot0:rot0===undefined?(a.rot||0):rot0};
+  scnBindLinks();scnSyncLinks();RUN.rev++;dirtyProj=true;scnUi();return true}
+
+/* ---------- 地形 ---------- */
+function artTerrain(a,opt){opt=opt||{};
+  if(!a||!a.img){note('絵を選んでください');return false}
+  if(!artEnsure())return false;
+  const v=RUN.view,kpm=W/v.w,R=artRaster(a),step=Math.max(1,Math.round(R.w/220)),cols=[];
+  for(let x=0;x<R.w;x+=step){let top=-1;for(let y=0;y<R.h;y++)if(R.al[y*R.w+x]){top=y;break}
+    if(top<0){cols.push(null);continue}let bot=top;while(bot<R.h&&R.al[bot*R.w+x])bot++;cols.push({x:x+step/2,top,bot})}
+  /* 切れ目（絵が無い列）で折れ線を分ける */
+  const runs=[];let cur=[];for(const c of cols){if(c)cur.push(c);else{if(cur.length)runs.push(cur);cur=[]}}if(cur.length)runs.push(cur);
+  const tol=Math.max(1,ART.TOL_M*kpm*R.k),cx=a.fx*W,cy=a.fy*H,mm=(xr,yr)=>{const p=artToWorld(R,kpm,v,xr,yr);return[p[0]-(v.x0+cx/kpm),p[1]-(v.y0+(H-cy)/kpm)]};   /* 絵の中心からの相対(m) */
+  const shapes=[];
+  for(const run of runs){if(run.length<3)continue;
+    const top=artDP(run.map(c=>[c.x,c.top]),tol),bt=new Map(run.map(c=>[c.x,c.bot]));
+    for(let i=0;i+1<top.length;i++){const p=top[i],q=top[i+1],bp=Math.max(bt.get(p[0])||p[1],p[1]+ART.MINTH_M*kpm*R.k),bq=Math.max(bt.get(q[0])||q[1],q[1]+ART.MINTH_M*kpm*R.k);
+      if(Math.abs(q[0]-p[0])<1e-6)continue;
+      const P0=mm(p[0],p[1]),B0=mm(p[0],bp),B1=mm(q[0],bq),P1=mm(q[0],q[1]);
+      shapes.push({t:'poly',pts:[P0,B0,B1,P1].map(u=>[artR(u[0]),artR(u[1])])})}}
+  if(!shapes.length){note('地形にできる線が見つかりませんでした（絵が小さすぎる・透明すぎる？）');return false}
+  const body={id:artId('t',a),type:'static',pos:[artR(v.x0+cx/kpm),artR(v.y0+(H-cy)/kpm)],mu:'mu',e:1,label:'',shapes};
+  if(!artCommit(a,body,false))return false;
+  if(!opt.quiet)note('「'+a.name+'」を地形にしました（'+shapes.length+'個の台形）。上から乗る物が対象です（ひさしやループは表せません）。▶で動かせます',7000);return body.id}
+
+/* ---------- 物体 ---------- */
+function artBody(a,opt){
+  opt=opt||{};if(!a||!a.img){note('絵を選んでください');return false}
+  if(!artEnsure())return false;
+  const v=RUN.view,kpm=W/v.w,R=artRaster(a),pts=[];
+  for(let y=0;y<R.h;y++)for(let x=0;x<R.w;x++){if(!R.al[y*R.w+x])continue;
+    if(x>0&&x<R.w-1&&y>0&&y<R.h-1&&R.al[y*R.w+x-1]&&R.al[y*R.w+x+1]&&R.al[(y-1)*R.w+x]&&R.al[(y+1)*R.w+x])continue;   /* 内側は輪郭の点にならない */
+    pts.push([x,y],[x+1,y],[x,y+1],[x+1,y+1])}
+  if(pts.length<3){note('絵の見える部分が見つかりません');return false}
+  const cx=a.fx*W,cy=a.fy*H,rel=pts.map(p=>[(p[0]/R.k-cx)/kpm,-(p[1]/R.k-cy)/kpm]);   /* 絵の中心からの相対(m)。y上向き */
+  const full=artHull(rel);
+  if(full.length<3){note('輪郭が細すぎて、物体にできません');return false}
+  const area=Math.abs(artArea(full)),G=artCentroid(full),Rm=Math.max(...full.map(p=>Math.hypot(p[0]-G[0],p[1]-G[1]))),circ=area/(Math.PI*Rm*Rm);   /* 丸さ＝面積÷(π×最大半径²)。円なら1に近い */
+  /* 長方形：絵の「見える範囲の長方形」（絵の向きのまま）が、輪郭の凸包とほぼ同じ面積なら、四角の物体にする（向きは絵に合わせる） */
+  const vis=scnImgVis(a.img),iw=a.img.naturalWidth||a.img.width||1,ih=a.img.naturalHeight||a.img.height||1,im=Math.max(iw,ih),Lm=S0*a.size/kpm;
+  let bx=null;if(vis){const wv=(vis.x1-vis.x0)/im*Lm,hv=(vis.y1-vis.y0)/im*Lm;bx={w:wv,h:hv,ox:((vis.x0+vis.x1)/2-iw/2)/im*Lm*(a.face||1),oy:-((vis.y0+vis.y1)/2-ih/2)/im*Lm,rect:area/(wv*hv)}}
+  const sh0=opt.shape||'auto',asCircle=sh0==='circle'||sh0==='auto'&&circ>=ART.CIRC,asBox=!asCircle&&bx&&(sh0==='box'||sh0==='auto'&&bx.rect>=ART.RECT),fixed=!!opt.fixed,hull=artReduce(full,ART.HULL_N);
+  const shape=asCircle?{t:'circle',r:artR(Math.sqrt(area/Math.PI)),ox:artR(G[0]),oy:artR(G[1])}:asBox?{t:'box',w:artR(bx.w),h:artR(bx.h),ox:artR(bx.ox),oy:artR(bx.oy)}:{t:'poly',pts:hull.map(p=>[artR(p[0]),artR(p[1])])};
+  const body={id:artId('b',a),type:fixed?'static':'dynamic',pos:[artR(v.x0+cx/kpm),artR(v.y0+(H-cy)/kpm)],mu:'mu',e:'e',label:a.name,shapes:[shape]};
+  if(asBox)body.angle=artR(-(a.rot||0));   /* 四角は絵の向きにそろえる（物体の向き＝絵の向き） */
+  if(!fixed)body.m='m_'+body.id;
+  if(!artCommit(a,body,!fixed,asBox?0:undefined))return false;
+  const poly=shape.t==='poly',com=poly?artCentroid(hull):[shape.ox,shape.oy];   /* 重心（絵の中心からの相対m）。物体の重心と同じ多角形から求める */
+  const topAt=x=>{let t=-1e9;const P=poly?hull:null;if(!P)return t;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];if((p[0]-x)*(q[0]-x)<=0&&p[0]!==q[0]){t=Math.max(t,p[1]+(q[1]-p[1])*(x-p[0])/(q[0]-p[0]))}}return t};
+  ART.last={id:body.id,kind:asCircle?'circle':asBox?'box':'poly',hull,box:bx,center:G,area,com,topAbove:poly?[com[0],topAt(com[0])]:[com[0],com[1]+(asCircle?shape.r:bx.h/2)],top:hull.reduce((t,p)=>p[1]>t[1]?p:t,hull[0])};   /* topAbove＝重心の真上で、輪郭の上の端（釘をかける所） */
+  if(!opt.quiet)note('「'+a.name+'」を'+(fixed?'固定の障害物':'物体')+'にしました（'+(asCircle?'円':asBox?'四角':hull.length+'角形')+'）。質量・反発・摩擦はスライダーで変えられます。▶で動かせます',7000);return body.id}
+
+/* ---------- 物理タブのボタン ---------- */
+$('scArtT').onclick=()=>{if(!sel){note('先に絵（オブジェクト）を選んでください');return}artTerrain(sel)};
+$('scArtB').onclick=()=>{if(!sel){note('先に絵（オブジェクト）を選んでください');return}const m=$('scArtS').value;artBody(sel,{shape:m==='static'?'auto':m,fixed:m==='static'})};
+/* ===== お絵かき×物理のサンプル（台帳Z-177）=====
+   「🎬 サンプルを見る」の c〜h。絵はコードで描いた（描画キャンバス・絵文字）もので、地形・物体は 56-phys-art.js の「絵→物理」で作る。
+   物理の計算・答え合わせ（ask）はシナリオ（PHS）に任せるので、どれも「見た目はお絵かき、中身は物理として正しい」。
+   縮尺：キャンバスの横幅＝8m（ART.W）。床の高さは 0.5m（下に地面の絵）。x右・y上（m）。
+   どれもシナリオ（保存される）なので、物理タブの条件スライダー・答え合わせ・グラフ・矢印がそのまま使える。 */
+const dmK=()=>W/ART.W,dmFx=x=>x/ART.W,dmFy=y=>1-y*W/(ART.W*H);
+function dmLong(a,Lm){a.size=Lm*dmK()/S0}
+function dmPut(a,x,y,Lm){a.fx=dmFx(x);a.fy=dmFy(y);if(Lm)dmLong(a,Lm);return a}
+function dmActor(src,name,x,y,Lm){const a=typeof src==='string'?add(src):add('',src);a.name=name;return dmPut(a,x,y,Lm)}
+function dmBase(c1,c2){resetAll();BG.m='grad';BG.c=c1;BG.c2=c2;bgUi();BG.v=(BG.v||0)+1;paused=false;$('pl').textContent='⏸ とめる';$('pl').classList.remove('on');pzSync()}
+const dmCv=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+function dmRR(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+/* ---- 絵（コードで描いたもの）---- */
+function dmPaintLine(cv,pts,widthM,col,edge){   /* 8m四方の描画キャンバスに、m座標の点列をなめらかな太い線で描く（手描き風の地形） */
+  const g=cv.getContext('2d'),s=cv.width/ART.W,P=pts.map(p=>[p[0]*s,(ART.W-p[1])*s]);
+  const path=()=>{g.beginPath();g.moveTo(P[0][0],P[0][1]);for(let i=0;i<P.length-1;i++){const a=P[Math.max(0,i-1)],b=P[i],c=P[i+1],d=P[Math.min(P.length-1,i+2)];
+    g.bezierCurveTo(b[0]+(c[0]-a[0])/6,b[1]+(c[1]-a[1])/6,c[0]-(d[0]-b[0])/6,c[1]-(d[1]-b[1])/6,c[0],c[1])}};
+  g.lineCap='round';g.lineJoin='round';
+  if(edge){path();g.strokeStyle=edge;g.lineWidth=widthM*s+6;g.stroke()}
+  path();g.strokeStyle=col;g.lineWidth=widthM*s;g.stroke();
+  path();g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=widthM*s*.3;g.setTransform(1,0,0,1,0,-widthM*s*.22);g.stroke();g.setTransform(1,0,0,1,0,0)}
+function dmGroundCv(){const c=dmCv(1024,64),g=c.getContext('2d');g.fillStyle='#a06a3a';g.fillRect(0,0,1024,64);g.fillStyle='#5cb44b';g.fillRect(0,0,1024,20);
+  g.fillStyle='#4a9a3c';for(let x=0;x<1024;x+=14){g.fillRect(x,16,7,8+((x*7)%5))}g.fillStyle='rgba(0,0,0,.12)';for(let x=10;x<1024;x+=37)g.fillRect(x,34+((x*3)%20),9,5);return c}
+function dmBeamCv(){const c=dmCv(1024,40),g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,40);gr.addColorStop(0,'#c58a5a');gr.addColorStop(1,'#8a5a36');g.fillStyle=gr;dmRR(g,0,4,1024,32,6);g.fill();g.strokeStyle='#5a371c';g.lineWidth=3;g.stroke();
+  g.strokeStyle='rgba(90,55,28,.35)';g.lineWidth=2;for(let x=20;x<1024;x+=70){g.beginPath();g.moveTo(x,10);g.lineTo(x+30,30);g.stroke()}return c}
+function dmBallCv(c0,c1){const c=dmCv(256,256),g=c.getContext('2d'),gr=g.createRadialGradient(92,88,10,128,128,126);gr.addColorStop(0,'#fff');gr.addColorStop(.25,c0);gr.addColorStop(1,c1);
+  g.fillStyle=gr;g.beginPath();g.arc(128,128,125,0,6.2832);g.fill();g.strokeStyle='rgba(30,41,59,.55)';g.lineWidth=3;g.stroke();
+  g.strokeStyle='rgba(30,41,59,.28)';g.lineWidth=5;g.beginPath();g.moveTo(128,128);g.lineTo(215,128);g.stroke();return c}   /* 回転が見えるように、中心から1本の線 */
+function dmDominoCv(col){const c=dmCv(90,450),g=c.getContext('2d');g.fillStyle=col;dmRR(g,2,2,86,446,9);g.fill();g.strokeStyle='rgba(30,41,59,.7)';g.lineWidth=4;g.stroke();
+  g.fillStyle='#fff';g.fillRect(8,224,74,4);g.fillStyle='#fff';for(const y of[90,140,310,360]){g.beginPath();g.arc(45,y,11,0,6.2832);g.fill()}return c}
+function dmBlockCv(col){const c=dmCv(128,128),g=c.getContext('2d');g.fillStyle=col;dmRR(g,2,2,124,124,10);g.fill();g.fillStyle='rgba(255,255,255,.28)';dmRR(g,12,12,104,40,8);g.fill();g.strokeStyle='rgba(30,41,59,.7)';g.lineWidth=4;dmRR(g,2,2,124,124,10);g.stroke();return c}
+/* ---- 共通の後始末：床を上げて地面の絵を置く／再生 ---- */
+function dmFloor(h){const gr=dmActor(dmGroundCv(),'地面',4,h/2,ART.W);gr.name='地面（飾り）';scnEdit(s=>{s.bodies[0].shapes[0].d=h});return gr}
+function dmEdit(fn){return scnEdit(s=>fn(s,id=>s.bodies.find(b=>b.id===id)))}
+function dmGo(msg,graph){if(!vLock){Z.s=1;Z.x=Z.y=0}   /* 選択で画面が動いた分を戻し、シーン全体（横8m）が見えるように */
+  if(graph!==undefined&&SCN.graph!==graph){SCN.graph=graph;scnBuild()}RUN.acc=0;RUN.playing=true;RUN.dirty=false;RUN.rev++;scnUi();if(msg)note(msg,9000)}
+
+/* c：描いた丘を、ボールが転がる */
+function demoC(){
+  dmBase('#dff1ff','#fff6e3');
+  const hill=addSpecial('d');hill.name='描いた丘';dmPut(hill,4,4,ART.W);
+  dmPaintLine(hill.cv,[[0,6.3],[1,6.15],[1.8,5.1],[2.6,3.8],[3.6,2.95],[4.6,2.8],[5.5,3.05],[6.4,3.85],[7.2,4.6],[8,4.85]],.34,'#8a5a2b','#4b2e14');hill.cvv=(hill.cvv||0)+1;
+  artTerrain(hill,{quiet:1});
+  const defs=[['🏀','バスケ',.95,.7,7.0,'min(1,e*1.3)'],['⚽','サッカー',.95,1.45,7.3,'e'],[dmBallCv('#fffbb0','#b5c424'),'テニス',.72,2.2,7.55,'min(1,e*1.5)']],ids=[];
+  for(const d of defs){const a=dmActor(d[0],d[1],d[3],d[4],d[2]);ids.push([artBody(a,{shape:'circle',quiet:1}),d[5]])}
+  dmEdit((s,get)=>{for(const[id,e]of ids)get(id).e=e;s.title='描いた丘をころがる'});
+  Object.assign(SCN.opt,{trail:true});RUN.rev++;setSel(hill);
+  dmGo('描いた線が、そのまま物理の地形になっています。ボールは種類ごとに反発が違います（物理タブで、重力・反発・摩擦・質量を変えられます）。','')}
+
+/* d：絵がふりこ（物理ふりこの周期の理論値つき） */
+function demoD(){
+  dmBase('#fff0f5','#e8f4ff');
+  dmActor(dmBeamCv(),'梁（飾り）',4,7.55,ART.W);
+  const bob=dmActor(blob('#7be0a4'),'ぐにゃ',4,4.5,1.9);
+  const id=artBody(bob,{shape:'hull',quiet:1}),top=ART.last.topAbove;   /* 釘は重心の真上にかける（つりあいの時、重心が釘の真下＝体の角度＝振れの角度） */
+  dmFloor(.5);
+  dmEdit((s,get)=>{s.title='釘にかけた絵のふりこ';s.level='standard';
+    s.problem='質量{m_'+id+'}kgの絵を、上の1点（釘）に吊るして、はじめ{theta0}°傾けて放す。この物理ふりこの周期は、ひもの長さが決まらなくても、重心まわりの慣性モーメントから決まる。';
+    s.params.theta0={v:40,min:5,max:70,step:1,unit:'°',label:'はじめの角度'};
+    Object.assign(s.vars=s.vars||{},{Px:'4',Py:'7.4',xt:String(top[0]),yt:String(top[1])});
+    const b=get(id);b.pos=['Px-(xt*cosd(theta0)-yt*sind(theta0))','Py-(xt*sind(theta0)+yt*cosd(theta0))'];b.angle='theta0';
+    s.joints=[{id:'nail',type:'pin',a:{at:['Px','Py']},b:{body:id,at:['xt','yt']}}];
+    s.probes={T:{expr:id+'.angle',reduce:'period',unit:'s',label:'周期'},I0:{expr:id+'.I',reduce:'first',label:'慣性モーメント'},m0:{expr:id+'.m',reduce:'first',unit:'kg',label:'質量'},dd:{expr:'hypot('+id+'.cx-Px,'+id+'.cy-Py)',reduce:'first',unit:'m',label:'釘から重心まで'},E:{expr:'E',reduce:'last',unit:'J',label:'全エネルギー'}};
+    s.ask=[{q:'周期（物理ふりこ 2π√((I/m+d²)/(g d))、振幅補正つき）',probe:'T',theory:'2*pi*sqrt((I0/m0+dd^2)/(gacc*dd))*(1+theta0^2*(pi/180)^2/16+11*theta0^4*(pi/180)^4/3072)',unit:'s',tol:.01}];
+    s.checks=[{name:'エネルギー保存',probe:'E',conserved:.004}];s.run={t:12}});
+  Object.assign(SCN.opt,{trail:false});setSel(bob);
+  dmGo('絵が釘にかかったふりこになりました。周期は物理ふりこの理論値と比べられます（物理タブの「答え合わせ」）。角度や重力を変えてみてください。','')}
+
+/* e：ばねにぶら下がる絵（ばね振動の周期） */
+function demoE(){
+  dmBase('#eefbe9','#fff7df');
+  dmActor(dmBeamCv(),'梁（飾り）',4,7.7,ART.W);
+  const pic=dmActor(blob('#ffb067'),'ぷるぷる',4,3.6,1.7);
+  const id=artBody(pic,{shape:'hull',quiet:1}),top=ART.last.top;
+  dmFloor(.5);
+  dmEdit((s,get)=>{s.title='ばねにぶら下がる絵';s.level='basic';
+    s.problem='自然の長さ{l0}mのばね（ばね定数{kk}N/m）に、質量{m_'+id+'}kgの絵をつるし、つりあいの位置から{A0}m引き下げて放す。上下の振動の周期は？';
+    Object.assign(s.params,{kk:{v:45,min:10,max:120,step:1,unit:'N/m',label:'ばね定数'},A0:{v:.8,min:.1,max:1.6,step:.05,unit:'m',label:'引き下げる長さ'}});
+    Object.assign(s.vars=s.vars||{},{Px:'4',Py:'7.5',l0:'2.0',xt:String(top[0]),yt:String(top[1])});
+    const b=get(id);b.fixedRot=true;b.pos=['Px-xt','Py-l0-m_'+id+'*gacc/kk-A0-yt'];
+    s.joints=[{id:'sp',type:'spring',a:{at:['Px','Py']},b:{body:id,at:['xt','yt']},k:'kk',len:'l0'}];
+    s.probes={T:{expr:id+'.y',reduce:'period',unit:'s',label:'周期'},amp:{expr:id+'.y',reduce:'amp',unit:'m',label:'振幅'},vmax:{expr:id+'.speed',reduce:'max',unit:'m/s',label:'最大の速さ'},m0:{expr:id+'.m',reduce:'first',unit:'kg',label:'質量'},E:{expr:'E',reduce:'last',unit:'J',label:'全エネルギー'}};
+    s.ask=[{q:'周期 2π√(m/k)',probe:'T',theory:'2*pi*sqrt(m0/kk)',unit:'s',tol:.005},{q:'振幅 A',probe:'amp',theory:'A0',unit:'m',tol:.01},{q:'最大の速さ A√(k/m)',probe:'vmax',theory:'A0*sqrt(kk/m0)',unit:'m/s',tol:.01}];
+    s.checks=[{name:'エネルギー保存',probe:'E',conserved:.004}];s.run={t:8}});
+  Object.assign(SCN.opt,{trail:false,vec:{Fs:true}});setSel(pic);RUN.rev++;
+  dmGo('ばねにぶら下がった絵がはずみます。ばねの力の矢印つき。周期は 2π√(m/k) と一致します（物理タブで質量やばね定数を変えて確かめられます）。','')}
+
+/* f：ドミノ倒し（描いた坂をころがるボールが、1枚目を倒す） */
+function demoF(){
+  dmBase('#fff4e0','#e6f3ff');
+  const ramp=addSpecial('d');ramp.name='描いた坂';dmPut(ramp,4,4,ART.W);
+  dmPaintLine(ramp.cv,[[.1,5.6],[1.2,5.25],[2.0,3.7],[2.7,1.95],[3.2,1.45],[4.4,1.45],[7.9,1.45]],.3,'#8a5a2b','#4b2e14');ramp.cvv=(ramp.cvv||0)+1;
+  artTerrain(ramp,{quiet:1});
+  const cols=['#ef6a6a','#f2a74b','#f0d34a','#7bc96b','#5bb8d4','#6f86e8','#a77be0','#e87bb4'],N=8,ids=[];
+  for(let i=0;i<N;i++){const d=dmActor(dmDominoCv(cols[i%cols.length]),'ドミノ'+(i+1),3.7+i*.52,1.65+.46+.003,.92);ids.push(artBody(d,{shape:'box',quiet:1}))}
+  const ball=dmActor('⚽','ボール',.55,6.2,.95);const bid=artBody(ball,{shape:'circle',quiet:1});
+  dmEdit((s,get)=>{s.title='ドミノ倒し';s.params.e.v=.25;s.params.mu.v=.5;delete s.params['m_'+bid];
+    s.params.md={v:.3,min:.1,max:2,step:.05,unit:'kg',label:'ドミノ1枚の質量'};s.params.mb={v:1.5,min:.3,max:6,step:.1,unit:'kg',label:'ボールの質量'};
+    ids.forEach(id=>{delete s.params['m_'+id];get(id).m='md'});get(bid).m='mb';get(bid).e='.6'});
+  Object.assign(SCN.opt,{trail:false});setSel(ball);
+  dmGo('描いた坂を転がるボールが、ドミノを倒します。ボールの質量・摩擦・重力を変えると、倒れ方が変わります。','')}
+
+/* g：ニュートンのゆりかご（弾性衝突） */
+function demoG(){
+  dmBase('#eaf0ff','#fff2f2');
+  dmActor(dmBeamCv(),'梁（飾り）',4,7.7,ART.W);
+  const N=5,D=1.0,gap=.004,R=2.8,ids=[];   /* 横幅8mの中で、両端の玉が引かれても壁に当たらない（R=2.8m・引く角度は30°まで） */
+  for(let i=0;i<N;i++){const x=4+(i-(N-1)/2)*(D+gap),a=dmActor(dmBallCv('#d8e2f0','#5a6b85'),'玉'+(i+1),x,7.4-R,D*1.02);ids.push(artBody(a,{shape:'circle',quiet:1}))}
+  dmFloor(.5);
+  const rb=+(D*1.02*125/128/2).toFixed(4),SP=2*rb+gap;   /* 絵（玉の絵は直径250/256）の見かけどおりの半径。玉の間隔はそれに合わせる（重なっていると、最初から押し合ってしまう） */
+  dmEdit((s,get)=>{s.title='ニュートンのゆりかご';s.level='standard';
+    s.problem='同じ質量の{n}個の玉を、細い糸で、すき間なく並べてつるす。いちばん左の玉を{theta0}°引いて放すと、右の端の玉だけが同じ高さまで上がる。';
+    s.params.e={v:1,min:.6,max:1,step:.02,label:'反発係数'};s.params.theta0={v:25,min:5,max:30,step:1,unit:'°',label:'左の玉を引く角度'};
+    Object.assign(s.vars=s.vars||{},{Py:'7.4',R:String(R),n:String(N)});
+    ids.forEach((id,i)=>{const b=get(id);delete s.params['m_'+id];b.m='mm';b.shapes=[{t:'circle',r:rb,ox:0,oy:0}];const x=+(4+(i-(N-1)/2)*SP).toFixed(4);
+      if(i===0)b.pos=[x+'-R*sind(theta0)','Py-R*cosd(theta0)'];else b.pos=[x,'Py-R'];
+      (s.joints=s.joints||[]).push({id:'rope'+(i+1),type:'rod',a:{at:[x,'Py']},b:{body:id,at:[0,0]}})});
+    s.params.mm={v:1,min:.2,max:5,step:.1,unit:'kg',label:'玉1個の質量'};
+    s.probes={hr:{expr:ids[N-1]+'.y',reduce:'max',unit:'m',label:'右の玉の最高点'},h0:{expr:ids[0]+'.y',reduce:'first',unit:'m',label:'左の玉のはじめの高さ'},hb:{expr:ids[N-1]+'.y',reduce:'first',unit:'m',label:'最下点の高さ'},E:{expr:'E',reduce:'last',unit:'J',label:'全エネルギー'}};
+    s.ask=[{q:'右の玉が上がる高さ（はじめの高さまで）',probe:'hr',theory:'h0',unit:'m',tol:.05}];
+    s.checks=[{name:'エネルギー保存（e=1のとき）',probe:'E',conserved:.02}];s.run={t:4}});
+  Object.assign(SCN.opt,{trail:false});setSel(AC[AC.length-1]);RUN.rev++;
+  dmGo('左の玉を引いて放した、ニュートンのゆりかごです。反発係数を下げると、玉どうしの打ち合いがだんだん減ります。','')}
+
+/* h：鉄球で積み木のお城をこわす */
+function demoH(){
+  dmBase('#e8f3ff','#fff4dd');
+  dmActor(dmBeamCv(),'梁（飾り）',5.2,7.8,ART.W);
+  const cols=['#ef6a6a','#f2a74b','#f0d34a','#7bc96b','#5bb8d4','#6f86e8'],B=.7,ids=[];let k=0;
+  for(let r=0;r<4;r++)for(let c=0;c<4-r;c++){const x=1.9+(c+r/2)*(B+.004)-(0),y=.5+B/2+.003+r*(B+.003),a=dmActor(dmBlockCv(cols[k++%cols.length]),'積み木'+k,x,y,B);ids.push(artBody(a,{shape:'box',quiet:1}))}
+  const ball=dmActor(dmBallCv('#9aa6b8','#252b36'),'鉄球',7.3,5.1,1.02),bid=artBody(ball,{shape:'circle',quiet:1});
+  dmFloor(.5);
+  dmEdit((s,get)=>{s.title='鉄球で積み木をこわす';s.params.e.v=.2;s.params.mu.v=.6;
+    s.params.mb={v:1,min:.3,max:4,step:.1,unit:'kg',label:'積み木1個の質量'};s.params.mt={v:30,min:5,max:100,step:1,unit:'kg',label:'鉄球の質量'};s.params.theta0={v:30,min:5,max:30,step:1,unit:'°',label:'鉄球を引く角度'};
+    Object.assign(s.vars=s.vars||{},{Px:'5.2',Py:'7.6',R:'4.4'});   /* 右の壁（x=8m）に鉄球（半径約0.5m）が触れない大きさ：5.2+4.4·sin30°+0.5=7.9m */
+    ids.forEach(id=>{delete s.params['m_'+id];get(id).m='mb'});delete s.params['m_'+bid];const b=get(bid);b.m='mt';b.e='.3';b.pos=['Px+R*sind(theta0)','Py-R*cosd(theta0)'];
+    s.joints=[{id:'chain',type:'rod',a:{at:['Px','Py']},b:{body:bid,at:[0,0]}}];
+    s.probes={v:{expr:bid+'.speed',reduce:'max',unit:'m/s',label:'鉄球の最大の速さ'}};
+    s.ask=[{q:'最下点の速さ √(2gR(1-cosθ))',probe:'v',theory:'sqrt(2*gacc*R*(1-cosd(theta0)))',unit:'m/s',tol:.05}];s.run={t:8}});
+  Object.assign(SCN.opt,{trail:false});setSel(ball);RUN.rev++;
+  dmGo('鉄球が振り子のように振れて、積み木のお城に当たります。鉄球の質量・角度・摩擦を変えると、崩れ方が変わります。','')}
+
+const ARTDEMOS={c:demoC,d:demoD,e:demoE,f:demoF,g:demoG,h:demoH};
+/* ===== 物理モードの「窓口」（台帳Z-178。ビジュアルプログラミングから使う想定）=====
+   ねらい：将来のビジュアルプログラミング（ブロックをつないで動かす）が、物理モードの中身を「データ」だけで使えるようにする。
+   ①部品表 catalog()：形・拘束・力場・物体の項目・量・関数・集計・ルールの動作を、型つき（名前・日本語名・型・単位・範囲・例）で返す。ブロックの並びや入力欄は、これから自動で作れる。
+   ②命令 OPS／apply()／exec()：置く・つなぐ・条件を決める・測る・動かす…を「1命令＝1つのオブジェクト」で渡す。apply は純粋（DOM なし・シナリオJSONを返すだけ）、exec はアプリ（SCN・RUN）に反映する。
+   ③ルール（シナリオの rules。52-phys-scenario.js）：「条件 → 動作」。物理の時間の中で動くので、巻き戻しても同じ結果になる（動作＝速度を足す・決める／止める／メッセージ）。
+   部品表は、エンジンの表（PHE.SHP・JNT・FLD、PHS.FN・RED・BP・JP・WP・RULE_OPS）に追加した時に、ここも直さないと検査（tools/phys_api_test.js）が落ちる。
+   純JS（DOMに触れない）。アプリへの反映（exec・runtime系）は SCN・RUN があるときだけ。 */
+const PHAPI=(function(){
+/* 型の語彙：num＝数か式（paramsやvarsの名前・関数が使える）／vec2＝[x,y]（各要素が数か式）／angle＝度（反時計まわりが正）／bool／text／enum（options）／
+   body＝物体id／anchor＝物体id・{body,at}・{at}（世界に固定）／anchors＝anchorの配列／pts＝[x,y]の配列（反時計まわり・凸）／ids＝物体idの配列／region＝{rect}か{circle} */
+const T=(k,t,u,l,x)=>Object.assign({k,type:t,unit:u||'',label:l},x||{});
+const SHAPES={
+  circle:{label:'円',desc:'半径rの円。回転する球・ボール',fields:[T('r','num','m','半径',{req:1,min:.001}),T('ox','num','m','中心のずれ（右）'),T('oy','num','m','中心のずれ（上）'),T('m','num','kg','この形の質量（複数の形を組む時だけ）')],example:{t:'circle',r:.1}},
+  box:{label:'長方形',desc:'横w×縦hの長方形（angleで傾ける）',fields:[T('w','num','m','横幅',{req:1,min:.001}),T('h','num','m','縦幅',{req:1,min:.001}),T('ox','num','m','中心のずれ（右）'),T('oy','num','m','中心のずれ（上）'),T('angle','angle','°','形の傾き'),T('m','num','kg','この形の質量')],example:{t:'box',w:.3,h:.2}},
+  poly:{label:'多角形',desc:'凸の多角形（反時計まわりの頂点）。凹んだ形は複数に分ける',fields:[T('pts','pts','m','頂点',{req:1}),T('m','num','kg','この形の質量')],example:{t:'poly',pts:[[0,0],[1,0],[0,.5]]}},
+  plane:{label:'平面（床・壁）',desc:'無限に広い平面。固定の物体だけ。normal＝外向きの法線、d＝原点から法線方向への距離',fields:[T('normal','vec2','','法線'),T('d','num','m','原点からの距離'),T('through','vec2','m','通る点（slopeと組）'),T('slope','angle','°','傾き（throughと組）')],example:{t:'plane',normal:[0,1],d:0},staticOnly:1},
+  arc:{label:'円弧のレール',desc:'円弧の道（side=in で内側・out で外側）。固定の物体だけ',fields:[T('c','vec2','m','中心',{req:1}),T('r','num','m','半径',{req:1,min:.001}),T('from','angle','°','始まりの角度',{req:1}),T('to','angle','°','終わりの角度',{req:1}),T('side','enum','','側',{options:['in','out'],labels:['内側','外側']}),T('thick','num','m','厚み')],example:{t:'arc',c:[0,0],r:1,from:180,to:270},staticOnly:1}
+};
+const BODY_TYPES=[{id:'dynamic',label:'動く物体'},{id:'static',label:'固定（床・台・壁）'},{id:'kinematic',label:'決めた動きをする台'}];
+const BODY_FIELDS=[
+  T('id','id','','名前',{req:1,hint:'式から参照するので、半角英数字とアンダースコア'}),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id),labels:BODY_TYPES.map(x=>x.label)}),
+  T('pos','vec2','m','位置（原点）'),T('angle','angle','°','向き'),T('vel','vec2','m/s','初速'),T('omega','num','rad/s','初めの角速度'),
+  T('m','num','kg','質量',{min:0}),T('I','num','kg·m²','慣性モーメント（省略すると形から計算）'),
+  T('mu','num','','摩擦係数',{min:0,max:3}),T('mus','num','','静止摩擦係数'),T('muk','num','','動摩擦係数'),T('e','num','','反発係数',{min:0,max:1}),T('q','num','C','電荷'),
+  T('fixedRot','bool','','回転しない'),T('collide','bool','','当たり判定を持つ'),T('group','num','','衝突グループ（同じ負の数どうしは当たらない）'),T('gs','num','','重力の効き方（0で無重力）'),
+  T('dragLin','num','kg/s','空気抵抗（速さに比例）'),T('dragQuad','num','kg/m','空気抵抗（速さの2乗）'),T('dampLin','num','1/s','速度の減衰'),T('dampAng','num','1/s','角速度の減衰'),
+  T('kin','object','','決めた動き {vx,vy,ax,ay,w（角速度rad/s）,alpha,osc:{hz,ax,ay,ph}}（kinematicの台だけ）'),T('label','text','','画面の名前'),T('color','color','','色'),T('img','text','','絵文字（自動でアクターを作る）')
+];
+const A=(k,l,x)=>T(k,'anchor','m',l,x);
+const JOINTS={
+  rod:{label:'棒',desc:'長さが変わらない（押しても引いても）',fields:[A('a','端1',{req:1}),A('b','端2',{req:1}),T('len','num','m','長さ（省略すると初めの長さ）'),T('via','anchors','','途中の点（滑車など）')],example:{type:'rod',a:{at:[0,1]},b:'B'}},
+  rope:{label:'紐',desc:'引くだけ（たるむ）。複数の点を通して滑車にできる',fields:[A('a','端1'),A('b','端2'),T('len','num','m','長さ'),T('via','anchors','','途中の点'),T('path','anchors','','点の列（aとbの代わり。多点の紐）')],example:{type:'rope',a:{at:[0,1]},b:'B'}},
+  pin:{label:'ピン（蝶番）',desc:'2点を一致させる（回転はできる）',fields:[A('a','物体A／世界の点',{req:1}),A('b','物体B／世界の点',{req:1})],example:{type:'pin',a:{at:[0,1]},b:{body:'B',at:[0,0]}}},
+  spring:{label:'ばね',desc:'フックの法則。自然の長さlen、ばね定数k、減衰c',fields:[A('a','端1',{req:1}),A('b','端2',{req:1}),T('k','num','N/m','ばね定数',{req:1,min:0}),T('len','num','m','自然の長さ'),T('c','num','N·s/m','減衰')],example:{type:'spring',a:{at:[0,1]},b:'B',k:20}}
+};
+const FIELDS={
+  uniform:{label:'一様な加速度（重力など）',fields:[T('ax','num','m/s²','加速度x'),T('ay','num','m/s²','加速度y'),T('g','num','m/s²','下向きの強さ（ayの代わり）')],example:{type:'uniform',ax:0,ay:-3}},
+  force:{label:'一様な力',fields:[T('fx','num','N','力x'),T('fy','num','N','力y')],example:{type:'force',fx:1,fy:0}},
+  E:{label:'電場',fields:[T('ex','num','N/C','電場x'),T('ey','num','N/C','電場y')],example:{type:'E',ex:100,ey:0}},
+  B:{label:'磁場（紙面に垂直）',fields:[T('bz','num','T','磁束密度（手前向きが正）',{req:1})],example:{type:'B',bz:.5}},
+  central:{label:'中心力',fields:[T('cx','num','m','中心x'),T('cy','num','m','中心y'),T('k','num','','強さ'),T('n','num','','べき（F∝r^n）')],example:{type:'central',cx:0,cy:0,k:-1,n:1}},
+  drag:{label:'抵抗（媒質）',fields:[T('lin','num','kg/s','速さに比例'),T('quad','num','kg/m','速さの2乗'),T('wx','num','m/s','媒質の速度x'),T('wy','num','m/s','媒質の速度y')],example:{type:'drag',lin:.5}},
+  coulomb:{label:'クーロン力（電荷どうし）',fields:[T('k','num','N·m²/C²','クーロン定数')],example:{type:'coulomb',k:9e9}},
+  gravity:{label:'万有引力（物体どうし）',fields:[T('G','num','N·m²/kg²','万有引力定数')],example:{type:'gravity',G:1}}
+};
+const FIELD_COMMON=[T('region','region','m','はたらく範囲（rectかcircle。省略すると全体）'),T('targets','ids','','はたらく物体（省略すると全部）')];
+/* 式で使える量（物体id.量／拘束id.量／世界の量）の、日本語名と単位 */
+const UNITS={x:'m',y:'m',cx:'m',cy:'m',vx:'m/s',vy:'m/s',speed:'m/s',angle:'°',omega:'rad/s',m:'kg',I:'kg·m²',q:'C',ke:'J',ke_t:'J',ke_r:'J',pe:'J',px:'kg·m/s',py:'kg·m/s',ax:'m/s²',ay:'m/s²',N:'N',Nx:'N',Ny:'N',fr:'N',frx:'N',fry:'N',Tn:'N',Tx:'N',Ty:'N',Fg:'N',Fgx:'N',Fgy:'N',Fs:'N',Fsx:'N',Fsy:'N',Ff:'N',Ffx:'N',Ffy:'N',L:'kg·m²/s',
+  T:'N',F:'N',len:'m',ext:'m',t:'s',E:'J',KE:'J',PE:'J',Px:'kg·m/s',Py:'kg·m/s',P:'kg·m/s',Lz:'kg·m²/s'};
+const LABELS={x:'位置x（原点）',y:'位置y（原点）',cx:'重心x',cy:'重心y',vx:'速度x',vy:'速度y',speed:'速さ',angle:'向き',omega:'角速度',m:'質量',I:'慣性モーメント',q:'電荷',ke:'運動エネルギー',ke_t:'並進の運動エネルギー',ke_r:'回転の運動エネルギー',pe:'位置エネルギー',px:'運動量x',py:'運動量y',ax:'加速度x',ay:'加速度y',N:'垂直抗力',Nx:'垂直抗力x',Ny:'垂直抗力y',fr:'摩擦力',frx:'摩擦力x',fry:'摩擦力y',Tn:'張力',Tx:'張力x',Ty:'張力y',Fg:'重力',Fgx:'重力x',Fgy:'重力y',Fs:'ばねの力',Fsx:'ばねの力x',Fsy:'ばねの力y',Ff:'場の力',Ffx:'場の力x',Ffy:'場の力y',L:'角運動量',
+  T:'張力（拘束）',F:'力（拘束）',len:'長さ（拘束）',ext:'伸び（拘束）',t:'時刻',E:'全エネルギー',KE:'全運動エネルギー',PE:'全位置エネルギー',Px:'全運動量x',Py:'全運動量y',P:'全運動量の大きさ',Lz:'全角運動量'};
+const RED_LABELS={max:'最大',min:'最小',absmax:'絶対値の最大',range:'最大−最小',amp:'振幅',first:'最初の値',last:'最後の値',mean:'平均',rms:'二乗平均平方根',count:'真だった回数',int:'時間積分',tmax:'最大になった時刻',tmin:'最小になった時刻',period:'周期',freq:'振動数',zero:'最初に0を横切る時刻'};
+const FN_LABELS={sin:'sin（ラジアン）',cos:'cos（ラジアン）',tan:'tan（ラジアン）',asin:'asin',acos:'acos',atan:'atan',atan2:'atan2(y,x)',sinh:'sinh',cosh:'cosh',tanh:'tanh',sind:'sin（度）',cosd:'cos（度）',tand:'tan（度）',asind:'asin（度で返す）',acosd:'acos（度で返す）',atand:'atan（度で返す）',atan2d:'atan2（度で返す）',sqrt:'平方根',cbrt:'立方根',abs:'絶対値',exp:'e^x',ln:'自然対数',log:'自然対数',log10:'常用対数',log2:'2を底とする対数',pow:'べき乗 pow(x,y)',min:'小さい方',max:'大きい方',floor:'切り捨て',ceil:'切り上げ',round:'四捨五入',hypot:'√(x²+y²)',sign:'符号',deg:'ラジアン→度',rad:'度→ラジアン',clamp:'範囲に収める clamp(x,小,大)',step:'x≧0なら1',if:'if(条件,真の値,偽の値)'};
+const EXTRA_FN=[{id:'normal',label:'2物体間の垂直抗力',args:['物体id','物体id'],unit:'N',eg:"normal('a','b')"},{id:'fric',label:'2物体間の摩擦力',args:['物体id','物体id'],unit:'N',eg:"fric('a','b')"},{id:'dist',label:'2物体の原点間の距離',args:['物体id','物体id'],unit:'m',eg:"dist('a','b')"}];
+const RULE_ACTS={
+  kick:{label:'速度に足す（キック）',fields:[T('body','body','','物体',{req:1}),T('vx','num','m/s','足す速度x'),T('vy','num','m/s','足す速度y')]},
+  setVel:{label:'速度を決める',fields:[T('body','body','','物体',{req:1}),T('vx','num','m/s','速度x'),T('vy','num','m/s','速度y')]},
+  stop:{label:'実行を止める',fields:[]},
+  note:{label:'メッセージを出す',fields:[T('text','text','','文字',{req:1})]}
+};
+const RULE_FIELDS=[T('id','text','','ルールの名前'),T('when','num','','条件の式（真なら動作）',{req:1,hint:'例 ball.y<0.3'}),T('mode','enum','','いつ動作するか',{options:['rise','once'],labels:['成り立った瞬間ごと','最初の1回だけ']}),T('do','acts','','動作の並び',{req:1})];
+const SCN_PARTS=[
+  {id:'params',label:'条件（スライダーで変えられる量）',fields:[T('v','num','','値',{req:1}),T('min','num','','最小'),T('max','num','','最大'),T('step','num','','刻み'),T('unit','text','','単位'),T('label','text','','画面の名前')]},
+  {id:'probes',label:'測定（時系列→1つの数）',fields:[T('expr','num','','測る式',{req:1}),T('reduce','enum','','集計',{options:Object.keys(RED_LABELS),labels:Object.values(RED_LABELS)}),T('when','num','','この条件の間だけ'),T('after','text','','この出来事／時刻より後だけ'),T('unit','text','','単位'),T('label','text','','画面の名前')]},
+  {id:'ask',label:'答え合わせ（測定値と理論値）',fields:[T('q','text','','問い'),T('probe','text','','測定の名前'),T('theory','num','','理論値の式',{req:1}),T('tol','num','','許容する相対誤差（既定0.02）'),T('abs','num','','許容する絶対誤差'),T('unit','text','','単位')]},
+  {id:'events',label:'出来事（条件が最初に成り立つ時刻）',fields:[T('when','num','','条件の式',{req:1}),T('label','text','','画面の名前')]},
+  {id:'checks',label:'不変量の検査（保存則など）',fields:[T('name','text','','名前'),T('probe','text','','測定の名前'),T('conserved','num','','許容する変動の割合'),T('min','num','','最小'),T('max','num','','最大')]}
+];
+
+/* ---------- 部品表 ---------- */
+function catalog(){
+  const clone=x=>JSON.parse(JSON.stringify(x));
+  return clone({
+    version:1,
+    types:{num:'数か式',vec2:'[x,y]',angle:'度（反時計まわりが正）',bool:'真偽',text:'文字',enum:'選択肢',id:'名前',body:'物体id',anchor:'物体id／{body,at}／{at}',anchors:'anchorの並び',pts:'頂点の並び',ids:'物体idの並び',region:'{rect}か{circle}',color:'色',acts:'動作の並び'},
+    shapes:Object.entries(SHAPES).map(([id,s])=>Object.assign({id},s)),
+    bodyTypes:BODY_TYPES,bodyFields:BODY_FIELDS,
+    joints:Object.entries(JOINTS).map(([id,s])=>Object.assign({id},s)),
+    fields:Object.entries(FIELDS).map(([id,s])=>Object.assign({id},s,{fields:s.fields.concat(FIELD_COMMON)})),
+    quantities:{body:Object.keys(PHS.BP).map(k=>({id:k,label:LABELS[k]||k,unit:UNITS[k]||'',use:'物体id.'+k})),
+      joint:Object.keys(PHS.JP).map(k=>({id:k,label:LABELS[k]||k,unit:UNITS[k]||'',use:'拘束id.'+k})),
+      world:Object.keys(PHS.WP).map(k=>({id:k,label:LABELS[k]||k,unit:UNITS[k]||'',use:k}))},
+    functions:Object.keys(PHS.FN).map(k=>({id:k,label:FN_LABELS[k]||k,arity:PHS.FN[k].length})).concat(EXTRA_FN),
+    constants:[{id:'pi',label:'円周率'},{id:'tau',label:'2π'},{id:'g',label:'重力加速度（world.g）'}],
+    reducers:Object.keys(PHS.RED).map(k=>({id:k,label:RED_LABELS[k]||k})),
+    parts:SCN_PARTS,
+    rules:{fields:RULE_FIELDS,acts:Object.entries(RULE_ACTS).map(([id,a])=>Object.assign({id},a))},
+    ops:Object.entries(OPS).map(([id,o])=>({id,label:o.label,kind:o.kind,fields:o.args,returns:o.returns||''}))});
+}
+/* 部品表とエンジンの表が食い違っていないか（足し忘れ）を返す。空なら一致 */
+function coverage(){
+  const miss=[],need=(what,keys,have)=>{for(const k of keys)if(!have.includes(k))miss.push(what+'「'+k+'」の説明がありません')};
+  need('形',Object.keys(PHE.SHP),Object.keys(SHAPES));need('拘束',Object.keys(PHE.JNT),Object.keys(JOINTS));need('力場',Object.keys(PHE.FLD),Object.keys(FIELDS));
+  need('集計',Object.keys(PHS.RED),Object.keys(RED_LABELS));need('関数',Object.keys(PHS.FN),Object.keys(FN_LABELS));
+  need('物体の量',Object.keys(PHS.BP),Object.keys(LABELS));need('拘束の量',Object.keys(PHS.JP),Object.keys(LABELS));need('世界の量',Object.keys(PHS.WP),Object.keys(LABELS));
+  need('ルールの動作',Object.keys(PHS.RULE_OPS),Object.keys(RULE_ACTS));
+  for(const k of PHS.KEYS.body)if(!BODY_FIELDS.some(f=>f.k===k)&&!['shapes'].includes(k)&&!['style','note','show','trail'].includes(k))miss.push('物体の項目「'+k+'」の説明がありません');
+  return miss}
+
+/* ---------- 命令 ---------- */
+const uniq=(list,pre)=>{const have=new Set(list.map(x=>x.id));let i=list.length+1;while(have.has(pre+i))i++;return pre+i};
+const need=(c,m)=>{if(!c)throw new Error(m)};
+const body=(s,id)=>{const b=(s.bodies||[]).find(x=>x.id===id);need(b,'物体「'+id+'」がありません');return b};
+const pick=(o,keys)=>{const r={};for(const k of keys)if(o[k]!==undefined)r[k]=o[k];return r};
+const BODY_SET=BODY_FIELDS.map(f=>f.k).filter(k=>k!=='id');
+/* 各命令：label・kind（scenario＝シナリオJSONを直す／runtime＝実行を操作する）・args（入力欄）・do(s,a)（シナリオを直接直す。idなどを返す） */
+const OPS={
+  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
+    make(a){const s={id:'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
+      if(a.floor!==false)s.bodies.push({id:'floor',type:'static',mu:.5,e:0,label:'床',shapes:[{t:'plane',normal:[0,1],d:0}]});return s}},
+  addBody:{label:'物体を置く',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id)}),T('shape','shape','','形（{t:"circle",r:0.1}など。部品表のshapes）',{req:1}),T('pos','vec2','m','位置'),T('set','object','','その他の項目（部品表のbodyFields）')],returns:'物体id',
+    do(s,a){need(a.shape&&a.shape.t,'shape（形）が必要です');const id=a.id||uniq(s.bodies,'b'),b={id,type:a.type||'dynamic',shapes:[a.shape]};
+      if(b.type==='dynamic'&&!(a.set&&a.set.m!==undefined))b.m=1;if(a.pos)b.pos=a.pos;Object.assign(b,pick(a.set||{},BODY_SET));s.bodies.push(b);return id}},
+  addShape:{label:'物体に形を足す',kind:'scenario',args:[T('body','body','','物体',{req:1}),T('shape','shape','','形',{req:1})],returns:'形の番号',do(s,a){const b=body(s,a.body);b.shapes.push(a.shape);return b.shapes.length-1}},
+  setBody:{label:'物体の項目を変える',kind:'scenario',args:[T('id','body','','物体',{req:1}),T('set','object','','変える項目（値がnullなら消す）',{req:1})],do(s,a){const b=body(s,a.id);for(const k of Object.keys(a.set||{})){need(BODY_SET.includes(k),'物体の項目「'+k+'」は変えられません（使える項目: '+BODY_SET.join('・')+'）');if(a.set[k]===null)delete b[k];else b[k]=a.set[k]}return a.id}},
+  removeBody:{label:'物体を消す（つないだ拘束・力場も外す）',kind:'scenario',args:[T('id','body','','物体',{req:1})],do(s,a){body(s,a.id);const uses=x=>x===a.id||(x&&typeof x==='object'&&x.body===a.id);
+      s.bodies=s.bodies.filter(b=>b.id!==a.id);s.joints=(s.joints||[]).filter(j=>![j.a,j.b].concat(j.via||[],j.path||[]).some(uses));
+      for(const f of s.fields||[])if(f.targets)f.targets=f.targets.filter(t=>t!==a.id);s.pairs=(s.pairs||[]).filter(p=>p.a!==a.id&&p.b!==a.id);if(s.params)delete s.params['m_'+a.id];return a.id}},
+  addJoint:{label:'つなぐ（棒・紐・ピン・ばね）',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{req:1,options:Object.keys(JOINTS),labels:Object.values(JOINTS).map(j=>j.label)}),T('a','anchor','','端1'),T('b','anchor','','端2'),T('set','object','','len・k・c・via・pathなど')],returns:'拘束id',
+    do(s,a){need(a.type,'type（種類）が必要です');s.joints=s.joints||[];const id=a.id||uniq(s.joints,'j');s.joints.push(Object.assign({id,type:a.type},a.a!==undefined?{a:a.a}:{},a.b!==undefined?{b:a.b}:{},a.set||{}));return id}},
+  removeJoint:{label:'つなぎを外す',kind:'scenario',args:[T('id','text','','拘束id',{req:1})],do(s,a){const n=(s.joints||[]).length;s.joints=(s.joints||[]).filter(j=>j.id!==a.id);need(s.joints.length<n,'拘束「'+a.id+'」がありません');return a.id}},
+  addField:{label:'力場を足す',kind:'scenario',args:[T('type','enum','','種類',{req:1,options:Object.keys(FIELDS),labels:Object.values(FIELDS).map(f=>f.label)}),T('set','object','','項目（ax・ay・bz・region・targetsなど）')],returns:'力場の番号',do(s,a){need(a.type,'type（種類）が必要です');(s.fields=s.fields||[]).push(Object.assign({type:a.type},a.set||{}));return s.fields.length-1}},
+  removeField:{label:'力場を消す',kind:'scenario',args:[T('index','num','','力場の番号',{req:1})],do(s,a){need(s.fields&&s.fields[a.index],'力場['+a.index+']がありません');s.fields.splice(a.index,1);return a.index}},
+  setParam:{label:'条件（スライダー）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1})].concat(SCN_PARTS[0].fields),do(s,a){need(a.name,'name（名前）が必要です');const p=(s.params=s.params||{});const cur=p[a.name]&&typeof p[a.name]==='object'?p[a.name]:{v:p[a.name]};p[a.name]=Object.assign(cur,pick(a,['v','min','max','step','unit','label']));return a.name}},
+  setVar:{label:'途中計算の名前（式）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1}),T('expr','num','','式',{req:1})],do(s,a){need(a.name&&a.expr!==undefined,'name と expr が必要です');(s.vars=s.vars||{})[a.name]=a.expr;return a.name}},
+  addProbe:{label:'測定を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[1].fields),do(s,a){need(a.id&&a.expr,'id と expr が必要です');(s.probes=s.probes||{})[a.id]=pick(a,['expr','reduce','when','after','unit','label']);return a.id}},
+  addAsk:{label:'答え合わせを足す',kind:'scenario',args:SCN_PARTS[2].fields,returns:'番号',do(s,a){need(a.theory!==undefined&&(a.probe!==undefined||a.expr!==undefined),'theory と、probe（または expr）が必要です');(s.ask=s.ask||[]).push(pick(a,['q','probe','expr','theory','tol','abs','unit']));return s.ask.length-1}},
+  addEvent:{label:'出来事を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[3].fields),do(s,a){need(a.id&&a.when,'id と when が必要です');(s.events=s.events||{})[a.id]={when:a.when,label:a.label};return a.id}},
+  addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max']));return s.checks.length-1}},
+  addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push({id,when:a.when,mode:a.mode,do:a.do});return id}},
+  removeRule:{label:'ルールを消す',kind:'scenario',args:[T('id','text','','ルールの名前',{req:1})],do(s,a){const n=(s.rules||[]).length;s.rules=(s.rules||[]).filter(r=>r.id!==a.id);need(s.rules.length<n,'ルール「'+a.id+'」がありません');return a.id}},
+  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample']));return 'run'}},
+  setView:{label:'画面（位置・横幅m）',kind:'scenario',args:[T('x0','num','m','左端x'),T('y0','num','m','下端y'),T('w','num','m','横幅'),T('grid','bool','','格子'),T('follow','text','','追う物体')],do(s,a){s.view=Object.assign(s.view||{},pick(a,['x0','y0','w','grid','ruler','follow']));return 'view'}},
+  setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir']));return 'world'}},
+  /* ---- 実行の操作（アプリの中だけ。純粋な apply には使えない） ---- */
+  play:{label:'再生',kind:'runtime',args:[]},pause:{label:'とめる',kind:'runtime',args:[]},reset:{label:'最初へ戻す',kind:'runtime',args:[]},
+  seek:{label:'その時刻へ',kind:'runtime',args:[T('t','num','s','時刻',{req:1})]},step:{label:'1刻み（1/120秒）ずつ進める',kind:'runtime',args:[T('n','num','','刻み数')]},
+  speed:{label:'再生の速さ',kind:'runtime',args:[T('v','num','','倍率')]},
+  read:{label:'いまの値を読む（式）',kind:'runtime',args:[T('expr','num','','式（物体id.量など）',{req:1})],returns:'数'},
+  result:{label:'答え合わせ・測定の結果',kind:'runtime',args:[],returns:'{probes,ask,checks,events}'},
+  sweep:{label:'条件を振って測る',kind:'runtime',args:[T('param','text','','条件の名前',{req:1}),T('values','num','','値の配列（または from・to・n）'),T('from','num','',''),T('to','num','',''),T('n','num','','')],returns:'{param,rows,fit}'},
+  open:{label:'サンプルを開く',kind:'runtime',args:[T('id','text','','サンプルのid',{req:1})]},
+  close:{label:'シナリオを閉じる',kind:'runtime',args:[]}
+};
+/* 純粋：シナリオJSON（src）に命令を適用した結果を返す（srcは書き換えない）。ok・errors・warns・src・value（idなど） */
+function apply(src,op){
+  const d=OPS[op&&op.op];if(!d)return{ok:false,errors:['未知の命令「'+(op&&op.op)+'」'+PHS.suggest(String(op&&op.op),Object.keys(OPS))],warns:[],src};
+  if(d.kind!=='scenario')return{ok:false,errors:['命令「'+op.op+'」は実行の操作です。アプリの中で exec を使ってください'],warns:[],src};
+  let s,value;
+  try{if(d.make){s=d.make(op);value=s.id}else{need(src,'まずシナリオを作ってください（newScenario）');s=JSON.parse(JSON.stringify(src));value=d.do(s,op)}}
+  catch(e){return{ok:false,errors:[String(e&&e.message||e)],warns:[],src}}
+  const V=PHS.validate(s);
+  /* 物体が空のシナリオ（newScenario直後で floor:false）は、物体を足すまで検証に通らないので、errors に出しつつ src は返す */
+  return{ok:!V.errors.length,errors:V.errors,warns:V.warns,src:s,value}}
+/* 命令の列を順に適用する（途中で誤りが出ても続ける＝最後まで足してから検証する。bodies空の検証エラーだけは無視） */
+function applyAll(src,ops){
+  let s=src,value=[],errors=[],warns=[];
+  for(const op of ops){const d=OPS[op.op];if(!d||d.kind!=='scenario'){errors.push('命令「'+op.op+'」は使えません');continue}
+    let t;try{if(d.make){t=d.make(op);value.push(t.id)}else{need(s,'まずシナリオを作ってください（newScenario）');t=JSON.parse(JSON.stringify(s));value.push(d.do(t,op))}}catch(e){errors.push(String(e&&e.message||e));continue}
+    s=t}
+  if(s){const V=PHS.validate(s);errors=errors.concat(V.errors);warns=V.warns}
+  return{ok:!errors.length,errors,warns,src:s,value}}
+
+/* ---------- アプリへの反映（SCN・RUN があるときだけ）---------- */
+function exec(op){
+  if(typeof SCN==='undefined'||typeof RUN==='undefined')return{ok:false,errors:['アプリの外では使えません（apply を使ってください）']};
+  const d=OPS[op&&op.op];if(!d)return{ok:false,errors:['未知の命令「'+(op&&op.op)+'」'+PHS.suggest(String(op&&op.op),Object.keys(OPS))]};
+  try{
+    if(d.kind==='scenario'){
+      const r=apply(d.make?null:SCN.src,op);
+      if(d.make){if(!r.src)return r;const o=scnSetSource(r.src);return{ok:!!(o&&o.ok),errors:o&&o.errors||[],warns:r.warns,value:r.value}}
+      if(!r.ok)return r;
+      const ok=scnEdit(s=>{d.do(s,op)});if(ok&&SCN.auto&&op.op==='addBody')scnAutoActors();   /* img（絵文字）つきの物体には絵を自動で付ける */
+      return{ok:!!ok,errors:ok?[]:['シナリオを直せませんでした'],warns:r.warns,value:r.value}}
+    if(!SCN.src&&op.op!=='open')return{ok:false,errors:['シナリオが開いていません（newScenario か open）']};
+    switch(op.op){
+      case 'open':{const o=scnLoadSample(op.id);return{ok:!!o.ok,errors:o.errors||[]}}
+      case 'close':scnClose();return{ok:true};
+      case 'play':if(!RUN.playing)scnPlay();return{ok:true};
+      case 'pause':RUN.playing=false;scnUi();return{ok:true};
+      case 'reset':scnReset();return{ok:true};
+      case 'seek':scnSeek(+op.t);return{ok:true,value:RUN.sess&&RUN.sess.W.t};
+      case 'step':scnStepN(Math.max(1,op.n|0||1));return{ok:true,value:RUN.sess&&RUN.sess.W.t};
+      case 'speed':SCN.speed=+op.v>0?+op.v:1;dirtyProj=true;return{ok:true};
+      case 'read':return RUN.sess?{ok:true,value:RUN.sess.ev(String(op.expr))}:{ok:false,errors:[RUN.err||'実行できる状態ではありません']};
+      case 'result':{if(!RUN.sess)return{ok:false,errors:[RUN.err||'実行できる状態ではありません']};const r=RUN.sess.finish();return{ok:true,value:{t:r.t,probes:r.probes,events:r.events,ask:r.ask,checks:r.checks}}}
+      case 'sweep':{const r=PHS.sweep(SCN.src,pick(op,['param','values','from','to','n']));return{ok:true,value:r}}}
+  }catch(e){return{ok:false,errors:[String(e&&e.message||e)]}}
+  return{ok:false,errors:['実装されていない命令です']}}
+/* 実行中の出来事を受け取る：ルールの note・stop と、events の成立。cb({t,kind,rule,text}) を毎フレームの後で呼ぶ（巻き戻しの再実行中は呼ばない）。返す関数で解除 */
+const LISTEN=[];
+function listen(cb){LISTEN.push(cb);return()=>{const i=LISTEN.indexOf(cb);if(i>=0)LISTEN.splice(i,1)}}
+function emit(e){for(const cb of LISTEN.slice())try{cb(e)}catch(_){}}
+return{catalog,coverage,OPS,apply,applyAll,exec,listen,emit,SHAPES,JOINTS,FIELDS}
+})();
 
 /* 入力: ドラッグ・2本指ズーム・空き地ドラッグで画面移動 */
 const sp=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}};
@@ -2948,6 +3484,7 @@ $('tcl').oninput=e=>{if(sel.txt!=null){sel.tcol=e.target.value;setImg(sel,txtCv(
    ・IO.box／IO.gauss ：ぼかし（端は延長）。複数チャンネル（ch）の並びは画素ごとに交互（RGBRGB…）
    ・IO.guided        ：ガイデッドフィルタ（He 2010）。輪郭を保つぼかし（輪郭吸着は、囲みが輪郭から離れていると働かないので、223-selection.jsの`selSnap`は色の局所平均による分類にした）
    ・IO.guidedRGBA    ：同じフィルタを、アルファ掛け済みのRGBA（4チャンネル）に一度に掛ける速い版（滑らかにする修整ブラシ用。係数を粗い格子で求めて細かく戻す＝He & Sun 2015。台帳Z-156）
+   ・IO.jaggy         ：ジャギー（輪郭のギザギザ）を、輪郭に沿った平均でなめらかにする（修整ブラシ「ジャギーをなめらかに」用。台帳Z-180）
    ・IO.pushPull／IO.pullPush ：穴の周りの色で、穴をなめらかに埋める（ピラミッドで粗い→細かいへ。Gortlerのpush-pull）。pullPushは色(3ch)と「分かっている度合い(0〜1)」の浮動小数版（修整の「埋める」が粗い解像度で解くのに使う）
    ・IO.noise         ：粒状ノイズ（σ=1に正規化。埋めた所の質感づけ）
    ・IO.flood         ：自動選択（Lab色距離の連結成長）
@@ -3208,6 +3745,37 @@ IO.dp=function(pts,eps){
   for(let i=1;i<tail.length-1;i++)if(kt[i])keep[b+i]=1;
   const out=[];for(let i=0;i<n;i++)if(keep[i])out.push(pts[i]);return out;
 };
+/* ジャギー（輪郭のギザギザ）をなめらかにする（修整ブラシ「ジャギーをなめらかに」用。台帳Z-180）。P＝アルファ掛け済みのRGBA（Float32Array w*h*4。色は0〜255×α、aは0〜255）。戻り値＝同じ並びのRGBA。
+   考え方：輪郭の向き（接線）を求め、**接線の方向にだけ**画素を平均する（ガウス重み）。ギザギザの階段は、輪郭に沿って平均すると「面積で数えた縁の濃さ」になる＝アンチエイリアスと同じ結果。
+   輪郭に垂直な方向には混ぜないので、縁はぼやけず、1画素幅の細い線も（線に沿って平均するので）消えない。色が平らな所・輪郭でない所（向きが定まらない角・ノイズ）は変えない。
+   ・向き：4チャンネル（色の3つ＋アルファ）をσ_dでぼかした勾配の構造テンソルを、さらにρでならす。階段の凸凹より広くならすので、傾きの浅い輪郭でも本来の向きが取れる。
+   ・効く量：輪郭の強さ（コントラスト≒10〜40で0→1）×向きの揃い（コヒーレンス0.55〜0.85で0→1）。角や線の端（揃いが低い所）はそのまま。
+   ・p（0〜1）＝ギザの長さに合わせる幅。接線方向の平均幅σ_t＝0.8＋2.4p画素。大きいほど浅い傾きのギザも直るが、曲率の大きい所（小さい円）が少し縮む（縮み≒σ_t²/2R）。
+   ・限界：ちょうど45°・水平垂直に近い規則的な階段は、元の絵に縁の位置の情報（画素より細かい位置）が無いので、これ以上は直せない（ぼかしの道具を使う）。 */
+IO.jaggyScale=function(p){const st=.8+2.4*Math.min(1,Math.max(0,p)),sd=st*.8+.5;return{st,sd,rho:sd,mg:Math.ceil(2.5*sd+2.5*sd+2.5*st)+2}};
+IO.jaggy=function(P,w,h,p){
+  const sc=IO.jaggyScale(p),st=sc.st,sd=sc.sd,n=w*h,WC=[.299,.587,.114,.6];
+  const B=IO.gauss(P,w,h,4,sd),J=new Float32Array(n*3),X1=w-1,Y1=h-1;
+  for(let y=0;y<h;y++){const ya=(y>0?y-1:0)*w,yb=(y<Y1?y+1:Y1)*w,y0=y*w;for(let x=0;x<w;x++){
+    const xa=x>0?x-1:0,xb=x<X1?x+1:X1;let jxx=0,jxy=0,jyy=0;
+    for(let c=0;c<4;c++){const gx=(B[(y0+xb)*4+c]-B[(y0+xa)*4+c])*.5,gy=(B[(yb+x)*4+c]-B[(ya+x)*4+c])*.5,wc=WC[c];jxx+=wc*gx*gx;jxy+=wc*gx*gy;jyy+=wc*gy*gy}
+    const i=(y0+x)*3;J[i]=jxx;J[i+1]=jxy;J[i+2]=jyy}}
+  const T=IO.gauss(J,w,h,3,sc.rho),out=new Float32Array(P),K=Math.ceil(2.5*st/.5),wk=new Float32Array(2*K+1);let ws=0;
+  for(let k=-K;k<=K;k++){const v=Math.exp(-(k*.5)*(k*.5)/(2*st*st));wk[k+K]=v;ws+=v}for(let k=0;k<wk.length;k++)wk[k]/=ws;
+  const gate=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t)},sdv=sd*Math.sqrt(2*Math.PI);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*3,jxx=T[i],jxy=T[i+1],jyy=T[i+2],tr=jxx+jyy;if(tr<=1e-9)continue;
+    const c2=jxx-jyy,s2=2*jxy,r=Math.hypot(c2,s2),m=gate(10,40,Math.sqrt(tr)*sdv);if(m<=0)continue;
+    const mm=m*gate(.55,.85,r/tr);if(mm<=0)continue;
+    const rr=r||1,tx=-(s2<0?-1:1)*Math.sqrt((1-c2/rr)/2),ty=Math.sqrt((1+c2/rr)/2);   /* 接線（勾配に垂直） */
+    let a0=0,a1=0,a2=0,a3=0;
+    for(let k=-K;k<=K;k++){
+      const u=Math.min(X1,Math.max(0,x+.5*k*tx)),v=Math.min(Y1,Math.max(0,y+.5*k*ty)),x0=Math.floor(u),y0=Math.floor(v),x1=x0<X1?x0+1:X1,y1=y0<Y1?y0+1:Y1,fx=u-x0,fy=v-y0,q=wk[k+K],
+        w00=(1-fx)*(1-fy)*q,w10=fx*(1-fy)*q,w01=(1-fx)*fy*q,w11=fx*fy*q,p00=(y0*w+x0)*4,p10=(y0*w+x1)*4,p01=(y1*w+x0)*4,p11=(y1*w+x1)*4;
+      a0+=P[p00]*w00+P[p10]*w10+P[p01]*w01+P[p11]*w11;a1+=P[p00+1]*w00+P[p10+1]*w10+P[p01+1]*w01+P[p11+1]*w11;
+      a2+=P[p00+2]*w00+P[p10+2]*w10+P[p01+2]*w01+P[p11+2]*w11;a3+=P[p00+3]*w00+P[p10+3]*w10+P[p01+3]*w01+P[p11+3]*w11}
+    const q=(y*w+x)*4;out[q]=P[q]+(a0-P[q])*mm;out[q+1]=P[q+1]+(a1-P[q+1])*mm;out[q+2]=P[q+2]+(a2-P[q+2])*mm;out[q+3]=P[q+3]+(a3-P[q+3])*mm}
+  return out};
 /* 多角形の面積（符号つき。画面座標で時計回り＝正） */
 IO.area=function(p){let s=0;for(let i=0,n=p.length;i<n;i++){const a=p[i],b=p[(i+1)%n];s+=a[0]*b[1]-b[0]*a[1]}return s/2};
 
@@ -4114,7 +4682,7 @@ function demoB(){
   const t=addSpecial('t');t.txt='ぐにゃ〜';t.tcol='#ffe066';setImg(t,txtCv(t.txt,t.tcol));Object.assign(t,{fx:.5,fy:.14,size:1.6});cs(t,'r',[6,1.2,'sin']);
   setSel(AC[0]);note('ぐにゃぐにゃ：「歪み」の螺旋・膨らみ・タッチを重ね、軌道と反復で動かしています。');
 }
-$('demo').onchange=e=>{const f={a:demoA,b:demoB}[e.target.value];if(f)f();e.target.value=''};
+$('demo').onchange=e=>{const f=Object.assign({a:demoA,b:demoB},ARTDEMOS)[e.target.value];if(f)f();e.target.value=''};
 /* ===== 歪み: 選択・一覧 ===== */
 function pickPin(q,l){
   if(!l.M||!l.pins.length)return;const c=loc(l,q),ph=pinHit(l,q);let bi=-1,bd=1e9;
@@ -5173,8 +5741,8 @@ function crdTick(){
 }
 $('crdb').onclick=()=>{CRD.on=!CRD.on;$('crdb').classList.toggle('on',CRD.on);$('crdb').setAttribute('aria-pressed',CRD.on?'true':'false');if(!CRD.on)crdHide()};
 
-/* ===== 修整ツール（クローン・ヒーリング・埋める・滑らかに・ぼかす・くっきり・スマッジ・覆い焼き・焼き込み・スポンジ）=====
-   台帳Z-86（クローン）・Z-120（周波数分離クローン）・Z-138（修整・インペイント）・Z-121（ぼかしの派生）・Z-141（質感の移植・シワを弱める）・Z-91④（切り取り跡の穴埋め）。
+/* ===== 修整ツール（クローン・ヒーリング・埋める・滑らかに・ジャギーをなめらかに・ぼかす・くっきり・スマッジ・覆い焼き・焼き込み・スポンジ）=====
+   台帳Z-86（クローン）・Z-180（ジャギーをなめらかに）・Z-120（周波数分離クローン）・Z-138（修整・インペイント）・Z-121（ぼかしの派生）・Z-141（質感の移植・シワを弱める）・Z-91④（切り取り跡の穴埋め）。
    **1つの道具＝「ブラシで画素を書き換える」共通の仕組み**。違いは、1回の打ち（dab）で何を計算するかだけ（表 RTM）。方式を足す時は、RTMに1行と、rtApplyDabの分岐を足す。
    ・書き込み先は画像本体（base）。ペン層（pen）に線が残っていたら、使い始めに画像へ焼き込む（rtFlatten）。ペン線ごと加工でき、アルファの二重がけも起きない。
      取り消しはUndo（pushUndoはpdownで済み）。
@@ -5190,6 +5758,7 @@ const RTM={
   heal  :{n:'ヒーリング（明るさを周りに合わせて写す）',src:1,g:100,pl:'なじませる幅',p:35,sp:.2,tip:'基準点の肌理（細かい模様）だけを写し、明るさと色は写し先の周りに合わせます。継ぎ接ぎの明るさの違いが出にくい'},
   fill  :{n:'周りで埋める（インペイント）',g:100,pl:'粒状感',p:50,sp:.3,tip:'なぞった円の周りの色で、中をなめらかに埋めます。粒状感で、周りの細かい粒を足して不自然な平らさを隠します'},
   smooth:{n:'滑らかにする（輪郭は保つ）',g:70,pl:'滑らかさ',p:50,sp:.25,tip:'輪郭は保ったまま、肌理・ノイズ・しわを弱めます（普通のぼかしと違い、境目はぼやけません）'},
+  jaggy :{n:'ジャギーをなめらかに（輪郭のギザギザ）',g:100,pl:'ギザの長さ',p:25,sp:.25,tip:'輪郭のギザギザ（階段）だけを、輪郭に沿ってなめらかにします。縁はぼやけず、細い線も消えません。広い面・ノイズ・角は変えません。ギザが長い（傾きが浅い）所は「ギザの長さ」を上げます（上げすぎると小さな丸が少し縮みます）'},
   blur  :{n:'ぼかす',g:70,pl:'ぼかす広さ',p:40,sp:.25,tip:'なぞった所をぼかします（縁もぼかすので、輪郭も溶けます）'},
   sharp :{n:'くっきりさせる',g:60,pl:'くっきり量',p:50,sp:.25,tip:'細かい所を強調して、くっきりさせます'},
   smudge:{n:'指でにじませる（スマッジ）',g:60,sp:.12,tip:'指でこするように、色を引きずってにじませます。強いほど遠くまで引きずります'},
@@ -5248,7 +5817,7 @@ function rtBegin(l,a){
   const M=rtM(),bw=l._bw,bh=l._bh;rtFlatten(l);
   const g=l.base.getContext('2d',{willReadFrequently:true}),work=g.getImageData(0,0,bw,bh);
   const st={l,bw,bh,g,work,mode:RT.mode,M,R:rtDia(bw,bh)/2,hd:RT.h/100,gs:RT.gs[RT.mode],ps:RT.ps[RT.mode],sp:M.sp,
-    src:(M.src||RT.mode==='smooth'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
+    src:(M.src||RT.mode==='smooth'||RT.mode==='jaggy'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
     selA:null,tc:{},fm:null,amp:0,nzx:(Math.random()*512)|0,nzy:(Math.random()*512)|0,lx:a.x,ly:a.y,cx:a.x,cy:a.y,acc:0,carry:null,off:null,stamp:false,cos:Math.cos(RT.rot*Math.PI/180),sin:Math.sin(RT.rot*Math.PI/180),fl:RT.flip?-1:1,isc:100/Math.max(5,RT.sc),seed:(Math.random()*1e9)|0};
   if(RT.useSel&&l.hasSm&&l.sm){
     const pm=partMask(l,bw,bh,false,2),d=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,bw,bh).data,sa=new Uint8Array(bw*bh);
@@ -5298,7 +5867,7 @@ function rtApplyDab(st,cx,cy){
   }
   if(md==='heal')return rtHeal(st,cx,cy,f,W);
   if(md==='fill')return rtFillDab(st,cx,cy,f,W);
-  if(md==='smooth'||md==='blur'||md==='sharp')return rtFilter(st,cx,cy,f,W);
+  if(md==='smooth'||md==='jaggy'||md==='blur'||md==='sharp')return rtFilter(st,cx,cy,f,W);
   /* 覆い焼き・焼き込み・スポンジ：画素ごと */
   for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
@@ -5439,15 +6008,16 @@ function rtFilter(st,cx,cy,f,W){
   const md=st.mode,bw=st.bw,R=st.R,p=st.ps,L=Math.max(st.bw,st.bh);
   let tc;
   if(md==='smooth'){const rg=Math.max(2,Math.round(R*(.1+.3*p))),eps=Math.pow(.02+.2*p,2);tc=rtTiles(st,'sm',rg+2,(P,w,h)=>IO.guidedRGBA(P,w,h,rg,eps))}
+  else if(md==='jaggy'){const q=p;tc=rtTiles(st,'jg'+q.toFixed(3),IO.jaggyScale(q).mg,(P,w,h)=>IO.jaggy(P,w,h,q))}
   else tc=rtLPT(st,md==='blur'?Math.max(1,R*(.03+.25*p)):Math.max(1,L/1000*1.2));
   rtCEns(st,tc,f.x,f.y,f.x+f.w,f.y+f.h);
   const D=st.work.data,S=st.src;
   for(let j=0;j<f.h;j++){const y=f.y+j;for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
     const x=f.x+i,pp=(y*bw+x)*4,a0=S[pp+3];
-    if(md!=='blur'&&a0===0)continue;
+    if(md!=='blur'&&md!=='jaggy'&&a0===0)continue;
     rtCAt(tc,x,y);const F0=RTT[0],F1=RTT[1],F2=RTT[2],fa=RTT[3];
-    if(md==='blur'){if(fa<=.5&&a0===0)continue;const k=fa>0?255/fa:0;rtMix(D,pp,rtC(F0*k),rtC(F1*k),rtC(F2*k),rtC(fa),m);continue}
+    if(md==='blur'||md==='jaggy'){if(fa<=.5&&a0===0)continue;const k=fa>0?255/fa:0;rtMix(D,pp,rtC(F0*k),rtC(F1*k),rtC(F2*k),rtC(fa),m);continue}
     if(fa<=2)continue;const k=255/fa;let r=F0*k,g=F1*k,b=F2*k;
     if(md==='sharp'){const amt=p*3,r0=S[pp],g0=S[pp+1],b0=S[pp+2];r=rtC(r0+amt*(r0-r));g=rtC(g0+amt*(g0-g));b=rtC(b0+amt*(b0-b))}
     rtMix(D,pp,rtC(r),rtC(g),rtC(b),a0,m);

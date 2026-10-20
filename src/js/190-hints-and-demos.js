@@ -28,4 +28,4 @@ function demoB(){
   const t=addSpecial('t');t.txt='ぐにゃ〜';t.tcol='#ffe066';setImg(t,txtCv(t.txt,t.tcol));Object.assign(t,{fx:.5,fy:.14,size:1.6});cs(t,'r',[6,1.2,'sin']);
   setSel(AC[0]);note('ぐにゃぐにゃ：「歪み」の螺旋・膨らみ・タッチを重ね、軌道と反復で動かしています。');
 }
-$('demo').onchange=e=>{const f={a:demoA,b:demoB}[e.target.value];if(f)f();e.target.value=''};
+$('demo').onchange=e=>{const f=Object.assign({a:demoA,b:demoB},ARTDEMOS)[e.target.value];if(f)f();e.target.value=''};

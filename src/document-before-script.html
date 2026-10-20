@@ -2,7 +2,7 @@
 </head>
 <body>
 <h1>アクションメーカー</h1>
-<div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option></select></div>
+<div class="row" id="topbar"><button id="undo" aria-label="元に戻す">↩ 戻す</button><button id="redo" aria-label="やり直す">↪</button><select id="demo" aria-label="サンプル"><option value="">🎬 サンプルを見る</option><option value="a">ぱくぱく（マスク）</option><option value="b">ぐにゃぐにゃ（歪み）</option><option value="c">描いた丘をボールが転がる（お絵かき×物理）</option><option value="d">絵がふりこ（周期の理論値つき）</option><option value="e">ばねにぶら下がる絵（周期の理論値つき）</option><option value="f">ドミノ倒し（描いた坂）</option><option value="g">ニュートンのゆりかご</option><option value="h">鉄球で積み木をこわす</option></select></div>
 <div id="wrap"><canvas id="cv"></canvas><div class="crdl" id="crdp" hidden></div><div class="crdl o" id="crdo" hidden></div><canvas class="lupe" id="lupe" width="132" height="132" hidden aria-hidden="true"></canvas>
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
@@ -102,7 +102,7 @@
     <div class="grp alt" id="rtBox" style="display:none"><div class="gh">🩹 修整（写す・直す・ぼかす）</div>
     <div class="row"><span class="lab">方式</span><select id="rtMode" aria-label="修整の方式">
       <optgroup label="写す（基準点が要る）"><option value="clone">クローン（そのまま写す）</option><option value="heal">ヒーリング（明るさを周りに合わせて写す）</option></optgroup>
-      <optgroup label="直す"><option value="fill">周りで埋める（インペイント）</option><option value="smooth">滑らかにする（輪郭は保つ）</option><option value="blur">ぼかす</option><option value="sharp">くっきりさせる</option><option value="smudge">指でにじませる（スマッジ）</option></optgroup>
+      <optgroup label="直す"><option value="fill">周りで埋める（インペイント）</option><option value="smooth">滑らかにする（輪郭は保つ）</option><option value="jaggy">ジャギーをなめらかに（輪郭のギザギザ）</option><option value="blur">ぼかす</option><option value="sharp">くっきりさせる</option><option value="smudge">指でにじませる（スマッジ）</option></optgroup>
       <optgroup label="明るさ・色"><option value="dodge">覆い焼き（明るく）</option><option value="burn">焼き込み（暗く）</option><option value="vivid">スポンジ（鮮やかに）</option><option value="dull">スポンジ（くすませる）</option></optgroup></select></div>
     <div class="row" id="rtStyleRow"><span class="lab">打ち方</span><select id="rtStyle" aria-label="写し方"><option value="brush">ブラシ（なぞって写す）</option><option value="stamp">スタンプ（押して離すと1回写す）</option></select></div>
     <div id="rtSrcBox">
@@ -226,6 +226,10 @@
     <div class="grp" id="scGrp"><div class="gh">📐 物理シナリオ（問題づくり・実験）</div>
     <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="雛形から新しいシナリオを作る">＋雛形</button><button id="scOff" aria-label="シナリオを閉じる（自動で作った絵も消えます）" hidden>閉じる</button></div>
     <div class="note" id="scHelp">サンプルを選ぶと、物体・糸・力の場がキャンバスに現れ、実行すると物理の法則どおりに動きます。条件（質量・角度など）のスライダーで、すぐ作り直せます。自分の絵につなぐと、絵がその物体として動きます。「＋雛形」から自作もできます。</div>
+    <div class="grp alt" id="scArt"><div class="gh">🎨 選んでいる絵を物理に使う</div>
+      <div class="row"><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">🏔 地形にする</button><button id="scArtB" aria-label="選んでいる絵を、物理の物体（絵の輪郭が当たり判定）にする">🏀 物体にする</button><select id="scArtS" aria-label="物体の形"><option value="auto">形：自動</option><option value="circle">形：丸</option><option value="box">形：四角</option><option value="hull">形：輪郭</option><option value="static">固定の障害物</option></select></div>
+      <div class="note">絵を描く（または画像を入れる）→ 選ぶ → 「地形にする」「物体にする」。見えている輪郭がそのまま当たり判定になり、▶で動きます。地形は、上から乗る物が対象です。</div>
+    </div>
     <div id="scBody" hidden>
       <div class="note" id="scTitle" style="font-weight:900;opacity:1"></div>
       <div class="note" id="scProb" style="opacity:.85"></div>
