@@ -1,0 +1,168 @@
+{
+ "id": "orig-arc-then-rough-floor",
+ "title": "なめらかな円弧をすべり下り、粗い水平面で止まる",
+ "tags": [
+  "力学",
+  "エネルギー",
+  "摩擦"
+ ],
+ "source": "オリジナル（円弧＋粗い床の型）",
+ "level": "standard",
+ "problem": "半径{R}mのなめらかな円弧（四分円）の、最下点から中心角{phi}°の位置に小球を置き、静かに放す。円弧の最下点につながる水平面は粗く、動摩擦係数は{mu}である。",
+ "params": {
+  "R": {
+   "v": 0.8,
+   "min": 0.3,
+   "max": 1.5,
+   "step": 0.1,
+   "unit": "m",
+   "label": "球の中心が描く円弧の半径"
+  },
+  "phi": {
+   "v": 60,
+   "min": 20,
+   "max": 85,
+   "step": 5,
+   "unit": "°",
+   "label": "はじめの位置の中心角"
+  },
+  "mu": {
+   "v": 0.4,
+   "min": 0.1,
+   "max": 0.8,
+   "step": 0.05,
+   "label": "水平面の動摩擦係数"
+  },
+  "m": {
+   "v": 0.3,
+   "min": 0.1,
+   "max": 1,
+   "step": 0.1,
+   "unit": "kg",
+   "label": "質量"
+  }
+ },
+ "vars": {
+  "r": "0.04",
+  "hh": "R*(1-cosd(phi))",
+  "vb": "sqrt(2*g*hh)",
+  "dstop": "hh/mu",
+  "tarc": "0"
+ },
+ "view": {
+  "x0": -1.9,
+  "y0": -0.2,
+  "w": 5.0
+ },
+ "bodies": [
+  {
+   "id": "floor",
+   "type": "static",
+   "mu": "mu",
+   "shapes": [
+    {
+     "t": "plane",
+     "normal": [
+      0,
+      1
+     ],
+     "d": 0
+    }
+   ]
+  },
+  {
+   "id": "track",
+   "type": "static",
+   "mu": 0,
+   "shapes": [
+    {
+     "t": "arc",
+     "c": [
+      0,
+      "R+r"
+     ],
+     "r": "R+r",
+     "from": 180,
+     "to": 270,
+     "side": "in"
+    }
+   ]
+  },
+  {
+   "id": "ball",
+   "type": "dynamic",
+   "m": "m",
+   "fixedRot": true,
+   "pos": [
+    "-R*sind(phi)",
+    "R+r-R*cosd(phi)"
+   ],
+   "label": "小球",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": "r"
+    }
+   ]
+  }
+ ],
+ "pairs": [
+  {
+   "a": "ball",
+   "b": "track",
+   "mu": 0
+  },
+  {
+   "a": "ball",
+   "b": "floor",
+   "mu": "mu"
+  }
+ ],
+ "probes": {
+  "vmaxp": {
+   "expr": "ball.speed",
+   "reduce": "max",
+   "unit": "m/s",
+   "label": "最下点での速さ"
+  },
+  "Nb": {
+   "expr": "normal('ball','track')",
+   "when": "ball.x>-0.02&&ball.x<0",
+   "reduce": "max",
+   "unit": "N",
+   "label": "最下点直前の垂直抗力"
+  },
+  "xstop": {
+   "expr": "ball.x",
+   "reduce": "last",
+   "unit": "m",
+   "label": "止まった位置（最下点から）"
+  }
+ },
+ "run": {
+  "t": "sqrt(2*hh/g)*3+vb/(mu*g)+0.5"
+ },
+ "ask": [
+  {
+   "q": "最下点での速さ √(2gR(1−cosφ))",
+   "probe": "vmaxp",
+   "theory": "vb",
+   "unit": "m/s",
+   "tol": 0.003
+  },
+  {
+   "q": "最下点直前の垂直抗力 mg+mv²/R（円弧上）",
+   "probe": "Nb",
+   "theory": "m*g*(3-2*cosd(phi))",
+   "unit": "N",
+   "tol": 0.02
+  },
+  {
+   "q": "止まる位置 d = R(1−cosφ)/μ",
+   "probe": "xstop",
+   "theory": "dstop",
+   "unit": "m",
+   "tol": 0.01
+  }
+ ]
+}

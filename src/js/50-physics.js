@@ -33,6 +33,7 @@ function physUi(){
   $('pOn').classList.toggle('on',physOn);$('pFloor').classList.toggle('on',physFloor);$('pWall').classList.toggle('on',physWall);$('pCol').classList.toggle('on',physCollide);
   $('pG').value=physG;$('pGd').value=physGDir;$('pT').value=physTimeScale;$('pTv').textContent='×'+physTimeScale.toFixed(2);
   if(p){$('pSelOn').classList.toggle('on',p.on);$('pFix').classList.toggle('on',p.fixed);$('pM').value=p.m;$('pE').value=p.e;$('pR').value=p.rs===undefined?.8:p.rs}
+  scnUi();
 }
 $('pOn').onclick=()=>{physOn=!physOn;physUi()};
 $('pFloor').onclick=()=>{physFloor=!physFloor;physUi()};
@@ -55,7 +56,7 @@ $('pStop').onclick=()=>{const p=ensurePhys(sel);p.vx=0;p.vy=0};
 function loop(ts){
   const raw=ts-last,dt=Math.min(raw/1000,.05);last=ts;perfTick(warpMs);if(++fc%12===0)syncNums();
   if(!paused)for(const l of AC){for(const[k]of K){const c=l.ch[k];c.ph=(c.ph+dt*gs*c.hz)%1}for(const p of l.pins)p.ph=(p.ph+dt*gs*p.hz)%1}
-  physStep(dt*physTimeScale);wbTick(dt);paintFrame();crdTick();lupeTick();adjPump();
+  if(SCN.on)scnTick(dt);else physStep(dt*physTimeScale);wbTick(dt);paintFrame();crdTick();lupeTick();adjPump();
   const zz=Z.s!==1||Z.x!==0||Z.y!==0;if(zz!==zshown){zshown=zz;$('zr').disabled=!zz}
   requestAnimationFrame(loop);
 }

@@ -1,0 +1,172 @@
+{
+ "id": "orig-kepler-orbit",
+ "title": "万有引力による楕円軌道",
+ "tags": [
+  "力学",
+  "万有引力",
+  "天体"
+ ],
+ "source": "オリジナル（中心天体のまわりの楕円運動の型。単位は GM=4π² の天文単位系）",
+ "level": "hard",
+ "problem": "中心の天体（質量M）から距離{rp}の近日点で、速さ{vp}の向きを動径に垂直にして惑星を打ち出す。単位は、長さ・時間をそれぞれ天文単位・年とし、GM=4π²。",
+ "params": {
+  "rp": {
+   "v": 1,
+   "min": 0.5,
+   "max": 1.5,
+   "step": 0.1,
+   "unit": "AU",
+   "label": "近日点距離"
+  },
+  "ecc": {
+   "v": 0.5,
+   "min": 0,
+   "max": 0.8,
+   "step": 0.05,
+   "label": "離心率"
+  }
+ },
+ "vars": {
+  "GM": "4*pi^2",
+  "aa": "rp/(1-ecc)",
+  "vp": "sqrt(GM*(1+ecc)/rp)",
+  "Tper": "2*pi*sqrt(aa^3/GM)",
+  "rap": "aa*(1+ecc)",
+  "Lz0": "rp*vp",
+  "va": "Lz0/rap",
+  "E0": "-GM/(2*aa)"
+ },
+ "world": {
+  "g": 0
+ },
+ "view": {
+  "x0": -3.6,
+  "y0": -1.9,
+  "w": 6.2
+ },
+ "bodies": [
+  {
+   "id": "sun",
+   "type": "static",
+   "m": "GM",
+   "pos": [
+    0,
+    0
+   ],
+   "label": "中心天体",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": 0.08
+    }
+   ]
+  },
+  {
+   "id": "pl",
+   "type": "dynamic",
+   "m": 1,
+   "pos": [
+    "rp",
+    0
+   ],
+   "vel": [
+    0,
+    "vp"
+   ],
+   "label": "惑星",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": 0.04
+    }
+   ]
+  }
+ ],
+ "fields": [
+  {
+   "type": "gravity",
+   "G": 1
+  }
+ ],
+ "probes": {
+  "rmax": {
+   "expr": "dist('sun','pl')",
+   "reduce": "max",
+   "unit": "AU",
+   "label": "遠日点距離"
+  },
+  "rmin": {
+   "expr": "dist('sun','pl')",
+   "reduce": "min",
+   "unit": "AU",
+   "label": "近日点距離"
+  },
+  "T": {
+   "expr": "dist('sun','pl')",
+   "reduce": "period",
+   "unit": "年",
+   "label": "周期"
+  },
+  "va": {
+   "expr": "pl.speed",
+   "reduce": "min",
+   "unit": "AU/年",
+   "label": "遠日点での速さ"
+  },
+  "Lz": {
+   "expr": "Lz",
+   "reduce": "last",
+   "label": "角運動量"
+  },
+  "E": {
+   "expr": "pl.ke+PE",
+   "reduce": "last",
+   "label": "エネルギー"
+  }
+ },
+ "run": {
+  "t": "3*Tper"
+ },
+ "ask": [
+  {
+   "q": "遠日点距離 a(1+e)",
+   "probe": "rmax",
+   "theory": "rap",
+   "unit": "AU",
+   "tol": 0.003
+  },
+  {
+   "q": "近日点距離 a(1−e)（はじめの位置）",
+   "probe": "rmin",
+   "theory": "rp",
+   "unit": "AU",
+   "tol": 0.003
+  },
+  {
+   "q": "周期 2π√(a³/GM)（ケプラーの第3法則 T²∝a³）",
+   "probe": "T",
+   "theory": "Tper",
+   "unit": "年",
+   "tol": 0.003
+  },
+  {
+   "q": "遠日点の速さ（面積速度一定 L/rmax）",
+   "probe": "va",
+   "theory": "va",
+   "unit": "AU/年",
+   "tol": 0.004
+  }
+ ],
+ "checks": [
+  {
+   "name": "角運動量の保存",
+   "probe": "Lz",
+   "conserved": 0.003
+  },
+  {
+   "name": "エネルギーの保存",
+   "probe": "E",
+   "conserved": 0.005
+  }
+ ]
+}

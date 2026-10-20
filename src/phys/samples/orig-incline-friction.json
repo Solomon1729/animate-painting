@@ -1,0 +1,132 @@
+{
+ "id": "orig-incline-friction",
+ "title": "粗い斜面をすべり下りる物体",
+ "tags": [
+  "力学",
+  "斜面",
+  "摩擦"
+ ],
+ "source": "オリジナル（斜面＋動摩擦型）",
+ "level": "basic",
+ "problem": "傾き{theta}°の粗い斜面（動摩擦係数{mu}）の上端から、質量{m}kgの物体を静かにすべらせる。斜面の長さは{L}m。",
+ "params": {
+  "theta": {
+   "v": 30,
+   "min": 5,
+   "max": 60,
+   "step": 1,
+   "unit": "°",
+   "label": "斜面の角度"
+  },
+  "mu": {
+   "v": 0.25,
+   "min": 0,
+   "max": 0.8,
+   "step": 0.05,
+   "label": "動摩擦係数"
+  },
+  "m": {
+   "v": 2,
+   "min": 0.5,
+   "max": 5,
+   "step": 0.5,
+   "unit": "kg",
+   "label": "質量"
+  }
+ },
+ "vars": {
+  "L": "2.0",
+  "a": "g*(sind(theta)-mu*cosd(theta))"
+ },
+ "world": {
+  "g": 9.8
+ },
+ "view": {
+  "x0": -0.5,
+  "y0": -0.3,
+  "w": 4.5
+ },
+ "bodies": [
+  {
+   "id": "ramp",
+   "type": "static",
+   "mu": "mu",
+   "shapes": [
+    {
+     "t": "plane",
+     "through": [
+      0,
+      "L*sind(theta)"
+     ],
+     "slope": "-theta"
+    }
+   ]
+  },
+  {
+   "id": "blk",
+   "type": "dynamic",
+   "m": "m",
+   "mu": "mu",
+   "pos": [
+    0.0,
+    "L*sind(theta)"
+   ],
+   "angle": "-theta",
+   "shapes": [
+    {
+     "t": "box",
+     "w": 0.3,
+     "h": 0.2,
+     "oy": 0.1
+    }
+   ]
+  }
+ ],
+ "probes": {
+  "t_down": {
+   "expr": "t",
+   "when": "blk.speed>=2.0",
+   "reduce": "first",
+   "unit": "s",
+   "label": "速さが2.0m/sに達する時刻"
+  },
+  "v_end": {
+   "expr": "blk.speed",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "終端速度"
+  },
+  "N": {
+   "expr": "blk.N",
+   "reduce": "mean",
+   "unit": "N",
+   "label": "垂直抗力"
+  }
+ },
+ "run": {
+  "t": 1.0
+ },
+ "ask": [
+  {
+   "q": "速さが2.0m/sに達する時刻 2.0/a",
+   "probe": "t_down",
+   "theory": "2.0/a",
+   "unit": "s",
+   "tol": 0.02
+  },
+  {
+   "q": "加速度から求めた1秒後の速さ",
+   "probe": "v_end",
+   "theory": "a*1.0",
+   "unit": "m/s",
+   "tol": 0.01
+  },
+  {
+   "q": "垂直抗力",
+   "probe": "N",
+   "theory": "m*g*cosd(theta)",
+   "unit": "N",
+   "tol": 0.01
+  }
+ ]
+}

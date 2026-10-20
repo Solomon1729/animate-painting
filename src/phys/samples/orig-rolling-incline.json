@@ -1,0 +1,150 @@
+{
+ "id": "orig-rolling-incline",
+ "title": "斜面をすべらずに転がる物体",
+ "tags": [
+  "力学",
+  "剛体",
+  "転がり"
+ ],
+ "source": "オリジナル（斜面の転がりの型。慣性モーメントを I=k·m·r² で指定）",
+ "level": "standard",
+ "problem": "傾き{th}°の粗い斜面に、半径{r}m・質量{m}kgの物体（慣性モーメント {kI}·m·r²）を静かに置くと、すべらずに転がり始めた。",
+ "params": {
+  "th": {
+   "v": 30,
+   "min": 10,
+   "max": 50,
+   "step": 5,
+   "unit": "°",
+   "label": "斜面の角度"
+  },
+  "kI": {
+   "v": 0.5,
+   "min": 0.4,
+   "max": 1,
+   "step": 0.1,
+   "label": "慣性モーメントの係数 I/(m r²)（円板0.5・輪1・球0.4）"
+  },
+  "m": {
+   "v": 1,
+   "min": 0.5,
+   "max": 3,
+   "step": 0.5,
+   "unit": "kg",
+   "label": "質量"
+  },
+  "r": {
+   "v": 0.1,
+   "min": 0.05,
+   "max": 0.2,
+   "step": 0.05,
+   "unit": "m",
+   "label": "半径"
+  }
+ },
+ "vars": {
+  "H": "2.0",
+  "a": "g*sind(th)/(1+kI)",
+  "ffr": "m*g*sind(th)*kI/(1+kI)"
+ },
+ "view": {
+  "x0": -0.5,
+  "y0": -0.3,
+  "w": 6.5
+ },
+ "bodies": [
+  {
+   "id": "ramp",
+   "type": "static",
+   "mu": 1.5,
+   "shapes": [
+    {
+     "t": "plane",
+     "through": [
+      0,
+      "H"
+     ],
+     "slope": "-th"
+    }
+   ]
+  },
+  {
+   "id": "disc",
+   "type": "dynamic",
+   "m": "m",
+   "mu": 1.5,
+   "I": "kI*m*r*r",
+   "pos": [
+    "r*sind(th)",
+    "H+r*cosd(th)"
+   ],
+   "label": "物体",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": "r"
+    }
+   ]
+  }
+ ],
+ "probes": {
+  "v1": {
+   "expr": "disc.speed",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "終了時の速さ"
+  },
+  "fr": {
+   "expr": "disc.fr",
+   "when": "t>0.1",
+   "reduce": "mean",
+   "unit": "N",
+   "label": "静止摩擦力"
+  },
+  "slip": {
+   "expr": "abs(disc.speed-r*abs(disc.omega))",
+   "reduce": "max",
+   "unit": "m/s",
+   "label": "すべり（接点の速さ）の最大"
+  },
+  "E": {
+   "expr": "E",
+   "reduce": "last",
+   "unit": "J",
+   "label": "力学的エネルギー"
+  }
+ },
+ "run": {
+  "t": 1.0
+ },
+ "ask": [
+  {
+   "q": "速さ a·t, a=g sinθ/(1+k)",
+   "probe": "v1",
+   "theory": "a*t",
+   "unit": "m/s",
+   "tol": 0.01
+  },
+  {
+   "q": "静止摩擦力 m g sinθ·k/(1+k)",
+   "probe": "fr",
+   "theory": "ffr",
+   "unit": "N",
+   "tol": 0.015
+  },
+  {
+   "q": "すべりがない（接点の速さ≒0）",
+   "probe": "slip",
+   "theory": "0",
+   "unit": "m/s",
+   "abs": 0.02
+  }
+ ],
+ "checks": [
+  {
+   "name": "力学的エネルギー保存",
+   "probe": "E",
+   "conserved": 0.005
+  }
+ ]
+}

@@ -13,13 +13,21 @@
 | `src/js/30-actors-and-drawing.js` | 画像設定、特殊アクター、配置・描画 `fit`/`img`/`draw`、白紙の大きさ`BLS`/`blankDims`/`addBlank`・範囲表示`drawBlankHint`（台帳Z-117・Z-118・Z-126）、削除時の参照外し`unlinkRefs`、統合の描画に合わせた`fit`/`img`/`draw`の分岐（`MGR`・`drawOnly`。台帳Z-157） |
 | `src/js/40-masks.js` | マスク描画 `maskedImg`/`stroke`/`paintFrame`（統合の描画中は背景・補助表示を描かない。台帳Z-157） |
 | `src/js/50-physics.js` | 物理状態・計算 `ensurePhys`/`physStep`/`physUi`、`loop` |
+| `src/js/51-phys-engine.js` | **物理エンジン`PHE`**（台帳Z-167・Z-183。DOM・`AC`に触れない純JS）：剛体（円・箱・多角形・平面・円弧レール）・回転・静止／動摩擦・反発・拘束（紐・棒・ばね・ピン・滑車＝多点の紐）・力場（一様・力・電場・磁場・中心力・抵抗・クーロン・万有引力）・イベント時刻（衝突の直前・領域の境界）・**衝突の連鎖`impactWaves`**。表（レジストリ）`SHP`・`FLD`・`JNT`・設定`DEF` |
+| `src/js/52-phys-scenario.js` | **シナリオ層`PHS`**（台帳Z-168）：式の評価器（`eval`なし）`FN`・検証`validate`（日本語のエラー・`KEYS`表）・変換`build`・実行セッション`session`/`run`・測定の表`BP`/`JP`/`WP`・集計`RED`・答え合わせ`ask`・`checks`・`events`・**ルール`rules`**（`RULE_OPS`。台帳Z-178）・掃引`sweep`・あてはめ・雛形`template`。DOMなし |
+| `src/js/53-phys-run.js` | **アプリへの接続**（台帳Z-172）：`SCN`（永続：シナリオ・条件・表示・つなぎ）・`RUN`（実行状態）・固定刻みの時計`TIME.DT=1/120`・`scnEdit`（検証して失敗なら元へ）・`scnSetSource`・保存／Undo・物理タブUI・絵（アクター）とのつなぎ・ルールの知らせ`scnLogs` |
+| `src/js/54-phys-render.js` | **物理の描画`PHR`**（台帳Z-171）：拘束・軌跡・ストロボ・ベクトル（v・a・mg・N・f・T・F弾・F場・合力）・磁場・電場・グラフ |
+| `src/js/55-phys-samples.js` | **生成物**（`src/phys/samples/*.json`から`node tools/build.js`が作る。直接編集しない）：`PHYS_SAMPLES` |
+| `src/js/56-phys-art.js` | **絵→物理**（台帳Z-177）：描いた線→凸の多角形の地形`artTerrain`、絵→円・箱・多角形の物体`artBody`、`ART.last`（直近の寸法） |
+| `src/js/57-phys-demos.js` | **お絵かき×物理のデモ**`ARTDEMOS`（c〜h：描いた丘・絵のふりこ・ばね・ドミノ・ニュートンのゆりかご・積み木くずし） |
+| `src/js/58-phys-api.js` | **窓口`PHAPI`**（台帳Z-178。DOMなし）：型つき部品表`catalog()`・足し忘れ検査`coverage()`・命令`OPS`・純粋な`apply`/`applyAll`・アプリの`exec`・`listen`。ビジュアルプログラミングの入口 |
 | `src/js/60-input-state.js` | ポインター座標・入力状態の共通ヘルパー |
 | `src/js/70-layers.js` | レイヤー `LAYERS`、可視・ロック判定、ツリーUI `layUi` |
 | `src/js/80-pointer-events.js` | ヒット判定、ドラッグ、ズーム、Canvasポインターイベント |
 | `src/js/90-ui.js` | 動きUI、選択 `setSel`、チップ、フレーム、配置UIのイベント |
 | `src/js/100-background-and-export.js` | 背景 `BG`、録画・通常書き出し |
 | `src/js/110-pen-and-text.js` | ペン `base`/`pen`、画面→ペン層の位置対応`penXY`（台帳Z-124）、文字、調整・質感UIイベント |
-| `src/js/112-imgops.js` | 画素処理の部品`IO`（Canvas・状態に触れない純粋関数）：箱ぼかし・ガウス`IO.box`/`IO.gauss`、ガイデッドフィルタ`IO.guided`、押し引き法の穴埋め`IO.pushPull`・その核`IO.pullPush`（小さい絵で広げて拡大する穴埋め用）、高速ガイデッドフィルタ（4チャンネル）`IO.guidedRGBA`（台帳Z-156）、粒状ノイズ`IO.noise`、自動選択の連結成長`IO.flood`（Lab・メドイド色）、輪郭の強さ`IO.edge`、最短経路`IO.dijkstra`・再開できる最短経路`IO.liveWire`（台帳Z-151）、外周の頂点列化`IO.trace`・間引き`IO.dp`（台帳Z-86・Z-87・Z-138・Z-142・Z-145） |
+| `src/js/112-imgops.js` | 画素処理の部品`IO`（Canvas・状態に触れない純粋関数。**ジャギー修正`IO.jaggy`/`IO.jaggyScale`＝台帳Z-180**）：箱ぼかし・ガウス`IO.box`/`IO.gauss`、ガイデッドフィルタ`IO.guided`、押し引き法の穴埋め`IO.pushPull`・その核`IO.pullPush`（小さい絵で広げて拡大する穴埋め用）、高速ガイデッドフィルタ（4チャンネル）`IO.guidedRGBA`（台帳Z-156）、粒状ノイズ`IO.noise`、自動選択の連結成長`IO.flood`（Lab・メドイド色）、輪郭の強さ`IO.edge`、最短経路`IO.dijkstra`・再開できる最短経路`IO.liveWire`（台帳Z-151）、外周の頂点列化`IO.trace`・間引き`IO.dp`（台帳Z-86・Z-87・Z-138・Z-142・Z-145） |
 | `src/js/115-pen-assist.js` | ペンの補正（台帳Z-108）：点列の当てはめ（直線`paFitLine`・円弧`paFitArc`・始点終点固定のベジェ`paFitBez`、形の選択`paShape`）、なぞり中の仮表示`paPreview`（ペン層の解像度で描く`paRasterPreview`）、離した時に一度だけ描く`paCommit`。始点は固定。`PA`（強さ・曲線の種類）、`paOn()`（0なら従来経路） |
 | `src/js/120-warp.js` | 歪みの処理・焼き込み、歪み用定数`WBC`、ブラシのメッシュ`wbDab`/`meshWarp`/`warpInc`、ピン`pinPass`、ブラシ操作`wbDown`/`wbMove`/`drawBrushRing` |
 | `src/js/130-gif.js` | GIFエンコーダ、GIF/テキスト/ぼかしイベント |
@@ -37,7 +45,7 @@
 | `src/js/226-merge.js` | 統合（レイヤー内／下のレイヤーと／表示中を全部。台帳Z-157）：親子まとめ`mgFamily`、動きの無い姿で対象だけを透明な紙へ描く`mgRender`（`drawOnly`・`MGR`・一時の`Z`/`hk`/`adjHQ`）、置き換え`mgMerge`、ボタン`#lymg`/`#lymd`/`#lyma` |
 | `src/js/230-color-picker.js` | スポイト |
 | `src/js/235-canvas-coords.js` | キャンバスのpx`setCanvasSize`/`canvasUi`/`fitCanvasToImage`（`DOC`）、「＋画像」の段`addRowUi`、オブジェクト0個の案内`noObjUi`、座標の表示`CRD`/`crdPointer`/`crdTick`（台帳Z-96〜Z-98） |
-| `src/js/236-retouch.js` | 修整ツール（台帳Z-86・Z-120・Z-121・Z-138・Z-141）：方式の表`RTM`、状態`RT`、1回の打ち`rtApplyDab`（ヒーリング`rtHeal`・フィルタ系`rtFilter`・埋める`rtFillDab`・スマッジ`rtSmudge`）、入口`rtDown`/`rtAt`/`rtEnd`、仮表示`rtPv`/`rtOverlay`、画像への焼き込み`rtFlatten`、切り取り跡の穴埋め`retouchFillHole`、窓`rtUi`。**高速化（台帳Z-156）**：1回のなぞりの間のタイルのキャッシュ`rtTiles`/`rtTEnsure`/`rtTAt`・縮小絵のキャッシュ`rtLowCache`/`rtLowEnsure`・埋めるの粒状ノイズ`RTN`/`rtNoiseTile`・振幅の測定`rtGrainAmp` |
+| `src/js/236-retouch.js` | 修整ツール（台帳Z-86・Z-120・Z-121・Z-138・Z-141・**Z-180ジャギーをなめらかに**`jaggy`）：方式の表`RTM`、状態`RT`、1回の打ち`rtApplyDab`（ヒーリング`rtHeal`・フィルタ系`rtFilter`・埋める`rtFillDab`・スマッジ`rtSmudge`）、入口`rtDown`/`rtAt`/`rtEnd`、仮表示`rtPv`/`rtOverlay`、画像への焼き込み`rtFlatten`、切り取り跡の穴埋め`retouchFillHole`、窓`rtUi`。**高速化（台帳Z-156）**：1回のなぞりの間のタイルのキャッシュ`rtTiles`/`rtTEnsure`/`rtTAt`・縮小絵のキャッシュ`rtLowCache`/`rtLowEnsure`・埋めるの粒状ノイズ`RTN`/`rtNoiseTile`・振幅の測定`rtGrainAmp` |
 | `src/js/237-loupe.js` | 手元の拡大窓（台帳Z-109）：`LUP`（状態・設定）、対象の道具の表`LUM`（マグネット選択などは1行足すだけ）、`lupeMode`/`lupeZoom`（倍率は道具の太さに合わせる自動／固定）、`lupeTick`（loopから毎フレーム）、`lupePin`（ピン微調整の連携） |
 | `src/js/238-size-hint.js` | 太さの目安表示（台帳Z-146）：バーを触っている間・直後にビューワー中央へ実寸の輪。表`SZH`、`sizeHintDraw`（`paintFrame`から） |
 | `src/js/240-tooling-and-init.js` | ツール・タブ、メニュー、枠3段`setFrame`、操作窓`UIS`/`tpClamp`/`tpApply`（上下2つの持ち手・四辺へ掃ける・透過オン/オフ）、画像追加`pickImages`/`addImages`、初期化、ロック用ラッパー |
@@ -63,5 +71,11 @@
 | `tools/check_foundation.py` | `python3 tools/check_foundation.py <HTMLの絶対パス>`。五基盤の検査（今はP0の6群50項目）：見本（`tools/fixtures/v1-sample.json`。旧ビルドが書いたv1）の読み書き／`v`なし・壊れたファイル／未知のキー（トップレベル・LAY・DOC・アクター）の保持／新しい版（v99）／移行の枠（`PROJ.MIG`）／書き出しの形。全項目`OK`が正常（台帳Z-166）。P1以降の基盤は、ここに群を足す。ヘッドレスのみ・実機未確認 |
 | `tools/check_assist.py` | `python3 tools/check_assist.py <HTMLの絶対パス>`。ペン補正（直線・円・曲線・消しゴム・Undo・取り残し・歪み・ロック）／拡大窓（既定オフ・対象の道具・隅へ逃げる・中身の一致・倍率の自動/固定・道具の表への追加）／ピンの微調整（刻み・長押し・Undo・動き量・ロック・拡大窓連携）の4群70項目（台帳Z-108〜Z-110・Z-124。始点固定・仮表示の一致・非正方形の位置を含む）。ヘッドレスのみ・実機未確認 |
 | `tools/check_ui.py` | `python3 tools/check_ui.py <HTMLの絶対パス>`。画面まわり8群133項目（持ち手の説明が消える／操作窓の大きさ・重ならない／✋・ピンチの自己修復／オブジェクト0個／キャンバスのpx・画像に合わせる・書き出しpx／座標の表示／並べ替えの点線／バーの縦距離スクラブ・吸着）。実際のタッチ（CDP）とマウス。全項目`OK`で`OK 133  NG 0`（台帳Z-95〜Z-99・Z-102・Z-106・Z-107・Z-88・Z-114） |
+| `tools/phys_engine_test.js` | `node tools/phys_engine_test.js`。物理エンジン`PHE`を解析解と比べる（62項目：自由落下・斜面・振り子・衝突・円弧・ばね・磁場・連鎖衝突…）。台帳Z-167・Z-183 |
+| `tools/phys_check.js` | `node tools/phys_check.js 見本.json`（検証→実行→答え合わせの表）／`--all`（全サンプル13件）／`--sweep`／`--csv`／`--param`／`--template`。台帳Z-169 |
+| `tools/phys_api_test.js` | `node tools/phys_api_test.js`。窓口`PHAPI`と部品表（70項目）：エンジンの表との一致・例が検証に通る・命令で組み立てて解析解と比べる・ルールの決定性・手引き`PHYSICS_SAMPLES.md`に全項目が載っている。台帳Z-178 |
+| `tools/check_physics.py` | `python3 tools/check_physics.py <HTMLの絶対パス>`。物理のアプリ内検査（S1〜S13・63項目）：サンプル全件・固定刻み・条件・絵とのつなぎ・保存・Undo・画面・JSON貼り付け・絵→物理・デモc〜h・窓口。ヘッドレスのみ（実機は未確認）。台帳Z-172 |
+| `tools/jaggy_test.js` | `node tools/jaggy_test.js`。ジャギー修正の核`IO.jaggy`（14項目）：ギザギザの合成画像を正解（16倍の超サンプリング）と比べる・平らな所／ノイズ／細い線／角・アルファの縁・色の縁。台帳Z-180 |
+| `tools/check_jaggy.py` | `python3 tools/check_jaggy.py <HTMLの絶対パス>`。修整「ジャギーをなめらかに」の画面内検査（19項目）：実際のマウスで円の縁をなぞる・なぞらない所は不変・Undo・タイルの継ぎ目・大きい絵の速さ。台帳Z-180 |
 | `tools/ledger.py` | `python3 tools/ledger.py`＝台帳（`roadmap.md`§Z）を状態ごとの表に振り分け、全文を`archive/ledger-detail.md`に無損失で保管する（台帳Z-101）。`--check`で整理済みか確認。 |
 | `tools/bench.py` | `python3 tools/bench.py <HTMLの絶対パス> [ラベル]`。色調整・質感・ペン・歪みの1操作の時間（6MP） |

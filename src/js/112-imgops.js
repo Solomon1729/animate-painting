@@ -5,6 +5,7 @@
    ・IO.box／IO.gauss ：ぼかし（端は延長）。複数チャンネル（ch）の並びは画素ごとに交互（RGBRGB…）
    ・IO.guided        ：ガイデッドフィルタ（He 2010）。輪郭を保つぼかし（輪郭吸着は、囲みが輪郭から離れていると働かないので、223-selection.jsの`selSnap`は色の局所平均による分類にした）
    ・IO.guidedRGBA    ：同じフィルタを、アルファ掛け済みのRGBA（4チャンネル）に一度に掛ける速い版（滑らかにする修整ブラシ用。係数を粗い格子で求めて細かく戻す＝He & Sun 2015。台帳Z-156）
+   ・IO.jaggy         ：ジャギー（輪郭のギザギザ）を、輪郭に沿った平均でなめらかにする（修整ブラシ「ジャギーをなめらかに」用。台帳Z-180）
    ・IO.pushPull／IO.pullPush ：穴の周りの色で、穴をなめらかに埋める（ピラミッドで粗い→細かいへ。Gortlerのpush-pull）。pullPushは色(3ch)と「分かっている度合い(0〜1)」の浮動小数版（修整の「埋める」が粗い解像度で解くのに使う）
    ・IO.noise         ：粒状ノイズ（σ=1に正規化。埋めた所の質感づけ）
    ・IO.flood         ：自動選択（Lab色距離の連結成長）
@@ -265,5 +266,36 @@ IO.dp=function(pts,eps){
   for(let i=1;i<tail.length-1;i++)if(kt[i])keep[b+i]=1;
   const out=[];for(let i=0;i<n;i++)if(keep[i])out.push(pts[i]);return out;
 };
+/* ジャギー（輪郭のギザギザ）をなめらかにする（修整ブラシ「ジャギーをなめらかに」用。台帳Z-180）。P＝アルファ掛け済みのRGBA（Float32Array w*h*4。色は0〜255×α、aは0〜255）。戻り値＝同じ並びのRGBA。
+   考え方：輪郭の向き（接線）を求め、**接線の方向にだけ**画素を平均する（ガウス重み）。ギザギザの階段は、輪郭に沿って平均すると「面積で数えた縁の濃さ」になる＝アンチエイリアスと同じ結果。
+   輪郭に垂直な方向には混ぜないので、縁はぼやけず、1画素幅の細い線も（線に沿って平均するので）消えない。色が平らな所・輪郭でない所（向きが定まらない角・ノイズ）は変えない。
+   ・向き：4チャンネル（色の3つ＋アルファ）をσ_dでぼかした勾配の構造テンソルを、さらにρでならす。階段の凸凹より広くならすので、傾きの浅い輪郭でも本来の向きが取れる。
+   ・効く量：輪郭の強さ（コントラスト≒10〜40で0→1）×向きの揃い（コヒーレンス0.55〜0.85で0→1）。角や線の端（揃いが低い所）はそのまま。
+   ・p（0〜1）＝ギザの長さに合わせる幅。接線方向の平均幅σ_t＝0.8＋2.4p画素。大きいほど浅い傾きのギザも直るが、曲率の大きい所（小さい円）が少し縮む（縮み≒σ_t²/2R）。
+   ・限界：ちょうど45°・水平垂直に近い規則的な階段は、元の絵に縁の位置の情報（画素より細かい位置）が無いので、これ以上は直せない（ぼかしの道具を使う）。 */
+IO.jaggyScale=function(p){const st=.8+2.4*Math.min(1,Math.max(0,p)),sd=st*.8+.5;return{st,sd,rho:sd,mg:Math.ceil(2.5*sd+2.5*sd+2.5*st)+2}};
+IO.jaggy=function(P,w,h,p){
+  const sc=IO.jaggyScale(p),st=sc.st,sd=sc.sd,n=w*h,WC=[.299,.587,.114,.6];
+  const B=IO.gauss(P,w,h,4,sd),J=new Float32Array(n*3),X1=w-1,Y1=h-1;
+  for(let y=0;y<h;y++){const ya=(y>0?y-1:0)*w,yb=(y<Y1?y+1:Y1)*w,y0=y*w;for(let x=0;x<w;x++){
+    const xa=x>0?x-1:0,xb=x<X1?x+1:X1;let jxx=0,jxy=0,jyy=0;
+    for(let c=0;c<4;c++){const gx=(B[(y0+xb)*4+c]-B[(y0+xa)*4+c])*.5,gy=(B[(yb+x)*4+c]-B[(ya+x)*4+c])*.5,wc=WC[c];jxx+=wc*gx*gx;jxy+=wc*gx*gy;jyy+=wc*gy*gy}
+    const i=(y0+x)*3;J[i]=jxx;J[i+1]=jxy;J[i+2]=jyy}}
+  const T=IO.gauss(J,w,h,3,sc.rho),out=new Float32Array(P),K=Math.ceil(2.5*st/.5),wk=new Float32Array(2*K+1);let ws=0;
+  for(let k=-K;k<=K;k++){const v=Math.exp(-(k*.5)*(k*.5)/(2*st*st));wk[k+K]=v;ws+=v}for(let k=0;k<wk.length;k++)wk[k]/=ws;
+  const gate=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t)},sdv=sd*Math.sqrt(2*Math.PI);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*3,jxx=T[i],jxy=T[i+1],jyy=T[i+2],tr=jxx+jyy;if(tr<=1e-9)continue;
+    const c2=jxx-jyy,s2=2*jxy,r=Math.hypot(c2,s2),m=gate(10,40,Math.sqrt(tr)*sdv);if(m<=0)continue;
+    const mm=m*gate(.55,.85,r/tr);if(mm<=0)continue;
+    const rr=r||1,tx=-(s2<0?-1:1)*Math.sqrt((1-c2/rr)/2),ty=Math.sqrt((1+c2/rr)/2);   /* 接線（勾配に垂直） */
+    let a0=0,a1=0,a2=0,a3=0;
+    for(let k=-K;k<=K;k++){
+      const u=Math.min(X1,Math.max(0,x+.5*k*tx)),v=Math.min(Y1,Math.max(0,y+.5*k*ty)),x0=Math.floor(u),y0=Math.floor(v),x1=x0<X1?x0+1:X1,y1=y0<Y1?y0+1:Y1,fx=u-x0,fy=v-y0,q=wk[k+K],
+        w00=(1-fx)*(1-fy)*q,w10=fx*(1-fy)*q,w01=(1-fx)*fy*q,w11=fx*fy*q,p00=(y0*w+x0)*4,p10=(y0*w+x1)*4,p01=(y1*w+x0)*4,p11=(y1*w+x1)*4;
+      a0+=P[p00]*w00+P[p10]*w10+P[p01]*w01+P[p11]*w11;a1+=P[p00+1]*w00+P[p10+1]*w10+P[p01+1]*w01+P[p11+1]*w11;
+      a2+=P[p00+2]*w00+P[p10+2]*w10+P[p01+2]*w01+P[p11+2]*w11;a3+=P[p00+3]*w00+P[p10+3]*w10+P[p01+3]*w01+P[p11+3]*w11}
+    const q=(y*w+x)*4;out[q]=P[q]+(a0-P[q])*mm;out[q+1]=P[q+1]+(a1-P[q+1])*mm;out[q+2]=P[q+2]+(a2-P[q+2])*mm;out[q+3]=P[q+3]+(a3-P[q+3])*mm}
+  return out};
 /* 多角形の面積（符号つき。画面座標で時計回り＝正） */
 IO.area=function(p){let s=0;for(let i=0,n=p.length;i<n;i++){const a=p[i],b=p[(i+1)%n];s+=a[0]*b[1]-b[0]*a[1]}return s/2};

@@ -26,12 +26,14 @@ function paintFrame(){
   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);
   if(!drawOnly)drawBG();const _wt0=performance.now();wAct=false;warpMs=0;for(const l of AC){if(l.layerId==null||!LAYERS.some(y=>y.id===l.layerId))l.layerId=curLid;if(drawOnly&&!drawOnly.has(l))continue;const e=l.wd||l.dirty||(hasWarp(l)&&!l.wo)||!!l._mr,t0=performance.now();warpFrame(l);if(!e)warpMs+=performance.now()-t0}
   ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
-  const P=(l,f)=>draw(l,l.fx*W,l.fy*H,mot(l),f);
+  const P=(l,f)=>{const m=mot(l),q=scnPose(l,m);q?draw(l,q.x,q.y,m,f):draw(l,l.fx*W,l.fy*H,m,f)};   /* 物理シナリオにつないだ絵は、物体の姿勢で描く（配置は書き換えない。53-phys-run.js） */
   const objD=c=>o=>{ctx.save();ctx.translate(o.ox*S0*c.size*c.face,o.oy*S0*c.size);draw(o,0,0,mot(o));ctx.restore()};
   const roots=AC.filter(r=>!(r.att&&byId(r.to))).sort((a,b)=>layIdx(a)-layIdx(b));
+  scnUnder();
   roots.forEach(r=>{
     const ks=AC.filter(o=>o.att&&o.to===r.id),d=objD(r);
     P(r,ks.length?self=>{ks.filter(o=>!o.front).forEach(d);self();ks.filter(o=>o.front).forEach(d)}:undefined)});
+  scnOver();
   if(drawOnly)return;   /* 統合の描画（226-merge.js）：背景・補助表示は描かない */
   drawBrushRing();paPreview();rtOverlay();selOverlay();sizeHintDraw();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();

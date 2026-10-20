@@ -1,0 +1,155 @@
+{
+ "id": "orig-loop-the-loop",
+ "title": "なめらかな円形コースを回る小球（ループ）",
+ "tags": [
+  "力学",
+  "円運動",
+  "エネルギー保存"
+ ],
+ "source": "オリジナル（鉛直円運動のコース型）",
+ "level": "standard",
+ "problem": "なめらかな円形コース（半径{R}m）の最下点で、質量{m}kgの小球に水平な速さ{v0}m/sを与える。コースは球の内側を回る。",
+ "params": {
+  "R": {
+   "v": 0.5,
+   "min": 0.2,
+   "max": 1.0,
+   "step": 0.05,
+   "unit": "m",
+   "label": "コースの半径（球の中心の軌道）"
+  },
+  "v0": {
+   "v": 5.0,
+   "min": 3,
+   "max": 8,
+   "step": 0.1,
+   "unit": "m/s",
+   "label": "はじめの速さ"
+  },
+  "m": {
+   "v": 0.2,
+   "min": 0.05,
+   "max": 1,
+   "step": 0.05,
+   "unit": "kg",
+   "label": "質量"
+  }
+ },
+ "vars": {
+  "r": "0.03",
+  "vtop2": "v0^2-4*g*R",
+  "Ntop": "m*(v0^2/R-5*g)"
+ },
+ "world": {
+  "g": 9.8
+ },
+ "view": {
+  "x0": -1.3,
+  "y0": -0.2,
+  "w": 2.6
+ },
+ "bodies": [
+  {
+   "id": "floor",
+   "type": "static",
+   "mu": 0,
+   "shapes": [
+    {
+     "t": "plane",
+     "normal": [
+      0,
+      1
+     ],
+     "d": 0
+    }
+   ]
+  },
+  {
+   "id": "track",
+   "type": "static",
+   "mu": 0,
+   "shapes": [
+    {
+     "t": "arc",
+     "c": [
+      0,
+      "R+r"
+     ],
+     "r": "R+r",
+     "from": 0,
+     "to": 360,
+     "side": "in"
+    }
+   ]
+  },
+  {
+   "id": "ball",
+   "type": "dynamic",
+   "m": "m",
+   "mu": 0,
+   "fixedRot": true,
+   "pos": [
+    0,
+    "r"
+   ],
+   "vel": [
+    "v0",
+    0
+   ],
+   "label": "小球",
+   "shapes": [
+    {
+     "t": "circle",
+     "r": "r"
+    }
+   ]
+  }
+ ],
+ "probes": {
+  "Nmin": {
+   "expr": "ball.N",
+   "when": "t>0.15",
+   "reduce": "min",
+   "unit": "N",
+   "label": "コース上の垂直抗力の最小値（頂点）"
+  },
+  "ytop": {
+   "expr": "ball.y",
+   "reduce": "max",
+   "unit": "m",
+   "label": "最高点の高さ"
+  },
+  "E": {
+   "expr": "E",
+   "reduce": "last",
+   "unit": "J",
+   "label": "全エネルギー（時系列の変動を検査）"
+  }
+ },
+ "run": {
+  "t": 0.9
+ },
+ "ask": [
+  {
+   "q": "頂点での垂直抗力 m(v0²/R−5g)",
+   "probe": "Nmin",
+   "theory": "Ntop",
+   "unit": "N",
+   "tol": 0.03
+  },
+  {
+   "q": "最高点の高さ 2R+r",
+   "probe": "ytop",
+   "theory": "2*R+r",
+   "unit": "m",
+   "tol": 0.01
+  }
+ ],
+ "checks": [
+  {
+   "name": "エネルギー保存",
+   "probe": "E",
+   "conserved": 0.002
+  }
+ ]
+}
