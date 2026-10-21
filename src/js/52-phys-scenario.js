@@ -330,8 +330,14 @@ function session(scn,opt){
   {const sn=PHE.snapshot(W),v0=W.bodies.map(b=>[b.vx,b.vy]);PHE.advance(W,DT);
    W.bodies.forEach((b,k)=>{acc.ctx.acc[k][0]=(b.vx-v0[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-v0[k][1])/DT});PHE.restore(W,sn)}
   sample(0);let stopped=false,i=0;
+  /* 人の手（台帳Z-185）：アプリが、各刻みの直前に呼ばれる hook(S) で、つまみ（b.pull）を付け外し・つつく（S.poke）を入れる。
+     速度を変えた分は、加速度の記録に入れない（ルールのkickと同じ）。hookが同じ刻みに同じ入力を入れれば、巻き戻して進め直しても同じ結果になる */
+  let hook=null;
+  const poke=(b,x,y,jx,jy)=>{const k=W.bodies.indexOf(b),ox=b.vx,oy=b.vy;if(k<0||!PHE.poke(W,b,x,y,jx,jy))return false;prevV[k][0]+=b.vx-ox;prevV[k][1]+=b.vy-oy;return true};
   const step=()=>{
-    if(stopped||i>=n)return false;i++;
+    if(stopped||i>=n)return false;
+    if(hook)hook(S);
+    i++;
     PHE.advance(W,DT);
     if(rules.length)for(const r of rules){const c=!!r.w(),go=r.once?(c&&!r.fired):(c&&!r.prev);r.prev=c;if(!go)continue;r.fired=true;
       for(const a of r.acts){if(a.op==='note')log.push({t:W.t,rule:r.id,text:a.text});
@@ -372,7 +378,8 @@ function session(scn,opt){
   return{ts,series:ser,probes:res,events:evt,ask:asks,checks,world:W,built:B,t:W.t,stopped}}
   /* いまの状態で式を評価する（ビジュアルプログラミングの「条件を見る」・画面の読み出し用）。式は使い回す */
   const ev=(src)=>{let f=cache.get(src);if(!f){f=compile(src,acc.resolve);cache.set(src,f)}return f()};
-  return{B,W,ts,series:ser,T,n,DT,acc:acc.ctx.acc,step,finish,ev,log,get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get done(){return stopped||i>=n}}}
+  const S={B,W,ts,series:ser,T,n,DT,acc:acc.ctx.acc,step,finish,ev,log,poke,setHook:f=>{hook=f},get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get done(){return stopped||i>=n}};
+  return S}
 function run(scn,opt){const S=session(scn,opt);while(S.step());return S.finish()}
 function runT(B,scn){const t=scn.run&&scn.run.t;if(typeof t==='string'){try{return compile(t,B.resolve)()}catch(e){throw new Error('run.t: '+e.message)}}return t}
 function num0(v,d){return isNum(v)?v:d}

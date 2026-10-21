@@ -15,7 +15,7 @@
 | `src/js/50-physics.js` | 物理状態・計算 `ensurePhys`/`physStep`/`physUi`、`loop` |
 | `src/js/51-phys-engine.js` | **物理エンジン`PHE`**（台帳Z-167・Z-183。DOM・`AC`に触れない純JS）：剛体（円・箱・多角形・平面・円弧レール）・回転・静止／動摩擦・反発・拘束（紐・棒・ばね・ピン・滑車＝多点の紐）・力場（一様・力・電場・磁場・中心力・抵抗・クーロン・万有引力）・イベント時刻（衝突の直前・領域の境界）・**衝突の連鎖`impactWaves`**。表（レジストリ）`SHP`・`FLD`・`JNT`・設定`DEF` |
 | `src/js/52-phys-scenario.js` | **シナリオ層`PHS`**（台帳Z-168）：式の評価器（`eval`なし）`FN`・検証`validate`（日本語のエラー・`KEYS`表）・変換`build`・実行セッション`session`/`run`・測定の表`BP`/`JP`/`WP`・集計`RED`・答え合わせ`ask`・`checks`・`events`・**ルール`rules`**（`RULE_OPS`。台帳Z-178）・掃引`sweep`・あてはめ・雛形`template`。DOMなし |
-| `src/js/53-phys-run.js` | **アプリへの接続**（台帳Z-172）：`SCN`（永続：シナリオ・条件・表示・つなぎ）・`RUN`（実行状態）・固定刻みの時計`TIME.DT=1/120`・`scnEdit`（検証して失敗なら元へ）・`scnSetSource`・保存／Undo・物理タブUI・絵（アクター）とのつなぎ・ルールの知らせ`scnLogs` |
+| `src/js/53-phys-run.js` | **アプリへの接続**（台帳Z-172）：`SCN`（永続：シナリオ・条件・表示・つなぎ）・`RUN`（実行状態）・固定刻みの時計`TIME.DT=1/120`・`scnEdit`（検証して失敗なら元へ）・`scnSetSource`・保存／Undo・物理タブUI・絵（アクター）とのつなぎ・ルールの知らせ`scnLogs`；**人の手（台帳Z-185）**＝`scnPtrDown/Move/End`・`scnHook`（入力の記録`RUN.inp`を刻みの直前に入れる）・`scnPlaceActor`・`scnWatch`/`scnArtRefresh`（絵の編集→物体の形）・🎬メニューの物理項目`scnMenuSync` |
 | `src/js/54-phys-render.js` | **物理の描画`PHR`**（台帳Z-171）：拘束・軌跡・ストロボ・ベクトル（v・a・mg・N・f・T・F弾・F場・合力）・磁場・電場・グラフ |
 | `src/js/55-phys-samples.js` | **生成物**（`src/phys/samples/*.json`から`node tools/build.js`が作る。直接編集しない）：`PHYS_SAMPLES` |
 | `src/js/56-phys-art.js` | **絵→物理**（台帳Z-177）：描いた線→凸の多角形の地形`artTerrain`、絵→円・箱・多角形の物体`artBody`、`ART.last`（直近の寸法） |
@@ -48,6 +48,7 @@
 | `src/js/236-retouch.js` | 修整ツール（台帳Z-86・Z-120・Z-121・Z-138・Z-141・**Z-180ジャギーをなめらかに**`jaggy`）：方式の表`RTM`、状態`RT`、1回の打ち`rtApplyDab`（ヒーリング`rtHeal`・フィルタ系`rtFilter`・埋める`rtFillDab`・スマッジ`rtSmudge`）、入口`rtDown`/`rtAt`/`rtEnd`、仮表示`rtPv`/`rtOverlay`、画像への焼き込み`rtFlatten`、切り取り跡の穴埋め`retouchFillHole`、窓`rtUi`。**高速化（台帳Z-156）**：1回のなぞりの間のタイルのキャッシュ`rtTiles`/`rtTEnsure`/`rtTAt`・縮小絵のキャッシュ`rtLowCache`/`rtLowEnsure`・埋めるの粒状ノイズ`RTN`/`rtNoiseTile`・振幅の測定`rtGrainAmp` |
 | `src/js/237-loupe.js` | 手元の拡大窓（台帳Z-109）：`LUP`（状態・設定）、対象の道具の表`LUM`（マグネット選択などは1行足すだけ）、`lupeMode`/`lupeZoom`（倍率は道具の太さに合わせる自動／固定）、`lupeTick`（loopから毎フレーム）、`lupePin`（ピン微調整の連携） |
 | `src/js/238-size-hint.js` | 太さの目安表示（台帳Z-146）：バーを触っている間・直後にビューワー中央へ実寸の輪。表`SZH`、`sizeHintDraw`（`paintFrame`から） |
+| `src/js/239-skin.js` | 見た目（台帳Z-186）：`SKIN`（表`T`・設定`cur`）、`skinSet`/`skinReset`/`skinApply`、丸ゴシックの遅延読み込み`skinFont`。`<html>`の`data-skin／font／round／dens／icon`に反映し、localStorage（`am_skin`）に覚える。ちらつき防止の早い適用は`document-prefix.html`の先頭。CSSの変数は`styles.css`先頭 |
 | `src/js/240-tooling-and-init.js` | ツール・タブ、メニュー、枠3段`setFrame`、操作窓`UIS`/`tpClamp`/`tpApply`（上下2つの持ち手・四辺へ掃ける・透過オン/オフ）、画像追加`pickImages`/`addImages`、初期化、ロック用ラッパー |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 

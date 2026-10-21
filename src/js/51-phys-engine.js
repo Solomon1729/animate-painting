@@ -34,7 +34,7 @@ function mkBody(s,idx){
   const type=s.type||'dynamic',dynamic=type==='dynamic',stat=type==='static';
   const b={idx,id:s.id!==undefined?s.id:idx,type,e:num(s.e,0),mus:num(s.mus,num(s.mu,.5)),muk:num(s.muk,num(s.mu,.5)),q:num(s.q,0),
     dragLin:num(s.dragLin,0),dragQuad:num(s.dragQuad,0),dampLin:num(s.dampLin,0),dampAng:num(s.dampAng,0),gs:num(s.gs,1),
-    collide:s.collide!==false,group:num(s.group,0),shapes:[],hold:null,kin:s.kin||null,lg:null};
+    collide:s.collide!==false,group:num(s.group,0),shapes:[],hold:null,pull:null,kin:s.kin||null,lg:null};
   const raw=[];let areaSum=0;
   for(const sp of s.shapes){const mk=SHP[sp.t];if(!mk)throw new Error('未知の形: '+sp.t);const o=mk.make(sp);o.spec=sp;raw.push(o);areaSum+=o.area}
   const anyM=raw.some(o=>o.spec.m!=null),Mtot=num(s.m,1);   /* 形が空なら質点（衝突しない・大きさなし） */
@@ -415,6 +415,18 @@ function impactWaves(W,ms,h){
       if(hit)nx.push(m)}
     cur=nx}
   return guard}
+/* ---------- 人の手（アプリの「つかんで動かす」「つつく」。台帳Z-185）----------
+   つまみ pull：体の上の1点（局所座標 rx,ry＝重心から見た位置。体の向きに固定）を、世界の点(x,y)へ、バネ＋ダンパーで引く。
+     w＝固有角振動数(rad/s)・z＝減衰比（1＝臨界）・amax＝加速度の上限(m/s²)・cr＝回転の減衰率(1/s)。力は質量に比例させるので、重い物も軽い物も同じように持てる。
+     「バネ」なので、持った物が床や他の物にめりこまず（接触が止める）、離せばその速さのまま投げられる。力は「場の力」として記録（合力の矢印がずれない）。
+   つつく poke：世界の点(x,y)に力積(jx,jy)を一瞬与える（速度と角速度が変わる）。どちらもエンジンの時刻の外から呼ぶので、記録して同じ刻みに入れれば巻き戻しても再現できる。 */
+const PULL={w:18,z:1,amax:500,cr:5};
+function pullAt(b,x,y){const dx=x-b.px,dy=y-b.py;return{rx:b.cs*dx+b.sn*dy,ry:-b.sn*dx+b.cs*dy}}   /* 世界の点 → 重心から見た局所座標 */
+function pullForce(b){
+  const p=b.pull,rx=b.cs*p.rx-b.sn*p.ry,ry=b.sn*p.rx+b.cs*p.ry,vx=b.vx-b.w*ry,vy=b.vy+b.w*rx,w=num(p.w,PULL.w),c=2*num(p.z,PULL.z)*w,am=num(p.amax,PULL.amax);
+  let ax=w*w*(p.x-(b.px+rx))-c*vx,ay=w*w*(p.y-(b.py+ry))-c*vy;const a=hypot(ax,ay);if(am>0&&a>am){ax*=am/a;ay*=am/a}
+  const fx=b.m*ax,fy=b.m*ay;b.fx+=fx;b.fy+=fy;b.tq+=rx*fy-ry*fx-(b.I+b.m*(rx*rx+ry*ry))*num(p.cr,PULL.cr)*b.w;b.vf=1;b.npe=1;b.diss=1;log(b,'fld',fx,fy)}   /* 持った点まわりの回転は、点が動かないので上のダンパーでは減らない。持っている間だけ、持った点まわりの慣性モーメント（I＋m r²）に比例した粘りを回転に付ける（cr＝角速度の減衰率 1/s） */
+function poke(W,b,x,y,jx,jy){if(!(b.im0>0))return false;const rx=x-b.px,ry=y-b.py;b.vx+=jx*b.im0;b.vy+=jy*b.im0;b.w+=(rx*jy-ry*jx)*b.iI0;return true}
 function step(W,h){
   const cfg=W.cfg,bs=W.bodies,dyn=W.dyn;
   /* 0) 準備：ログ・つかまれた物（hold）・動かす台（kin）の速度 */
@@ -432,6 +444,7 @@ function step(W,h){
   for(const b of dyn){if(b.hold)continue;b.ax=W.g[0]*b.gs;b.ay=W.g[1]*b.gs;log(b,'grav',b.m*b.ax,b.m*b.ay)}
   for(const f of W.fields)FLD[f.type].apply(W,f,h);
   for(const j of W.joints)if(JNT[j.type].force)JNT[j.type].force(W,j,h);
+  for(const b of dyn)if(b.pull&&!b.hold&&b.im)pullForce(b);   /* 人の手（つまみ） */
   /* 2) 速度の更新（半陰的オイラー。磁場は厳密な回転＝ボリス法） */
   for(const b of dyn){if(b.hold||!b.im)continue;
     const pa=b.pa,ax=b.ax+b.fx*b.im-(pa?.5*pa[0]:0),ay=b.ay+b.fy*b.im-(pa?.5*pa[1]:0);
@@ -580,9 +593,9 @@ function energy(W){
 function momentum(W){let x=0,y=0;for(const b of W.dyn){x+=b.m*b.vx;y+=b.m*b.vy}return[x,y]}
 /* 状態の複製・復元（時間を戻す・キーフレーム用。warm startの持ち越しも含めて厳密に戻る） */
 function snapshot(W){return{t:W.t,tick:W.tick,hp:W.hp,b:W.bodies.map(b=>[b.px,b.py,b.a,b.vx,b.vy,b.w]),j:W.joints.map(j=>Array.isArray(j.acc)?j.acc.slice():j.acc),c:[...W.prevC].map(([k,v])=>[k,v.map(p=>({...p}))])}}
-function restore(W,s){W.t=s.t;W.tick=s.tick;W.hp=s.hp;s.b.forEach((v,i)=>{const b=W.bodies[i];b.px=v[0];b.py=v[1];setAngle(b,v[2]);b.vx=v[3];b.vy=v[4];b.w=v[5];b.hold=null});
+function restore(W,s){W.t=s.t;W.tick=s.tick;W.hp=s.hp;s.b.forEach((v,i)=>{const b=W.bodies[i];b.px=v[0];b.py=v[1];setAngle(b,v[2]);b.vx=v[3];b.vy=v[4];b.w=v[5];b.hold=null;b.pull=null});
   s.j.forEach((v,i)=>{W.joints[i].acc=Array.isArray(v)?v.slice():v});W.prevC=new Map(s.c.map(([k,v])=>[k,v.map(p=>({...p}))]));
   for(const b of W.bodies)updShapes(b)}
 
-return{DEF,SHP,FLD,JNT,COL,create,advance,step,energy,momentum,snapshot,restore,origin,setAngle,updShapes,isConvex,polyProps,ccw,anchorW,pathGeom,peBody}
+return{DEF,SHP,FLD,JNT,COL,PULL,create,advance,step,energy,momentum,snapshot,restore,origin,setAngle,updShapes,isConvex,polyProps,ccw,anchorW,pathGeom,peBody,pullAt,poke}
 })();

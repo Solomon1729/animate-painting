@@ -9,9 +9,14 @@
 <div class="cmenu" id="mV" hidden>
   <div class="cmh">枠の大きさ</div>
   <div class="cseg" id="frSeg"><button data-fr="n" aria-label="通常の枠（正方形）">通常</button><button data-fr="b" aria-label="大きい枠（画面いっぱいに近い・操作窓は下）">大</button><button data-fr="f" aria-label="全画面">全画面</button></div>
+  <div class="cmh">画面</div>
   <button id="vlk" aria-label="ビューワーを固定（もう一度押すまで拡大・移動を一切しない）">🔒 ビューワーを固定</button>
   <button id="zr" disabled aria-label="拡大を1倍に戻す">1× 拡大を戻す</button>
   <button id="tpfb" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟 操作窓を分離</button>
+  <div class="cmh">キャンバス・見た目</div>
+  <button id="cvsb" aria-label="キャンバスの大きさを変える（背景・出力のタブを開く）">📐 キャンバスの大きさ</button>
+  <select id="skq" aria-label="画面のテーマ（色の組み合わせ）。文字・角の丸みなどの細かい設定は、背景・出力タブの「画面の見た目」"></select>
+  <div class="cmh">補助表示</div>
   <button id="crdb" aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
   <button id="lpb" aria-label="手元の拡大窓（オン：ペン・切り抜き・ぼかしや色調整の範囲・歪みのピンを触っている間、指の下を隅に拡大して見せる）" aria-pressed="false">🔍 手元の拡大窓</button>
   <button id="lpz" aria-label="拡大窓の倍率：自動（使っている道具の太さに合わせる）と固定を切り替える" disabled>🔍 倍率：自動（太さに合わせる）</button>
@@ -20,10 +25,13 @@
     <label>輪の見せる大きさ％（自動の時）<input type="range" id="lpR" min="20" max="80" step="5" value="45" aria-label="自動の時、道具の太さの輪を窓の何パーセントの大きさに見せるか"></label>
     <label>窓の大きさ（px）<input type="range" id="lpS" min="96" max="220" step="4" value="132" aria-label="拡大窓の大きさ"></label>
   </details>
-  <button id="cvsb" aria-label="キャンバスの大きさを変える（背景・出力のタブを開く）">📐 キャンバスの大きさ</button>
 </div>
 <div class="cmenu" id="mA" hidden>
   <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
+  <div class="cmh" id="mPh" hidden>物理</div>
+  <button id="mPlay" aria-label="物理を実行・一時停止" hidden>▶ 物理を実行</button>
+  <button id="mRst" aria-label="物理を最初に戻す" hidden>⟲ 物理を最初へ</button>
+  <button id="mGrab" aria-label="実行中にキャンバスを触って物を動かす（つかむ・つつく）のオン／オフ" aria-pressed="true" hidden>🖐 つかんで動かす</button>
   <button id="ad2" aria-label="画像を選んでオブジェクトを追加">🖼 画像を追加</button>
   <button id="sn2" aria-label="静止画を保存">📷 静止画を保存</button>
   <button id="rc2" aria-label="録画">⏺ 録画</button>
@@ -34,21 +42,25 @@
 <div class="pane" id="tp">
   <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）"></span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
   <div id="tpb">
-  <div class="row"><button id="physMode">⚙️ 物理モードに切り替え</button></div>
   <div class="row" id="ch1"></div>
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
-  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
-    <div class="row"><button id="bnd">境界線を表示</button><button id="clrfx">エフェクトを全消去</button></div>
-    <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:inherit"></div>
+    <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
     <div class="row"><span class="lab">大きさ</span><input id="sz" type="range" min="0.03" max="6" step="0.01" aria-label="大きさ"><b class="v" id="szv"></b></div>
     <div class="row"><span class="lab">角度</span><input id="rt" type="range" min="-180" max="180" step="5" value="0" data-snap="-180,-90,0,90,180" aria-label="止まったままの角度"><b class="v" id="rtv"></b></div>
     <div class="row" id="fbRow" style="display:none"><span class="lab">重なり</span><button id="fbF">😀 手前</button><button id="fbB">🫥 奥</button></div>
+    <div class="grp"><div class="gh">向き・つながり</div>
+    <div class="row"><span id="ex" style="display:contents"></span></div>
+    </div>
+    <details class="grp" id="plmore"><summary>絵の差し替え・絵文字・表示</summary>
+    <div class="row"><button id="bnd">境界線を表示</button><button id="clrfx">エフェクトを全消去</button></div>
     <div class="row"><button id="emTgl">🎨 サンプル絵文字を使う</button></div>
     <div class="row em" id="em" style="display:none"></div>
-    <div class="row"><label class="file">この絵を別の画像に差し替える<input id="f" type="file" accept="image/*"></label><span id="ex" style="display:contents"></span></div>
+    <div class="row"><label class="file">この絵を別の画像に差し替える<input id="f" type="file" accept="image/*"></label></div>
+    </details>
     <div class="note">回転の半径・伸び縮みの支点は「動き」タブに移しました。</div>
   </div>
 
@@ -123,7 +135,7 @@
     <div class="row"><span class="lab">曲線補正</span><input id="paC" type="range" min="0" max="100" step="1" value="0" aria-label="曲線補正の強さ（0で補正なし。強いほど、選んだ種類の曲線に直します）"></div>
     <div class="row"><span class="lab">曲線の種類</span><select id="paK" aria-label="曲線の種類"><option value="arc">円・円弧</option><option value="quad" selected>2次曲線</option><option value="cubic">3次ベジェ</option></select></div>
     <div class="note">なぞっている間は、補正後の線と形の名前（直線・曲線など）が仮表示され、指を離すと描かれます。強いほど強制的に整い、弱いと小さな動きが残ります（弱いほど、よく似た形の時だけ補正）。直線のつもりが曲線になる時は「直線補正」を上げるか「曲線補正」を下げてください（逆の時は反対）。</div></div>
-    <div class="row"><span class="lab">文字</span><input id="tx" type="text" placeholder="文字を入力" aria-label="文字" style="flex:1;min-width:120px;font:inherit;padding:6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:inherit"><input id="tcl" type="color" value="#2b2140" aria-label="文字の色"><button class="pk" data-for="tcl" aria-label="スポイト">💧</button></div>
+    <div class="row"><span class="lab">文字</span><input id="tx" type="text" placeholder="文字を入力" aria-label="文字" style="flex:1;min-width:120px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"><input id="tcl" type="color" value="#2b2140" aria-label="文字の色"><button class="pk" data-for="tcl" aria-label="スポイト">💧</button></div>
     <div class="row"><button id="addt">＋文字を置く</button><button id="addd">＋白紙レイヤー</button></div>
     <div class="row" id="blrow"><span class="lab" style="min-width:0">白紙の大きさ</span><select id="blsz" aria-label="＋白紙で足す紙の大きさ（紙の規格）"><option value="A1">A1（594×841mm）</option><option value="A2">A2（420×594mm）</option><option value="A3">A3（297×420mm）</option><option value="A4" selected>A4（210×297mm）</option><option value="A5">A5（148×210mm）</option><option value="A6">A6（105×148mm）</option><option value="B1">B1（JIS 728×1030mm）</option><option value="B2">B2（JIS 515×728mm）</option><option value="B3">B3（JIS 364×515mm）</option><option value="B4">B4（JIS 257×364mm）</option><option value="B5">B5（JIS 182×257mm）</option><option value="B6">B6（JIS 128×182mm）</option><option value="sq">正方形 512×512</option><option value="px">px で指定…</option></select><button id="blor" aria-pressed="false" aria-label="紙の向き（縦・横）">縦</button><select id="bldpi" aria-label="紙の解像度（dpi）"><option value="72">72dpi</option><option value="150" selected>150dpi</option><option value="300">300dpi</option></select></div>
     <div class="row" id="blcu" hidden><input id="blw" class="num" type="number" min="8" max="4096" step="1" inputmode="numeric" value="1024" aria-label="白紙の幅（px）" style="width:76px"><span>×</span><input id="blh" class="num" type="number" min="8" max="4096" step="1" inputmode="numeric" value="1024" aria-label="白紙の高さ（px）" style="width:76px"><span class="note" style="margin:0">px</span></div>
@@ -164,7 +176,7 @@
     <div class="row tools" id="fxEff"><button data-fx="clarity" class="on">明瞭度</button><button data-fx="structure">ストラクチャ</button><button data-fx="texture">テクスチャ</button><button data-fx="sharp">シャープ</button><button data-fx="ambience">アンビエンス</button></div>
     <div class="note" id="fxNote"></div>
     <div class="row"><span class="lab">強さ</span><input id="fxAm" type="range" min="-100" max="100" step="1" value="0"><b class="v" id="fxAmv">0</b></div>
-    <div class="row"><canvas id="fxPad" width="260" height="130" aria-label="横：効かせる大きさ、縦：局所性" style="width:min(100%,260px);height:130px;border:2px solid var(--line);border-radius:10px;background:var(--bg);touch-action:none"></canvas></div>
+    <div class="row"><canvas id="fxPad" width="260" height="130" aria-label="横：効かせる大きさ、縦：局所性" style="width:min(100%,260px);height:130px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);touch-action:none"></canvas></div>
     <div class="note">パッド：横＝細部⇄大きな構造、縦＝下は画像全体の明暗差・上は周囲との差だけ。</div>
     <details style="margin-top:6px"><summary>詳細設定（この項目だけ）</summary>
     <div class="row"><span class="lab">スケール</span><input id="fxSc" type="range" min="0" max="100" step="1" value="50"><b class="v" id="fxScv">50</b></div>
@@ -223,36 +235,42 @@
   </div>
 
   <div class="tab" data-tab="ph">
-    <div class="grp" id="scGrp"><div class="gh">📐 物理シナリオ（問題づくり・実験）</div>
+    <div class="grp" id="scGrp"><div class="gh">物理</div>
+    <div class="note" id="scHelp">絵を選んで「動く物体」か「地形」にして、▶ で動かします。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。絵を描き足したり大きさを変えたりすると、当たり判定も追従します。サンプルを開くと、問題づくり・実験もできます。</div>
     <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="雛形から新しいシナリオを作る">＋雛形</button><button id="scOff" aria-label="シナリオを閉じる（自動で作った絵も消えます）" hidden>閉じる</button></div>
-    <div class="note" id="scHelp">サンプルを選ぶと、物体・糸・力の場がキャンバスに現れ、実行すると物理の法則どおりに動きます。条件（質量・角度など）のスライダーで、すぐ作り直せます。自分の絵につなぐと、絵がその物体として動きます。「＋雛形」から自作もできます。</div>
-    <div class="grp alt" id="scArt"><div class="gh">🎨 選んでいる絵を物理に使う</div>
-      <div class="row"><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">🏔 地形にする</button><button id="scArtB" aria-label="選んでいる絵を、物理の物体（絵の輪郭が当たり判定）にする">🏀 物体にする</button><select id="scArtS" aria-label="物体の形"><option value="auto">形：自動</option><option value="circle">形：丸</option><option value="box">形：四角</option><option value="hull">形：輪郭</option><option value="static">固定の障害物</option></select></div>
-      <div class="note">絵を描く（または画像を入れる）→ 選ぶ → 「地形にする」「物体にする」。見えている輪郭がそのまま当たり判定になり、▶で動きます。地形は、上から乗る物が対象です。</div>
+    <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の役割</div>
+      <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理の物体（絵の輪郭が当たり判定）にする">動く物体</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵を物理に参加させない（絵は残ります）">参加しない</button></div>
+      <div class="row"><span class="lab">形</span><select id="scArtS" aria-label="物体の形"><option value="auto">自動</option><option value="circle">丸</option><option value="box">四角</option><option value="hull">輪郭</option><option value="static">固定の障害物</option></select></div>
+      <div class="note" id="scArtSt"></div>
     </div>
     <div id="scBody" hidden>
-      <div class="note" id="scTitle" style="font-weight:900;opacity:1"></div>
+      <div class="note" id="scTitle" style="font-weight:var(--fw,900);opacity:1"></div>
       <div class="note" id="scProb" style="opacity:.85"></div>
-      <div class="row"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
+      <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
+      <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span></div>
       <div class="row"><span class="lab">時刻</span><input id="scT" type="range" min="0" max="1" step="0.0083333" value="0" aria-label="時刻（動かすと、その時刻の姿になります）"><b class="v" id="scTv" style="min-width:7em">0.00 s</b></div>
       <div class="row" id="scLive"></div>
       <div id="scParams"></div>
-      <div class="gh" style="margin-top:8px">見せるもの</div>
-      <div class="row" id="scVec"></div>
-      <div class="row" id="scDisp"></div>
-      <div class="row"><span class="lab">グラフ</span><input id="scGx" type="text" placeholder="例: blk.speed, blk.y" aria-label="グラフに出す式（カンマ区切り。物体のid.量、時刻t など）" style="flex:1;min-width:8em"></div>
       <canvas id="scGraph" style="width:100%;height:150px;display:none" aria-label="時系列のグラフ"></canvas>
       <div id="scAns"></div>
-      <div class="gh" style="margin-top:8px">絵とつなぐ</div>
-      <div id="scLink"></div>
-      <div class="row"><button id="scPull" aria-label="つないだ絵の今の位置・向きを、シナリオの初期位置にする">絵の位置を初期位置に</button><button id="scCommit" aria-label="いまの物理の姿を絵の位置として確定し、物理を閉じる">いまの姿で確定</button></div>
-      <details><summary style="font-weight:900;cursor:pointer;margin-top:8px">シナリオ（JSON）を見る・直す・貼る</summary>
+      <details id="scMoreView"><summary>見せるもの（矢印・軌跡・表示）</summary>
+        <div class="row" id="scVec"></div>
+        <div class="row" id="scDisp"></div>
+      </details>
+      <details id="scMoreLink"><summary>絵とつなぐ</summary>
+        <div id="scLink"></div>
+        <div class="row"><button id="scPull" aria-label="つないだ絵の今の位置・向きを、シナリオの初期位置にする">絵の位置を初期位置に</button><button id="scCommit" aria-label="いまの物理の姿を絵の位置として確定し、物理を閉じる">いまの姿で確定</button></div>
+      </details>
+      <details id="scMoreEdit"><summary>グラフの式・シナリオ（JSON）</summary>
+        <div class="row"><span class="lab">グラフ</span><input id="scGx" type="text" placeholder="例: blk.speed, blk.y" aria-label="グラフに出す式（カンマ区切り。物体のid.量、時刻t など）" style="flex:1;min-width:8em"></div>
         <textarea id="scJson" rows="14" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace" spellcheck="false" aria-label="シナリオのJSON"></textarea>
         <div class="row"><button id="scApply">読み込む</button><button id="scCheck" aria-label="最後まで計算して、答え合わせと保存則の検査をする">検査する</button><button id="scCopy">コピー</button></div>
       </details>
     </div>
     <div class="note" id="scErr" style="color:#b91c1c;opacity:1"></div>
     </div>
+    <details class="grp" id="phOld"><summary>旧：かんたん物理（絵ごとの簡易設定）・単位の定規</summary>
+    <div class="note">上の物理（サンプル・「動く物体」「地形」）を使っている間は、こちらは止まります。以前の作品を開いた時のための互換の設定です。</div>
     <div class="grp"><div class="gh">全体</div>
     <div class="row"><button id="pOn">物理を有効にする</button><button id="pFloor" class="on">床</button><button id="pWall" class="on">壁</button><button id="pCol" class="on">当たり判定</button></div>
     <div class="row"><span class="lab">重力</span><input id="pG" type="range" min="0" max="3" step="0.05" value="1" aria-label="重力の強さ（1で現実の重力相当。単位を設定していない場合は目安）"></div>
@@ -272,21 +290,41 @@
     <div class="row"><button id="pStop">この子の速度をとめる</button></div>
     <div class="note">ドラッグして離すと、その勢いで飛んでいきます。「固定する」を押すと、他のオブジェクトの土台や壁になりますが自分は動きません。</div>
     </div>
+    </details>
   </div>
 
   <div class="tab" data-tab="bg">
-    <div class="row" id="cvsz"><span class="lab">キャンバス</span><input id="cvw" class="num" type="number" min="16" max="8192" step="1" inputmode="numeric" aria-label="キャンバスの幅（px）" style="width:76px"><span>×</span><input id="cvh" class="num" type="number" min="16" max="8192" step="1" inputmode="numeric" aria-label="キャンバスの高さ（px）" style="width:76px"><span class="note" style="margin:0">px</span><button id="cvset" aria-label="入れた大きさにする">適用</button></div>
+    <div class="grp"><div class="gh">キャンバス</div>
+    <div class="row" id="cvsz"><span class="lab">大きさ</span><input id="cvw" class="num" type="number" min="16" max="8192" step="1" inputmode="numeric" aria-label="キャンバスの幅（px）" style="width:76px"><span>×</span><input id="cvh" class="num" type="number" min="16" max="8192" step="1" inputmode="numeric" aria-label="キャンバスの高さ（px）" style="width:76px"><span class="note" style="margin:0">px</span><button id="cvset" aria-label="入れた大きさにする">適用</button></div>
     <div class="row"><select id="cvpre" aria-label="キャンバスの大きさの候補"><option value="">候補から選ぶ…</option><option value="1080x1080">正方形 1080×1080</option><option value="1080x1920">縦長 9:16 1080×1920</option><option value="1920x1080">横長 16:9 1920×1080</option><option value="1200x1600">縦 3:4 1200×1600</option><option value="1600x1200">横 4:3 1600×1200</option></select><button id="cvfit" aria-label="選んでいるオブジェクトの絵の大きさ（px）に、キャンバスを合わせる">選んだ絵に合わせる</button><button id="cvauto" aria-label="キャンバスの大きさを自動（画面の枠に合わせる）に戻す">自動に戻す</button></div>
     <div class="note" id="cvnote"></div>
-    <div class="row"><span class="lab">背景</span><input id="bg1" type="color" value="#ffffff" aria-label="背景の上の色"><button class="pk" data-for="bg1" aria-label="スポイト">💧</button><input id="bg2" type="color" value="#ffffff" aria-label="背景の下の色"><button class="pk" data-for="bg2" aria-label="スポイト">💧</button><select id="bgm" aria-label="背景の種類"><option value="grad">2色</option><option value="solid" selected>1色</option><option value="none">透明(PNGのみ)</option></select></div>
+    </div>
+    <div class="grp"><div class="gh">背景</div>
+    <div class="row"><span class="lab">色</span><input id="bg1" type="color" value="#ffffff" aria-label="背景の上の色"><button class="pk" data-for="bg1" aria-label="スポイト">💧</button><input id="bg2" type="color" value="#ffffff" aria-label="背景の下の色"><button class="pk" data-for="bg2" aria-label="スポイト">💧</button><select id="bgm" aria-label="背景の種類"><option value="grad">2色</option><option value="solid" selected>1色</option><option value="none">透明(PNGのみ)</option></select></div>
     <div class="row"><label class="file">背景画像<input id="bgf" type="file" accept="image/*"></label><button id="bgr">画像を外す</button></div>
     <div class="row"><span class="lab">ぼかし</span><input id="bgb" type="range" min="0" max="30" value="0" aria-label="背景のぼかし"></div>
-    <div class="row"><span class="lab">書き出し</span><button id="rec">⏺ 動画</button><button id="gif">🎞 GIF</button><span id="rtx" class="note" style="margin:0"></span></div>
+    </div>
+    <div class="grp"><div class="gh">書き出し</div>
+    <div class="row"><span class="lab">動画</span><button id="rec">⏺ 動画</button><button id="gif">🎞 GIF</button><span id="rtx" class="note" style="margin:0"></span></div>
     <div class="row"><span class="lab">静止画</span><select id="sq" aria-label="倍率"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select><select id="sf" aria-label="形式"><option value="png">PNG</option><option value="jpg">JPEG</option><option value="pdf">PDF</option></select><button id="snap">📷 保存</button></div>
-    <div class="row"><span class="lab">作品</span><button id="sv">💾 保存</button><label class="file">📂 読み込み<input id="pf" type="file" accept=".json,application/json"></label><button id="rs" style="display:none">↩ 前回の続き</button></div>
-    <div class="row"><span class="lab">処理の軽さ</span><select id="qs" aria-label="処理の軽さ"><option value="auto">自動</option><option value="0">高品質</option><option value="1">標準</option><option value="2">軽い</option></select><span id="qtx" class="note" style="margin:0"></span></div>
     <div id="out"></div>
     <div class="note">動画は WebM（対応端末ではMP4）、GIFは最大10秒・幅360pxです。保存できない環境では、表示された動画・画像を長押しして保存してください。</div>
+    </div>
+    <div class="grp"><div class="gh">作品の保存</div>
+    <div class="row"><span class="lab">ファイル</span><button id="sv">💾 保存</button><label class="file">📂 読み込み<input id="pf" type="file" accept=".json,application/json"></label><button id="rs" style="display:none">↩ 前回の続き</button></div>
+    </div>
+    <details class="grp" id="skd"><summary>🎨 画面の見た目</summary>
+      <div class="skrow"><label for="skS">テーマ</label><select id="skS" aria-label="画面のテーマ（色の組み合わせ）"></select></div>
+      <div class="skrow"><label for="skF">文字</label><select id="skF" aria-label="画面の文字の種類"></select></div>
+      <div class="skrow"><label for="skR">角の丸み</label><select id="skR" aria-label="ボタンや枠の角の丸み"></select></div>
+      <div class="skrow"><label for="skD">ゆとり</label><select id="skD" aria-label="ボタンや行の余白（コンパクト／ゆったり）"></select></div>
+      <div class="skrow"><label for="skI">アイコン</label><select id="skI" aria-label="ボタンの絵文字をカラーにするか単色にするか"></select></div>
+      <div class="row"><button id="skRst" aria-label="見た目を初期設定（自動）に戻す">初期設定に戻す</button></div>
+      <div class="note">この端末のブラウザにだけ覚えます（作品には入りません）。</div>
+    </details>
+    <details class="grp" id="perfd"><summary>⚙ 動作</summary>
+    <div class="row"><span class="lab">処理の軽さ</span><select id="qs" aria-label="処理の軽さ"><option value="auto">自動</option><option value="0">高品質</option><option value="1">標準</option><option value="2">軽い</option></select><span id="qtx" class="note" style="margin:0"></span></div>
+    </details>
   </div>
   </div>
   <div id="grip2"><span id="gdrag2" aria-label="操作窓の下の持ち手（ドラッグで移動。ダブルタップで元に戻す）"></span></div>

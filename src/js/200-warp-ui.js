@@ -25,7 +25,6 @@ function setWarpSync(l,id){
 $('wsyncSel').onchange=e=>{setWarpSync(sel,+e.target.value||null)};
 const wmUi=()=>{$('wmB').classList.toggle('on',wmode==='brush');$('wm1').classList.toggle('on',wmode==='add');$('wm2').classList.toggle('on',wmode==='pick');
   $('wbr').style.display=wmode==='brush'?'':'none';$('wpn').style.display=wmode==='brush'?'none':'';wHov=null};
-$('physMode').onclick=()=>{setTab(document.querySelector('.tab[data-tab="ph"]').classList.contains('on')?'pl':'ph')};
 $('wmB').onclick=()=>{wmode='brush';wmUi()};$('wm1').onclick=()=>{wmode='add';wmUi()};$('wm2').onclick=()=>{wmode='pick';wmUi()};
 /* --- ゆがみブラシのUI：ツールごとに別設定 --- */
 function wbUi(){

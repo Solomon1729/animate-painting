@@ -14,7 +14,7 @@ function artNewScene(){const w=ART.W;
     params:{gacc:{v:9.8,min:0,max:30,step:.1,unit:'m/s²',label:'重力の強さ'},e:{v:.5,min:0,max:1,step:.05,label:'反発係数'},mu:{v:.4,min:0,max:1.5,step:.05,label:'摩擦係数'}},
     world:{g:'gacc'},view:{x0:0,y0:0,w},
     bodies:[{id:'frame',type:'static',mu:'mu',e:1,label:'',shapes:[{t:'plane',normal:[0,1],d:0},{t:'plane',normal:[1,0],d:0},{t:'plane',normal:[-1,0],d:-w}]}],
-    probes:{},run:{t:15}}}
+    probes:{},run:{t:60}}}
 function artEnsure(){
   if(SCN.src)return true;
   const r=scnSetSource(artNewScene());if(!r.ok){note('シーンを作れませんでした：'+r.errors.join(' / '));return false}
@@ -49,8 +49,8 @@ const artId=(kind,a)=>'art_'+kind+a.id;
 const artR=x=>+x.toFixed(4);
 function artRemove(id){if(!SCN.src)return;SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);delete(SCN.src.params||{})['m_'+id];delete SCN.link[id]}
 /* 作ったシーンに物体を足して、世界を作り直し、絵につなぐ（原点＝絵の中心） */
-function artCommit(a,body,massParam,rot0){
-  pushUndo();const id=body.id;artRemove(id);
+function artCommit(a,body,massParam,rot0,noUndo){   /* noUndo＝絵の編集に追従して作り直す時（絵の編集のUndoに乗る。台帳Z-185） */
+  if(!noUndo)pushUndo();const id=body.id;artRemove(id);
   SCN.src.bodies.push(body);
   if(massParam){SCN.src.params=SCN.src.params||{};SCN.src.params['m_'+id]={v:1,min:.1,max:20,step:.1,unit:'kg',label:a.name+'の質量'}}
   const V=PHS.validate(SCN.src);if(V.errors.length){note('物体を足せませんでした：'+V.errors.slice(0,2).join(' / '));SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);return false}
@@ -79,7 +79,8 @@ function artTerrain(a,opt){opt=opt||{};
       shapes.push({t:'poly',pts:[P0,B0,B1,P1].map(u=>[artR(u[0]),artR(u[1])])})}}
   if(!shapes.length){note('地形にできる線が見つかりませんでした（絵が小さすぎる・透明すぎる？）');return false}
   const body={id:artId('t',a),type:'static',pos:[artR(v.x0+cx/kpm),artR(v.y0+(H-cy)/kpm)],mu:'mu',e:1,label:'',shapes};
-  if(!artCommit(a,body,false))return false;
+  if(!artCommit(a,body,false,undefined,opt.noUndo))return false;
+  SCN.link[body.id].art={};
   if(!opt.quiet)note('「'+a.name+'」を地形にしました（'+shapes.length+'個の台形）。上から乗る物が対象です（ひさしやループは表せません）。▶で動かせます',7000);return body.id}
 
 /* ---------- 物体 ---------- */
@@ -103,7 +104,8 @@ function artBody(a,opt){
   const body={id:artId('b',a),type:fixed?'static':'dynamic',pos:[artR(v.x0+cx/kpm),artR(v.y0+(H-cy)/kpm)],mu:'mu',e:'e',label:a.name,shapes:[shape]};
   if(asBox)body.angle=artR(-(a.rot||0));   /* 四角は絵の向きにそろえる（物体の向き＝絵の向き） */
   if(!fixed)body.m='m_'+body.id;
-  if(!artCommit(a,body,!fixed,asBox?0:undefined))return false;
+  if(!artCommit(a,body,!fixed,asBox?0:undefined,opt.noUndo))return false;
+  SCN.link[body.id].art={shape:sh0,fixed};   /* 作り直す時に同じ作り方をする */
   const poly=shape.t==='poly',com=poly?artCentroid(hull):[shape.ox,shape.oy];   /* 重心（絵の中心からの相対m）。物体の重心と同じ多角形から求める */
   const topAt=x=>{let t=-1e9;const P=poly?hull:null;if(!P)return t;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];if((p[0]-x)*(q[0]-x)<=0&&p[0]!==q[0]){t=Math.max(t,p[1]+(q[1]-p[1])*(x-p[0])/(q[0]-p[0]))}}return t};
   ART.last={id:body.id,kind:asCircle?'circle':asBox?'box':'poly',hull,box:bx,center:G,area,com,topAbove:poly?[com[0],topAt(com[0])]:[com[0],com[1]+(asCircle?shape.r:bx.h/2)],top:hull.reduce((t,p)=>p[1]>t[1]?p:t,hull[0])};   /* topAbove＝重心の真上で、輪郭の上の端（釘をかける所） */
