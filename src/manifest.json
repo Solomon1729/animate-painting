@@ -45,6 +45,7 @@
     "js/236-retouch.js",
     "js/237-loupe.js",
     "js/238-size-hint.js",
+    "js/239-skin.js",
     "js/240-tooling-and-init.js",
     "document-suffix.html"
   ]

@@ -25,7 +25,7 @@ function heal(why){
 function healStale(e){
   if(!e.isPrimary)return;
   let st=false;for(const[id,t]of[...ptyp])if(t===e.pointerType){ptrs.delete(id);ptyp.delete(id);st=true}
-  if(!ptrs.size&&(st||tgt||drawing||wg||wbg||pan||pz0))heal(st?'ptrs':'flags');
+  if(!ptrs.size&&(st||tgt||drawing||wg||wbg||pan||pz0||RUN.grab||RUN.mv))heal(st?'ptrs':'flags');
 }
 function pdown(e){
   healStale(e);
@@ -33,12 +33,12 @@ function pdown(e){
   if(ptrs.size===1)firstDownTs=performance.now();
   if(ptrs.size>=2){
     const quick=performance.now()-firstDownTs<300;
-    if((tgt||drawing||wg||wbg)&&!quick)return;
+    if((tgt||drawing||wg||wbg||RUN.grab||RUN.mv)&&!quick)return;
     if(vLock)return;if(tgt&&tgtBak&&tgtBak.a===tgt&&quick){const b=tgtBak;tgt.fx=b.fx;tgt.fy=b.fy;tgt.ox=b.ox;tgt.oy=b.oy}up();const pts=[...ptrs.values()].slice(-2),[a,b]=pts;pz0={d:Math.hypot(a.x-b.x,a.y-b.y)||1,m:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},Z:{...Z}};return
   }
   if(pickFor){pickAt(q);return}
   if(handMode){if(!vLock){pid=e.pointerId;pan={x:q.x-Z.x,y:q.y-Z.y}}return}
-  if(!sel){pid=e.pointerId;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
+  if(!sel){pid=e.pointerId;if(!rulerOn&&tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、シナリオの物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
   pushUndo();pid=e.pointerId;const p=wp(q);
   if(rulerOn){drawing=true;rulerPt={x0:p.x,y0:p.y,x1:p.x,y1:p.y};return}
   if(paint){if(blocked(sel))return;drawing=true;lp=null;stroke(q);return}
@@ -49,6 +49,7 @@ function pdown(e){
   if(tool==='clone'){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);if(rtDown(q,e,pl)){drawing=true;lp=null;strokeActor=pl}return}  /* 修整（台帳Z-86ほか）。基準点を決めただけのタップは、描かない */
   if(tool==='pen'||tool==='eraser'||tool==='ieraser'){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;strokeActor=pl;penAt(q,pl);return}
   if(tool==='warp'){const l=hit(p)||sel;if(blocked(l))return;if(l!==sel)setSel(l);if(wmode==='brush')wbDown(q,e,l);else if(wmode==='pick')pickPin(q,l);else startWarp(q,l);return}
+  if(scnPtrDown(p,e))return;   /* 物理が開いている：実行中は物をつかむ／つつく、止まっている時は物体を置き直す（台帳Z-185。53-phys-run.js） */
   const h=hit(p);
   if(h){
     tgt=h;editing=true;setSel(h);dragOff=null;thist=[];tgtBak={a:h,fx:h.fx,fy:h.fy,ox:h.ox,oy:h.oy};
@@ -61,6 +62,7 @@ function pdown(e){
   else if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};
 }
 cv.addEventListener('pointermove',e=>{
+  if(e.pointerType==='mouse')scnCursor(wp(sp(e)));
   if(e.pointerType!=='touch'&&tool==='warp'&&wmode==='brush'){const h=sp(e);wHov={x:h.x,y:h.y,t:performance.now(),m:e.pointerType==='mouse'}}
   if(!ptrs.has(e.pointerId))return;const q=sp(e);ptrs.set(e.pointerId,q);
   if(pz0&&ptrs.size===2){
@@ -68,13 +70,14 @@ cv.addEventListener('pointermove',e=>{
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
   if(rulerOn&&rulerPt){const p=wp(q);rulerPt.x1=p.x;rulerPt.y1=p.y;return}
-  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
+  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
 });
 let thist=[],firstDownTs=0;
 const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)pz0=null;
   if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){thist=[];up()}}}
 };
 function endAll(){
+  scnPtrEnd();  /* つかんでいた物を離す／つつく／物体の置き直しを確定（53-phys-run.js） */
   selEnd(drawing);  /* マグネットの点・輪郭の頂点を確定（223-selection.js） */
   rtEnd(drawing);  /* 修整：スタンプはここで1回写す（2本指などで取り消された時は写さない） */
   paCommit();  /* ペンの補正：溜めた点列を、補正した線として一度に描く（台帳Z-108。補正オフなら何もしない） */
@@ -88,6 +91,7 @@ function endAll(){
     const a=thist[0],b=thist[thist.length-1],dt=(b.t-a.t)/1000;
     if(dt>0.01){tgt.phys.vx=cl((b.x-a.x)/dt,-2000,2000);tgt.phys.vy=cl((b.y-a.y)/dt,-2000,2000)}
   }
+  if(tgt)scnPlaceActor(tgt);  /* 物理につないだ絵を置き直した：初期位置にする */
   if(pbox&&drawing&&pl&&boxStart&&boxEnd){rectSel(pl,boxStart,boxEnd);flashUntil=performance.now()+500}
   thist=[];up();
 }
@@ -96,7 +100,7 @@ addEventListener('blur',()=>{ptrs.clear();ptyp.clear();pz0=null;up()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){ptrs.clear();ptyp.clear();pz0=null;up()}});
 cv.addEventListener('lostpointercapture',end);
 cv.addEventListener('contextmenu',e=>e.preventDefault());
-cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')wHov=null});
+cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){wHov=null;cv.style.cursor=''}});
 cv.addEventListener('wheel',e=>{e.preventDefault();if(vLock)return;const q=sp(e),w=wp(q),s=cl(Z.s*(e.deltaY<0?1.1:1/1.1),.25,12);Z.s=s;Z.x=q.x-s*w.x;Z.y=q.y-s*w.y},{passive:false});
 $('zr').onclick=()=>{if(vLock)return;Z.s=1;Z.x=0;Z.y=0};
 let handMode=false,vLock=false;$('vlk').onclick=()=>{vLock=!vLock;$('vlk').classList.toggle('on',vLock);$('vlk').textContent=vLock?'🔒 固定中（押すと解除）':'🔒 ビューワーを固定';$('mnv').textContent=vLock?'🔒':'👁'};
