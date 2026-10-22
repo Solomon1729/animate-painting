@@ -52,10 +52,10 @@ function chips(){
 function frame(l){
   if(!W||!l||vLock||noFrame)return;
   const att=l.att&&byId(l.to);
-  const sx=att?l.wx:l.fx*W,sy=att?l.wy:l.fy*H,pad=Math.min(W,H)*.14;
+  const v=vis(),sx=att?l.wx:l.fx*W,sy=att?l.wy:l.fy*H,pad=Math.min(v.x1-v.x0,v.y1-v.y0)*.14;   /* 見えている範囲に収める（枠が紙より低い時、窓の下を見ない。台帳Z-115） */
   let sxp=sx*Z.s+Z.x,syp=sy*Z.s+Z.y;
-  if(sxp<pad)Z.x+=pad-sxp;else if(sxp>W-pad)Z.x-=sxp-(W-pad);
-  if(syp<pad)Z.y+=pad-syp;else if(syp>H-pad)Z.y-=syp-(H-pad);
+  if(sxp<v.x0+pad)Z.x+=v.x0+pad-sxp;else if(sxp>v.x1-pad)Z.x-=sxp-(v.x1-pad);
+  if(syp<v.y0+pad)Z.y+=v.y0+pad-syp;else if(syp>v.y1-pad)Z.y-=syp-(v.y1-pad);
 }
 function setSel(l){
   if(!l){sel=null;chips();noObjUi(true);return}  /* オブジェクト0個（台帳Z-97）：選択なし。操作窓は背景・出力だけにする */

@@ -44,7 +44,7 @@ async function loadProj(txt){
   AC.forEach(a=>{if(a.syncTo!=null){const t=byId(a.syncTo);if(t)a.pins=t.pins}});
   Object.assign(BG,d.BG||{},{img:bgI,v:(BG.v||0)+1});bgUi();
   /* キャンバスの大きさ（台帳Z-98）。旧データには無い＝自動 */
-  DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit();canvasUi();
+  DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit(true);canvasUi();
   scnLoad(d.SCN);   /* 物理シナリオ（無い作品では空にする） */
   setSel(AC[d.sel]||AC[0]||null);
   if(PROJ.v)note('新しい版（v'+PROJ.v+'）で保存された作品です。このアプリが知らない項目は、そのまま残して保存します。読めない部分があるかもしれないので、上書きは避け、自動保存は別の入れ物に入ります',9000);

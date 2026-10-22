@@ -77,7 +77,7 @@ function lupeTick(){
   cross('rgba(0,0,0,.65)',3);cross('#fff',1.4);
   if(wpx>0){const rr=Math.min(wpx*z/2*dpr,mid-3*dpr);g.beginPath();g.arc(mid,mid,rr,0,6.2832);g.lineWidth=3*dpr;g.strokeStyle='rgba(0,0,0,.45)';g.stroke();g.lineWidth=1.2*dpr;g.strokeStyle='#fff';g.stroke()}
   if(m&&m.draw){try{m.draw(g,{c,z,d,dpr,to:(x,y)=>[(x-c.x)*z*dpr+mid,(y-c.y)*z*dpr+mid]})}catch(_){}}
-  const cs=[[8,8],[W-sz-8,8],[8,H-sz-8],[W-sz-8,H-sz-8]],near=k=>{const[x,y]=cs[k];return c.x>x-30&&c.x<x+sz+30&&c.y>y-30&&c.y<y+sz+30};
+  const vv=vis(),cs=[[vv.x0+8,vv.y0+8],[vv.x1-sz-8,vv.y0+8],[vv.x0+8,vv.y1-sz-8],[vv.x1-sz-8,vv.y1-sz-8]],near=k=>{const[x,y]=cs[k];return c.x>x-30&&c.x<x+sz+30&&c.y>y-30&&c.y<y+sz+30};
   if(near(LUP.corner)){let b=-1,bd=-1;cs.forEach(([x,y],k)=>{if(near(k))return;const dd=Math.hypot(c.x-(x+sz/2),c.y-(y+sz/2));if(dd>bd){bd=dd;b=k}});if(b>=0)LUP.corner=b}
   const[px,py]=cs[LUP.corner];
   el.hidden=false;el.style.transform='translate('+Math.round(cv.offsetLeft+Math.max(3,px))+'px,'+Math.round(cv.offsetTop+Math.max(3,py))+'px)';

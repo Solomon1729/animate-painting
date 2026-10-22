@@ -22,7 +22,7 @@ function restore(sn){
   AC.forEach(a=>{if(a.syncTo!=null){const t=byId(a.syncTo);if(t)a.pins=t.pins}});
   Object.assign(BG,{m:sn.B.m,c:sn.B.c,c2:sn.B.c2,b:sn.B.b,img:sn.B.img,v:sn.B.v});bgUi();
   if(sn.L){LAYERS=sn.L.map(y=>({...y}));curLid=sn.cl}
-  if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit();if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
+  if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
   canvasUi();
   scnRestore(sn.sc);   /* シナリオは、中身（シナリオ・条件）が同じなら実行を続ける。違えば作り直す */
   setSel(AC[sn.sel]||AC[0]||null);

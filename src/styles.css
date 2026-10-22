@@ -24,7 +24,7 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-variant-emoji:var(--ei,normal);padding:12px;max-width:680px;margin:0 auto}
 h1{font-size:var(--h1,20px);font-weight:var(--fw,900);margin:4px 0 10px}
-#wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--pane)}
+#wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--pane);touch-action:none}   /* 紙の外の余白（枠「大」で窓を下げた時）に触れても、ページのスクロール・引っ張り更新に回さない（台帳Z-115）。メニュー（.cmenu）は自前のスクロール領域なので影響しない */
 canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* キャンバス上のボタン：拡大縮小3つ（左上・常時）＋メニュー2つ（右上）。メニューは押した時だけ開く（ホバー演出なし） */
 .cbar{position:absolute;top:8px;z-index:5;display:flex;gap:6px}#cz{left:8px}#cm{right:8px}

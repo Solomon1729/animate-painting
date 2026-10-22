@@ -59,19 +59,39 @@ const mot=l=>{const r={x:0,y:0,r:0,s:0},f=editing||tool!=='move'||!!drawOnly;   
     else if(k==='m'){const d=c.d*Math.PI/180;r.x=v*Math.cos(d);r.y=-v*Math.sin(d)}else r[k]=v}
   return r};
 
-function fit(){
-  const bd=document.body,fs=bd.classList.contains('fs')||bd.classList.contains('big'),r=$('wrap').getBoundingClientRect();
+/* 紙（W×H）の高さの基準（台帳Z-115）。作品の位置・大きさは「紙に対する割合」で持つので、紙を作り直すと全部が一緒に動く・伸縮する。
+   枠「大」では、持ち手で窓を上下させる・分離して浮かせる／戻す・折りたたむ・アドレスバーの出入り・キーボードで、枠（#wrap）の高さは頻繁に変わる。
+   そこで紙の高さは、枠「大」の間は`FITB.h`に持ち、**明示の操作（fit(true)＝枠の切り替え・キャンバスの大きさの変更）と、枠の幅が変わった時（向き・ウィンドウ幅）だけ**測り直す。
+   枠が紙より低い間は紙の下側が隠れ、高い間は紙の下に余白が出る（紙は伸縮しない。画面に見えている範囲は`vis()`）。 */
+const FITB={w:0,h:0};let FITLAST='';
+function fit(redo){
+  const bd=document.body,big=bd.classList.contains('big'),fs=bd.classList.contains('fs')||big,r=$('wrap').getBoundingClientRect();
+  let rh=r.height;   /* 紙を収める箱の高さ */
+  if(big){if(redo===true||!(FITB.h>0)||Math.abs(FITB.w-r.width)>1){FITB.w=r.width;FITB.h=r.height}rh=FITB.h}else FITB.h=0;
+  let nW,nH,nD,cw,ch,sw,sh,sm;
   if(DOC.w>0&&DOC.h>0){
     /* 指定サイズ：縦横比を保って枠に収める。W・Hは小数のまま持ち、書き出し（hk）ではキャンバスの画素数をちょうどDOC.w×hk・DOC.h×hkにする（四捨五入の1pxのずれを出さない） */
-    const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,r.height):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
-    W=Math.max(1,w);H=Math.max(1,W/a);dpr=hk?DOC.w*hk/W:Math.min(devicePixelRatio||1,2);
-    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';
-    cv.style.margin=(fs?Math.max(0,(r.height-H)/2):0)+'px auto 0';
+    const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,rh):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
+    nW=Math.max(1,w);nH=Math.max(1,nW/a);nD=hk?DOC.w*hk/nW:Math.min(devicePixelRatio||1,2);
+    cw=Math.round(nW*nD);ch=Math.round(nH*nD);sw=nW+'px';sh=nH+'px';sm=(fs?Math.max(0,(rh-nH)/2):0)+'px auto 0';
   }else{
-    dpr=hk||Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.round(r.width));H=fs?Math.max(1,Math.round(r.height)):W;cv.width=W*dpr;cv.height=H*dpr;cv.style.width='';cv.style.margin='';cv.style.height=H+'px';
+    nD=hk||Math.min(devicePixelRatio||1,2);nW=Math.max(1,Math.round(r.width));nH=fs?Math.max(1,Math.round(rh)):nW;cw=nW*nD;ch=nH*nD;sw='';sh=nH+'px';sm='';
   }
+  /* 同じ大きさなら何もしない（枠の高さが変わるたびに呼ばれるが、cvの幅・高さを代入するたびに絵が消えるので、変わらない時は触らない） */
+  const sig=[nW,nH,nD,cw,ch,sw,sh,sm].join('|');
+  if(!MGR&&sig===FITLAST&&cv.width===Math.floor(cw)&&cv.height===Math.floor(ch)&&oc.width===cv.width&&oc.height===cv.height)return;
+  W=nW;H=nH;dpr=nD;
+  cv.width=cw;cv.height=ch;cv.style.width=sw;cv.style.height=sh;cv.style.margin=sm;
   oc.width=cv.width;oc.height=cv.height;ob1.width=ob2.width=cv.width;ob1.height=ob2.height=cv.height;S0=Math.min(W,H)*.26;
   if(MGR){dpr=MGR.d;cv.width=oc.width=ob1.width=ob2.width=MGR.w;cv.height=oc.height=ob1.height=ob2.height=MGR.h}   /* 統合の描画先（画面のCSSの大きさは変えない。226-merge.js） */
+  FITLAST=MGR?'':sig;
+}
+/* 画面に見えているキャンバスの範囲（キャンバスのCSS px）と、その中心。枠が紙より低い時（枠「大」で窓を上げた時）は、紙の一部しか見えない。
+   「見えている中央」「見えている下端」を使う処理（ズームの中心・画像を置く位置・太さの目安・拡大窓・座標のラベル）は、W/2・Hではなくこれを使う（台帳Z-115） */
+function vis(){
+  const r=$('wrap').getBoundingClientRect(),c=cv.getBoundingClientRect(),w=W||1,h=H||1;
+  const x0=Math.max(0,r.left-c.left),y0=Math.max(0,r.top-c.top),x1=Math.min(w,r.right-c.left),y1=Math.min(h,r.bottom-c.top);
+  return x1>x0+1&&y1>y0+1?{x0,y0,x1,y1,cx:(x0+x1)/2,cy:(y0+y1)/2}:{x0:0,y0:0,x1:w,y1:h,cx:w/2,cy:h/2};
 }
 
 const FILT='filter' in CanvasRenderingContext2D.prototype;

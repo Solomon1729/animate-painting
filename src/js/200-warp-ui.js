@@ -36,7 +36,7 @@ function wbUi(){
 }
 $('wbt').innerHTML=BRT.map(([k,ic,nm])=>`<button data-bt="${k}" aria-label="${nm}">${ic} ${nm}</button>`).join('');
 document.querySelectorAll('#wbt [data-bt]').forEach(b=>b.onclick=()=>{bt=b.dataset.bt;wbUi()});
-[['wbS','size'],['wbH','hard'],['wbG','str'],['wbR','rate']].forEach(([id,k])=>$(id).oninput=e=>{brc()[k]=+e.target.value;wHov=wHov||{x:W/2,y:H/2,t:performance.now()};wHov.t=performance.now()});
+[['wbS','size'],['wbH','hard'],['wbG','str'],['wbR','rate']].forEach(([id,k])=>$(id).oninput=e=>{brc()[k]=+e.target.value;wHov=wHov||{x:vis().cx,y:vis().cy,t:performance.now()};wHov.t=performance.now()});
 $('wbP').onchange=e=>{bpress=e.target.checked};
 $('wbRst').onclick=()=>{const l=sel;if(!l||!l.dm)return;if(blocked(l))return;pushUndo();l.dm=null;l.dmv=(l.dmv|0)+1;l._mr=null;l.dirty=true;l.wd=true;dirtyProj=true;note('ブラシの歪みを全部戻しました（ピンはそのまま）')};
 wbUi();wmUi();

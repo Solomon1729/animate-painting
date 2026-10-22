@@ -105,5 +105,5 @@ cv.addEventListener('wheel',e=>{e.preventDefault();if(vLock)return;const q=sp(e)
 $('zr').onclick=()=>{if(vLock)return;Z.s=1;Z.x=0;Z.y=0};
 let handMode=false,vLock=false;$('vlk').onclick=()=>{vLock=!vLock;$('vlk').classList.toggle('on',vLock);$('vlk').textContent=vLock?'🔒 固定中（押すと解除）':'🔒 ビューワーを固定';$('mnv').textContent=vLock?'🔒':'👁'};
 $('hand').onclick=()=>{handMode=!handMode;$('hand').classList.toggle('on',handMode)};
-function zoomBy(k){if(vLock)return;const cx=W/2,cy=H/2,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,12);Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
+function zoomBy(k){if(vLock)return;const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,12);Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
 $('zin').onclick=()=>zoomBy(1.35);$('zout').onclick=()=>zoomBy(1/1.35);
