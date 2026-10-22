@@ -67,7 +67,8 @@ async function addImages(files){
       add(null,im,{name:nm,size:Math.max(W,H)/S0,fx:.5,fy:.5});k++;continue;
     }
     /* 見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
-    add(null,im,{name:nm,size:2,fx:cl((W/2-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((H/2-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
+    const vc=vis();   /* 見えている範囲の中央に置く（窓の下に隠れない。台帳Z-115） */
+    add(null,im,{name:nm,size:2,fx:cl((vc.cx-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((vc.cy-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
   }
   chips();
 }
@@ -97,9 +98,13 @@ function setFrame(m,init){
   document.querySelectorAll('#frSeg [data-fr]').forEach(b=>b.classList.toggle('on',b.dataset.fr===m));
   try{const d=document.documentElement;if(m==='f'){d.requestFullscreen&&d.requestFullscreen().catch(()=>{})}else if(document.fullscreenElement)document.exitFullscreen()}catch(_){}
   if(!init){up();if(!vLock){Z.s=1;Z.x=0;Z.y=0}}
-  fit();if(!init){frame(sel);tpClamp()}
+  fit(true);if(!init){frame(sel);tpClamp()}   /* 枠の切り替えは明示の操作：紙の高さの基準を測り直す（台帳Z-115） */
 }
-document.querySelectorAll('#frSeg [data-fr]').forEach(b=>b.onclick=()=>setFrame(b.dataset.fr));
+/* 枠「大」の間、紙は窓の上下では伸縮しない（台帳Z-115）。窓を動かしたあとで、紙を今の枠に合わせ直したい時は、「大」を押し直す（他の枠は今までどおり何もしない） */
+document.querySelectorAll('#frSeg [data-fr]').forEach(b=>b.onclick=()=>{
+  const m=b.dataset.fr;
+  if(m==='b'&&frameMode==='b'){fit(true);if(!vLock){Z.s=1;Z.x=0;Z.y=0}frame(sel);tpClamp();canvasUi();note('紙の大きさを、今の枠に合わせ直しました')}
+  else setFrame(m)});
 
 /* ===== 操作窓（#tp）：枠が大・全画面の時は下の窓、「分離」で作品の上に浮かせて半透明にできる =====
    UI一時状態（UIS）。作品データ・Undo・保存には入れない。次回起動への復元は未実装（roadmap F-2 B：要相談）。 */

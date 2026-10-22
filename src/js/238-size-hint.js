@@ -33,7 +33,7 @@ function szhState(now){
 /* paintFrameの最後で呼ぶ：ビューワー（キャンバスの枠）の中央に、画面の実寸の輪を描く */
 function sizeHintDraw(){
   const s=szhState(performance.now());if(!s)return;
-  const cx=W/2,cy=H/2,r=s.d/2;
+  const v=vis(),cx=v.cx,cy=v.cy,r=s.d/2;   /* 見えている範囲の中央（枠が紙より低い時も、輪が隠れない。台帳Z-115） */
   ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=s.a;
   /* 白い輪の下に黒い影を引く（明るい絵でも暗い絵でも見える）。輪の中は、ごく薄く暗くして、絵との境を分かりやすくする */
   ctx.beginPath();ctx.arc(cx,cy,r,0,6.2832);ctx.fillStyle='rgba(255,255,255,.10)';ctx.fill();

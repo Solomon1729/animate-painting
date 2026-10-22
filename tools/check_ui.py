@@ -11,6 +11,7 @@
   4 オブジェクト0個で壊れない（Z-97）      5 キャンバスの大きさ・画像に合わせる・書き出しのpx・Undo・保存（Z-96・Z-98）
   6 座標の表示（Z-98）                     7 レイヤー／オブジェクトの並べ替え：すき間の点線（Z-99）
   8 バーの縦距離スクラブ・吸着（デテント強化）・ラベルの段分け（Z-88）   9 太さの目安表示（Z-146）
+  10 枠「大」で窓を上下・分離・戻しても、紙（W×H）も作品の位置も変わらない／見えている範囲vis()（Z-115）
 """
 import sys, os, re, json, struct, zlib, tempfile
 from playwright.sync_api import sync_playwright
@@ -473,9 +474,61 @@ def g_sizehint(p):
     chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
 
 
+# ---------------------------------------------------------------- 10 枠「大」：窓の上下で紙が伸縮しない（台帳Z-115）
+def g_paper(p):
+    print('--- 10 枠「大」：窓を上下・分離・戻しても、紙も作品の位置も変わらない（Z-115）')
+    s = Sess(p); pg = s.pg
+    ST = "(()=>{const l=sel,r=document.getElementById('wrap').getBoundingClientRect();return{W:+W.toFixed(2),H:+H.toFixed(2),S0:+S0.toFixed(2),wx:+(l.wx||0).toFixed(2),wy:+(l.wy||0).toFixed(2),wrap:+r.height.toFixed(1)}})()"
+    same = lambda a, b: all(abs(a[k] - b[k]) < .02 for k in ('W', 'H', 'S0', 'wx', 'wy'))
+
+    def drag(dy):
+        r = s.rect('#gdrag'); x, y = r['cx'], r['cy']
+        s.touch('touchStart', x, y)
+        for i in range(1, 9):
+            s.touch('touchMove', x, y + dy * i / 8); pg.wait_for_timeout(16)
+        s.touch('touchEnd'); pg.wait_for_timeout(250)
+    chk('枠は「大」で始まる', pg.evaluate("frameMode") == 'b', pg.evaluate("frameMode"))
+    for label, doc in (('自動', None), ('A4', (794, 1123))):
+        if doc:
+            pg.evaluate("(d)=>setCanvasSize(d[0],d[1])", list(doc)); pg.wait_for_timeout(300)
+        a0 = pg.evaluate(ST); drag(-170); a1 = pg.evaluate(ST); drag(+330); a2 = pg.evaluate(ST)
+        chk(label + '：持ち手を上げる・下げる（指）で、枠の高さは変わる', a1['wrap'] < a0['wrap'] - 50 and a2['wrap'] > a0['wrap'] + 50, (a0['wrap'], a1['wrap'], a2['wrap']))
+        chk(label + '：そのあいだ、紙（W・H・S0）も作品の位置（wx・wy）も変わらない', same(a0, a1) and same(a0, a2), (a0, a1, a2))
+        pg.evaluate("tpToggle()"); pg.wait_for_timeout(300); b1 = pg.evaluate(ST); pg.evaluate("tpToggle()"); pg.wait_for_timeout(300); b2 = pg.evaluate(ST)
+        chk(label + '：操作窓を分離して戻しても、紙も作品の位置も変わらない', same(a0, b1) and same(a0, b2), (a0, b1, b2))
+        chk(label + '：絵が消えない', pg.evaluate("(()=>{const d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i])n++;return n})()") > 0)
+        # 見えている範囲（vis）：枠が紙より十分低くなるまで窓を上げる
+        drag(-330)
+        v = pg.evaluate("(()=>{const v=vis(),r=document.getElementById('wrap').getBoundingClientRect(),c=cv.getBoundingClientRect();return{y1:v.y1,H:H,bottom:r.bottom-c.top}})()")
+        chk(label + '：窓を上げると、見えている範囲が紙より低くなる（vis）', v['y1'] < v['H'] - 50 and abs(v['y1'] - v['bottom']) < 1.5, v)
+        z = pg.evaluate("(()=>{const f=()=>{const v=vis();return{x:(v.cx-Z.x)/Z.s,y:(v.cy-Z.y)/Z.s}};const a=f();zoomBy(1.6);const b=f();Z.s=1;Z.x=0;Z.y=0;return{a,b}})()")
+        chk(label + '：＋で、見えている中央の点が動かない', abs(z['a']['x'] - z['b']['x']) < .5 and abs(z['a']['y'] - z['b']['y']) < .5, z)
+        pg.evaluate("""()=>{const c=document.createElement('canvas');c.width=c.height=48;c.getContext('2d').fillRect(0,0,48,48);return new Promise(res=>c.toBlob(b=>{addImages([new File([b],'t.png',{type:'image/png'})]);res(1)}))}""")
+        pg.wait_for_timeout(600)
+        o = pg.evaluate("(()=>{const l=AC[AC.length-1],v=vis();return{y:l.fy*H,y0:v.y0,y1:v.y1}})()")
+        chk(label + '：足した画像は、見えている範囲に置かれる（窓の下に隠れない）', o['y0'] <= o['y'] <= o['y1'], o)
+        drag(+330)
+    # 測り直す場面
+    pg.evaluate("setCanvasSize(0,0)"); pg.wait_for_timeout(300)
+    pg.evaluate("setFrame('f')"); pg.wait_for_timeout(300); f = pg.evaluate(ST)
+    chk('全画面は、今までどおり枠に合う（紙の高さ＝枠）', abs(f['H'] - f['wrap']) < 1.5, f)
+    pg.evaluate("setFrame('b')"); pg.wait_for_timeout(300); g = pg.evaluate(ST)
+    chk('全画面→大で、紙を測り直す（紙の高さ＝枠）', abs(g['H'] - g['wrap']) < 1.5, g)
+    drag(-150); h = pg.evaluate(ST)
+    pg.evaluate("document.querySelector('#frSeg [data-fr=\"b\"]').click()"); pg.wait_for_timeout(300); h2 = pg.evaluate(ST)
+    chk('「大」を押し直すと、紙を今の枠に合わせ直す', abs(h['H'] - g['H']) < .02 and abs(h2['H'] - h2['wrap']) < 1.5, (h, h2))
+    w0 = pg.evaluate("({W:W,H:H})")
+    pg.set_viewport_size({'width': 420, 'height': 640}); pg.wait_for_timeout(500); w1 = pg.evaluate("({W:W,H:H})")
+    chk('高さだけが変わっても（アドレスバー・キーボード）、紙は変わらない', abs(w0['H'] - w1['H']) < .02 and abs(w0['W'] - w1['W']) < .02, (w0, w1))
+    pg.set_viewport_size({'width': 760, 'height': 420}); pg.wait_for_timeout(500); w2 = pg.evaluate("({W:W,H:H,wrap:document.getElementById('wrap').getBoundingClientRect().height})")
+    chk('幅が変わる（画面の向き）と、紙を測り直す', abs(w2['W'] - 760) < 2 and abs(w2['H'] - w2['wrap']) < 1.5, w2)
+    chk('紙の外の余白は、ページのスクロールに回さない（#wrapのtouch-action）', pg.evaluate("getComputedStyle(document.getElementById('wrap')).touchAction") == 'none')
+    chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp, sync_playwright() as p:
-        for g in (g_tip, g_win, g_heal, g_zero, lambda p: g_canvas(p, tmp), g_coords, g_drag, g_slider, g_sizehint):
+        for g in (g_tip, g_win, g_heal, g_zero, lambda p: g_canvas(p, tmp), g_coords, g_drag, g_slider, g_sizehint, g_paper):
             try: g(p)
             except Exception as e: chk('検査が途中で止まった：' + getattr(g, '__name__', 'canvas'), False, str(e)[:200])
     print('OK %d  NG %d' % tuple(OKN))

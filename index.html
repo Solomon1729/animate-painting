@@ -32,7 +32,7 @@ if(d.getAttribute('data-font')==='maru'||(d.getAttribute('data-skin')==='pop'&&!
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-variant-emoji:var(--ei,normal);padding:12px;max-width:680px;margin:0 auto}
 h1{font-size:var(--h1,20px);font-weight:var(--fw,900);margin:4px 0 10px}
-#wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--pane)}
+#wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--pane);touch-action:none}   /* 紙の外の余白（枠「大」で窓を下げた時）に触れても、ページのスクロール・引っ張り更新に回さない（台帳Z-115）。メニュー（.cmenu）は自前のスクロール領域なので影響しない */
 canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* キャンバス上のボタン：拡大縮小3つ（左上・常時）＋メニュー2つ（右上）。メニューは押した時だけ開く（ホバー演出なし） */
 .cbar{position:absolute;top:8px;z-index:5;display:flex;gap:6px}#cz{left:8px}#cm{right:8px}
@@ -864,19 +864,39 @@ const mot=l=>{const r={x:0,y:0,r:0,s:0},f=editing||tool!=='move'||!!drawOnly;   
     else if(k==='m'){const d=c.d*Math.PI/180;r.x=v*Math.cos(d);r.y=-v*Math.sin(d)}else r[k]=v}
   return r};
 
-function fit(){
-  const bd=document.body,fs=bd.classList.contains('fs')||bd.classList.contains('big'),r=$('wrap').getBoundingClientRect();
+/* 紙（W×H）の高さの基準（台帳Z-115）。作品の位置・大きさは「紙に対する割合」で持つので、紙を作り直すと全部が一緒に動く・伸縮する。
+   枠「大」では、持ち手で窓を上下させる・分離して浮かせる／戻す・折りたたむ・アドレスバーの出入り・キーボードで、枠（#wrap）の高さは頻繁に変わる。
+   そこで紙の高さは、枠「大」の間は`FITB.h`に持ち、**明示の操作（fit(true)＝枠の切り替え・キャンバスの大きさの変更）と、枠の幅が変わった時（向き・ウィンドウ幅）だけ**測り直す。
+   枠が紙より低い間は紙の下側が隠れ、高い間は紙の下に余白が出る（紙は伸縮しない。画面に見えている範囲は`vis()`）。 */
+const FITB={w:0,h:0};let FITLAST='';
+function fit(redo){
+  const bd=document.body,big=bd.classList.contains('big'),fs=bd.classList.contains('fs')||big,r=$('wrap').getBoundingClientRect();
+  let rh=r.height;   /* 紙を収める箱の高さ */
+  if(big){if(redo===true||!(FITB.h>0)||Math.abs(FITB.w-r.width)>1){FITB.w=r.width;FITB.h=r.height}rh=FITB.h}else FITB.h=0;
+  let nW,nH,nD,cw,ch,sw,sh,sm;
   if(DOC.w>0&&DOC.h>0){
     /* 指定サイズ：縦横比を保って枠に収める。W・Hは小数のまま持ち、書き出し（hk）ではキャンバスの画素数をちょうどDOC.w×hk・DOC.h×hkにする（四捨五入の1pxのずれを出さない） */
-    const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,r.height):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
-    W=Math.max(1,w);H=Math.max(1,W/a);dpr=hk?DOC.w*hk/W:Math.min(devicePixelRatio||1,2);
-    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';
-    cv.style.margin=(fs?Math.max(0,(r.height-H)/2):0)+'px auto 0';
+    const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,rh):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
+    nW=Math.max(1,w);nH=Math.max(1,nW/a);nD=hk?DOC.w*hk/nW:Math.min(devicePixelRatio||1,2);
+    cw=Math.round(nW*nD);ch=Math.round(nH*nD);sw=nW+'px';sh=nH+'px';sm=(fs?Math.max(0,(rh-nH)/2):0)+'px auto 0';
   }else{
-    dpr=hk||Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.round(r.width));H=fs?Math.max(1,Math.round(r.height)):W;cv.width=W*dpr;cv.height=H*dpr;cv.style.width='';cv.style.margin='';cv.style.height=H+'px';
+    nD=hk||Math.min(devicePixelRatio||1,2);nW=Math.max(1,Math.round(r.width));nH=fs?Math.max(1,Math.round(rh)):nW;cw=nW*nD;ch=nH*nD;sw='';sh=nH+'px';sm='';
   }
+  /* 同じ大きさなら何もしない（枠の高さが変わるたびに呼ばれるが、cvの幅・高さを代入するたびに絵が消えるので、変わらない時は触らない） */
+  const sig=[nW,nH,nD,cw,ch,sw,sh,sm].join('|');
+  if(!MGR&&sig===FITLAST&&cv.width===Math.floor(cw)&&cv.height===Math.floor(ch)&&oc.width===cv.width&&oc.height===cv.height)return;
+  W=nW;H=nH;dpr=nD;
+  cv.width=cw;cv.height=ch;cv.style.width=sw;cv.style.height=sh;cv.style.margin=sm;
   oc.width=cv.width;oc.height=cv.height;ob1.width=ob2.width=cv.width;ob1.height=ob2.height=cv.height;S0=Math.min(W,H)*.26;
   if(MGR){dpr=MGR.d;cv.width=oc.width=ob1.width=ob2.width=MGR.w;cv.height=oc.height=ob1.height=ob2.height=MGR.h}   /* 統合の描画先（画面のCSSの大きさは変えない。226-merge.js） */
+  FITLAST=MGR?'':sig;
+}
+/* 画面に見えているキャンバスの範囲（キャンバスのCSS px）と、その中心。枠が紙より低い時（枠「大」で窓を上げた時）は、紙の一部しか見えない。
+   「見えている中央」「見えている下端」を使う処理（ズームの中心・画像を置く位置・太さの目安・拡大窓・座標のラベル）は、W/2・Hではなくこれを使う（台帳Z-115） */
+function vis(){
+  const r=$('wrap').getBoundingClientRect(),c=cv.getBoundingClientRect(),w=W||1,h=H||1;
+  const x0=Math.max(0,r.left-c.left),y0=Math.max(0,r.top-c.top),x1=Math.min(w,r.right-c.left),y1=Math.min(h,r.bottom-c.top);
+  return x1>x0+1&&y1>y0+1?{x0,y0,x1,y1,cx:(x0+x1)/2,cy:(y0+y1)/2}:{x0:0,y0:0,x1:w,y1:h,cx:w/2,cy:h/2};
 }
 
 const FILT='filter' in CanvasRenderingContext2D.prototype;
@@ -3473,7 +3493,7 @@ cv.addEventListener('wheel',e=>{e.preventDefault();if(vLock)return;const q=sp(e)
 $('zr').onclick=()=>{if(vLock)return;Z.s=1;Z.x=0;Z.y=0};
 let handMode=false,vLock=false;$('vlk').onclick=()=>{vLock=!vLock;$('vlk').classList.toggle('on',vLock);$('vlk').textContent=vLock?'🔒 固定中（押すと解除）':'🔒 ビューワーを固定';$('mnv').textContent=vLock?'🔒':'👁'};
 $('hand').onclick=()=>{handMode=!handMode;$('hand').classList.toggle('on',handMode)};
-function zoomBy(k){if(vLock)return;const cx=W/2,cy=H/2,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,12);Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
+function zoomBy(k){if(vLock)return;const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,12);Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
 $('zin').onclick=()=>zoomBy(1.35);$('zout').onclick=()=>zoomBy(1/1.35);
 
 /* UI */
@@ -3529,10 +3549,10 @@ function chips(){
 function frame(l){
   if(!W||!l||vLock||noFrame)return;
   const att=l.att&&byId(l.to);
-  const sx=att?l.wx:l.fx*W,sy=att?l.wy:l.fy*H,pad=Math.min(W,H)*.14;
+  const v=vis(),sx=att?l.wx:l.fx*W,sy=att?l.wy:l.fy*H,pad=Math.min(v.x1-v.x0,v.y1-v.y0)*.14;   /* 見えている範囲に収める（枠が紙より低い時、窓の下を見ない。台帳Z-115） */
   let sxp=sx*Z.s+Z.x,syp=sy*Z.s+Z.y;
-  if(sxp<pad)Z.x+=pad-sxp;else if(sxp>W-pad)Z.x-=sxp-(W-pad);
-  if(syp<pad)Z.y+=pad-syp;else if(syp>H-pad)Z.y-=syp-(H-pad);
+  if(sxp<v.x0+pad)Z.x+=v.x0+pad-sxp;else if(sxp>v.x1-pad)Z.x-=sxp-(v.x1-pad);
+  if(syp<v.y0+pad)Z.y+=v.y0+pad-syp;else if(syp>v.y1-pad)Z.y-=syp-(v.y1-pad);
 }
 function setSel(l){
   if(!l){sel=null;chips();noObjUi(true);return}  /* オブジェクト0個（台帳Z-97）：選択なし。操作窓は背景・出力だけにする */
@@ -4795,7 +4815,7 @@ function restore(sn){
   AC.forEach(a=>{if(a.syncTo!=null){const t=byId(a.syncTo);if(t)a.pins=t.pins}});
   Object.assign(BG,{m:sn.B.m,c:sn.B.c,c2:sn.B.c2,b:sn.B.b,img:sn.B.img,v:sn.B.v});bgUi();
   if(sn.L){LAYERS=sn.L.map(y=>({...y}));curLid=sn.cl}
-  if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit();if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
+  if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
   canvasUi();
   scnRestore(sn.sc);   /* シナリオは、中身（シナリオ・条件）が同じなら実行を続ける。違えば作り直す */
   setSel(AC[sn.sel]||AC[0]||null);
@@ -4865,7 +4885,7 @@ async function loadProj(txt){
   AC.forEach(a=>{if(a.syncTo!=null){const t=byId(a.syncTo);if(t)a.pins=t.pins}});
   Object.assign(BG,d.BG||{},{img:bgI,v:(BG.v||0)+1});bgUi();
   /* キャンバスの大きさ（台帳Z-98）。旧データには無い＝自動 */
-  DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit();canvasUi();
+  DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit(true);canvasUi();
   scnLoad(d.SCN);   /* 物理シナリオ（無い作品では空にする） */
   setSel(AC[d.sel]||AC[0]||null);
   if(PROJ.v)note('新しい版（v'+PROJ.v+'）で保存された作品です。このアプリが知らない項目は、そのまま残して保存します。読めない部分があるかもしれないので、上書きは避け、自動保存は別の入れ物に入ります',9000);
@@ -4893,7 +4913,7 @@ function blob(col){
 }
 const cs=(a,k,v,ph)=>{a.ch[k]={a:v[0],hz:v[1],w:v[2],d:v[3]||0,e:v[4]||0,ph:ph||0}};
 const mkpin=(t,x,y,r,o)=>({t,x,y,r,a:o.a!==undefined?o.a:(t==='p'?1:.6),vx:o.vx||0,vy:o.vy||0,b:o.b||0,hz:o.hz||1,w:o.w||'sin',ma:o.ma||0,md:o.md||0,mw:o.mw||'sin',ph:0});
-function resetAll(){pushUndo();AC=[];uid=0;sel=null;projReset();scnLoad(null);DOC.w=DOC.h=0;fit();canvasUi();Z.s=1;Z.x=Z.y=0;paused=false;$('pl').textContent='⏸ とめる';pzSync();BG.img=null;BG.b=0;BG.m='solid';BG.c=BG.c2='#ffffff';BG.v=(BG.v||0)+1}
+function resetAll(){pushUndo();AC=[];uid=0;sel=null;projReset();scnLoad(null);DOC.w=DOC.h=0;fit(true);canvasUi();Z.s=1;Z.x=Z.y=0;paused=false;$('pl').textContent='⏸ とめる';pzSync();BG.img=null;BG.b=0;BG.m='solid';BG.c=BG.c2='#ffffff';BG.v=(BG.v||0)+1}
 /* 通知を出す。既定は7秒で消える（×でも閉じられる）。成功の短い通知は、ms（ミリ秒）を渡して早く消せる（台帳Z-116）。エラー・警告は渡さない＝読み逃さない */
 function note(t,ms){$('ht').textContent=t;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},ms>0?ms:7000)}
 function demoA(){
@@ -4950,7 +4970,7 @@ function wbUi(){
 }
 $('wbt').innerHTML=BRT.map(([k,ic,nm])=>`<button data-bt="${k}" aria-label="${nm}">${ic} ${nm}</button>`).join('');
 document.querySelectorAll('#wbt [data-bt]').forEach(b=>b.onclick=()=>{bt=b.dataset.bt;wbUi()});
-[['wbS','size'],['wbH','hard'],['wbG','str'],['wbR','rate']].forEach(([id,k])=>$(id).oninput=e=>{brc()[k]=+e.target.value;wHov=wHov||{x:W/2,y:H/2,t:performance.now()};wHov.t=performance.now()});
+[['wbS','size'],['wbH','hard'],['wbG','str'],['wbR','rate']].forEach(([id,k])=>$(id).oninput=e=>{brc()[k]=+e.target.value;wHov=wHov||{x:vis().cx,y:vis().cy,t:performance.now()};wHov.t=performance.now()});
 $('wbP').onchange=e=>{bpress=e.target.checked};
 $('wbRst').onclick=()=>{const l=sel;if(!l||!l.dm)return;if(blocked(l))return;pushUndo();l.dm=null;l.dmv=(l.dmv|0)+1;l._mr=null;l.dirty=true;l.wd=true;dirtyProj=true;note('ブラシの歪みを全部戻しました（ピンはそのまま）')};
 wbUi();wmUi();
@@ -5875,14 +5895,14 @@ function setCanvasSize(w,h){
     if(k<1){w=Math.round(w*k);h=Math.round(h*k);note('大きすぎるので、縦横比を保って '+w+'×'+h+' px に縮めました（上限：長辺'+CV_MAX+'px・合計2500万画素）')}
     DOC.w=Math.max(CV_MIN,w);DOC.h=Math.max(CV_MIN,h);
   }
-  fit();if(!vLock){Z.s=1;Z.x=Z.y=0}dirtyProj=true;canvasUi();
+  fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}dirtyProj=true;canvasUi();
   return[DOC.w,DOC.h];
 }
 /* 画面の表示（背景・出力のタブのキャンバスの段と、静止画の倍率の候補）を今の状態に合わせる */
 function canvasUi(){
   const w=DOC.w||Math.round(W||0),h=DOC.h||Math.round(H||0),a=document.activeElement;
   if(a!==$('cvw'))$('cvw').value=w;if(a!==$('cvh'))$('cvh').value=h;
-  $('cvnote').textContent=DOC.w?'キャンバス '+DOC.w+'×'+DOC.h+' px。静止画の1×がこの大きさです（座標もこのpxで測ります）。':'自動：画面の枠に合わせます（今は約 '+w+'×'+h+' px）。大きさを決めると、書き出しも座標もその大きさになります。';
+  $('cvnote').textContent=DOC.w?'キャンバス '+DOC.w+'×'+DOC.h+' px。静止画の1×がこの大きさです（座標もこのpxで測ります）。':'自動：画面の枠に合わせます（今は約 '+w+'×'+h+' px）。操作窓を動かしても、紙は伸び縮みしません（合わせ直すには、枠の「大」を押し直す）。大きさを決めると、書き出しも座標もその大きさになります。';
   $('cvauto').disabled=!DOC.w;
   [...$('sq').options].forEach(o=>{const k=+o.value;o.textContent=k+'×（'+Math.round(w*k)+'×'+Math.round(h*k)+'px）'});
 }
@@ -5928,7 +5948,7 @@ function crdHide(){$('crdp').hidden=true;$('crdo').hidden=true;CRD.hold=false;CR
 function crdPlace(el,x,y,anchor){  /* (x,y)＝キャンバス内の表示位置（CSS px）。ラベルは枠の外へ出ない */
   el.hidden=false;const lw=el.offsetWidth,lh=el.offsetHeight;
   let lx=x,ly=y;if(anchor==='c'){lx=x-lw/2}else if(anchor==='r'){lx=x-lw}
-  lx=cl(lx,3,Math.max(3,W-lw-3));ly=cl(ly,3,Math.max(3,H-lh-3));
+  const v=vis();lx=cl(lx,v.x0+3,Math.max(v.x0+3,v.x1-lw-3));ly=cl(ly,v.y0+3,Math.max(v.y0+3,v.y1-lh-3));   /* 見えている範囲の中に収める（台帳Z-115） */
   el.style.transform='translate('+Math.round(cv.offsetLeft+lx)+'px,'+Math.round(cv.offsetTop+ly)+'px)';
 }
 /* 押している間は、1行目＝今の座標、2行目＝押した所（ドラッグ開始）の座標（台帳Z-114）。離したあとも、ラベルが消えるまで両方残る。
@@ -6551,7 +6571,7 @@ function lupeTick(){
   cross('rgba(0,0,0,.65)',3);cross('#fff',1.4);
   if(wpx>0){const rr=Math.min(wpx*z/2*dpr,mid-3*dpr);g.beginPath();g.arc(mid,mid,rr,0,6.2832);g.lineWidth=3*dpr;g.strokeStyle='rgba(0,0,0,.45)';g.stroke();g.lineWidth=1.2*dpr;g.strokeStyle='#fff';g.stroke()}
   if(m&&m.draw){try{m.draw(g,{c,z,d,dpr,to:(x,y)=>[(x-c.x)*z*dpr+mid,(y-c.y)*z*dpr+mid]})}catch(_){}}
-  const cs=[[8,8],[W-sz-8,8],[8,H-sz-8],[W-sz-8,H-sz-8]],near=k=>{const[x,y]=cs[k];return c.x>x-30&&c.x<x+sz+30&&c.y>y-30&&c.y<y+sz+30};
+  const vv=vis(),cs=[[vv.x0+8,vv.y0+8],[vv.x1-sz-8,vv.y0+8],[vv.x0+8,vv.y1-sz-8],[vv.x1-sz-8,vv.y1-sz-8]],near=k=>{const[x,y]=cs[k];return c.x>x-30&&c.x<x+sz+30&&c.y>y-30&&c.y<y+sz+30};
   if(near(LUP.corner)){let b=-1,bd=-1;cs.forEach(([x,y],k)=>{if(near(k))return;const dd=Math.hypot(c.x-(x+sz/2),c.y-(y+sz/2));if(dd>bd){bd=dd;b=k}});if(b>=0)LUP.corner=b}
   const[px,py]=cs[LUP.corner];
   el.hidden=false;el.style.transform='translate('+Math.round(cv.offsetLeft+Math.max(3,px))+'px,'+Math.round(cv.offsetTop+Math.max(3,py))+'px)';
@@ -6603,7 +6623,7 @@ function szhState(now){
 /* paintFrameの最後で呼ぶ：ビューワー（キャンバスの枠）の中央に、画面の実寸の輪を描く */
 function sizeHintDraw(){
   const s=szhState(performance.now());if(!s)return;
-  const cx=W/2,cy=H/2,r=s.d/2;
+  const v=vis(),cx=v.cx,cy=v.cy,r=s.d/2;   /* 見えている範囲の中央（枠が紙より低い時も、輪が隠れない。台帳Z-115） */
   ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=s.a;
   /* 白い輪の下に黒い影を引く（明るい絵でも暗い絵でも見える）。輪の中は、ごく薄く暗くして、絵との境を分かりやすくする */
   ctx.beginPath();ctx.arc(cx,cy,r,0,6.2832);ctx.fillStyle='rgba(255,255,255,.10)';ctx.fill();
@@ -6717,7 +6737,8 @@ async function addImages(files){
       add(null,im,{name:nm,size:Math.max(W,H)/S0,fx:.5,fy:.5});k++;continue;
     }
     /* 見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
-    add(null,im,{name:nm,size:2,fx:cl((W/2-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((H/2-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
+    const vc=vis();   /* 見えている範囲の中央に置く（窓の下に隠れない。台帳Z-115） */
+    add(null,im,{name:nm,size:2,fx:cl((vc.cx-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((vc.cy-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
   }
   chips();
 }
@@ -6747,9 +6768,13 @@ function setFrame(m,init){
   document.querySelectorAll('#frSeg [data-fr]').forEach(b=>b.classList.toggle('on',b.dataset.fr===m));
   try{const d=document.documentElement;if(m==='f'){d.requestFullscreen&&d.requestFullscreen().catch(()=>{})}else if(document.fullscreenElement)document.exitFullscreen()}catch(_){}
   if(!init){up();if(!vLock){Z.s=1;Z.x=0;Z.y=0}}
-  fit();if(!init){frame(sel);tpClamp()}
+  fit(true);if(!init){frame(sel);tpClamp()}   /* 枠の切り替えは明示の操作：紙の高さの基準を測り直す（台帳Z-115） */
 }
-document.querySelectorAll('#frSeg [data-fr]').forEach(b=>b.onclick=()=>setFrame(b.dataset.fr));
+/* 枠「大」の間、紙は窓の上下では伸縮しない（台帳Z-115）。窓を動かしたあとで、紙を今の枠に合わせ直したい時は、「大」を押し直す（他の枠は今までどおり何もしない） */
+document.querySelectorAll('#frSeg [data-fr]').forEach(b=>b.onclick=()=>{
+  const m=b.dataset.fr;
+  if(m==='b'&&frameMode==='b'){fit(true);if(!vLock){Z.s=1;Z.x=0;Z.y=0}frame(sel);tpClamp();canvasUi();note('紙の大きさを、今の枠に合わせ直しました')}
+  else setFrame(m)});
 
 /* ===== 操作窓（#tp）：枠が大・全画面の時は下の窓、「分離」で作品の上に浮かせて半透明にできる =====
    UI一時状態（UIS）。作品データ・Undo・保存には入れない。次回起動への復元は未実装（roadmap F-2 B：要相談）。 */

@@ -13,14 +13,14 @@ function setCanvasSize(w,h){
     if(k<1){w=Math.round(w*k);h=Math.round(h*k);note('大きすぎるので、縦横比を保って '+w+'×'+h+' px に縮めました（上限：長辺'+CV_MAX+'px・合計2500万画素）')}
     DOC.w=Math.max(CV_MIN,w);DOC.h=Math.max(CV_MIN,h);
   }
-  fit();if(!vLock){Z.s=1;Z.x=Z.y=0}dirtyProj=true;canvasUi();
+  fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}dirtyProj=true;canvasUi();
   return[DOC.w,DOC.h];
 }
 /* 画面の表示（背景・出力のタブのキャンバスの段と、静止画の倍率の候補）を今の状態に合わせる */
 function canvasUi(){
   const w=DOC.w||Math.round(W||0),h=DOC.h||Math.round(H||0),a=document.activeElement;
   if(a!==$('cvw'))$('cvw').value=w;if(a!==$('cvh'))$('cvh').value=h;
-  $('cvnote').textContent=DOC.w?'キャンバス '+DOC.w+'×'+DOC.h+' px。静止画の1×がこの大きさです（座標もこのpxで測ります）。':'自動：画面の枠に合わせます（今は約 '+w+'×'+h+' px）。大きさを決めると、書き出しも座標もその大きさになります。';
+  $('cvnote').textContent=DOC.w?'キャンバス '+DOC.w+'×'+DOC.h+' px。静止画の1×がこの大きさです（座標もこのpxで測ります）。':'自動：画面の枠に合わせます（今は約 '+w+'×'+h+' px）。操作窓を動かしても、紙は伸び縮みしません（合わせ直すには、枠の「大」を押し直す）。大きさを決めると、書き出しも座標もその大きさになります。';
   $('cvauto').disabled=!DOC.w;
   [...$('sq').options].forEach(o=>{const k=+o.value;o.textContent=k+'×（'+Math.round(w*k)+'×'+Math.round(h*k)+'px）'});
 }
@@ -66,7 +66,7 @@ function crdHide(){$('crdp').hidden=true;$('crdo').hidden=true;CRD.hold=false;CR
 function crdPlace(el,x,y,anchor){  /* (x,y)＝キャンバス内の表示位置（CSS px）。ラベルは枠の外へ出ない */
   el.hidden=false;const lw=el.offsetWidth,lh=el.offsetHeight;
   let lx=x,ly=y;if(anchor==='c'){lx=x-lw/2}else if(anchor==='r'){lx=x-lw}
-  lx=cl(lx,3,Math.max(3,W-lw-3));ly=cl(ly,3,Math.max(3,H-lh-3));
+  const v=vis();lx=cl(lx,v.x0+3,Math.max(v.x0+3,v.x1-lw-3));ly=cl(ly,v.y0+3,Math.max(v.y0+3,v.y1-lh-3));   /* 見えている範囲の中に収める（台帳Z-115） */
   el.style.transform='translate('+Math.round(cv.offsetLeft+lx)+'px,'+Math.round(cv.offsetTop+ly)+'px)';
 }
 /* 押している間は、1行目＝今の座標、2行目＝押した所（ドラッグ開始）の座標（台帳Z-114）。離したあとも、ラベルが消えるまで両方残る。
