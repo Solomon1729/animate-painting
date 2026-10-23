@@ -1,6 +1,7 @@
 /* ===== 物理モード: 重力・質量・反発・簡易の当たり判定。既存の動き/歪みとは独立 ===== */
 let physOn=false,physG=1,physGDir=90,physFloor=true,physWall=true,physCollide=true,physTimeScale=1,pxPerM=100,rulerOn=false,rulerPt=null,pendingRulerPx=0;
-function ensurePhys(l){return l.phys||(l.phys={on:false,m:1,e:.55,vx:0,vy:0,fixed:false,rs:.8})}
+function ensurePhys(l){if(!l)return{};   /* オブジェクト0個（sel=null）で旧・簡易の物理の部品を動かしても落ちない（書いた値は捨てる。台帳Z-193） */
+  return l.phys||(l.phys={on:false,m:1,e:.55,vx:0,vy:0,fixed:false,rs:.8})}
 function physStep(dt){
   if(!physOn||paused||dt<=0)return;
   const G=physG*9.8*pxPerM,ga=physGDir*Math.PI/180,gx=Math.cos(ga)*G,gy=Math.sin(ga)*G;

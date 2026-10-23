@@ -167,6 +167,23 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 .skrow{display:flex;align-items:center;gap:6px;margin-top:calc(var(--dp,1)*6px)}.skrow>label{flex:0 0 7.5em;font-size:12px;font-weight:var(--fw,900)}.skrow>select{flex:1;min-width:0}
 #skq{width:100%;margin-top:2px}
 .cmenu .cmh:not(:first-child){margin-top:6px}
+/* ===== タイムラプス（操作の手順の記録・再生。台帳Z-192）。色はスキンの変数だけ。分類の色（--c）は意味を表す印なので固定の色相（背景は --pane に混ぜて文字の対比を保つ）。ホバー演出なし ===== */
+#tlp{position:sticky;top:0;z-index:6;background:var(--pane);max-height:78vh;overflow:auto;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+#tlp [hidden]{display:none!important}
+#tlp .tlh{justify-content:flex-end}#tlp .tlh .gh{flex:1 1 100%;margin:0;line-height:1.4}
+#tlp.min #tlHowBox,#tlp.min #tlBlkBox,#tlp.min #tlMore{display:none}
+.tlcap{margin-top:8px;padding:8px 10px;border-radius:calc(var(--rk,1)*10px);background:color-mix(in srgb,var(--acc) 12%,var(--pane));border:var(--bw,1px) solid color-mix(in srgb,var(--acc) 45%,var(--line));font-weight:var(--fw,600);font-size:14px;line-height:1.5;min-height:2.6em}
+.tlerr{font-size:12px;color:#b91c1c;margin-top:4px}.tlerr:empty{display:none}
+.tlsub{margin-top:8px}
+#tlHow{margin:2px 0 0;padding-left:1.6em;font-size:13px;line-height:1.5}#tlHow li{margin:2px 0}
+#tlBlocks{display:flex;flex-direction:column;gap:5px;max-height:30vh;overflow:auto;padding:2px}
+.tlb{--c:#64748b;border-left:5px solid var(--c);background:color-mix(in srgb,var(--c) 11%,var(--pane));border-radius:calc(var(--rk,1)*8px);padding:5px 8px;cursor:pointer;font-size:12px;opacity:.42}
+.tlb.done{opacity:1}.tlb.cur{opacity:1;outline:2px solid var(--acc);outline-offset:1px}
+.tlbt{font-weight:var(--fw,800);font-size:13px}.tlbf{display:flex;gap:6px;margin-top:2px;min-width:0}.tlbf span{opacity:.68;flex:0 0 auto}.tlbf b{font-weight:var(--fw,600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tlb[data-c="setup"]{--c:#3b82c4}.tlb[data-c="cond"]{--c:#9a5bc4}.tlb[data-c="body"]{--c:#2f9e62}.tlb[data-c="link"]{--c:#d9822b}.tlb[data-c="field"]{--c:#1f9db0}
+.tlb[data-c="measure"]{--c:#d1486f}.tlb[data-c="check"]{--c:#6aa22f}.tlb[data-c="rule"]{--c:#b8960f}.tlb[data-c="run"]{--c:#5b6472}.tlb[data-c="note"]{--c:#94a3b8}.tlb[data-c="ui"]{--c:#5a6fd6}
+.tlhi{outline:3px solid var(--acc)!important;outline-offset:2px}
+#tlFg{position:absolute;z-index:9;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:3px solid var(--acc);background:color-mix(in srgb,var(--acc) 35%,transparent);pointer-events:none}
 </style>
 </head>
 <body>
@@ -201,6 +218,7 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
   <button id="mPlay" aria-label="物理を実行・一時停止" hidden>▶ 物理を実行</button>
   <button id="mRst" aria-label="物理を最初に戻す" hidden>⟲ 物理を最初へ</button>
   <button id="mGrab" aria-label="実行中にキャンバスを触って物を動かす（つかむ・つつく）のオン／オフ" aria-pressed="true" hidden>🖐 つかんで動かす</button>
+  <button id="mTl" aria-label="タイムラプス（作り方・操作の手順を、早送りで見る／自分の操作を記録する）">🎞 タイムラプス</button>
   <button id="ad2" aria-label="画像を選んでオブジェクトを追加">🖼 画像を追加</button>
   <button id="sn2" aria-label="静止画を保存">📷 静止画を保存</button>
   <button id="rc2" aria-label="録画">⏺ 録画</button>
@@ -211,6 +229,32 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 <div class="pane" id="tp">
   <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）"></span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
   <div id="tpb">
+  <div class="grp tlp" id="tlp" hidden>
+    <div class="row tlh"><b class="gh" id="tlTitle">🎞 タイムラプス</b><button id="tlMin" aria-label="枠を小さくする／大きくする" aria-pressed="false">▾</button><button id="tlX" aria-label="タイムラプスを閉じる（見る前の作品に戻ります）">✕ 閉じる</button></div>
+    <div id="tlPick">
+      <div class="note">「どうやって作るか」を、操作の手順つきの早送りで見ます。見終わって閉じると、見る前の作品に戻ります。物理は、ブロックを順に置いてシナリオを作る形（将来のビジュアルプログラミング）で見せます。</div>
+      <div class="row"><select id="tlSrc" aria-label="作り方を見る物理サンプル"><option value="">作り方を見る：物理サンプル…</option></select></div>
+      <div class="row"><button id="tlCur" aria-label="いま開いている物理シナリオの作り方を見る">いまの物理シナリオ</button><button id="tlRec" aria-label="自分の操作を記録する（画面のボタン・バー・物理の命令）">● 操作を記録</button><button id="tlLd" aria-label="手順書（JSON）を読み込む">JSONを読む</button></div>
+      <div id="tlLdBox" hidden><textarea id="tlJson" rows="6" spellcheck="false" aria-label="手順書のJSON" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace"></textarea><div class="row"><button id="tlLdGo">読み込んで見る</button></div></div>
+      <div class="note" id="tlPickErr" style="color:#b91c1c;opacity:1"></div>
+    </div>
+    <div id="tlRc" hidden><div class="row"><b id="tlRcN">● 記録中</b><button id="tlRcX" aria-label="記録を止めて、記録した手順を再生できる形にする">■ 止める</button></div><div class="note">いま画面で触った操作（ボタン・バー・選ぶ・物理の命令）が、手順として貯まります。キャンバスをなぞった跡は「動きの目安」としてだけ残ります（再生では作品に反映しません）。</div></div>
+    <div id="tlPl" hidden>
+      <div class="row" id="tlBar"><button id="tlFirst" aria-label="最初へ">⏮</button><button id="tlPrev" aria-label="1つ前の手順へ">◀</button><button id="tlPlay" aria-label="再生・一時停止">▶ 再生</button><button id="tlNext" aria-label="1つ先の手順へ">▶|</button><button id="tlLast" aria-label="最後へ（できあがり）">⏭</button></div>
+      <div class="row"><input id="tlSk" type="range" data-e="1" min="0" max="1" step="1" value="0" aria-label="手順の位置（動かすと、その手順の姿になります）"><b class="v" id="tlPos" style="min-width:5em">はじめ</b></div>
+      <div class="row"><span class="lab" style="min-width:2.6em">速さ</span><select id="tlSpd" aria-label="再生の速さ"></select><select id="tlMode" aria-label="進め方"><option value="auto">自動で進む</option><option value="recorded">記録した間隔どおり</option><option value="manual">1手順ずつ（◀▶|で）</option></select></div>
+      <div class="tlcap" id="tlCap" role="status" aria-live="polite"></div>
+      <div class="tlerr" id="tlErr"></div>
+      <div id="tlHowBox"><div class="gh tlsub">操作の手順</div><ol id="tlHow"></ol></div>
+      <div id="tlBlkBox"><div class="gh tlsub">ブロック（タップでその手順へ）</div><div id="tlBlocks"></div></div>
+      <details id="tlMore"><summary>書き出し・直す</summary>
+        <div class="row"><button id="tlTxt" aria-label="操作手順書（文章）をコピー">📄 手順書をコピー</button><button id="tlJs" aria-label="手順書（JSON）をコピー">JSONをコピー</button></div>
+        <div class="row"><span class="lab" style="min-width:2.6em">字幕</span><input id="tlEd" type="text" aria-label="いまの手順の字幕を直す" style="flex:1;min-width:8em"><button id="tlDel" aria-label="いまの手順を消す">この手順を消す</button></div>
+        <textarea id="tlOut" rows="8" hidden spellcheck="false" aria-label="書き出した内容" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace"></textarea>
+      </details>
+      <div class="row"><button id="tlKeep" aria-label="見終わったこの状態のまま続ける（「戻す」で見る前に戻せます）">この状態で続ける</button><span class="note" style="margin:0">「閉じる」で、見る前の作品に戻ります</span></div>
+    </div>
+  </div>
   <div class="row" id="ch1"></div>
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
@@ -406,7 +450,7 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
   <div class="tab" data-tab="ph">
     <div class="grp" id="scGrp"><div class="gh">物理</div>
     <div class="note" id="scHelp">絵を選んで「動く物体」か「地形」にして、▶ で動かします。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。絵を描き足したり大きさを変えたりすると、当たり判定も追従します。サンプルを開くと、問題づくり・実験もできます。</div>
-    <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="雛形から新しいシナリオを作る">＋雛形</button><button id="scOff" aria-label="シナリオを閉じる（自動で作った絵も消えます）" hidden>閉じる</button></div>
+    <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="プロトタイプ（最小のシナリオ）から新しいシナリオを作る">＋プロトタイプ</button><button id="scOff" aria-label="シナリオを閉じる（自動で作った絵も消えます）" hidden>閉じる</button></div>
     <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の役割</div>
       <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理の物体（絵の輪郭が当たり判定）にする">動く物体</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵を物理に参加させない（絵は残ります）">参加しない</button></div>
       <div class="row"><span class="lab">形</span><select id="scArtS" aria-label="物体の形"><option value="auto">自動</option><option value="circle">丸</option><option value="box">四角</option><option value="hull">輪郭</option><option value="static">固定の障害物</option></select></div>
@@ -415,6 +459,7 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
     <div id="scBody" hidden>
       <div class="note" id="scTitle" style="font-weight:var(--fw,900);opacity:1"></div>
       <div class="note" id="scProb" style="opacity:.85"></div>
+      <div class="row"><button id="scHow" aria-label="このシナリオの作り方を、ブロックを順に置く形のタイムラプスで見る（見終わると見る前に戻ります）">🎞 作り方をタイムラプスで見る</button></div>
       <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
       <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span></div>
       <div class="row"><span class="lab">時刻</span><input id="scT" type="range" min="0" max="1" step="0.0083333" value="0" aria-label="時刻（動かすと、その時刻の姿になります）"><b class="v" id="scTv" style="min-width:7em">0.00 s</b></div>
@@ -1023,7 +1068,8 @@ function drawRangeBox(){
 }
 /* ===== 物理モード: 重力・質量・反発・簡易の当たり判定。既存の動き/歪みとは独立 ===== */
 let physOn=false,physG=1,physGDir=90,physFloor=true,physWall=true,physCollide=true,physTimeScale=1,pxPerM=100,rulerOn=false,rulerPt=null,pendingRulerPx=0;
-function ensurePhys(l){return l.phys||(l.phys={on:false,m:1,e:.55,vx:0,vy:0,fixed:false,rs:.8})}
+function ensurePhys(l){if(!l)return{};   /* オブジェクト0個（sel=null）で旧・簡易の物理の部品を動かしても落ちない（書いた値は捨てる。台帳Z-193） */
+  return l.phys||(l.phys={on:false,m:1,e:.55,vx:0,vy:0,fixed:false,rs:.8})}
 function physStep(dt){
   if(!physOn||paused||dt<=0)return;
   const G=physG*9.8*pxPerM,ga=physGDir*Math.PI/180,gx=Math.cos(ga)*G,gy=Math.sin(ga)*G;
@@ -2086,7 +2132,7 @@ function fit(rows,f,scn){
 function toCSV(cols,rows){const esc=v=>typeof v==='number'?String(+v.toPrecision(8)):String(v);return[cols.join(',')].concat(rows.map(r=>cols.map(c=>esc(r[c])).join(','))).join('\n')}
 function seriesCSV(res,names){const cols=['t'].concat(names||Object.keys(res.series));const rows=res.ts.map((t,i)=>{const r={t};for(const c of cols.slice(1))r[c]=res.series[c][i];return r});return toCSV(cols,rows)}
 
-/* 作者向けの雛形（最小の有効なシナリオ） */
+/* 作者向けのプロトタイプ（最小の有効なシナリオ） */
 function template(){return{id:'my-scenario',title:'題名',tags:['力学'],source:'オリジナル（型の名前）',level:'basic',problem:'（問題文は自分の言葉で書く）',
   params:{theta:{v:30,min:5,max:60,step:1,unit:'°',label:'斜面の角度'},mu:{v:.2,min:0,max:1,step:.05,label:'動摩擦係数'}},
   vars:{L:'2'},world:{g:9.8},view:{x0:0,y0:0,w:6},
@@ -2153,7 +2199,7 @@ function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻�
   }catch(e){RUN.err=String(e&&e.message||e);RUN.sess=null;RUN.R=null}
 }
 function scnReset(){RUN.playing=false;scnBuild();scnSyncLinks();scnUi()}
-/* シナリオを開く（サンプル・貼り付け・雛形）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
+/* シナリオを開く（サンプル・貼り付け・プロトタイプ）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
 function scnSetSource(src,o){
   o=o||{};const V=PHS.validate(src);
   if(V.errors.length)return{ok:false,errors:V.errors,warns:V.warns};
@@ -2167,7 +2213,7 @@ function scnSetSource(src,o){
   return{ok:true,warns:V.warns}}
 function scnLoadSample(id){const s=typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.find(x=>x.id===id);if(!s)return{ok:false,errors:['サンプル「'+id+'」がありません']};return scnSetSource(s)}
 function scnClose(o){
-  o=o||{};pushUndo();if(!o.keepActors)scnClearAuto();else AC.forEach(a=>{delete a.scnAuto});
+  o=o||{};if(!o.noUndo)pushUndo();if(!o.keepActors)scnClearAuto();else AC.forEach(a=>{delete a.scnAuto});
   SCN.src=null;SCN.on=false;SCN.link={};SCN.params={};SCN.graph='';RUN.playing=false;scnBuild();RUN.rev++;dirtyProj=true;scnUi()}
 function scnSetParam(k,v){SCN.params[k]=v;RUN.dirty=true;dirtyProj=true}
 function scnResetParams(){SCN.params={};RUN.dirty=true;RUN.rev++;dirtyProj=true}
@@ -3146,13 +3192,13 @@ const RULE_ACTS={
   stop:{label:'実行を止める',fields:[]},
   note:{label:'メッセージを出す',fields:[T('text','text','','文字',{req:1})]}
 };
-const RULE_FIELDS=[T('id','text','','ルールの名前'),T('when','num','','条件の式（真なら動作）',{req:1,hint:'例 ball.y<0.3'}),T('mode','enum','','いつ動作するか',{options:['rise','once'],labels:['成り立った瞬間ごと','最初の1回だけ']}),T('do','acts','','動作の並び',{req:1})];
+const RULE_FIELDS=[T('id','text','','ルールの名前'),T('when','num','','条件の式（真なら動作）',{req:1,hint:'例 ball.y<0.3'}),T('mode','enum','','いつ動作するか',{options:['rise','once'],labels:['成り立った瞬間ごと','最初の1回だけ']}),T('do','acts','','動作の並び',{req:1}),T('label','text','','画面の名前'),T('note','text','','メモ')];
 const SCN_PARTS=[
-  {id:'params',label:'条件（スライダーで変えられる量）',fields:[T('v','num','','値',{req:1}),T('min','num','','最小'),T('max','num','','最大'),T('step','num','','刻み'),T('unit','text','','単位'),T('label','text','','画面の名前')]},
-  {id:'probes',label:'測定（時系列→1つの数）',fields:[T('expr','num','','測る式',{req:1}),T('reduce','enum','','集計',{options:Object.keys(RED_LABELS),labels:Object.values(RED_LABELS)}),T('when','num','','この条件の間だけ'),T('after','text','','この出来事／時刻より後だけ'),T('unit','text','','単位'),T('label','text','','画面の名前')]},
-  {id:'ask',label:'答え合わせ（測定値と理論値）',fields:[T('q','text','','問い'),T('probe','text','','測定の名前'),T('theory','num','','理論値の式',{req:1}),T('tol','num','','許容する相対誤差（既定0.02）'),T('abs','num','','許容する絶対誤差'),T('unit','text','','単位')]},
-  {id:'events',label:'出来事（条件が最初に成り立つ時刻）',fields:[T('when','num','','条件の式',{req:1}),T('label','text','','画面の名前')]},
-  {id:'checks',label:'不変量の検査（保存則など）',fields:[T('name','text','','名前'),T('probe','text','','測定の名前'),T('conserved','num','','許容する変動の割合'),T('min','num','','最小'),T('max','num','','最大')]}
+  {id:'params',label:'条件（スライダーで変えられる量）',fields:[T('v','num','','値',{req:1}),T('min','num','','最小'),T('max','num','','最大'),T('step','num','','刻み'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'probes',label:'測定（時系列→1つの数）',fields:[T('expr','num','','測る式',{req:1}),T('reduce','enum','','集計',{options:Object.keys(RED_LABELS),labels:Object.values(RED_LABELS)}),T('when','num','','この条件の間だけ'),T('after','text','','この出来事／時刻より後だけ'),T('at','text','','この出来事／時刻の値（その時の値を読む）'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'ask',label:'答え合わせ（測定値と理論値）',fields:[T('q','text','','問い'),T('probe','text','','測定の名前'),T('expr','num','','測定の名前の代わりに、その場で測る式'),T('theory','num','','理論値の式',{req:1}),T('tol','num','','許容する相対誤差（既定0.02）'),T('abs','num','','許容する絶対誤差'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'events',label:'出来事（条件が最初に成り立つ時刻）',fields:[T('when','num','','条件の式',{req:1}),T('label','text','','画面の名前'),T('first','bool','','最初の1回だけ'),T('note','text','','メモ')]},
+  {id:'checks',label:'不変量の検査（保存則など）',fields:[T('name','text','','名前'),T('probe','text','','測定の名前'),T('expr','num','','測定の名前の代わりに、その場で測る式'),T('conserved','num','','許容する変動の割合'),T('min','num','','最小'),T('max','num','','最大'),T('scale','num','','変動を測る基準の大きさ'),T('tol','num','','許容する誤差'),T('note','text','','メモ')]}
 ];
 
 /* ---------- 部品表 ---------- */
@@ -3193,8 +3239,8 @@ const pick=(o,keys)=>{const r={};for(const k of keys)if(o[k]!==undefined)r[k]=o[
 const BODY_SET=BODY_FIELDS.map(f=>f.k).filter(k=>k!=='id');
 /* 各命令：label・kind（scenario＝シナリオJSONを直す／runtime＝実行を操作する）・args（入力欄）・do(s,a)（シナリオを直接直す。idなどを返す） */
 const OPS={
-  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
-    make(a){const s={id:'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
+  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('id','id','','シナリオの名前',{hint:'省略するとmy-scene'}),T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
+    make(a){const s={id:a.id||'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
       if(a.floor!==false)s.bodies.push({id:'floor',type:'static',mu:.5,e:0,label:'床',shapes:[{t:'plane',normal:[0,1],d:0}]});return s}},
   addBody:{label:'物体を置く',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id)}),T('shape','shape','','形（{t:"circle",r:0.1}など。部品表のshapes）',{req:1}),T('pos','vec2','m','位置'),T('set','object','','その他の項目（部品表のbodyFields）')],returns:'物体id',
     do(s,a){need(a.shape&&a.shape.t,'shape（形）が必要です');const id=a.id||uniq(s.bodies,'b'),b={id,type:a.type||'dynamic',shapes:[a.shape]};
@@ -3209,17 +3255,26 @@ const OPS={
   removeJoint:{label:'つなぎを外す',kind:'scenario',args:[T('id','text','','拘束id',{req:1})],do(s,a){const n=(s.joints||[]).length;s.joints=(s.joints||[]).filter(j=>j.id!==a.id);need(s.joints.length<n,'拘束「'+a.id+'」がありません');return a.id}},
   addField:{label:'力場を足す',kind:'scenario',args:[T('type','enum','','種類',{req:1,options:Object.keys(FIELDS),labels:Object.values(FIELDS).map(f=>f.label)}),T('set','object','','項目（ax・ay・bz・region・targetsなど）')],returns:'力場の番号',do(s,a){need(a.type,'type（種類）が必要です');(s.fields=s.fields||[]).push(Object.assign({type:a.type},a.set||{}));return s.fields.length-1}},
   removeField:{label:'力場を消す',kind:'scenario',args:[T('index','num','','力場の番号',{req:1})],do(s,a){need(s.fields&&s.fields[a.index],'力場['+a.index+']がありません');s.fields.splice(a.index,1);return a.index}},
-  setParam:{label:'条件（スライダー）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1})].concat(SCN_PARTS[0].fields),do(s,a){need(a.name,'name（名前）が必要です');const p=(s.params=s.params||{});const cur=p[a.name]&&typeof p[a.name]==='object'?p[a.name]:{v:p[a.name]};p[a.name]=Object.assign(cur,pick(a,['v','min','max','step','unit','label']));return a.name}},
+  setParam:{label:'条件（スライダー）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1})].concat(SCN_PARTS[0].fields),do(s,a){need(a.name,'name（名前）が必要です');const p=(s.params=s.params||{});const cur=p[a.name]&&typeof p[a.name]==='object'?p[a.name]:{v:p[a.name]};p[a.name]=Object.assign(cur,pick(a,['v','min','max','step','unit','label','note']));return a.name}},
   setVar:{label:'途中計算の名前（式）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1}),T('expr','num','','式',{req:1})],do(s,a){need(a.name&&a.expr!==undefined,'name と expr が必要です');(s.vars=s.vars||{})[a.name]=a.expr;return a.name}},
-  addProbe:{label:'測定を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[1].fields),do(s,a){need(a.id&&a.expr,'id と expr が必要です');(s.probes=s.probes||{})[a.id]=pick(a,['expr','reduce','when','after','unit','label']);return a.id}},
-  addAsk:{label:'答え合わせを足す',kind:'scenario',args:SCN_PARTS[2].fields,returns:'番号',do(s,a){need(a.theory!==undefined&&(a.probe!==undefined||a.expr!==undefined),'theory と、probe（または expr）が必要です');(s.ask=s.ask||[]).push(pick(a,['q','probe','expr','theory','tol','abs','unit']));return s.ask.length-1}},
-  addEvent:{label:'出来事を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[3].fields),do(s,a){need(a.id&&a.when,'id と when が必要です');(s.events=s.events||{})[a.id]={when:a.when,label:a.label};return a.id}},
-  addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max']));return s.checks.length-1}},
-  addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push({id,when:a.when,mode:a.mode,do:a.do});return id}},
+  addProbe:{label:'測定を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[1].fields),do(s,a){need(a.id&&a.expr,'id と expr が必要です');(s.probes=s.probes||{})[a.id]=pick(a,['expr','reduce','when','after','at','unit','label','note']);return a.id}},
+  addAsk:{label:'答え合わせを足す',kind:'scenario',args:SCN_PARTS[2].fields,returns:'番号',do(s,a){need(a.theory!==undefined&&(a.probe!==undefined||a.expr!==undefined),'theory と、probe（または expr）が必要です');(s.ask=s.ask||[]).push(pick(a,['q','probe','expr','theory','tol','abs','unit','label','note']));return s.ask.length-1}},
+  addEvent:{label:'出来事を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[3].fields),do(s,a){need(a.id&&a.when,'id と when が必要です');(s.events=s.events||{})[a.id]=Object.assign({when:a.when,label:a.label},pick(a,['first','note']));if(a.label===undefined)delete s.events[a.id].label;return a.id}},
+  addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max','scale','tol','note']));return s.checks.length-1}},
+  addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push(Object.assign({id,when:a.when,mode:a.mode,do:a.do},pick(a,['label','note'])));if(a.mode===undefined)delete s.rules[s.rules.length-1].mode;return id}},
   removeRule:{label:'ルールを消す',kind:'scenario',args:[T('id','text','','ルールの名前',{req:1})],do(s,a){const n=(s.rules||[]).length;s.rules=(s.rules||[]).filter(r=>r.id!==a.id);need(s.rules.length<n,'ルール「'+a.id+'」がありません');return a.id}},
-  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample']));return 'run'}},
+  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔'),T('note','text','','メモ')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample','note']));return 'run'}},
   setView:{label:'画面（位置・横幅m）',kind:'scenario',args:[T('x0','num','m','左端x'),T('y0','num','m','下端y'),T('w','num','m','横幅'),T('grid','bool','','格子'),T('follow','text','','追う物体')],do(s,a){s.view=Object.assign(s.view||{},pick(a,['x0','y0','w','grid','ruler','follow']));return 'view'}},
-  setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir']));return 'world'}},
+  setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir','maxStep','cfg','canvas','note']));return 'world'}},
+  /* ---- 題名・摩擦の組・グラフ・掃引（サンプルを命令の列だけで組み立て直せるように。台帳Z-192） ---- */
+  setMeta:{label:'題名・問題文などを書く',kind:'scenario',args:[T('title','text','','題名'),T('tags','object','','タグ（文字の配列）'),T('source','text','','出どころ（例: オリジナル（○○型））'),T('level','enum','','難しさ',{options:['basic','standard','advanced','olympiad'],labels:['基礎','標準','発展','物理オリンピック級']}),T('problem','text','','問題文（{名前}は条件の値に置き換わる）'),T('notes','text','','メモ・解説'),T('solution','text','','解答'),T('hint','text','','ヒント'),T('style','object','','見た目の指定')],
+    do(s,a){const k=pick(a,['title','tags','source','level','problem','notes','solution','hint','style']);need(Object.keys(k).length,'title・tags・source・level・problem・notes・solution・hint・style のどれかが必要です');Object.assign(s,k);return 'meta'}},
+  addPair:{label:'2つの物体の摩擦・反発を決める',kind:'scenario',args:[T('a','body','','物体A',{req:1}),T('b','body','','物体B',{req:1}),T('mu','num','','摩擦係数'),T('mus','num','','静止摩擦係数'),T('muk','num','','動摩擦係数'),T('e','num','','反発係数',{min:0,max:1})],returns:'番号',
+    do(s,a){need(a.a&&a.b,'a と b（物体）が必要です');body(s,a.a);body(s,a.b);(s.pairs=s.pairs||[]).push(Object.assign({a:a.a,b:a.b},pick(a,['mu','mus','muk','e'])));return s.pairs.length-1}},
+  addGraph:{label:'グラフを足す',kind:'scenario',args:[T('title','text','','題名'),T('x','num','','横軸の式（省略すると時刻）'),T('y','object','','縦軸の式の配列',{req:1}),T('xlabel','text','','横軸の名前'),T('ylabel','text','','縦軸の名前')],returns:'番号',
+    do(s,a){need(a.y!==undefined,'y（縦軸の式）が必要です');(s.graphs=s.graphs||[]).push(pick(a,['title','x','y','xlabel','ylabel','label']));return s.graphs.length-1}},
+  setSweep:{label:'条件を振る設定（現象考察）',kind:'scenario',args:[T('param','text','','振る条件の名前',{req:1}),T('values','object','','値の配列'),T('from','num','','最初の値'),T('to','num','','最後の値'),T('n','num','','個数'),T('probes','object','','測定の名前の配列'),T('fit','object','','直線あてはめ {x,y}')],
+    do(s,a){need(a.param,'param（振る条件の名前）が必要です');s.sweep=pick(a,['param','values','from','to','n','probes','fit']);return 'sweep'}},
   /* ---- 実行の操作（アプリの中だけ。純粋な apply には使えない） ---- */
   play:{label:'再生',kind:'runtime',args:[]},pause:{label:'とめる',kind:'runtime',args:[]},reset:{label:'最初へ戻す',kind:'runtime',args:[]},
   seek:{label:'その時刻へ',kind:'runtime',args:[T('t','num','s','時刻',{req:1})]},step:{label:'1刻み（1/120秒）ずつ進める',kind:'runtime',args:[T('n','num','','刻み数')]},
@@ -3250,7 +3305,11 @@ function applyAll(src,ops){
   return{ok:!errors.length,errors,warns,src:s,value}}
 
 /* ---------- アプリへの反映（SCN・RUN があるときだけ）---------- */
-function exec(op){
+const TAPS=[];
+/* 成功した exec を見張る（タイムラプスの記録用）。cb(op,結果)。返す関数で解除。再生中の命令（タイムラプスの再生）は、TL.busy の間は知らせない */
+function tap(cb){TAPS.push(cb);return()=>{const i=TAPS.indexOf(cb);if(i>=0)TAPS.splice(i,1)}}
+function exec(op){const r=exec0(op);if(r&&r.ok&&!(typeof TL!=='undefined'&&TL.busy))for(const cb of TAPS.slice())try{cb(op,r)}catch(_){}return r}
+function exec0(op){
   if(typeof SCN==='undefined'||typeof RUN==='undefined')return{ok:false,errors:['アプリの外では使えません（apply を使ってください）']};
   const d=OPS[op&&op.op];if(!d)return{ok:false,errors:['未知の命令「'+(op&&op.op)+'」'+PHS.suggest(String(op&&op.op),Object.keys(OPS))]};
   try{
@@ -3279,7 +3338,262 @@ function exec(op){
 const LISTEN=[];
 function listen(cb){LISTEN.push(cb);return()=>{const i=LISTEN.indexOf(cb);if(i>=0)LISTEN.splice(i,1)}}
 function emit(e){for(const cb of LISTEN.slice())try{cb(e)}catch(_){}}
-return{catalog,coverage,OPS,apply,applyAll,exec,listen,emit,SHAPES,JOINTS,FIELDS}
+return{catalog,coverage,OPS,apply,applyAll,exec,tap,listen,emit,SHAPES,JOINTS,FIELDS}
+})();
+/* ===== タイムラプス（操作手順の記録・再生・書き出し）TL（台帳Z-192）=====
+   ねらい：「どう作るか」を、操作の手順（データ）として作る・再生する・文章にする部品。将来のビジュアルプログラミング（ブロックを置く→入力欄を埋める→つなぐ）の一部になる前提で、
+   画面（DOM）に触れない核（このファイル）と、アプリにつなぐ部分（241-timelapse-ui.js）を分ける。純JS。58-phys-api.js（PHAPI）の後に置く。
+   【手順書 script】 {v:1, id, title, about, steps:[step…], x?}  未知のキーは捨てずに保つ（norm は元のオブジェクトの複製を返す）。作品ファイルには入れない（書き出し・読み込みはJSON）。
+   【手順 step】 {k:ドライバ名, say:字幕（何をするか）, how:[操作の手順の文…], cat:分類, blk:{c,t,f:[{l,v}]}＝ブロックの見え方, d:見せる時間ms（×1）, t:記録した時刻ms, …ドライバごとの項目}
+   【ドライバ drv】 表に1行足せば増える：{label, apply(step,host,quiet,i)}。k が未知の手順は、捨てずに保ち、再生では「この版では再生できない」と出して飛ばす。
+     note＝説明だけ／phys＝PHAPI.OPSの命令（step.op）／ui＝画面の部品の操作（step.do＝click・set・tab・check、step.id、step.v）／gesture＝キャンバスをなぞる（見せるだけ。作品には反映しない）。
+   【ホスト host】 再生の相手：{reset(), begin?(), phys?(op,quiet), ui?(step,quiet), gesture?(step), sync?(step,i)}。アプリでは241、検査では pureHost（PHAPIだけで組み立てる）。
+   【再生 player】 固定の時計を持たず、tick(dtMs) を外から呼ぶ（検査で時間を進められる）。戻る・飛ぶ時は reset してから先頭へ再生し直す（手順がデータなので、同じ結果になる）。
+   【速さ】 モード auto＝各手順の d を倍率で割る／recorded＝記録した時刻の間隔（待ちは maxGap までに詰める）／manual＝自動では進まない（次へで1手順ずつ）。 */
+const TL=(function(){
+const V=1;
+const CAT={setup:'設定',cond:'条件',body:'物体',link:'つなぎ',field:'力場',measure:'測定',check:'答え合わせ',rule:'ルール',run:'実行',note:'説明',ui:'画面の操作'};
+const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup',setRun:'setup',setParam:'cond',setVar:'cond',addBody:'body',addShape:'body',setBody:'body',removeBody:'body',
+  addJoint:'link',removeJoint:'link',addPair:'link',addField:'field',removeField:'field',addProbe:'measure',addEvent:'measure',addGraph:'measure',setSweep:'measure',addAsk:'check',addCheck:'check',
+  addRule:'rule',removeRule:'rule',play:'run',pause:'run',reset:'run',seek:'run',step:'run',speed:'run',read:'run',result:'run',sweep:'run',open:'run',close:'run'};
+const SPEEDS=[.25,.5,1,2,4,8,16,32];
+const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const num=x=>typeof x==='number'&&isFinite(x)?String(+x.toPrecision(6)):String(x);
+const NUMS='①②③④⑤⑥⑦⑧⑨⑩⑪⑫';
+const short=l=>{const s=String(l).replace(/（[^）]*）/g,'').replace(/\{[^}]*\}/g,'').replace(/\s+/g,' ').trim();return s||String(l)};
+
+/* ---------- 部品表からの名前（日本語名・単位）---------- */
+let LM=null;
+function lm(){if(LM)return LM;const C=PHAPI.catalog(),M={body:{},shape:{},joint:{},field:{},red:{},act:{}};
+  C.bodyFields.forEach(f=>M.body[f.k]=f);
+  for(const s of C.shapes){M.shape[s.id]={label:s.label,f:{}};s.fields.forEach(f=>M.shape[s.id].f[f.k]=f)}
+  for(const s of C.joints){M.joint[s.id]={label:s.label,f:{}};s.fields.forEach(f=>M.joint[s.id].f[f.k]=f)}
+  for(const s of C.fields){M.field[s.id]={label:s.label,f:{}};s.fields.forEach(f=>M.field[s.id].f[f.k]=f)}
+  C.reducers.forEach(r=>M.red[r.id]=r.label);C.rules.acts.forEach(a=>M.act[a.id]=a);LM=M;return M}
+
+/* ---------- 値を、人が読む形にする ---------- */
+function anc(a){if(typeof a==='string')return'物体 '+a;if(a&&a.body!==undefined)return'物体 '+a.body+' の '+fv(a.at||[0,0]);return'世界の点 '+fv(a&&a.at)}
+function shapeText(sh){const S=lm().shape[sh&&sh.t];if(!S)return JSON.stringify(sh);
+  const ps=Object.keys(sh).filter(k=>k!=='t').map(k=>{const f=S.f[k];return(f?f.label:k)+' '+fv(sh[k],f&&f.unit)});return S.label+(ps.length?'（'+ps.join('、')+'）':'')}
+function fv(v,unit){const u=unit?' '+unit:'';
+  if(v===undefined||v===null)return'（なし）';
+  if(typeof v==='number')return num(v)+u;if(typeof v==='boolean')return v?'はい':'いいえ';if(typeof v==='string')return v+u;
+  if(Array.isArray(v)){if(v.every(x=>typeof x==='number'||typeof x==='string'))return'('+v.map(x=>typeof x==='number'?num(x):x).join(', ')+')'+u;return v.map(x=>fv(x)).join(' → ')}
+  if(typeof v==='object'){if('body'in v||'at'in v)return anc(v);if(v.t)return shapeText(v);return Object.keys(v).map(k=>k+'＝'+fv(v[k])).join('、')}
+  return String(v)}
+function fmtBy(f,v){const t=f&&f.type;
+  if(t==='anchor')return anc(v);if(t==='anchors')return(v||[]).map(anc).join(' → ');
+  if(t==='enum'&&f.options){const i=f.options.indexOf(v);return i>=0&&f.labels?f.labels[i]:String(v)}
+  return fv(v,f&&f.unit)}
+function actText(x){const A=lm().act[x&&x.op];const ps=Object.keys(x||{}).filter(k=>k!=='op').map(k=>k+'＝'+fv(x[k]));return(A?A.label:(x&&x.op))+(ps.length?'（'+ps.join('、')+'）':'')}
+/* 「set」の中の項目の日本語名（命令と種類で、引く表が変わる） */
+function fdef(op,k){const M=lm();
+  if(op.op==='addBody'||op.op==='setBody'||op.op==='addShape')return M.body[k]||{k,label:k};
+  if(op.op==='addJoint'){const J=M.joint[op.type];return(J&&J.f[k])||{k,label:k}}
+  if(op.op==='addField'){const F=M.field[op.type];return(F&&F.f[k])||{k,label:k}}
+  return{k,label:k}}
+/* 命令の入力欄 → [{l:名前, v:値の文字, list?:[…]}] */
+function fields(op){const D=PHAPI.OPS[op.op],out=[];
+  if(!D)return Object.keys(op).filter(k=>k!=='op').map(k=>({l:k,v:fv(op[k])}));
+  const push=(l,f,v)=>{const e={l:short(l),v:fmtBy(f,v)};if(f&&f.type==='anchors'&&Array.isArray(v)&&v.length>2)e.list=v.map(anc);out.push(e)};
+  for(const a of D.args){const v=op[a.k];if(v===undefined)continue;
+    if(a.k==='shape'){out.push({l:'形',v:shapeText(v)});continue}
+    if(a.k==='set'&&v&&typeof v==='object'){for(const k of Object.keys(v)){const f=fdef(op,k);push(f.label||k,f,v[k])}continue}
+    if(a.k==='do'&&Array.isArray(v)){v.forEach(x=>out.push({l:'動作',v:actText(x)}));continue}
+    push(a.label||a.k,a,v)}
+  return out}
+
+/* ---------- 字幕（say）と操作の手順（how）---------- */
+const LV={basic:'基礎',standard:'標準',advanced:'発展',olympiad:'物理オリンピック級'};
+const has=(o,k)=>o[k]!==undefined;
+const SAY={
+  newScenario:o=>'空のシナリオ「'+(o.title||'無題')+'」を作る'+(o.floor===false?'（床は置かない）':'（床つき）')+(o.width?'。画面の横幅は '+fv(o.width,'m'):''),
+  setMeta:o=>'題名・タグ・問題文を書き込む'+(o.level?'（難しさ：'+(LV[o.level]||o.level)+'）':''),
+  setWorld:o=>'世界の決まりを書く：'+[has(o,'g')?'重力加速度 '+fv(o.g,'m/s²'):'',has(o,'gdir')?'重力の向き '+fv(o.gdir,'°'):''].filter(Boolean).join('、'),
+  setView:o=>'画面の範囲を決める：横幅 '+(has(o,'w')?fv(o.w,'m'):'そのまま')+(has(o,'x0')||has(o,'y0')?'、左下 '+fv([o.x0||0,o.y0||0]):''),
+  setParam:o=>'条件（スライダー）「'+(o.label||o.name)+'」を作る：初めは '+fv(o.v,o.unit)+(has(o,'min')&&has(o,'max')?'（'+num(o.min)+'〜'+num(o.max)+'）':''),
+  setVar:o=>'途中計算「'+o.name+'」を決める：'+o.name+' ＝ '+o.expr,
+  addBody:o=>'物体「'+(o.id||'')+'」を置く：'+(o.shape?shapeText(o.shape):'')+(o.type==='static'?'（固定）':o.type==='kinematic'?'（決めた動きをする台）':'')+(o.pos?'。位置 '+fv(o.pos,'m'):''),
+  addShape:o=>'物体「'+o.body+'」に形を足す：'+shapeText(o.shape),
+  setBody:o=>'物体「'+o.id+'」の項目を変える：'+Object.keys(o.set||{}).join('・'),
+  removeBody:o=>'物体「'+o.id+'」を消す',
+  addJoint:o=>'「'+((lm().joint[o.type]||{}).label||o.type)+'」でつなぐ'+(o.id?'（'+o.id+'）':''),
+  removeJoint:o=>'つなぎ「'+o.id+'」を外す',
+  addPair:o=>'物体「'+o.a+'」と「'+o.b+'」がふれた時の摩擦・反発を決める',
+  addField:o=>'力場を足す：'+((lm().field[o.type]||{}).label||o.type),
+  removeField:o=>'力場['+o.index+']を消す',
+  addProbe:o=>'測定「'+(o.label||o.id)+'」を足す：'+o.expr+(o.reduce?'（'+(lm().red[o.reduce]||o.reduce)+'）':''),
+  addEvent:o=>'出来事「'+(o.label||o.id)+'」を足す：'+o.when+' が最初に成り立つ時刻',
+  addRule:o=>'ルールを足す：「'+o.when+'」になったら '+(o.do||[]).map(actText).join('、'),
+  removeRule:o=>'ルール「'+o.id+'」を消す',
+  setRun:o=>'実行する長さを決める'+(has(o,'t')?'：'+fv(o.t,'秒'):''),
+  addAsk:o=>'答え合わせ「'+(o.q||'')+'」：理論値 '+o.theory+' と比べる',
+  addCheck:o=>'検査「'+(o.name||'')+'」を足す'+(has(o,'conserved')?'（変動 '+num(o.conserved*100)+'% 以内）':''),
+  addGraph:o=>'グラフ「'+(o.title||'')+'」を足す',
+  setSweep:o=>'条件「'+o.param+'」を振って測る設定をする',
+  play:()=>'▶ 実行して、動きを見る',
+  result:()=>'答え合わせを見る（測定値と理論値の比較）'};
+function sayOf(op,fs){const f=SAY[op.op];if(f)try{return f(op)}catch(_){}
+  const D=PHAPI.OPS[op.op];return '「'+(D?D.label:op.op)+'」を行う'+(fs.length?'：'+fs.slice(0,3).map(x=>x.l+' '+x.v).join('、'):'')}
+function howOf(op,cat,fs){
+  const D=PHAPI.OPS[op.op],lab=D?D.label:op.op;
+  if(op.op==='play')return['画面の「▶ 実行」を押す（ブロック列の最後に「▶ 実行」ブロックを置いてもよい）','物体が動き、測定値がたまっていく'];
+  if(op.op==='result')return['「検査する」を押す（ブロック列の最後に「答え合わせ」ブロックを置いてもよい）','測定値と理論値、保存則の検査が一覧で出る'];
+  const L=['「＋ブロック」→ パレットの「'+CAT[cat]+'」→「'+lab+'」をタップ'];
+  const cut=s=>s.length>70?s.slice(0,68)+'…':s;
+  for(const f of fs.slice(0,8)){
+    if(f.list)L.push('「'+f.l+'」に、順に足す：'+f.list.map((x,i)=>(NUMS[i]||'・')+cut(x)).join('　'));
+    else L.push('「'+f.l+'」を '+cut(f.v)+' にする')}
+  if(fs.length>8)L.push('そのほか：'+fs.slice(8).map(f=>f.l+'＝'+cut(f.v)).join('、'));
+  L.push('「決定」を押すと、ブロック列の最後に加わる');
+  return L}
+/* 命令1つ → 手順1つ */
+function stepOf(op,extra){
+  const D=PHAPI.OPS[op.op],cat=OPCAT[op.op]||'setup',fs=fields(op);
+  const s={k:'phys',op:clone(op),cat,say:sayOf(op,fs),how:howOf(op,cat,fs),blk:{c:cat,t:D?D.label:op.op,f:fs.map(f=>({l:f.l,v:f.v}))},d:clamp(1100+260*Math.min(fs.length,8),1300,3800)};
+  return extra?Object.assign(s,extra):s}
+
+/* ---------- シナリオ → 命令の列 → 手順書 ---------- */
+/* 検証に通る順（条件→物体→つなぎ→測定→答え合わせ）。サンプルのJSONから、PHAPIの命令だけで同じシナリオを組み立て直せる（検査＝tools/tl_test.js） */
+function opsOf(S){
+  const O=[],P=op=>O.push(op),view=S.view||{},world=S.world||{};
+  P({op:'newScenario',id:S.id,title:S.title||'無題',floor:false,width:view.w||6});
+  const meta={};for(const k of['tags','source','level','problem','notes','solution','hint','style'])if(S[k]!==undefined)meta[k]=S[k];
+  if(Object.keys(meta).length)P(Object.assign({op:'setMeta'},meta));
+  if(Object.keys(world).length&&!(Object.keys(world).length===1&&world.g===9.8))P(Object.assign({op:'setWorld'},world));
+  const vk=Object.keys(view).filter(k=>!(k==='w'||((k==='x0'||k==='y0')&&view[k]===0)));if(vk.length)P(Object.assign({op:'setView'},view));
+  for(const k of Object.keys(S.params||{})){const p=S.params[k];P(Object.assign({op:'setParam',name:k},p&&typeof p==='object'?p:{v:p}))}
+  for(const k of Object.keys(S.vars||{}))P({op:'setVar',name:k,expr:S.vars[k]});
+  for(const b of S.bodies||[]){
+    const {id,type,pos,shapes,...rest}=b,sh=shapes||[],set={};for(const k of Object.keys(rest))set[k]=rest[k];
+    P(Object.assign({op:'addBody',id,type:type||'dynamic',shape:sh[0]},pos!==undefined?{pos}:{},Object.keys(set).length?{set}:{}));
+    for(let i=1;i<sh.length;i++)P({op:'addShape',body:id,shape:sh[i]});
+    if((type||'dynamic')==='dynamic'&&set.m===undefined)P({op:'setBody',id,set:{m:null}})}
+  for(const q of S.pairs||[])P(Object.assign({op:'addPair'},q));
+  for(const j of S.joints||[]){const {id,type,a,b,...rest}=j;P(Object.assign({op:'addJoint',id,type},a!==undefined?{a}:{},b!==undefined?{b}:{},Object.keys(rest).length?{set:rest}:{}))}
+  for(const f of S.fields||[]){const {type,...rest}=f;P(Object.assign({op:'addField',type},Object.keys(rest).length?{set:rest}:{}))}
+  for(const k of Object.keys(S.probes||{}))P(Object.assign({op:'addProbe',id:k},S.probes[k]));
+  for(const k of Object.keys(S.events||{}))P(Object.assign({op:'addEvent',id:k},S.events[k]));
+  for(const r of S.rules||[])P(Object.assign({op:'addRule'},r));
+  if(S.run&&Object.keys(S.run).length)P(Object.assign({op:'setRun'},S.run));
+  for(const a of S.ask||[])P(Object.assign({op:'addAsk'},a));
+  for(const c of S.checks||[])P(Object.assign({op:'addCheck'},c));
+  for(const g of S.graphs||[])P(Object.assign({op:'addGraph'},g));
+  if(S.sweep)P(Object.assign({op:'setSweep'},S.sweep));
+  return O}
+function fromScenario(src,o){
+  o=o||{};const S=clone(src),ops=opsOf(S),steps=[];
+  const hasAns=(S.ask||[]).length||(S.checks||[]).length,tail=1+(hasAns?1:0);
+  const prob=S.problem?String(S.problem).replace(/\{(\w+)\}/g,(m,k)=>{const p=(S.params||{})[k];return p===undefined?m:num(p&&typeof p==='object'?p.v:p)}):'';
+  steps.push({k:'note',cat:'note',say:'「'+(S.title||S.id)+'」を、ブロックを順に置いて作ります（全'+(ops.length+tail)+'手順）',
+    how:(prob?['問題：'+prob]:[]).concat(['ブロックは「設定→条件→物体→つなぎ→力場→測定→答え合わせ」の順に積むと、いつでも検証に通る形で組み上がる','各手順では、パレットから選ぶ → 入力欄を埋める → 決定、の3つの操作をする']),
+    blk:{c:'note',t:'はじめに',f:[]},d:2800});
+  for(const op of ops)steps.push(stepOf(op));
+  steps.push(stepOf({op:'play'},{d:2200}));
+  if(hasAns)steps.push(stepOf({op:'result'},{d:3200}));
+  return{v:V,id:'tl-'+S.id,title:'「'+(S.title||S.id)+'」の作り方',about:o.about||'ビジュアルプログラミングで、ブロックを置いて作る手順（完成イメージ。ブロックの見た目は、今後の実装で変わることがある）',steps,src:{kind:'scenario',id:S.id}}}
+
+/* ---------- 検証・読み書き ---------- */
+function norm(o){
+  const E=[],W=[];
+  if(!o||typeof o!=='object'||Array.isArray(o))return{ok:false,errors:['手順書はオブジェクト（{…}）で書いてください'],warns:[]};
+  if(!Array.isArray(o.steps))E.push('steps（手順の配列）が必要です');
+  if(o.v!==undefined&&o.v>V)W.push('新しい版（v'+o.v+'）の手順書です。読めるだけ読みます');
+  (o.steps||[]).forEach((s,i)=>{if(!s||typeof s!=='object'||Array.isArray(s)||typeof s.k!=='string')E.push('steps['+i+']: k（種類）が必要です');else if(!drv[s.k])W.push('steps['+i+']: 未知の種類「'+s.k+'」（再生では飛ばします）')});
+  if(E.length)return{ok:false,errors:E,warns:W};
+  const script=clone(o);if(script.v===undefined)script.v=V;return{ok:true,errors:[],warns:W,script}}
+function parse(text){let o;try{o=JSON.parse(text)}catch(e){return{ok:false,errors:['JSONの書き方が正しくありません：'+e.message],warns:[]}}return norm(o)}
+const stringify=s=>JSON.stringify(s,null,1);
+/* 手順書 → 文章（「操作手順書」。手順ごとに、字幕と操作の手順） */
+function toText(script){
+  const L=['■ '+(script.title||'操作の手順')];if(script.about)L.push(script.about);L.push('');let n=0;
+  for(const s of script.steps){
+    if(s.cat==='note'||s.k==='note'){L.push(s.say||'');(s.how||[]).forEach(h=>L.push('  '+h));L.push('');continue}
+    n++;L.push(n+'. '+(s.say||labelOf(s)));(s.how||[]).forEach(h=>L.push('   ・'+h));L.push('')}
+  return L.join('\n').replace(/\n+$/,'\n')}
+const labelOf=s=>(drv[s.k]&&drv[s.k].label||s.k)+(s.op?'：'+s.op.op:'')+(s.id?'：'+s.id:'');
+function stats(script){const c={};for(const s of script.steps){const k=s.cat||s.k;c[k]=(c[k]||0)+1}return c}
+
+/* ---------- ドライバ（表に1行足せば増える）---------- */
+const drv={
+  note:{label:'説明',apply(){return{ok:true}}},
+  phys:{label:'物理の命令',apply(s,h,q){return h.phys?h.phys(s.op,q):{ok:false,errors:['この画面では、物理の命令は実行できません']}}},
+  ui:{label:'画面の操作',apply(s,h,q){return h.ui?h.ui(s,q):{ok:false,errors:['この画面では、画面の操作は再現できません']}}},
+  gesture:{label:'なぞる（見せるだけ）',apply(s,h,q){if(h.gesture&&!q)h.gesture(s);return{ok:true}}}};
+
+/* ---------- 再生 ---------- */
+function player(script,host,o){
+  o=o||{};
+  const P={script,host,i:-1,playing:false,speed:o.speed||1,mode:o.mode||'auto',acc:0,errs:{},cb:o.cb||{},maxGap:o.maxGap||1500,began:false};
+  const N=()=>P.script.steps.length,emit=ev=>{try{P.cb[ev]&&P.cb[ev](P)}catch(_){}};
+  function run(step,i,quiet){
+    const d=drv[step.k];if(!d){P.errs[i]='この版では再生できない手順です（'+step.k+'）';return false}
+    try{const r=d.apply(step,P.host,quiet,i);if(r&&r.ok===false){P.errs[i]=(r.errors&&r.errors[0])||'できませんでした';return false}delete P.errs[i];return true}
+    catch(e){P.errs[i]=String(e&&e.message||e);return false}}
+  function rewind(){P.errs={};P.i=-1;if(P.host.reset)P.host.reset()}
+  function advance(n,quiet){   /* acc に触れない。n まで（今より先）を順に適用 */
+    if(!P.began){P.began=true;if(P.host.begin)P.host.begin()}
+    for(let k=P.i+1;k<=n;k++){run(P.script.steps[k],k,quiet||k<n);P.i=k}
+    if(P.host.sync)P.host.sync(P.script.steps[P.i],P.i)}
+  P.goto=function(n,o2){
+    n=clamp(n|0,-1,N()-1);if(n<P.i)rewind();
+    if(n>P.i)advance(n,!!(o2&&o2.quiet));else if(n===P.i&&P.host.sync)P.host.sync(P.script.steps[P.i],P.i);
+    P.acc=0;emit('step')};
+  P.next=function(){if(P.i<N()-1)P.goto(P.i+1);else{P.playing=false;emit('play');emit('end')}};
+  P.prev=function(){P.goto(P.i-1)};P.first=function(){P.goto(-1)};P.last=function(){P.goto(N()-1)};
+  P.play=function(){if(!N())return;if(P.i>=N()-1)P.goto(-1);P.playing=true;P.acc=0;emit('play');if(P.i<0)P.goto(0)};
+  P.pause=function(){P.playing=false;emit('play')};
+  P.toggle=function(){P.playing?P.pause():P.play()};
+  P.setSpeed=function(x){P.speed=x>0?+x:1;emit('state')};
+  P.setMode=function(m){P.mode=['auto','recorded','manual'].includes(m)?m:'auto';P.acc=0;emit('state')};
+  P.hold=function(i){const s=P.script.steps[i];if(!s)return 0;
+    if(P.mode==='recorded'){const nx=P.script.steps[i+1];if(nx&&nx.t!==undefined&&s.t!==undefined)return clamp(nx.t-s.t,300,P.maxGap)}
+    return s.d||1400};
+  P.tick=function(dt){
+    if(!P.playing||P.mode==='manual'||!(dt>0))return;
+    P.acc+=dt*P.speed;let g=0;
+    while(P.playing&&g++<256){const h=P.hold(P.i);if(P.acc<h)break;P.acc-=h;
+      if(P.i>=N()-1){P.playing=false;P.acc=0;emit('play');emit('end');break}
+      const keep=P.acc;advance(P.i+1,false);P.acc=keep;emit('step')}};
+  P.info=()=>({i:P.i,n:N(),playing:P.playing,speed:P.speed,mode:P.mode,step:P.script.steps[P.i]||null,err:P.errs[P.i]||''});
+  return P}
+/* 全体の長さ（ms）。倍率と方式を指定 */
+function totalMs(script,speed,mode){let t=0;const st=script.steps;
+  for(let i=0;i<st.length;i++){let h=st[i].d||1400;if(mode==='recorded'){const nx=st[i+1];if(nx&&nx.t!==undefined&&st[i].t!==undefined)h=clamp(nx.t-st[i].t,300,1500)}t+=h}
+  return t/(speed>0?speed:1)}
+
+/* ---------- 検査・書き出し用：PHAPIだけで組み立てるホスト ---------- */
+function pureHost(){const H={src:null,errors:[],log:[],
+  reset(){H.src=null;H.errors=[]},
+  phys(op){const D=PHAPI.OPS[op.op];if(!D)return{ok:false,errors:['未知の命令「'+op.op+'」']};if(D.kind!=='scenario')return{ok:true};
+    const r=PHAPI.apply(D.make?null:H.src,op);if(r.src)H.src=r.src;H.errors=r.errors;H.log.push({op:op.op,ok:r.ok,errors:r.errors});return{ok:true}}};
+  return H}
+function replay(script,n){const H=pureHost(),P=player(script,H);P.goto(n===undefined?script.steps.length-1:n,{quiet:true});return H.src}
+
+/* ---------- 編集（手順書を直す。元は書き換えず、新しい手順書を返す）---------- */
+const edit={
+  say:(sc,i,t)=>{const r=clone(sc);if(r.steps[i])r.steps[i].say=String(t);return r},
+  remove:(sc,i)=>{const r=clone(sc);r.steps.splice(i,1);return r},
+  move:(sc,i,j)=>{const r=clone(sc);if(!r.steps[i]||j<0||j>=r.steps.length)return r;const[x]=r.steps.splice(i,1);r.steps.splice(j,0,x);return r},
+  slice:(sc,a,b)=>{const r=clone(sc);r.steps=r.steps.slice(a,b+1);return r}};
+
+/* ---------- 記録 ---------- */
+/* add(step)：時刻を付けて溜める。step.co（まとめる印）が前の手順と同じで、間が coMs 以内なら、前の手順を置き換える（スライダーを動かし続けた時に1手順にする） */
+function recorder(o){
+  o=o||{};const now=o.now||(()=>Date.now()),R={steps:[],t0:now(),coMs:o.coMs||700};
+  R.add=function(step){
+    const t=Math.round(now()-R.t0),L=R.steps[R.steps.length-1];step.t=t;
+    if(L&&step.co&&L.co===step.co&&t-(L.t2!==undefined?L.t2:L.t)<=R.coMs){const t0=L.t;Object.assign(L,step);L.t=t0;L.t2=t;return L}
+    R.steps.push(step);return step};
+  R.finish=function(title){
+    const st=R.steps.map(s=>{const c=clone(s);delete c.co;delete c.t2;return c});
+    for(let i=0;i<st.length;i++){const nx=st[i+1];st[i].d=clamp(nx?nx.t-st[i].t:1500,500,3000)}
+    return{v:V,id:'rec-'+R.t0,title:title||'記録した操作',about:'操作を記録した手順書（再生すると、いまの作品に同じ操作が行われます。「戻す」で元に戻せます）',steps:st}};
+  return R}
+
+const busy=false;
+return{V,CAT,OPCAT,SPEEDS,busy,drv,fv,shapeText,fields,stepOf,opsOf,fromScenario,norm,parse,stringify,toText,stats,player,totalMs,pureHost,replay,edit,recorder}
 })();
 
 /* 入力: ドラッグ・2本指ズーム・空き地ドラッグで画面移動 */
@@ -4836,8 +5150,8 @@ function pushUndo(){const sn=snap();if(US.length&&US[US.length-1].sig===sn.sig)r
 function undo(){if(!US.length)return;const sn=snap();sn._uh=++undoSeq;RS.push(sn);restore(US.pop());trimHistory()}
 function redo(){if(!RS.length)return;const sn=snap();sn._uh=++undoSeq;US.push(sn);restore(RS.pop());trimHistory()}
 $('undo').onclick=undo;$('un2').onclick=undo;$('redo').onclick=redo;$('rd2').onclick=redo;
-$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#grip2,#tpz,#pnud'))pushUndo()},true);
-$('tp').addEventListener('focusin',e=>{if(e.target.type==='number'||e.target.type==='text')pushUndo()});
+$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#grip2,#tpz,#pnud,#tlp'))pushUndo()},true);
+$('tp').addEventListener('focusin',e=>{if(e.target.closest('#tlp'))return;if(e.target.type==='number'||e.target.type==='text')pushUndo()});
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!/^(text|number)$/.test(document.activeElement.type||'')){if(e.key==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(e.key==='y'){e.preventDefault();redo()}}});
 
 /* ===== 作品の保存・読み込み ===== */
@@ -4898,7 +5212,7 @@ $('sv').onclick=saveProj;
 $('pf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadProj(r.result).catch(()=>{$('rtx').textContent='読み込めませんでした'});r.readAsText(f)};
 $('rs').onclick=()=>{try{loadProj(localStorage.getItem('am_auto'))}catch(_){}};
 addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnValue=''}});
-function autosave(){if(!dirtyProj)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
+function autosave(){if(!dirtyProj||TL.busy)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
 function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document)}
 
@@ -6846,6 +7160,221 @@ requestAnimationFrame(t=>{last=t;loop(t)});
 /* ロック中レイヤーの編集ボタンを止める（B-2） */
 ['pcut','pcopy','pdup','wbake','bbake','bfill','wc','wu'].forEach(id=>{const b=$(id),f=b&&b.onclick;if(f)b.onclick=function(...a){if(blocked(sel))return;return f.apply(this,a)}});
 layUi();
+/* ===== タイムラプスのアプリ側（台帳Z-192。核は 59-timelapse.js の TL）=====
+   ・枠（#tlp。操作窓の先頭）：手順書を選ぶ／記録する → 再生（⏮◀▶▶|⏭・速さ・進め方・位置のバー・字幕・操作の手順・ブロックの列・書き出し・字幕を直す）。
+   ・再生の相手（ホスト tlHost）：物理の命令は PHAPI.apply（純粋）→ scnSetSource({noUndo})で画面に出す（検証に通らない途中の姿は空の舞台）。画面の操作は、実際の部品を押す・動かす。
+   ・非破壊：再生を始める時の姿を snap() で預かり、閉じると restore() で戻す（「この状態で続ける」なら、預かった姿をUndoに積んで残す）。再生中は TL.busy＝自動保存しない・記録しない。
+     snap() の中の絵のオブジェクト（s.p）は restore() が実物として使ってしまうので、何度も戻す時は複製を渡す（tlCloneSnap）。
+   ・記録：画面のボタン・バー・選ぶ・チェック・文字（id か data-*／aria-label で場所を決める）、PHAPI.exec で実行した命令、キャンバスのなぞり（見せるだけ＝gesture）。
+   ・UIの一時状態（TLA）は、作品・Undo・保存に入れない。 */
+const TLA={hid:null,sc:null,P:null,saved:null,base:null,dirty0:false,tab0:'pl',src:null,rec:null,recSnap:null,raf:0,t0:0,hiT:0,fgT:0,stroke:null,untap:null,hasPhys:false};
+
+/* ---------- 預かった姿を、何度でも戻せるようにする ---------- */
+function tlCloneSnap(sn){
+  return Object.assign({},sn,{acs:sn.acs.map(x=>Object.assign({},x,{p:JSON.parse(JSON.stringify(x.p)),bite:x.bite?cloneC(x.bite):x.bite})),B:Object.assign({},sn.B),L:sn.L?sn.L.map(y=>Object.assign({},y)):sn.L,D:sn.D?Object.assign({},sn.D):sn.D})}
+function tlRestore(sn){try{restore(tlCloneSnap(sn))}catch(e){note('タイムラプス：元の姿に戻せませんでした（'+(e&&e.message||e)+'）',6000)}}
+const tlEl=id=>document.getElementById(id);
+const tlTab=()=>{const b=document.querySelector('#tabs [data-t].on');return b?b.dataset.t:'pl'};
+
+/* ---------- 光らせる・指（見せるだけ） ---------- */
+function tlFlash(el){
+  if(!el)return;try{el.scrollIntoView({block:'nearest',inline:'nearest'})}catch(_){}
+  document.querySelectorAll('.tlhi').forEach(e=>e.classList.remove('tlhi'));el.classList.add('tlhi');clearTimeout(TLA.hiT);TLA.hiT=setTimeout(()=>el.classList.remove('tlhi'),1500)}
+function tlFinger(s){   /* キャンバスをなぞる手順：指の印が、記録した順に動く（作品には反映しない） */
+  const p=s.path;if(!Array.isArray(p)||!p.length)return;
+  let fg=tlEl('tlFg');if(!fg){fg=document.createElement('div');fg.id='tlFg';tlEl('wrap').append(fg)}
+  const w=tlEl('wrap'),cr=cv.getBoundingClientRect(),wr=w.getBoundingClientRect(),T=Math.max(300,Math.min(2500,p[p.length-1][2]||600));
+  const at=t=>{let i=0;while(i<p.length-1&&p[i+1][2]<=t)i++;const a=p[i],b=p[Math.min(i+1,p.length-1)],k=b[2]>a[2]?(t-a[2])/(b[2]-a[2]):0;return[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k]};
+  clearInterval(TLA.fgT);const t0=performance.now();fg.hidden=false;
+  const put=t=>{const q=at(t);fg.style.left=(cr.left-wr.left+q[0]*cr.width)+'px';fg.style.top=(cr.top-wr.top+q[1]*cr.height)+'px'};put(0);
+  TLA.fgT=setInterval(()=>{const t=(performance.now()-t0)*(TLA.P?TLA.P.speed:1);if(t>=T){clearInterval(TLA.fgT);setTimeout(()=>{fg.hidden=true},250);return}put(t*(p[p.length-1][2]/T))},30)}
+
+/* ---------- 再生の相手（ホスト） ---------- */
+/* 「シナリオをブロックで組み立てる」手順書（fromScenario が作る。src.kind==='scenario'）は、空の舞台から始める（見る前のシナリオは、閉じると戻る） */
+function tlEmpty(){
+  if(!(TLA.sc&&TLA.sc.src&&TLA.sc.src.kind==='scenario'))return;
+  if(SCN.src)scnClose({noUndo:true});
+  /* 絵のあるレイヤーだけ隠す（空のレイヤーまで隠すと、再生中に足した物体が「非表示のレイヤー」に入り、消せなくなる） */
+  const used=new Set(AC.map(a=>layOf(a).id));
+  TLA.hid=LAYERS.filter(y=>y.visible!==false&&used.has(y.id)).map(y=>y.id);LAYERS.forEach(y=>{if(TLA.hid.includes(y.id))y.visible=false})}
+const tlHost={
+  begin(){if(TLA.base!==TLA.saved)tlRestore(TLA.base);tlEmpty();tlStage(true)},
+  reset(){TLA.src=null;tlRestore(TLA.base);tlEmpty();tlStage(true)},
+  phys(op,quiet){
+    const D=PHAPI.OPS[op.op];if(!D)return{ok:false,errors:['未知の命令「'+op.op+'」']};
+    if(D.kind==='scenario'){
+      /* 土台：いま開いているシナリオ（画面の操作で開いたものを含む）。無い時（物体がまだ無い途中の姿）だけ、手順の中で持っている途中のシナリオ */
+      const r=PHAPI.apply(D.make?null:(SCN.src?scnClone(SCN.src):TLA.src),op);if(!r.src)return{ok:false,errors:r.errors};
+      TLA.src=r.src;RUN.playing=false;
+      if(!r.errors.length){const o=scnSetSource(r.src,{noUndo:true});if(!o.ok)return{ok:false,errors:o.errors};if(op.op==='addBody'&&SCN.auto)scnAutoActors()}
+      else if(SCN.src)scnClose({noUndo:true});   /* 検証に通らない途中の姿（物体がまだ無い）は、空の舞台 */
+      if(!quiet)tlStage();return{ok:true}}
+    switch(op.op){
+      case 'play':if(!SCN.src)return{ok:false,errors:['まだシナリオができていません']};if(!quiet){RUN.playing=false;scnPlay();tlStage()}return{ok:true};
+      case 'result':if(!SCN.src)return{ok:false,errors:['まだシナリオができていません']};if(!quiet){tlStage();scnCheckNow()}return{ok:true};
+      case 'open':{const s=typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.find(x=>x.id===op.id);if(!s)return{ok:false,errors:['サンプル「'+op.id+'」がありません']};TLA.src=scnClone(s);const o=scnSetSource(s,{noUndo:true});return{ok:!!o.ok,errors:o.errors||[]}}
+      case 'close':TLA.src=null;if(SCN.src)scnClose({noUndo:true});return{ok:true};
+      default:return PHAPI.exec(op)}},   /* pause・reset・seek・step・speed・read・sweep（TL.busy の間は記録に知らせない） */
+  ui(s,quiet){
+    const el=s.sel&&document.querySelector(s.sel);
+    if(!el)return{ok:false,errors:['画面に「'+(s.sel||'')+'」が見つかりません（この画面では再現できません）']};
+    if(el.disabled)return{ok:false,errors:['「'+(s.sel||'')+'」は、いまは使えません']};
+    const fire=t=>el.dispatchEvent(new Event(t,{bubbles:true}));
+    switch(s.do){
+      case 'click':el.click();break;
+      case 'check':if(el.checked!==!!s.v)el.click();break;
+      case 'set':if(el.type==='checkbox'||el.type==='radio'){if(el.checked!==!!s.v)el.click()}else{el.value=s.v;fire('input');fire('change')}break;
+      default:return{ok:false,errors:['未知の操作「'+s.do+'」']}}
+    if(!quiet)tlFlash(el);return{ok:true}},
+  gesture(s){tlFinger(s)},
+  sync(){tlRender()}};
+/* 物理の手順がある手順書では、物理タブを前に出す（再生中の舞台はキャンバス） */
+function tlStage(force){if(TLA.hasPhys&&(force||tlTab()!=='ph'))setTab('ph')}
+
+/* ---------- 枠の出し入れ ---------- */
+function tlShow(mode){   /* mode: pick（手順書を選ぶ）／rec（記録中）／play */
+  tlEl('tlp').hidden=false;tlEl('tlPick').hidden=mode!=='pick';tlEl('tlRc').hidden=mode!=='rec';tlEl('tlPl').hidden=mode!=='play';
+  tlEl('tlTitle').textContent=mode==='play'?'🎞 '+(TLA.sc&&TLA.sc.title||'タイムラプス'):mode==='rec'?'🎞 記録中':'🎞 タイムラプス';
+  tlEl('tlX').textContent='✕ 閉じる'}
+function tlOpen(){
+  if(TLA.P||TLA.rec){tlEl('tlp').hidden=false;return}
+  tlEl('tlPickErr').textContent='';tlShow('pick');
+  try{tlEl('tlp').scrollIntoView({block:'nearest'})}catch(_){}}
+function tlStart(script,o){
+  o=o||{};if(TLA.P)tlStop(false);
+  const N=TL.norm(script);if(!N.ok){tlEl('tlPickErr').textContent='⚠ '+N.errors.join(' / ');tlShow('pick');return false}
+  TLA.sc=N.script;TLA.saved=snap();TLA.base=o.base||TLA.saved;TLA.dirty0=dirtyProj;TLA.tab0=tlTab();TLA.src=null;
+  TLA.hasPhys=TLA.sc.steps.some(s=>s.k==='phys');TL.busy=true;
+  TLA.P=TL.player(TLA.sc,tlHost,{speed:+tlEl('tlSpd').value||1,mode:tlEl('tlMode').value,cb:{step:tlRender,state:tlRender,play:tlPlayUi,end:tlRender}});
+  tlBuild();tlShow('play');
+  if(N.warns.length)tlEl('tlErr').textContent=N.warns.join(' / ');
+  tlRender();if(o.auto!==false)TLA.P.play();return true}
+/* 閉じる。keep＝この状態のまま続ける（預かった姿をUndoに積む）。そうでなければ見る前の姿へ戻す */
+function tlStop(keep){
+  const P=TLA.P;
+  if(P){P.pause();TLA.P=null;TL.busy=false;cancelAnimationFrame(TLA.raf);TLA.raf=0;clearInterval(TLA.fgT);const fg=tlEl('tlFg');if(fg)fg.hidden=true;
+    document.querySelectorAll('.tlhi').forEach(e=>e.classList.remove('tlhi'));
+    if(keep){if(TLA.hid)LAYERS.forEach(y=>{if(TLA.hid.includes(y.id))y.visible=true});TLA.saved._uh=++undoSeq;US.push(TLA.saved);RS.length=0;trimHistory();dirtyProj=true;note('この状態で続けます（「戻す」で、見る前に戻せます）',4000)}
+    else{tlRestore(TLA.saved);dirtyProj=TLA.dirty0;if(tlTab()!==TLA.tab0)setTab(TLA.tab0)}
+    TLA.saved=TLA.base=null;TLA.sc=null;TLA.src=null;TLA.hid=null}
+  tlEl('tlp').hidden=true}
+function tlClose(keep){if(TLA.rec)tlRecStop(true);tlStop(keep);tlEl('tlp').hidden=true}
+
+/* ---------- 表示 ---------- */
+function tlBuild(){
+  const box=tlEl('tlBlocks');box.textContent='';
+  TLA.sc.steps.forEach((s,i)=>{
+    const b=s.blk||{c:s.cat||s.k,t:s.say||s.k,f:[]},d=document.createElement('div'),t=document.createElement('div');
+    d.className='tlb';d.dataset.i=i;d.dataset.c=b.c||s.cat||s.k;t.className='tlbt';t.textContent=b.t||'';d.append(t);
+    (b.f||[]).slice(0,6).forEach(f=>{const r=document.createElement('div'),l=document.createElement('span'),v=document.createElement('b');r.className='tlbf';l.textContent=f.l;v.textContent=f.v;v.title=f.v;r.append(l,v);d.append(r)});
+    if((b.f||[]).length>6){const m=document.createElement('div');m.className='tlbf';m.textContent='…ほか '+(b.f.length-6)+' 項目';d.append(m)}
+    d.onclick=()=>{if(!TLA.P)return;TLA.P.pause();TLA.P.goto(i)};box.append(d)});
+  const sk=tlEl('tlSk');sk.max=TLA.sc.steps.length}
+function tlRender(){
+  const P=TLA.P;if(!P)return;const I=P.info(),N=I.n,st=I.step;
+  tlEl('tlPos').textContent=I.i<0?'はじめ（全'+N+'）':(I.i+1)+' / '+N;
+  const sk=tlEl('tlSk');sk.max=N;if(document.activeElement!==sk)sk.value=I.i+1;
+  tlEl('tlCap').textContent=st?(st.say||''):'▶ 再生 を押すと、はじめから見られます（全'+N+'手順）';
+  tlEl('tlErr').textContent=I.err?'⚠ '+I.err:'';
+  const ol=tlEl('tlHow');ol.textContent='';
+  if(st)(st.how||[]).forEach(h=>{const li=document.createElement('li');li.textContent=h;ol.append(li)});
+  tlEl('tlHowBox').hidden=!(st&&(st.how||[]).length);
+  const kids=tlEl('tlBlocks').children;let cur=null;
+  for(let j=0;j<kids.length;j++){const k=kids[j];k.classList.toggle('done',j<I.i);k.classList.toggle('cur',j===I.i);if(j===I.i)cur=k}
+  if(cur){const box=tlEl('tlBlocks');box.scrollTop=Math.max(0,cur.offsetTop-box.clientHeight/3)}
+  if(document.activeElement!==tlEl('tlEd'))tlEl('tlEd').value=st?(st.say||''):'';
+  tlPlayUi()}
+function tlPlayUi(){
+  const P=TLA.P;if(!P)return;const I=P.info();
+  tlEl('tlPlay').textContent=I.playing?'⏸ 一時停止':(I.i>=I.n-1&&I.n?'↺ もう一度':'▶ 再生');
+  if(I.playing&&!TLA.raf){TLA.t0=performance.now();TLA.raf=requestAnimationFrame(tlLoop)}}
+function tlLoop(t){
+  TLA.raf=0;const P=TLA.P;if(!P||!P.playing)return;
+  const dt=Math.min(250,Math.max(0,t-TLA.t0));TLA.t0=t;P.tick(dt);
+  if(TLA.P&&TLA.P.playing)TLA.raf=requestAnimationFrame(tlLoop)}
+
+/* ---------- 枠の操作 ---------- */
+(function(){
+  const E=tlEl,sel=E('tlSpd');
+  TL.SPEEDS.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent='×'+v;if(v===1)o.selected=true;sel.append(o)});
+  const src=E('tlSrc');(typeof PHYS_SAMPLES!=='undefined'?PHYS_SAMPLES:[]).forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent='作り方：'+(s.title||s.id);src.append(o)});
+  src.onchange=()=>{const s=PHYS_SAMPLES.find(x=>x.id===src.value);src.value='';if(s)tlStart(TL.fromScenario(s))};
+  const cur=()=>{if(!SCN.src){E('tlPickErr').textContent='物理シナリオが開いていません（物理タブで、サンプルを開くか「＋プロトタイプ」を押してください）';tlOpen();return}tlStart(TL.fromScenario(JSON.parse(scnJson())))};
+  E('tlCur').onclick=cur;E('scHow').onclick=()=>{if(TLA.rec){note('記録中です。先に「■ 止める」を押してください');return}cur()};
+  E('mTl').onclick=tlOpen;E('tlX').onclick=()=>tlClose(false);E('tlKeep').onclick=()=>tlClose(true);
+  E('tlMin').onclick=()=>{const m=E('tlp').classList.toggle('min');E('tlMin').setAttribute('aria-pressed',m);E('tlMin').textContent=m?'▸':'▾'};
+  E('tlLd').onclick=()=>{E('tlLdBox').hidden=!E('tlLdBox').hidden};
+  E('tlLdGo').onclick=()=>{const r=TL.parse(E('tlJson').value);if(!r.ok){E('tlPickErr').textContent='⚠ '+r.errors.join(' / ');return}E('tlPickErr').textContent='';E('tlLdBox').hidden=true;tlStart(r.script)};
+  E('tlFirst').onclick=()=>{TLA.P&&(TLA.P.pause(),TLA.P.first())};E('tlPrev').onclick=()=>{TLA.P&&(TLA.P.pause(),TLA.P.prev())};
+  E('tlNext').onclick=()=>{TLA.P&&(TLA.P.pause(),TLA.P.next())};E('tlLast').onclick=()=>{TLA.P&&(TLA.P.pause(),TLA.P.last())};
+  E('tlPlay').onclick=()=>TLA.P&&TLA.P.toggle();
+  E('tlSk').oninput=e=>{if(!TLA.P)return;TLA.P.pause();TLA.P.goto(+e.target.value-1)};
+  sel.onchange=()=>TLA.P&&TLA.P.setSpeed(+sel.value);E('tlMode').onchange=()=>TLA.P&&TLA.P.setMode(E('tlMode').value);
+  /* 書き出し・直す */
+  const out=(t,msg)=>{const o=E('tlOut');o.value=t;o.hidden=false;try{navigator.clipboard.writeText(t).then(()=>note(msg+'をコピーしました',3000),()=>{o.select();note('コピーできませんでした。枠の中を選んでコピーしてください')})}catch(_){o.select()}};
+  E('tlTxt').onclick=()=>TLA.sc&&out(TL.toText(TLA.sc),'操作手順書（文章）');
+  E('tlJs').onclick=()=>TLA.sc&&out(TL.stringify(TLA.sc),'手順書（JSON）');
+  const setSc=(sc,i)=>{TLA.sc=sc;TLA.P.script=sc;tlBuild();TLA.P.goto(Math.min(i,sc.steps.length-1))};
+  E('tlEd').onchange=()=>{const P=TLA.P;if(!P||P.i<0)return;const i=P.i;setSc(TL.edit.say(TLA.sc,i,E('tlEd').value),i)};
+  E('tlDel').onclick=()=>{const P=TLA.P;if(!P||P.i<0||TLA.sc.steps.length<2)return;const i=P.i;P.pause();setSc(TL.edit.remove(TLA.sc,i),Math.max(0,i-1))};
+  /* 記録 */
+  E('tlRec').onclick=tlRecStart;E('tlRcX').onclick=()=>tlRecStop(false);
+})();
+
+/* ---------- 記録 ---------- */
+const tlSkipSel='#tlp,#tlFg,#mTl';   /* 枠そのもの・指の印・タイムラプスを開く項目は、記録しない */
+function tlLabel(el){
+  if(!el)return'';
+  const row=el.closest&&el.closest('.row'),lab=row&&row.querySelector(':scope>.lab');
+  let t=(el.tagName==='BUTTON'?(el.textContent||'').trim():'')||(lab&&lab.textContent.trim())||el.getAttribute('aria-label')||el.title||el.id||'';
+  t=t.replace(/\s+/g,' ');return t.length>26?t.slice(0,24)+'…':t}
+function tlSelOf(el){   /* 場所を表すCSSセレクタ。見つからない・一意でないなら空（記録しない） */
+  const one=s=>{try{return document.querySelectorAll(s).length===1?s:''}catch(_){return''}};
+  if(el.id)return'#'+(window.CSS&&CSS.escape?CSS.escape(el.id):el.id);
+  if(el.dataset){if(el.dataset.t&&el.closest('#tabs'))return one('#tabs [data-t="'+el.dataset.t+'"]');if(el.dataset.fr)return one('#frSeg [data-fr="'+el.dataset.fr+'"]');if(el.dataset.tool)return one('#tp [data-tool="'+el.dataset.tool+'"]')}
+  const a=el.getAttribute('aria-label');return a?one(el.tagName.toLowerCase()+'[aria-label="'+a.replace(/"/g,'\\"')+'"]'):''}
+function tlUiStep(el,kind,v,co){
+  const sel=tlSelOf(el);if(!sel)return null;const name=tlLabel(el)||sel,tab=el.closest('#tabs')&&el.dataset.t;
+  let say,how;
+  if(kind==='click'){say=tab?'「'+name+'」タブを開く':'「'+name+'」を押す';how=[tab?'操作窓の上の並びから「'+name+'」タブをタップ':'「'+name+'」をタップ']}
+  else if(kind==='check'){say='「'+name+'」を'+(v?'オンにする':'オフにする');how=['「'+name+'」を'+(v?'オン':'オフ')+'にする']}
+  else if(el.tagName==='SELECT'){const op=el.options[el.selectedIndex],ot=op?op.textContent.trim():String(v);say='「'+name+'」で「'+ot+'」を選ぶ';how=['「'+name+'」をタップして開く','一覧から「'+ot+'」を選ぶ']}
+  else{say='「'+name+'」を '+v+' にする';how=el.type==='range'?['「'+name+'」のつまみを '+v+' の位置まで動かす（つまみを押したまま縦に離すと、細かく動かせる）']:['「'+name+'」の欄に '+v+' と入れる']}
+  const s={k:'ui',cat:'ui',do:kind==='click'?'click':kind,sel,say,how,blk:{c:'ui',t:say,f:[]}};if(kind!=='click')s.v=v;if(co)s.co=co;return s}
+function tlRecStart(){
+  if(TLA.P||TLA.rec){return}
+  TLA.rec=TL.recorder();TLA.recSnap=snap();
+  TLA.untap=PHAPI.tap(op=>{if(!TLA.rec||TL.busy)return;const st=TL.stepOf(op);TLA.rec.add(st);tlRecN()});
+  tlShow('rec');tlRecN()}
+function tlRecN(){const n=TLA.rec?TLA.rec.steps.length:0;tlEl('tlRcN').textContent='● 記録中（'+n+'手順）'}
+function tlRecStop(quiet){
+  const R=TLA.rec;if(!R)return;TLA.rec=null;if(TLA.untap){TLA.untap();TLA.untap=null}
+  const base=TLA.recSnap;TLA.recSnap=null;
+  if(!R.steps.length){if(!quiet){tlEl('tlPickErr').textContent='操作が記録されませんでした（ボタン・バー・選ぶ・物理の命令を触ってから止めてください）';tlShow('pick')}return}
+  if(quiet)return;
+  const d=new Date(),two=n=>String(n).padStart(2,'0'),sc=R.finish('記録した操作 '+two(d.getHours())+':'+two(d.getMinutes()));
+  tlStart(sc,{auto:false,base})}
+(function(){
+  const live=e=>TLA.rec&&!TL.busy&&e.isTrusted!==false&&!(e.target.closest&&e.target.closest(tlSkipSel));
+  document.addEventListener('click',e=>{
+    if(!live(e))return;const el=e.target.closest&&e.target.closest('button,summary,[data-t],[data-fr],[data-tool]');if(!el||/^(INPUT|SELECT|TEXTAREA|LABEL)$/.test(el.tagName))return;
+    const s=tlUiStep(el,'click');if(s){TLA.rec.add(s);tlRecN()}},true);
+  document.addEventListener('input',e=>{
+    if(!live(e))return;const el=e.target;if(!el||el.tagName!=='INPUT'||el.type!=='range')return;
+    const s=tlUiStep(el,'set',+el.value,'set:'+(el.id||''));if(s){TLA.rec.add(s);tlRecN()}},true);
+  document.addEventListener('change',e=>{
+    if(!live(e))return;const el=e.target;if(!el)return;let s=null;
+    if(el.tagName==='SELECT')s=tlUiStep(el,'set',el.value);
+    else if(el.tagName==='INPUT'&&(el.type==='checkbox'||el.type==='radio'))s=tlUiStep(el,'check',el.checked);
+    else if(el.tagName==='INPUT'&&(el.type==='text'||el.type==='number'))s=tlUiStep(el,'set',el.type==='number'&&el.value!==''&&isFinite(+el.value)?+el.value:el.value);
+    if(s){TLA.rec.add(s);tlRecN()}},true);
+  /* キャンバスのなぞり（見せるだけ。再生では作品に反映しない） */
+  cv.addEventListener('pointerdown',e=>{if(!TLA.rec||TL.busy||e.isTrusted===false)return;const r=cv.getBoundingClientRect();TLA.stroke={t0:performance.now(),r,p:[[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,0]],lt:0}},true);
+  cv.addEventListener('pointermove',e=>{const s=TLA.stroke;if(!s||!TLA.rec)return;const t=Math.round(performance.now()-s.t0);if(t-s.lt<40||s.p.length>=60)return;s.lt=t;s.p.push([+((e.clientX-s.r.left)/s.r.width).toFixed(4),+((e.clientY-s.r.top)/s.r.height).toFixed(4),t])},true);
+  const end=()=>{const s=TLA.stroke;TLA.stroke=null;if(!s||!TLA.rec)return;const p=s.p.map(q=>[+q[0].toFixed(4),+q[1].toFixed(4),q[2]]);if(p.length<2)p.push([p[0][0],p[0][1],300]);
+    const say='キャンバスをなぞる（動きの目安。再生では作品に反映しません）';TLA.rec.add({k:'gesture',cat:'ui',path:p,say,how:['キャンバスの上を、指の印のとおりになぞる'],blk:{c:'ui',t:'キャンバスをなぞる',f:[{l:'点の数',v:String(p.length)}]}});tlRecN()};
+  ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,end,true));
+})();
 </script>
 </body>
 </html>

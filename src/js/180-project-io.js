@@ -57,6 +57,6 @@ $('sv').onclick=saveProj;
 $('pf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadProj(r.result).catch(()=>{$('rtx').textContent='読み込めませんでした'});r.readAsText(f)};
 $('rs').onclick=()=>{try{loadProj(localStorage.getItem('am_auto'))}catch(_){}};
 addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnValue=''}});
-function autosave(){if(!dirtyProj)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
+function autosave(){if(!dirtyProj||TL.busy)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
 function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document)}

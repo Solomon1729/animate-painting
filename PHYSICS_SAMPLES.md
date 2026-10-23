@@ -6,7 +6,7 @@
 
 ## 1. 1件を足す手順（5つ）
 
-1. `node tools/phys_check.js --template > src/phys/samples/orig-○○.json` で雛形を出す（`id`はファイル名と同じ。`orig-`で始める）。
+1. `node tools/phys_check.js --template > src/phys/samples/orig-○○.json` でプロトタイプ（最小の有効なシナリオ）を出す（`id`はファイル名と同じ。`orig-`で始める）。
 2. JSONを書く（下の§2〜§8）。**`ask`（理論値の式）を必ず1つ以上つける**＝モデルが正しいことを機械が確かめられる。
 3. `node tools/phys_check.js src/phys/samples/orig-○○.json` で、検証（日本語のエラー）→実行→**測定値と理論値の表**を見る。`✗`が出たら直す。`--sweep`で掃引、`--csv`で時系列、`--param theta=40`で条件を変えて実行。
 4. `node tools/phys_check.js --all`（全件。失敗があると終了コード1）。`node tools/phys_engine_test.js`（エンジンの解析解との照合）も通すこと。
@@ -234,6 +234,10 @@ SI（m・kg・s・N・J）。**x右・y上**。原点＝作品の左下（`view.
 | `setRun` | 実行の設定（長さ・止める条件） | 命令 |
 | `setView` | 画面（位置・横幅m） | 命令 |
 | `setWorld` | 世界（重力の大きさ・向き） | 命令 |
+| `setMeta` | 題名・タグ・出どころ・難しさ・問題文・メモ・解答・ヒントを書く | 命令 |
+| `addPair` | 2つの物体の摩擦・反発を決める（`pairs`） | 命令 |
+| `addGraph` | グラフを足す（`graphs`） | 命令 |
+| `setSweep` | 条件を振る設定（現象考察。`sweep`） | 命令 |
 | `play` | 再生 | 実行 |
 | `pause` | とめる | 実行 |
 | `reset` | 最初へ戻す | 実行 |

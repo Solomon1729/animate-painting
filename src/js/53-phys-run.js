@@ -52,7 +52,7 @@ function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻�
   }catch(e){RUN.err=String(e&&e.message||e);RUN.sess=null;RUN.R=null}
 }
 function scnReset(){RUN.playing=false;scnBuild();scnSyncLinks();scnUi()}
-/* シナリオを開く（サンプル・貼り付け・雛形）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
+/* シナリオを開く（サンプル・貼り付け・プロトタイプ）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
 function scnSetSource(src,o){
   o=o||{};const V=PHS.validate(src);
   if(V.errors.length)return{ok:false,errors:V.errors,warns:V.warns};
@@ -66,7 +66,7 @@ function scnSetSource(src,o){
   return{ok:true,warns:V.warns}}
 function scnLoadSample(id){const s=typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.find(x=>x.id===id);if(!s)return{ok:false,errors:['サンプル「'+id+'」がありません']};return scnSetSource(s)}
 function scnClose(o){
-  o=o||{};pushUndo();if(!o.keepActors)scnClearAuto();else AC.forEach(a=>{delete a.scnAuto});
+  o=o||{};if(!o.noUndo)pushUndo();if(!o.keepActors)scnClearAuto();else AC.forEach(a=>{delete a.scnAuto});
   SCN.src=null;SCN.on=false;SCN.link={};SCN.params={};SCN.graph='';RUN.playing=false;scnBuild();RUN.rev++;dirtyProj=true;scnUi()}
 function scnSetParam(k,v){SCN.params[k]=v;RUN.dirty=true;dirtyProj=true}
 function scnResetParams(){SCN.params={};RUN.dirty=true;RUN.rev++;dirtyProj=true}

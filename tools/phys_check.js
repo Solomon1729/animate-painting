@@ -7,7 +7,7 @@
      node tools/phys_check.js 見本.json --param theta=40 --param mu=0.1   パラメータを変えて実行
      node tools/phys_check.js --all                 src/phys/samples/*.json をすべて検査（失敗があれば終了コード1）
      node tools/phys_check.js --list                 見本の一覧
-     node tools/phys_check.js --template             最小のひな形を表示
+     node tools/phys_check.js --template             最小のプロトタイプ（有効なシナリオ）を表示
      node tools/phys_check.js 見本.json --json       結果をJSONで出力 */
 const fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');
