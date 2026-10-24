@@ -46,6 +46,7 @@ async function loadProj(txt){
   /* キャンバスの大きさ（台帳Z-98）。旧データには無い＝自動 */
   DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit(true);canvasUi();
   scnLoad(d.SCN);   /* 物理シナリオ（無い作品では空にする） */
+  try{artMigrateOld()}catch(e){}   /* 旧・簡易の物理（絵ごとの phys）を、新しい物理の物体に置き換える（台帳Z-197） */
   setSel(AC[d.sel]||AC[0]||null);
   if(PROJ.v)note('新しい版（v'+PROJ.v+'）で保存された作品です。このアプリが知らない項目は、そのまま残して保存します。読めない部分があるかもしれないので、上書きは避け、自動保存は別の入れ物に入ります',9000);
 }
@@ -57,6 +58,6 @@ $('sv').onclick=saveProj;
 $('pf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadProj(r.result).catch(()=>{$('rtx').textContent='読み込めませんでした'});r.readAsText(f)};
 $('rs').onclick=()=>{try{loadProj(localStorage.getItem('am_auto'))}catch(_){}};
 addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnValue=''}});
-function autosave(){if(!dirtyProj)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
+function autosave(){if(!dirtyProj||TL.busy)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
 function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document)}

@@ -38,9 +38,8 @@ function pdown(e){
   }
   if(pickFor){pickAt(q);return}
   if(handMode){if(!vLock){pid=e.pointerId;pan={x:q.x-Z.x,y:q.y-Z.y}}return}
-  if(!sel){pid=e.pointerId;if(!rulerOn&&tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、シナリオの物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
+  if(!sel){pid=e.pointerId;if(tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、シナリオの物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
   pushUndo();pid=e.pointerId;const p=wp(q);
-  if(rulerOn){drawing=true;rulerPt={x0:p.x,y0:p.y,x1:p.x,y1:p.y};return}
   if(paint){if(blocked(sel))return;drawing=true;lp=null;stroke(q);return}
   if(adjMode){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;adjBrushAt(q,pl);return}
   if(pbox){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;boxStart=loc(pl,q);boxEnd={...boxStart};return}
@@ -52,7 +51,7 @@ function pdown(e){
   if(scnPtrDown(p,e))return;   /* 物理が開いている：実行中は物をつかむ／つつく、止まっている時は物体を置き直す（台帳Z-185。53-phys-run.js） */
   const h=hit(p);
   if(h){
-    tgt=h;editing=true;setSel(h);dragOff=null;thist=[];tgtBak={a:h,fx:h.fx,fy:h.fy,ox:h.ox,oy:h.oy};
+    tgt=h;editing=true;setSel(h);dragOff=null;tgtBak={a:h,fx:h.fx,fy:h.fy,ox:h.ox,oy:h.oy};
     const par=h.att&&byId(h.to);
     if(par&&par.F){
       const qq=par.F.inverse().transformPoint(new DOMPoint((p.x*Z.s+Z.x)*dpr,(p.y*Z.s+Z.y)*dpr)),u=S0*par.size;
@@ -69,12 +68,11 @@ cv.addEventListener('pointermove',e=>{
     const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},s=cl(pz0.Z.s*d/pz0.d,.5,6),w0={x:(pz0.m.x-pz0.Z.x)/pz0.Z.s,y:(pz0.m.y-pz0.Z.y)/pz0.Z.s};
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
-  if(rulerOn&&rulerPt){const p=wp(q);rulerPt.x1=p.x;rulerPt.y1=p.y;return}
-  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
+  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p)}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
 });
-let thist=[],firstDownTs=0;
+let firstDownTs=0;
 const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)pz0=null;
-  if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){thist=[];up()}}}
+  if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){up()}}}
 };
 function endAll(){
   scnPtrEnd();  /* つかんでいた物を離す／つつく／物体の置き直しを確定（53-phys-run.js） */
@@ -82,18 +80,9 @@ function endAll(){
   rtEnd(drawing);  /* 修整：スタンプはここで1回写す（2本指などで取り消された時は写さない） */
   paCommit();  /* ペンの補正：溜めた点列を、補正した線として一度に描く（台帳Z-108。補正オフなら何もしない） */
   if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
-  if(rulerOn&&rulerPt){
-    const px=Math.hypot(rulerPt.x1-rulerPt.x0,rulerPt.y1-rulerPt.y0);
-    if(px>4){pendingRulerPx=px;$('pRulerSet').style.display='flex'}
-    rulerPt=null;drawing=false;pid=-1;return;
-  }
-  if(tgt&&tgt.phys&&tgt.phys.on&&!tgt.phys.fixed&&thist.length>=2){
-    const a=thist[0],b=thist[thist.length-1],dt=(b.t-a.t)/1000;
-    if(dt>0.01){tgt.phys.vx=cl((b.x-a.x)/dt,-2000,2000);tgt.phys.vy=cl((b.y-a.y)/dt,-2000,2000)}
-  }
   if(tgt)scnPlaceActor(tgt);  /* 物理につないだ絵を置き直した：初期位置にする */
   if(pbox&&drawing&&pl&&boxStart&&boxEnd){rectSel(pl,boxStart,boxEnd);flashUntil=performance.now()+500}
-  thist=[];up();
+  up();
 }
 addEventListener('pointerup',end);addEventListener('pointercancel',end);
 addEventListener('blur',()=>{ptrs.clear();ptyp.clear();pz0=null;up()});

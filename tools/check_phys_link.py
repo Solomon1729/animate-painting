@@ -309,7 +309,7 @@ def main():
         scene((4, 5))
         ev("()=>{sel=_a;setSel(_a);del()}")
         pg.wait_for_timeout(300)
-        r = ev("()=>({has:!!SCN.src.bodies.find(x=>x.id===_id),link:!!SCN.link[_id],par:!!(SCN.src.params&&SCN.src.params['m_'+_id]),err:RUN.err})")
+        r = ev("()=>({has:!!(SCN.src&&SCN.src.bodies.find(x=>x.id===_id)),link:!!SCN.link[_id],par:!!(SCN.src&&SCN.src.params&&SCN.src.params['m_'+_id]),err:RUN.err})")   # 絵の物体が1つも無くなったシーンは閉じる（台帳Z-197）ので、SCN.src が null でもよい
         chk('L8 絵を消すと、絵から作った物体・質量・つなぎも消え、エラーが出ない', not r['has'] and not r['link'] and not r['par'] and not r['err'], r)
 
         # ---------- L9 時間 ----------

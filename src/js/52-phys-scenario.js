@@ -400,7 +400,7 @@ function fit(rows,f,scn){
 function toCSV(cols,rows){const esc=v=>typeof v==='number'?String(+v.toPrecision(8)):String(v);return[cols.join(',')].concat(rows.map(r=>cols.map(c=>esc(r[c])).join(','))).join('\n')}
 function seriesCSV(res,names){const cols=['t'].concat(names||Object.keys(res.series));const rows=res.ts.map((t,i)=>{const r={t};for(const c of cols.slice(1))r[c]=res.series[c][i];return r});return toCSV(cols,rows)}
 
-/* 作者向けの雛形（最小の有効なシナリオ） */
+/* 作者向けのプロトタイプ（最小の有効なシナリオ） */
 function template(){return{id:'my-scenario',title:'題名',tags:['力学'],source:'オリジナル（型の名前）',level:'basic',problem:'（問題文は自分の言葉で書く）',
   params:{theta:{v:30,min:5,max:60,step:1,unit:'°',label:'斜面の角度'},mu:{v:.2,min:0,max:1,step:.05,label:'動摩擦係数'}},
   vars:{L:'2'},world:{g:9.8},view:{x0:0,y0:0,w:6},

@@ -62,7 +62,7 @@ async function mgMerge(layers,dest){
   mgBusy=true;note('統合しています…');await cmFrame();
   try{
     const r=mgRender(mem);
-    const motion=mem.filter(a=>(a.phys&&a.phys.on)||K.some(([k])=>a.ch&&a.ch[k]&&a.ch[k].a)).length;
+    const motion=mem.filter(a=>scnRoleOf(a)||K.some(([k])=>a.ch&&a.ch[k]&&a.ch[k].a)).length;
     const outer=AC.filter(x=>!mem.includes(x)&&x.maskTo&&mem.some(m=>m.id===x.to&&x.toType!=='layer')).length;   /* 統合する物をマスク対象にしていた、外のオブジェクト */
     pushUndo();
     const top=Math.max(...mem.map(a=>AC.indexOf(a)));

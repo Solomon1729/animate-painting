@@ -18,6 +18,7 @@
     "js/56-phys-art.js",
     "js/57-phys-demos.js",
     "js/58-phys-api.js",
+    "js/59-timelapse.js",
     "js/60-input-state.js",
     "js/70-layers.js",
     "js/80-pointer-events.js",
@@ -47,6 +48,8 @@
     "js/238-size-hint.js",
     "js/239-skin.js",
     "js/240-tooling-and-init.js",
+    "js/241-timelapse-ui.js",
+    "js/242-timelapse-board.js",
     "document-suffix.html"
   ]
 }

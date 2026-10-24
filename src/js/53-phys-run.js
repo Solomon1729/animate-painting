@@ -29,6 +29,14 @@ const scnClone=o=>o==null?o:JSON.parse(JSON.stringify(o));
 function scnSplit(s){const r=[];let d=0,cur='';for(const c of String(s||'')){if(c==='(')d++;else if(c===')')d--;if((c===','||c==='、')&&d<=0){if(cur.trim())r.push(cur.trim());cur=''}else cur+=c}if(cur.trim())r.push(cur.trim());return r}
 function scnDefaultGraph(src){const ys=[];for(const q of(src&&src.graphs)||[])for(const y of[].concat(q.y||[]))if(typeof y==='string')ys.push(y);return ys.join(', ')}
 const scnROpt=()=>Object.assign({},PHR.DEFOPT,SCN.opt,{vec:SCN.opt.vec||{}});
+/* 非表示の絵につないだ物体は、物理から外す（当たり判定を無くす）。レイヤー一覧の「非表示レイヤーを物理の計算から除外する」（physHideEx）がオンの時。台帳Z-188 */
+function scnHiddenIds(){
+  if(!physHideEx||!SCN.src)return[];const o=[];
+  for(const id of Object.keys(SCN.link)){const a=byId(SCN.link[id].a);if(a&&!isVisible(a))o.push(id)}
+  return o}
+function scnEffSrc(){   /* 計算に使うシナリオ：SCN.src そのもの（隠れた絵が無ければ）か、隠れた物体を collide:false にした複製。物体の並びは変えない */
+  const h=scnHiddenIds();RUN.hid=h.join(',');if(!h.length)return SCN.src;
+  const c=scnClone(SCN.src);for(const b of c.bodies)if(h.includes(b.id))b.collide=false;return c}
 
 /* ---------- 作る・やり直す ---------- */
 function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻して進め直す時だけ）。それ以外は、条件が変わるので記録を捨てる */
@@ -40,8 +48,9 @@ function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻�
     const V=PHS.validate(SCN.src);RUN.warns=V.warns.slice();
     if(V.errors.length)throw new Error(V.errors.join('\n'));
     const ex=scnSplit(SCN.graph);let sess;
-    try{sess=PHS.session(SCN.src,{params:SCN.params,series:ex})}
-    catch(e){if(!ex.length)throw e;RUN.warns.push('グラフの式: '+e.message);sess=PHS.session(SCN.src,{params:SCN.params})}
+    const eff=scnEffSrc();
+    try{sess=PHS.session(eff,{params:SCN.params,series:ex})}
+    catch(e){if(!ex.length)throw e;RUN.warns.push('グラフの式: '+e.message);sess=PHS.session(eff,{params:SCN.params})}
     sess.W.logContacts=true;
     RUN.sess=sess;sess.setHook(scnHook);RUN.a0=sess.W.bodies.map(b=>b.a);RUN.p0=sess.W.bodies.map(b=>[b.px,b.py]);
     const view=Object.assign({x0:0,y0:0,w:6},SCN.src.view||{});RUN.view=view;
@@ -52,7 +61,7 @@ function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻�
   }catch(e){RUN.err=String(e&&e.message||e);RUN.sess=null;RUN.R=null}
 }
 function scnReset(){RUN.playing=false;scnBuild();scnSyncLinks();scnUi()}
-/* シナリオを開く（サンプル・貼り付け・雛形）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
+/* シナリオを開く（サンプル・貼り付け・プロトタイプ）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
 function scnSetSource(src,o){
   o=o||{};const V=PHS.validate(src);
   if(V.errors.length)return{ok:false,errors:V.errors,warns:V.warns};
@@ -66,7 +75,7 @@ function scnSetSource(src,o){
   return{ok:true,warns:V.warns}}
 function scnLoadSample(id){const s=typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.find(x=>x.id===id);if(!s)return{ok:false,errors:['サンプル「'+id+'」がありません']};return scnSetSource(s)}
 function scnClose(o){
-  o=o||{};pushUndo();if(!o.keepActors)scnClearAuto();else AC.forEach(a=>{delete a.scnAuto});
+  o=o||{};if(!o.noUndo)pushUndo();if(!o.keepActors)scnClearAuto();else AC.forEach(a=>{delete a.scnAuto});
   SCN.src=null;SCN.on=false;SCN.link={};SCN.params={};SCN.graph='';RUN.playing=false;scnBuild();RUN.rev++;dirtyProj=true;scnUi()}
 function scnSetParam(k,v){SCN.params[k]=v;RUN.dirty=true;dirtyProj=true}
 function scnResetParams(){SCN.params={};RUN.dirty=true;RUN.rev++;dirtyProj=true}
@@ -256,6 +265,8 @@ const scnArtSig=a=>a?[a.cvv|0,a.bsv|0,a.pnv|0,a.face||1].join('|'):'';
    ・絵から作った物体（art_）：形を作り直す。編集の途中（指が下りている間）は待ち、止まって350ms後に1回だけ（scnArtRefresh）
    ・それ以外（絵文字など、物体の形は別にある）：絵の見た目の倍率（link.k）・向き（link.rot0）にする */
 function scnWatch(){
+  if(SCN.src&&SCN.src.id==='art-scene'&&!SCN.src.bodies.some(b=>/^art_/.test(b.id))){scnClose({noUndo:true});return}   /* 絵の物体が1つも無くなった「絵に物理を付けた」シーンは閉じる（外した・絵を消した後。台帳Z-197） */
+  if(RUN.sess&&!RUN.dirty&&(physHideEx||RUN.hid)&&scnHiddenIds().join(',')!==(RUN.hid||'')){RUN.dirty=true;note('絵の表示・非表示が変わったので、物理を最初に戻しました（非表示の絵は物理に参加しません）',4000)}
   if(!RUN.sess||!RUN.al.size)return;
   const now=performance.now();let restyle=false;
   for(const[aid,o]of RUN.al){const a=byId(aid),L=SCN.link[o.id];if(!a||!L)continue;const art=/^art_/.test(o.id);let ch=false;
@@ -368,7 +379,9 @@ function scnUiTime(force){
 }
 function scnUi(){
   const g=$('scGrp');if(!g)return;
-  const has=!!SCN.src;$('scBody').hidden=!has;$('scOff').hidden=!has;
+  const has=!!SCN.src;$('scBody').hidden=!has;$('scOff').hidden=!has;$('scHowRow').hidden=!has;
+  if(!has){$('scTitle').textContent='';$('scProb').style.display='none';RUN.advId=null}
+  else if(RUN.advId!==SCN.src.id){RUN.advId=SCN.src.id;if(SCN.src.id!=='art-scene')$('scAdv').open=true}   /* サンプル・自作のシナリオを開いた時は「くわしく」も開く */
   const sel_=$('scSel');if(typeof PHYS_SAMPLES!=='undefined'&&sel_.options.length<=1){PHYS_SAMPLES.forEach(s=>{const o=scnEl('option');o.value=s.id;o.textContent=(s.title||s.id)+(s.level==='olympiad'?'（物理オリンピック級）':'');sel_.append(o)})}
   sel_.value=has&&typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.some(s=>s.id===SCN.src.id)?SCN.src.id:'';
   const ac=AC.map(a=>a.id+':'+a.name).join('|');
@@ -386,17 +399,21 @@ function scnRoleOf(a){
   return null}
 function scnUiRole(){
   if(!$('scArtSt'))return;const r=scnRoleOf(sel);
-  $('scArtB').classList.toggle('on',!!r&&r.kind==='body');$('scArtT').classList.toggle('on',!!r&&r.kind==='terrain');$('scArtX').classList.toggle('on',!r&&!!sel&&!!SCN.src);
-  for(const id of['scArtB','scArtT','scArtX'])$(id).disabled=!sel;
+  $('scArtB').classList.toggle('on',!!r&&r.kind==='body');$('scArtF').classList.toggle('on',!!r&&r.kind==='fixed');$('scArtT').classList.toggle('on',!!r&&r.kind==='terrain');
+  for(const id of['scArtB','scArtF','scArtT'])$(id).disabled=!sel;
+  $('scArtX').disabled=!sel||!r;
   $('scArtS').disabled=!sel;
-  $('scArtSt').textContent=!sel?'絵（オブジェクト）を選ぶと、ここで物理での役割を決められます。':!r?'この絵は物理に参加していません。「動く物体」か「地形」を押すと、見えている輪郭がそのまま当たり判定になります。':
+  $('scArtSt').textContent=!sel?'絵（オブジェクト）を選ぶと、ここで物理を付けられます。':!r?'この絵には物理が付いていません。「動く」を押すと、見えている輪郭がそのまま当たり判定になり、▶ で動きます。（動かない台は「固定」、坂や丘は「地形」）':
     r.kind==='terrain'?'この絵は地形です（上から乗る物が対象）。止まっている間にドラッグすると置き直せます。描き足すと、当たり判定も追従します。':
-    r.kind==='fixed'?'この絵は固定の障害物です（動きません）。':
-    r.kind==='body'?'この絵は動く物体です。質量・反発・摩擦は上の条件のスライダーで変えられます。実行中はドラッグでつかめます。':
-    '「'+r.label+'」につないであります（シナリオの物体）。'}
+    r.kind==='fixed'?'この絵は固定の土台です（動きません。台・壁・障害物）。':
+    r.kind==='body'?'この絵は物理で動きます。下のつまみで、この絵だけの質量・反発・摩擦・初速を変えられます。実行中はドラッグでつかめます。':
+    '「'+r.label+'」につないであります（シナリオの物体）。';
+  artPropsUi(r);artWorldUi()}
 /* キャンバスのメニュー（🎬）の物理の項目：開いていない時は隠す。実行の表示をタブと合わせる */
 function scnMenuSync(){
-  const on=!!SCN.on&&!!SCN.src;for(const id of['mPh','mPlay','mRst','mGrab'])if($(id))$(id).hidden=!on;
+  const on=!!SCN.on&&!!SCN.src;for(const id of['mPlay','mRst','mGrab'])if($(id))$(id).hidden=!on;
+  if($('mPh'))$('mPh').hidden=!(on||sel);   /* 見出し：シナリオが開いている時、または絵を選んでいる時（絵に物理を付けられる） */
+  if($('mPhArt')){$('mPhArt').hidden=!sel;$('mPhArt').textContent=scnRoleOf(sel)?'🌍 この絵の物理を外す':'🌍 この絵に物理を付ける'}
   if(!on)return;const S=RUN.sess;RUN.menuPlaying=RUN.playing;
   $('mPlay').textContent=RUN.playing?'⏸ 物理を一時停止':(S&&S.done?'↺ 物理をもう一度':'▶ 物理を実行');
   for(const id of['scGrab','mGrab']){$(id).classList.toggle('on',PTR.on);$(id).setAttribute('aria-pressed',PTR.on?'true':'false')}}

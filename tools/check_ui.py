@@ -380,7 +380,7 @@ def g_slider(p):
     px = lambda i: (info(i)['max'] - info(i)['min']) / (info(i)['w'] - 20)   # 1pxあたりの値
     pg.evaluate("window.EV={i:0,c:0};const r=document.getElementById('rt');r.addEventListener('input',e=>{if(!e.isTrusted||true)EV.i++});r.addEventListener('change',()=>EV.c++)")
     a = info('sz'); chk('ラベルがバーの上の段に分かれる', a['labTop'] < a['t'] - 2, (a['labTop'], a['t']))
-    chk('角度・重力の向きに吸着の値（90度刻み）が付いている', pg.evaluate("document.getElementById('rt').dataset.snap")=='-180,-90,0,90,180' and pg.evaluate("document.getElementById('pGd').dataset.snap")=='0,90,180,270,360')
+    chk('角度・初速の向きに吸着の値（90度刻み）が付いている', pg.evaluate("document.getElementById('rt').dataset.snap")=='-180,-90,0,90,180' and pg.evaluate("document.getElementById('apA').dataset.snap")=='-180,-90,0,90,180')   # 旧・重力の向き(pGd)は物理の統合で無くなった。初速の向き(apA。台帳Z-197)
     # --- マウス
     setv('rt', 0); x, y = thumb('rt'); k = px('rt')
     pg.mouse.move(x, y); pg.mouse.down()

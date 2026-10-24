@@ -183,15 +183,16 @@ def main():
         chk('S8 グラフが出る', gvis)
         ev("scnClose()")
 
-        # ---------- S9 旧物理 ----------
+        # ---------- S9 旧物理は統合された（台帳Z-197） ----------
+        # 旧・簡易の物理（絵ごとの phys・physOn・床と壁・定規）は無い。絵に物理を付ける形（56-phys-art.js）が標準
+        r = ev("""()=>({old:typeof physStep+'/'+typeof ensurePhys+'/'+typeof physUi+'/'+typeof physOn+'/'+typeof rulerOn,
+          ids:['pOn','pFloor','pWall','pSelOn','pFix','pRuler','phOld'].filter(i=>document.getElementById(i)),
+          std:['scArt','scArtB','scArtF','scArtT','scArtX','apM','apE','apU','apV','apA','apHit','wlFloor','wlWall','wlTop','scAdv'].filter(i=>!document.getElementById(i))})""")
+        chk('S9 旧・簡易の物理のコードと部品が無い', r['old'] == 'undefined/undefined/undefined/undefined/undefined' and r['ids'] == [], r)
+        chk('S9 絵に物理を付ける部品（絵ごとのつまみ・世界・くわしく）がある', r['std'] == [], r)
         ev("resetAll()")
-        r = ev("""()=>{const a=add('🍎');a.phys={on:true,m:1,e:.5,vx:0,vy:0,fixed:false,rs:.8};physOn=true;a.fy=.3;const y0=a.fy;
-          scnLoadSample('orig-projectile');window._a2=a;return y0}""")
-        pg.wait_for_timeout(800)
-        r2 = ev("()=>window._a2.fy")
-        chk('S9 シナリオが開いている間は、旧物理（簡易）が動かない', abs(r2 - r) < 1e-9, (r, r2))
-        ev("()=>{scnClose();physOn=false}")
-        pg.wait_for_timeout(100)
+        r = ev("""()=>{const a=add('🍎');a.fy=.3;setSel(a);return [a.phys===undefined]}""")
+        chk('S9 絵に旧 phys が付かない', r == [True], r)
 
         # ---------- S10 JSON ----------
         r = ev("""()=>{const bad=PHS.template();bad.bodies[0].shapes[0].t='plane2';const r=scnSetSource(bad);return [r.ok,r.errors.join('|')]}""")

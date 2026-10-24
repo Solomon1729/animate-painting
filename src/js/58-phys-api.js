@@ -58,13 +58,13 @@ const RULE_ACTS={
   stop:{label:'実行を止める',fields:[]},
   note:{label:'メッセージを出す',fields:[T('text','text','','文字',{req:1})]}
 };
-const RULE_FIELDS=[T('id','text','','ルールの名前'),T('when','num','','条件の式（真なら動作）',{req:1,hint:'例 ball.y<0.3'}),T('mode','enum','','いつ動作するか',{options:['rise','once'],labels:['成り立った瞬間ごと','最初の1回だけ']}),T('do','acts','','動作の並び',{req:1})];
+const RULE_FIELDS=[T('id','text','','ルールの名前'),T('when','num','','条件の式（真なら動作）',{req:1,hint:'例 ball.y<0.3'}),T('mode','enum','','いつ動作するか',{options:['rise','once'],labels:['成り立った瞬間ごと','最初の1回だけ']}),T('do','acts','','動作の並び',{req:1}),T('label','text','','画面の名前'),T('note','text','','メモ')];
 const SCN_PARTS=[
-  {id:'params',label:'条件（スライダーで変えられる量）',fields:[T('v','num','','値',{req:1}),T('min','num','','最小'),T('max','num','','最大'),T('step','num','','刻み'),T('unit','text','','単位'),T('label','text','','画面の名前')]},
-  {id:'probes',label:'測定（時系列→1つの数）',fields:[T('expr','num','','測る式',{req:1}),T('reduce','enum','','集計',{options:Object.keys(RED_LABELS),labels:Object.values(RED_LABELS)}),T('when','num','','この条件の間だけ'),T('after','text','','この出来事／時刻より後だけ'),T('unit','text','','単位'),T('label','text','','画面の名前')]},
-  {id:'ask',label:'答え合わせ（測定値と理論値）',fields:[T('q','text','','問い'),T('probe','text','','測定の名前'),T('theory','num','','理論値の式',{req:1}),T('tol','num','','許容する相対誤差（既定0.02）'),T('abs','num','','許容する絶対誤差'),T('unit','text','','単位')]},
-  {id:'events',label:'出来事（条件が最初に成り立つ時刻）',fields:[T('when','num','','条件の式',{req:1}),T('label','text','','画面の名前')]},
-  {id:'checks',label:'不変量の検査（保存則など）',fields:[T('name','text','','名前'),T('probe','text','','測定の名前'),T('conserved','num','','許容する変動の割合'),T('min','num','','最小'),T('max','num','','最大')]}
+  {id:'params',label:'条件（スライダーで変えられる量）',fields:[T('v','num','','値',{req:1}),T('min','num','','最小'),T('max','num','','最大'),T('step','num','','刻み'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'probes',label:'測定（時系列→1つの数）',fields:[T('expr','num','','測る式',{req:1}),T('reduce','enum','','集計',{options:Object.keys(RED_LABELS),labels:Object.values(RED_LABELS)}),T('when','num','','この条件の間だけ'),T('after','text','','この出来事／時刻より後だけ'),T('at','text','','この出来事／時刻の値（その時の値を読む）'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'ask',label:'答え合わせ（測定値と理論値）',fields:[T('q','text','','問い'),T('probe','text','','測定の名前'),T('expr','num','','測定の名前の代わりに、その場で測る式'),T('theory','num','','理論値の式',{req:1}),T('tol','num','','許容する相対誤差（既定0.02）'),T('abs','num','','許容する絶対誤差'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'events',label:'出来事（条件が最初に成り立つ時刻）',fields:[T('when','num','','条件の式',{req:1}),T('label','text','','画面の名前'),T('first','bool','','最初の1回だけ'),T('note','text','','メモ')]},
+  {id:'checks',label:'不変量の検査（保存則など）',fields:[T('name','text','','名前'),T('probe','text','','測定の名前'),T('expr','num','','測定の名前の代わりに、その場で測る式'),T('conserved','num','','許容する変動の割合'),T('min','num','','最小'),T('max','num','','最大'),T('scale','num','','変動を測る基準の大きさ'),T('tol','num','','許容する誤差'),T('note','text','','メモ')]}
 ];
 
 /* ---------- 部品表 ---------- */
@@ -105,8 +105,8 @@ const pick=(o,keys)=>{const r={};for(const k of keys)if(o[k]!==undefined)r[k]=o[
 const BODY_SET=BODY_FIELDS.map(f=>f.k).filter(k=>k!=='id');
 /* 各命令：label・kind（scenario＝シナリオJSONを直す／runtime＝実行を操作する）・args（入力欄）・do(s,a)（シナリオを直接直す。idなどを返す） */
 const OPS={
-  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
-    make(a){const s={id:'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
+  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('id','id','','シナリオの名前',{hint:'省略するとmy-scene'}),T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
+    make(a){const s={id:a.id||'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
       if(a.floor!==false)s.bodies.push({id:'floor',type:'static',mu:.5,e:0,label:'床',shapes:[{t:'plane',normal:[0,1],d:0}]});return s}},
   addBody:{label:'物体を置く',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id)}),T('shape','shape','','形（{t:"circle",r:0.1}など。部品表のshapes）',{req:1}),T('pos','vec2','m','位置'),T('set','object','','その他の項目（部品表のbodyFields）')],returns:'物体id',
     do(s,a){need(a.shape&&a.shape.t,'shape（形）が必要です');const id=a.id||uniq(s.bodies,'b'),b={id,type:a.type||'dynamic',shapes:[a.shape]};
@@ -121,17 +121,26 @@ const OPS={
   removeJoint:{label:'つなぎを外す',kind:'scenario',args:[T('id','text','','拘束id',{req:1})],do(s,a){const n=(s.joints||[]).length;s.joints=(s.joints||[]).filter(j=>j.id!==a.id);need(s.joints.length<n,'拘束「'+a.id+'」がありません');return a.id}},
   addField:{label:'力場を足す',kind:'scenario',args:[T('type','enum','','種類',{req:1,options:Object.keys(FIELDS),labels:Object.values(FIELDS).map(f=>f.label)}),T('set','object','','項目（ax・ay・bz・region・targetsなど）')],returns:'力場の番号',do(s,a){need(a.type,'type（種類）が必要です');(s.fields=s.fields||[]).push(Object.assign({type:a.type},a.set||{}));return s.fields.length-1}},
   removeField:{label:'力場を消す',kind:'scenario',args:[T('index','num','','力場の番号',{req:1})],do(s,a){need(s.fields&&s.fields[a.index],'力場['+a.index+']がありません');s.fields.splice(a.index,1);return a.index}},
-  setParam:{label:'条件（スライダー）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1})].concat(SCN_PARTS[0].fields),do(s,a){need(a.name,'name（名前）が必要です');const p=(s.params=s.params||{});const cur=p[a.name]&&typeof p[a.name]==='object'?p[a.name]:{v:p[a.name]};p[a.name]=Object.assign(cur,pick(a,['v','min','max','step','unit','label']));return a.name}},
+  setParam:{label:'条件（スライダー）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1})].concat(SCN_PARTS[0].fields),do(s,a){need(a.name,'name（名前）が必要です');const p=(s.params=s.params||{});const cur=p[a.name]&&typeof p[a.name]==='object'?p[a.name]:{v:p[a.name]};p[a.name]=Object.assign(cur,pick(a,['v','min','max','step','unit','label','note']));return a.name}},
   setVar:{label:'途中計算の名前（式）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1}),T('expr','num','','式',{req:1})],do(s,a){need(a.name&&a.expr!==undefined,'name と expr が必要です');(s.vars=s.vars||{})[a.name]=a.expr;return a.name}},
-  addProbe:{label:'測定を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[1].fields),do(s,a){need(a.id&&a.expr,'id と expr が必要です');(s.probes=s.probes||{})[a.id]=pick(a,['expr','reduce','when','after','unit','label']);return a.id}},
-  addAsk:{label:'答え合わせを足す',kind:'scenario',args:SCN_PARTS[2].fields,returns:'番号',do(s,a){need(a.theory!==undefined&&(a.probe!==undefined||a.expr!==undefined),'theory と、probe（または expr）が必要です');(s.ask=s.ask||[]).push(pick(a,['q','probe','expr','theory','tol','abs','unit']));return s.ask.length-1}},
-  addEvent:{label:'出来事を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[3].fields),do(s,a){need(a.id&&a.when,'id と when が必要です');(s.events=s.events||{})[a.id]={when:a.when,label:a.label};return a.id}},
-  addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max']));return s.checks.length-1}},
-  addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push({id,when:a.when,mode:a.mode,do:a.do});return id}},
+  addProbe:{label:'測定を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[1].fields),do(s,a){need(a.id&&a.expr,'id と expr が必要です');(s.probes=s.probes||{})[a.id]=pick(a,['expr','reduce','when','after','at','unit','label','note']);return a.id}},
+  addAsk:{label:'答え合わせを足す',kind:'scenario',args:SCN_PARTS[2].fields,returns:'番号',do(s,a){need(a.theory!==undefined&&(a.probe!==undefined||a.expr!==undefined),'theory と、probe（または expr）が必要です');(s.ask=s.ask||[]).push(pick(a,['q','probe','expr','theory','tol','abs','unit','label','note']));return s.ask.length-1}},
+  addEvent:{label:'出来事を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[3].fields),do(s,a){need(a.id&&a.when,'id と when が必要です');(s.events=s.events||{})[a.id]=Object.assign({when:a.when,label:a.label},pick(a,['first','note']));if(a.label===undefined)delete s.events[a.id].label;return a.id}},
+  addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max','scale','tol','note']));return s.checks.length-1}},
+  addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push(Object.assign({id,when:a.when,mode:a.mode,do:a.do},pick(a,['label','note'])));if(a.mode===undefined)delete s.rules[s.rules.length-1].mode;return id}},
   removeRule:{label:'ルールを消す',kind:'scenario',args:[T('id','text','','ルールの名前',{req:1})],do(s,a){const n=(s.rules||[]).length;s.rules=(s.rules||[]).filter(r=>r.id!==a.id);need(s.rules.length<n,'ルール「'+a.id+'」がありません');return a.id}},
-  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample']));return 'run'}},
+  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔'),T('note','text','','メモ')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample','note']));return 'run'}},
   setView:{label:'画面（位置・横幅m）',kind:'scenario',args:[T('x0','num','m','左端x'),T('y0','num','m','下端y'),T('w','num','m','横幅'),T('grid','bool','','格子'),T('follow','text','','追う物体')],do(s,a){s.view=Object.assign(s.view||{},pick(a,['x0','y0','w','grid','ruler','follow']));return 'view'}},
-  setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir']));return 'world'}},
+  setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir','maxStep','cfg','canvas','note']));return 'world'}},
+  /* ---- 題名・摩擦の組・グラフ・掃引（サンプルを命令の列だけで組み立て直せるように。台帳Z-192） ---- */
+  setMeta:{label:'題名・問題文などを書く',kind:'scenario',args:[T('title','text','','題名'),T('tags','object','','タグ（文字の配列）'),T('source','text','','出どころ（例: オリジナル（○○型））'),T('level','enum','','難しさ',{options:['basic','standard','advanced','olympiad'],labels:['基礎','標準','発展','物理オリンピック級']}),T('problem','text','','問題文（{名前}は条件の値に置き換わる）'),T('notes','text','','メモ・解説'),T('solution','text','','解答'),T('hint','text','','ヒント'),T('style','object','','見た目の指定')],
+    do(s,a){const k=pick(a,['title','tags','source','level','problem','notes','solution','hint','style']);need(Object.keys(k).length,'title・tags・source・level・problem・notes・solution・hint・style のどれかが必要です');Object.assign(s,k);return 'meta'}},
+  addPair:{label:'2つの物体の摩擦・反発を決める',kind:'scenario',args:[T('a','body','','物体A',{req:1}),T('b','body','','物体B',{req:1}),T('mu','num','','摩擦係数'),T('mus','num','','静止摩擦係数'),T('muk','num','','動摩擦係数'),T('e','num','','反発係数',{min:0,max:1})],returns:'番号',
+    do(s,a){need(a.a&&a.b,'a と b（物体）が必要です');body(s,a.a);body(s,a.b);(s.pairs=s.pairs||[]).push(Object.assign({a:a.a,b:a.b},pick(a,['mu','mus','muk','e'])));return s.pairs.length-1}},
+  addGraph:{label:'グラフを足す',kind:'scenario',args:[T('title','text','','題名'),T('x','num','','横軸の式（省略すると時刻）'),T('y','object','','縦軸の式の配列',{req:1}),T('xlabel','text','','横軸の名前'),T('ylabel','text','','縦軸の名前')],returns:'番号',
+    do(s,a){need(a.y!==undefined,'y（縦軸の式）が必要です');(s.graphs=s.graphs||[]).push(pick(a,['title','x','y','xlabel','ylabel','label']));return s.graphs.length-1}},
+  setSweep:{label:'条件を振る設定（現象考察）',kind:'scenario',args:[T('param','text','','振る条件の名前',{req:1}),T('values','object','','値の配列'),T('from','num','','最初の値'),T('to','num','','最後の値'),T('n','num','','個数'),T('probes','object','','測定の名前の配列'),T('fit','object','','直線あてはめ {x,y}')],
+    do(s,a){need(a.param,'param（振る条件の名前）が必要です');s.sweep=pick(a,['param','values','from','to','n','probes','fit']);return 'sweep'}},
   /* ---- 実行の操作（アプリの中だけ。純粋な apply には使えない） ---- */
   play:{label:'再生',kind:'runtime',args:[]},pause:{label:'とめる',kind:'runtime',args:[]},reset:{label:'最初へ戻す',kind:'runtime',args:[]},
   seek:{label:'その時刻へ',kind:'runtime',args:[T('t','num','s','時刻',{req:1})]},step:{label:'1刻み（1/120秒）ずつ進める',kind:'runtime',args:[T('n','num','','刻み数')]},
@@ -162,7 +171,11 @@ function applyAll(src,ops){
   return{ok:!errors.length,errors,warns,src:s,value}}
 
 /* ---------- アプリへの反映（SCN・RUN があるときだけ）---------- */
-function exec(op){
+const TAPS=[];
+/* 成功した exec を見張る（タイムラプスの記録用）。cb(op,結果)。返す関数で解除。再生中の命令（タイムラプスの再生）は、TL.busy の間は知らせない */
+function tap(cb){TAPS.push(cb);return()=>{const i=TAPS.indexOf(cb);if(i>=0)TAPS.splice(i,1)}}
+function exec(op){const r=exec0(op);if(r&&r.ok&&!(typeof TL!=='undefined'&&TL.busy))for(const cb of TAPS.slice())try{cb(op,r)}catch(_){}return r}
+function exec0(op){
   if(typeof SCN==='undefined'||typeof RUN==='undefined')return{ok:false,errors:['アプリの外では使えません（apply を使ってください）']};
   const d=OPS[op&&op.op];if(!d)return{ok:false,errors:['未知の命令「'+(op&&op.op)+'」'+PHS.suggest(String(op&&op.op),Object.keys(OPS))]};
   try{
@@ -191,5 +204,5 @@ function exec(op){
 const LISTEN=[];
 function listen(cb){LISTEN.push(cb);return()=>{const i=LISTEN.indexOf(cb);if(i>=0)LISTEN.splice(i,1)}}
 function emit(e){for(const cb of LISTEN.slice())try{cb(e)}catch(_){}}
-return{catalog,coverage,OPS,apply,applyAll,exec,listen,emit,SHAPES,JOINTS,FIELDS}
+return{catalog,coverage,OPS,apply,applyAll,exec,tap,listen,emit,SHAPES,JOINTS,FIELDS}
 })();

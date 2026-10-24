@@ -121,8 +121,8 @@ with sync_playwright() as p:
       /* 質感だけ・14メガ画素（上限12メガ）→断る */
       T.reset();const big=document.createElement('canvas');big.width=4200;big.height=3400;big.getContext('2d').fillRect(0,0,10,10);l=add(null,big,{size:1});ensureLF(l).clarity.amount=50;
       u0=US.length;await cmCommit();out.big={us:US.length-u0,same:l.img===big,lf:lfActive(l),note:$('ht').textContent};
-      /* 物理が有効＋レイヤーとして保存→断る（通常の確定はできる） */
-      T.reset();l=add(null,T.mk(64,64,1),{size:1});ensureAdj(l).brightness=40;adjDirty(l);ensurePhys(l).on=true;T.layerOn(true);a0=AC.length;await cmCommit();out.phys={ac:AC.length-a0,adjA:adjActive(l),note:$('ht').textContent};
+      /* 物理に参加している絵でも、「レイヤーとして保存」は新しいオブジェクトを作り、元の絵の物理はそのまま（旧物理の断りは物理の統合で無くなった。台帳Z-197） */
+      T.reset();l=add(null,T.mk(64,64,1),{size:1});ensureAdj(l).brightness=40;adjDirty(l);artBody(l,{quiet:true,noUndo:true});T.layerOn(true);a0=AC.length;await cmCommit();out.phys={ac:AC.length-a0,adjA:adjActive(l),role:!!scnRoleOf(l),note:$('ht').textContent};
       T.layerOn(false);await cmCommit();out.physPlain={adjA:adjActive(l)};
       /* ロック中→何もしない */
       T.reset();l=add(null,T.mk(64,64,1),{size:1});ensureAdj(l).brightness=40;adjDirty(l);LAYERS[0].locked=true;u0=US.length;await cmCommit();out.lock={adjA:adjActive(l),us:US.length-u0};
@@ -131,7 +131,7 @@ with sync_playwright() as p:
       return out}""")
     rep('調整が無い時は何もしない（履歴も増やさない）',r['none']['us']==0 and r['none']['ac']==0,r['none'])
     rep('質感があり12メガ画素を超える絵は、断る（絵・調整はそのまま）',r['big']['us']==0 and r['big']['same'] and r['big']['lf'] and '大きすぎ' in r['big']['note'],r['big'])
-    rep('物理が有効だと「レイヤーとして保存」は断り、通常の確定はできる',r['phys']['ac']==0 and r['phys']['adjA'] and not r['physPlain']['adjA'],{'phys':r['phys'],'plain':r['physPlain']})
+    rep('物理に参加した絵でも「レイヤーとして保存」ができ（新しいオブジェクトが増え）、元の絵は物理のまま。通常の確定もできる',r['phys']['ac']==1 and r['phys']['role'] and not r['physPlain']['adjA'],{'phys':r['phys'],'plain':r['physPlain']})
     rep('ロック中のレイヤーでは確定できない',r['lock']['adjA'] and r['lock']['us']==0,r['lock'])
     rep('範囲が空の時は、レイヤーを作らない',r['empty']['ac']==0 and r['empty']['adjA'],r['empty'])
     rep('エラーなし',not errs,errs);b.close()

@@ -45,7 +45,7 @@ canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-
 .hint{position:absolute;left:10px;bottom:8px;right:10px;font-size:12px;opacity:.75;pointer-events:none}
 .pane{background:var(--pane);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px);padding:10px;margin-top:10px}
 .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:calc(var(--dp,1)*6px)}
-.row:first-child{margin-top:0}
+.row:first-child{margin-top:0}.row[hidden]{display:none}
 .lab{font-size:13px;font-weight:var(--fw,900);min-width:3em}
 /* バーの行：ラベルを上の段へ分け、バーを長くする（台帳Z-88④）。1行を消せば元に戻る */
 .row>.lab:first-child:has(~input[type=range]){flex:0 0 100%;min-width:0}
@@ -167,6 +167,59 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 .skrow{display:flex;align-items:center;gap:6px;margin-top:calc(var(--dp,1)*6px)}.skrow>label{flex:0 0 7.5em;font-size:12px;font-weight:var(--fw,900)}.skrow>select{flex:1;min-width:0}
 #skq{width:100%;margin-top:2px}
 .cmenu .cmh:not(:first-child){margin-top:6px}
+/* ===== タイムラプス（操作の手順の記録・再生。台帳Z-192）。色はスキンの変数だけ。分類の色（--c）は意味を表す印なので固定の色相（背景は --pane に混ぜて文字の対比を保つ）。ホバー演出なし ===== */
+#tlp{position:sticky;top:0;z-index:6;background:var(--pane);max-height:78vh;overflow:auto;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+#tlp [hidden]{display:none!important}
+#tlp .tlh{justify-content:flex-end;flex-wrap:nowrap}#tlp .tlh .gh{flex:1 1 0;min-width:0;margin:0;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tlp.min #tlHowBox,#tlp.min #tlBlkBox,#tlp.min #tlMore{display:none}
+.tlcap{margin-top:8px;padding:8px 10px;border-radius:calc(var(--rk,1)*10px);background:color-mix(in srgb,var(--acc) 12%,var(--pane));border:var(--bw,1px) solid color-mix(in srgb,var(--acc) 45%,var(--line));font-weight:var(--fw,600);font-size:14px;line-height:1.5;min-height:2.6em}
+.tlerr{font-size:12px;color:#b91c1c;margin-top:4px}.tlerr:empty{display:none}
+.tlsub{margin-top:8px}
+#tlHow{margin:2px 0 0;padding-left:1.6em;font-size:13px;line-height:1.5}#tlHow li{margin:2px 0}
+#tlp.min #tlFlds{display:none}
+#tlBw{position:relative;margin-top:4px}
+.tlpr{display:flex;align-items:flex-start;gap:6px}
+#tlPal{display:flex;flex-wrap:wrap;gap:3px 4px;padding:0 2px 4px;flex:1;min-width:0}
+.tlpr #tlFit{flex:0 0 auto;margin-top:4px}
+.tlchip{--c:#64748b;position:relative;padding:2px 6px 1px;margin-top:5px;border-radius:calc(var(--rk,1)*4px);background:color-mix(in srgb,var(--c) 72%,#000);color:#fff;font-size:10.5px;font-weight:var(--fw,800);line-height:1.3;box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--c) 45%,#000)}
+.tlchip::before{content:"";position:absolute;left:4px;right:4px;top:-4px;height:5px;background:radial-gradient(circle at 50% 100%,color-mix(in srgb,var(--c) 70%,#fff) 0 2.4px,transparent 2.8px) 0 0/10px 5px repeat-x}
+.tlchip.act{transform:translateY(-3px);outline:2px solid var(--acc);outline-offset:1px}
+#tlBoard{height:clamp(170px,30vh,300px);overflow:auto;overscroll-behavior:contain;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:color-mix(in srgb,var(--ink) 5%,var(--pane));-webkit-overflow-scrolling:touch}
+#tlBd{--u:28px;--lv:34px;--pl:16px;--n:8;position:relative;margin:0 auto;height:calc(var(--pl) + var(--lv)*var(--n) + 14px)}
+#tlBlocks{position:absolute;inset:0}
+#tlPlate{position:absolute;left:0;right:0;bottom:0;height:var(--pl);border-radius:calc(var(--rk,1)*3px);background:color-mix(in srgb,var(--ink) 38%,var(--pane));box-shadow:inset 0 2px 0 color-mix(in srgb,var(--ink) 18%,var(--pane))}
+#tlPlate::before{content:"";position:absolute;left:3px;right:3px;top:3px;bottom:3px;background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--ink) 62%,var(--pane)) 0 2.6px,transparent 3px) 0 0/var(--u) 100% repeat-x}
+.tlb{--c:#64748b;--face:color-mix(in srgb,var(--c) 72%,#000);position:absolute;left:calc(var(--u)*var(--x) + 3px);bottom:calc(var(--pl) + var(--lv)*var(--y));width:calc(var(--u)*var(--w) - 2px);height:calc(var(--lv) - 3px);box-sizing:border-box;padding:2px 6px 0;border-radius:calc(var(--rk,1)*3px);background:var(--face);color:#fff;cursor:pointer;overflow:visible;box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--face) 62%,#000),inset 0 1px 0 color-mix(in srgb,var(--face) 70%,#fff)}
+.tlb::before{content:"";position:absolute;left:1px;right:1px;top:-5px;height:6px;background:radial-gradient(circle at 50% 100%,color-mix(in srgb,var(--face) 76%,#fff) 0 3.3px,transparent 3.7px) 0 0/var(--u) 6px repeat-x;pointer-events:none}
+.tlbt{font-size:12px;font-weight:var(--fw,800);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tlbv{font-size:10.5px;line-height:1.15;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tlbv:empty{display:none}
+#tlBd.tiny .tlb{padding:0}#tlBd.tiny .tlbt,#tlBd.tiny .tlbv{display:none}
+/* まだ置かれていない場所は、点線の設計図。置かれたものは色のブロック。いまのものは枠で示す */
+.tlb:not(.done):not(.cur){background:transparent;box-shadow:none;color:color-mix(in srgb,var(--ink) 55%,transparent);outline:1.5px dashed color-mix(in srgb,var(--c) 75%,var(--ink));outline-offset:-1.5px}
+.tlb:not(.done):not(.cur)::before{opacity:.28;background-image:radial-gradient(circle at 50% 100%,color-mix(in srgb,var(--c) 75%,var(--ink)) 0 3.3px,transparent 3.7px)}
+.tlb:not(.done):not(.cur) .tlbv{opacity:.7}
+.tlb.cur{outline:2px solid var(--acc);outline-offset:1px;z-index:2}
+.tlb.fly{visibility:hidden}
+.tlb.tlfly{position:absolute;margin:0;z-index:7;pointer-events:none;will-change:transform}
+.tlb.snap{animation:tlsnap .4s cubic-bezier(.3,.7,.4,1)}
+@keyframes tlsnap{0%{transform:translateY(-6px) scaleY(1.06)}45%{transform:translateY(1px) scaleY(.93)}70%{transform:translateY(-1px) scaleY(1.02)}100%{transform:none}}
+#tlHand{position:absolute;z-index:8;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:3px solid var(--acc);background:color-mix(in srgb,var(--acc) 35%,transparent);pointer-events:none}
+#tlFlds{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.tlfh{display:flex;align-items:center;gap:6px;font-size:13px;min-width:0}.tlfh b{font-weight:var(--fw,800);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tltag{--c:#64748b;flex:0 0 auto;padding:1px 7px;border-radius:calc(var(--rk,1)*4px);background:color-mix(in srgb,var(--c) 72%,#000);color:#fff;font-size:11px;font-weight:var(--fw,800)}
+.tlfh[data-c="setup"] .tltag{--c:#3b82c4}.tlfh[data-c="cond"] .tltag{--c:#9a5bc4}.tlfh[data-c="body"] .tltag{--c:#2f9e62}.tlfh[data-c="link"] .tltag{--c:#d9822b}.tlfh[data-c="field"] .tltag{--c:#1f9db0}
+.tlfh[data-c="measure"] .tltag{--c:#d1486f}.tlfh[data-c="check"] .tltag{--c:#6aa22f}.tlfh[data-c="rule"] .tltag{--c:#b8960f}.tlfh[data-c="run"] .tltag{--c:#5b6472}.tlfh[data-c="note"] .tltag{--c:#94a3b8}.tlfh[data-c="ui"] .tltag{--c:#5a6fd6}
+.tlpill{display:flex;gap:6px;align-items:baseline;padding:2px 8px;border-radius:calc(var(--rk,1)*999px);background:color-mix(in srgb,var(--acc) 10%,var(--pane));border:var(--bw,1px) solid color-mix(in srgb,var(--acc) 30%,var(--line));font-size:12px;min-width:0}
+.tlpill span{opacity:.68;flex:0 0 auto}.tlpill b{font-weight:var(--fw,700);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tlpill.more{border-style:dashed;background:transparent;opacity:.75}
+.tlpill.in{animation:tlin .32s cubic-bezier(.3,.7,.4,1) both;animation-delay:var(--dl,0ms)}
+@keyframes tlin{from{opacity:0;transform:translateX(-10px) scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tlb.snap,.tlpill.in{animation:none}}
+.tlb[data-c="setup"],.tlchip[data-c="setup"]{--c:#3b82c4}.tlb[data-c="cond"],.tlchip[data-c="cond"]{--c:#9a5bc4}.tlb[data-c="body"],.tlchip[data-c="body"]{--c:#2f9e62}.tlb[data-c="link"],.tlchip[data-c="link"]{--c:#d9822b}.tlb[data-c="field"],.tlchip[data-c="field"]{--c:#1f9db0}
+.tlb[data-c="measure"],.tlchip[data-c="measure"]{--c:#d1486f}.tlb[data-c="check"],.tlchip[data-c="check"]{--c:#6aa22f}.tlb[data-c="rule"],.tlchip[data-c="rule"]{--c:#b8960f}.tlb[data-c="run"],.tlchip[data-c="run"]{--c:#5b6472}.tlb[data-c="note"],.tlchip[data-c="note"]{--c:#94a3b8}.tlb[data-c="ui"],.tlchip[data-c="ui"]{--c:#5a6fd6}
+.tlhi{outline:3px solid var(--acc)!important;outline-offset:2px}
+#tlFg{position:absolute;z-index:9;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:3px solid var(--acc);background:color-mix(in srgb,var(--acc) 35%,transparent);pointer-events:none}
 </style>
 </head>
 <body>
@@ -198,9 +251,11 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 <div class="cmenu" id="mA" hidden>
   <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
   <div class="cmh" id="mPh" hidden>物理</div>
+  <button id="mPhArt" aria-label="選んでいる絵に物理を付ける／外す（付けると、見えている輪郭が当たり判定になって動く）" hidden>🌍 この絵に物理を付ける</button>
   <button id="mPlay" aria-label="物理を実行・一時停止" hidden>▶ 物理を実行</button>
   <button id="mRst" aria-label="物理を最初に戻す" hidden>⟲ 物理を最初へ</button>
   <button id="mGrab" aria-label="実行中にキャンバスを触って物を動かす（つかむ・つつく）のオン／オフ" aria-pressed="true" hidden>🖐 つかんで動かす</button>
+  <button id="mTl" aria-label="タイムラプス（作り方・操作の手順を、早送りで見る／自分の操作を記録する）">🎞 タイムラプス</button>
   <button id="ad2" aria-label="画像を選んでオブジェクトを追加">🖼 画像を追加</button>
   <button id="sn2" aria-label="静止画を保存">📷 静止画を保存</button>
   <button id="rc2" aria-label="録画">⏺ 録画</button>
@@ -211,6 +266,39 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 <div class="pane" id="tp">
   <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）"></span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
   <div id="tpb">
+  <div class="grp tlp" id="tlp" hidden>
+    <div class="row tlh"><b class="gh" id="tlTitle">🎞 タイムラプス</b><button id="tlMin" aria-label="枠を小さくする／大きくする" aria-pressed="false">▾</button><button id="tlX" aria-label="タイムラプスを閉じる（見る前の作品に戻ります）">✕ 閉じる</button></div>
+    <div id="tlPick">
+      <div class="note">「どうやって作るか」を、操作の手順つきの早送りで見ます。見終わって閉じると、見る前の作品に戻ります。物理は、ブロックを順に置いてシナリオを作る形（将来のビジュアルプログラミング）で見せます。</div>
+      <div class="row"><select id="tlSrc" aria-label="作り方を見る物理サンプル"><option value="">作り方を見る：物理サンプル…</option></select></div>
+      <div class="row"><button id="tlCur" aria-label="いま開いている物理シナリオの作り方を見る">いまの物理シナリオ</button><button id="tlRec" aria-label="自分の操作を記録する（画面のボタン・バー・物理の命令）">● 操作を記録</button><button id="tlLd" aria-label="手順書（JSON）を読み込む">JSONを読む</button></div>
+      <div id="tlLdBox" hidden><textarea id="tlJson" rows="6" spellcheck="false" aria-label="手順書のJSON" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace"></textarea><div class="row"><button id="tlLdGo">読み込んで見る</button></div></div>
+      <div class="note" id="tlPickErr" style="color:#b91c1c;opacity:1"></div>
+    </div>
+    <div id="tlRc" hidden><div class="row"><b id="tlRcN">● 記録中</b><button id="tlRcX" aria-label="記録を止めて、記録した手順を再生できる形にする">■ 止める</button></div><div class="note">いま画面で触った操作（ボタン・バー・選ぶ・物理の命令）が、手順として貯まります。キャンバスをなぞった跡は「動きの目安」としてだけ残ります（再生では作品に反映しません）。</div></div>
+    <div id="tlPl" hidden>
+      <div class="row" id="tlBar"><button id="tlFirst" aria-label="最初へ">⏮</button><button id="tlPrev" aria-label="1つ前の手順へ">◀</button><button id="tlPlay" aria-label="再生・一時停止">▶ 再生</button><button id="tlNext" aria-label="1つ先の手順へ">▶|</button><button id="tlLast" aria-label="最後へ（できあがり）">⏭</button><b class="v" id="tlPos" style="min-width:4.6em;text-align:right;flex:1">はじめ</b></div>
+      <div id="tlBlkBox">
+        <div id="tlBw">
+          <div class="tlpr"><div id="tlPal" aria-hidden="true"></div><button id="tlFit" aria-pressed="false" aria-label="組み立て台の全体を縮めて見る／大きく見る">全体</button></div>
+          <div id="tlBoard" role="group" aria-label="組み立て台。ブロックが1つずつ組み上がります。ブロックをタップすると、その手順へ移ります"><div id="tlBd"><div id="tlBlocks"></div><div id="tlPlate" aria-hidden="true"></div></div></div>
+          <div id="tlHand" hidden aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="tlcap" id="tlCap" role="status" aria-live="polite"></div>
+      <div id="tlFlds"></div>
+      <div class="row"><input id="tlSk" type="range" data-e="1" min="0" max="1" step="1" value="0" aria-label="手順の位置（動かすと、その手順の姿になります）"></div>
+      <div class="row"><span class="lab" style="min-width:2.6em">速さ</span><select id="tlSpd" aria-label="再生の速さ"></select><select id="tlMode" aria-label="進め方"><option value="auto">自動で進む</option><option value="recorded">記録した間隔どおり</option><option value="manual">1手順ずつ（◀▶|で）</option></select></div>
+      <div class="tlerr" id="tlErr"></div>
+      <div id="tlHowBox"><div class="gh tlsub">操作の手順</div><ol id="tlHow"></ol></div>
+      <details id="tlMore"><summary>書き出し・直す</summary>
+        <div class="row"><button id="tlTxt" aria-label="操作手順書（文章）をコピー">📄 手順書をコピー</button><button id="tlJs" aria-label="手順書（JSON）をコピー">JSONをコピー</button></div>
+        <div class="row"><span class="lab" style="min-width:2.6em">字幕</span><input id="tlEd" type="text" aria-label="いまの手順の字幕を直す" style="flex:1;min-width:8em"><button id="tlDel" aria-label="いまの手順を消す">この手順を消す</button></div>
+        <textarea id="tlOut" rows="8" hidden spellcheck="false" aria-label="書き出した内容" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace"></textarea>
+      </details>
+      <div class="row"><button id="tlKeep" aria-label="見終わったこの状態のまま続ける（「戻す」で見る前に戻せます）">この状態で続ける</button><span class="note" style="margin:0">「閉じる」で、見る前の作品に戻ります</span></div>
+    </div>
+  </div>
   <div class="row" id="ch1"></div>
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
@@ -405,18 +493,24 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 
   <div class="tab" data-tab="ph">
     <div class="grp" id="scGrp"><div class="gh">物理</div>
-    <div class="note" id="scHelp">絵を選んで「動く物体」か「地形」にして、▶ で動かします。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。絵を描き足したり大きさを変えたりすると、当たり判定も追従します。サンプルを開くと、問題づくり・実験もできます。</div>
-    <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="雛形から新しいシナリオを作る">＋雛形</button><button id="scOff" aria-label="シナリオを閉じる（自動で作った絵も消えます）" hidden>閉じる</button></div>
-    <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の役割</div>
-      <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理の物体（絵の輪郭が当たり判定）にする">動く物体</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵を物理に参加させない（絵は残ります）">参加しない</button></div>
+    <div class="note" id="scHelp">絵を選んで「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
+    <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の物理</div>
+      <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理で動く物体にする（絵の輪郭が当たり判定）">🌍 動く</button><button id="scArtF" aria-label="選んでいる絵を、固定の土台にする（物理には参加するが動かない。台・壁・障害物）">固定</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵から物理を外す（絵は残ります）">外す</button></div>
       <div class="row"><span class="lab">形</span><select id="scArtS" aria-label="物体の形"><option value="auto">自動</option><option value="circle">丸</option><option value="box">四角</option><option value="hull">輪郭</option><option value="static">固定の障害物</option></select></div>
+      <div id="scArtP" hidden>
+        <div class="row"><span class="lab">質量</span><input id="apM" type="range" min="0.1" max="20" step="0.1" value="1" aria-label="質量（kg）"><b class="v" id="apMv">1 kg</b></div>
+        <div class="row"><span class="lab">反発</span><input id="apE" type="range" min="0" max="1" step="0.05" value="0.5" aria-label="反発係数（大きいほどよく跳ねる）"><b class="v" id="apEv">0.5</b></div>
+        <div class="row"><span class="lab">摩擦</span><input id="apU" type="range" min="0" max="1.5" step="0.05" value="0.4" aria-label="摩擦係数（大きいほど滑りにくい）"><b class="v" id="apUv">0.4</b></div>
+        <div class="row" id="apVRow"><span class="lab">初速の向き</span><input id="apA" type="range" min="-180" max="180" step="5" value="0" data-snap="-180,-90,0,90,180" aria-label="初速の向き（0°＝右、90°＝上、−90°＝下）"><b class="v" id="apAv">0°</b></div>
+        <div class="row" id="apSRow"><span class="lab">初速</span><input id="apV" type="range" min="0" max="20" step="0.5" value="0" aria-label="初速（m/s）。投げ出す速さ"><b class="v" id="apVv">0 m/s</b></div>
+        <div class="row"><button id="apHit" class="on" aria-pressed="true" aria-label="他の物体とぶつかる（オフにするとすり抜けます）">当たり判定</button></div>
+      </div>
       <div class="note" id="scArtSt"></div>
     </div>
     <div id="scBody" hidden>
-      <div class="note" id="scTitle" style="font-weight:var(--fw,900);opacity:1"></div>
-      <div class="note" id="scProb" style="opacity:.85"></div>
       <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
-      <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span></div>
+      <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span><button id="scOff" aria-label="物理をすべて外す（自動で作った絵も消えます）" hidden>✕ 物理を全部外す</button></div>
+      <div class="row" id="scWorld" hidden><span class="lab">まわり</span><button id="wlFloor" class="on" aria-pressed="true" aria-label="床（下の面）">床</button><button id="wlWall" class="on" aria-pressed="true" aria-label="左右の壁">左右の壁</button><button id="wlTop" aria-pressed="false" aria-label="天井（上の面）">天井</button></div>
       <div class="row"><span class="lab">時刻</span><input id="scT" type="range" min="0" max="1" step="0.0083333" value="0" aria-label="時刻（動かすと、その時刻の姿になります）"><b class="v" id="scTv" style="min-width:7em">0.00 s</b></div>
       <div class="row" id="scLive"></div>
       <div id="scParams"></div>
@@ -436,30 +530,15 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
         <div class="row"><button id="scApply">読み込む</button><button id="scCheck" aria-label="最後まで計算して、答え合わせと保存則の検査をする">検査する</button><button id="scCopy">コピー</button></div>
       </details>
     </div>
+    <details id="scAdv"><summary>くわしく：サンプル・問題づくり・作り方</summary>
+      <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="プロトタイプ（最小のシナリオ）から新しいシナリオを作る">＋プロトタイプ</button></div>
+      <div class="note" id="scTitle" style="font-weight:var(--fw,900);opacity:1"></div>
+      <div class="note" id="scProb" style="opacity:.85"></div>
+      <div class="row" id="scHowRow" hidden><button id="scHow" aria-label="このシナリオの作り方を、ブロックを順に置く形のタイムラプスで見る（見終わると見る前に戻ります）">🎞 作り方をタイムラプスで見る</button></div>
+      <div class="note">サンプル（東大物理・物理オリンピック風など）を開くと、条件・測定・答え合わせ・グラフ・JSONで、問題づくりや実験ができます。</div>
+    </details>
     <div class="note" id="scErr" style="color:#b91c1c;opacity:1"></div>
     </div>
-    <details class="grp" id="phOld"><summary>旧：かんたん物理（絵ごとの簡易設定）・単位の定規</summary>
-    <div class="note">上の物理（サンプル・「動く物体」「地形」）を使っている間は、こちらは止まります。以前の作品を開いた時のための互換の設定です。</div>
-    <div class="grp"><div class="gh">全体</div>
-    <div class="row"><button id="pOn">物理を有効にする</button><button id="pFloor" class="on">床</button><button id="pWall" class="on">壁</button><button id="pCol" class="on">当たり判定</button></div>
-    <div class="row"><span class="lab">重力</span><input id="pG" type="range" min="0" max="3" step="0.05" value="1" aria-label="重力の強さ（1で現実の重力相当。単位を設定していない場合は目安）"></div>
-    <div class="row"><span class="lab">重力の向き</span><input id="pGd" type="range" min="0" max="360" step="5" value="90" data-snap="0,90,180,270,360" aria-label="重力の向き（90度＝下、0度＝右、270度＝上）"></div>
-    <div class="row"><span class="lab">時間の流れ</span><input id="pT" type="range" min="0" max="3" step="0.05" value="1" aria-label="物理の時間の流れの速さ（1で現実と同じ、0で静止）"><b class="v" id="pTv">×1</b></div>
-    </div>
-    <div class="grp alt"><div class="gh">単位（定規）</div>
-    <div class="row"><button id="pRuler">📏 定規で測る</button><span class="note" id="pRulerTx" style="margin:0">現在：100px ＝ 1m（未設定・目安）</span></div>
-    <div class="row" id="pRulerSet" style="display:none"><span class="lab" style="min-width:0">この線の長さ＝</span><input id="pRulerLen" type="number" value="1" min="0.01" step="0.01" style="width:70px" aria-label="実際の長さ(m)"><span>m</span><button id="pRulerOk">設定</button><button id="pRulerCancel">やめる</button></div>
-    <div class="note">画面上でドラッグして線を引くと、その長さが実際にどれくらいかを指定できます。設定すると、重力・質量・速度をおおよそ現実の単位（m, kg, m/s）に対応づけられます。</div>
-    </div>
-    <div class="grp alt"><div class="gh">選んでいるオブジェクト</div>
-    <div class="row"><button id="pSelOn">このオブジェクトを物理で動かす</button><button id="pFix">固定する（土台にする）</button></div>
-    <div class="row"><span class="lab">質量</span><input id="pM" type="range" min="0.2" max="10" step="0.1" value="1" aria-label="質量"></div>
-    <div class="row"><span class="lab">反発係数</span><input id="pE" type="range" min="0" max="1.1" step="0.05" value="0.55" aria-label="反発係数（大きいほどよく跳ねる）"></div>
-    <div class="row"><span class="lab">当たり判定</span><input id="pR" type="range" min="0.2" max="1.3" step="0.05" value="0.8" aria-label="当たり判定の大きさ（見た目の絵より小さくして、離れた所での衝突を減らせます）"></div>
-    <div class="row"><button id="pStop">この子の速度をとめる</button></div>
-    <div class="note">ドラッグして離すと、その勢いで飛んでいきます。「固定する」を押すと、他のオブジェクトの土台や壁になりますが自分は動きません。</div>
-    </div>
-    </details>
   </div>
 
   <div class="tab" data-tab="bg">
@@ -1007,13 +1086,6 @@ function paintFrame(){
   if(drawOnly)return;   /* 統合の描画（226-merge.js）：背景・補助表示は描かない */
   drawBrushRing();paPreview();rtOverlay();selOverlay();sizeHintDraw();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
-  if(rulerPt){
-    ctx.save();ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
-    ctx.strokeStyle='#ffb020';ctx.lineWidth=3/Z.s;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(rulerPt.x0,rulerPt.y0);ctx.lineTo(rulerPt.x1,rulerPt.y1);ctx.stroke();
-    for(const[x,y]of[[rulerPt.x0,rulerPt.y0],[rulerPt.x1,rulerPt.y1]]){ctx.beginPath();ctx.arc(x,y,5/Z.s,0,6.283);ctx.fillStyle='#ffb020';ctx.fill()}
-    ctx.restore();
-  }
 }
 function drawRangeBox(){
   ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -1021,65 +1093,12 @@ function drawRangeBox(){
   ctx.strokeStyle='#ff5d8f';ctx.globalAlpha=.55;ctx.lineWidth=2;ctx.setLineDash([8,6]);
   ctx.strokeRect(x0,y0,x1-x0,y1-y0);ctx.restore();
 }
-/* ===== 物理モード: 重力・質量・反発・簡易の当たり判定。既存の動き/歪みとは独立 ===== */
-let physOn=false,physG=1,physGDir=90,physFloor=true,physWall=true,physCollide=true,physTimeScale=1,pxPerM=100,rulerOn=false,rulerPt=null,pendingRulerPx=0;
-function ensurePhys(l){return l.phys||(l.phys={on:false,m:1,e:.55,vx:0,vy:0,fixed:false,rs:.8})}
-function physStep(dt){
-  if(!physOn||paused||dt<=0)return;
-  const G=physG*9.8*pxPerM,ga=physGDir*Math.PI/180,gx=Math.cos(ga)*G,gy=Math.sin(ga)*G;
-  for(const l of AC){
-    const p=l.phys;if(!p||!p.on||p.fixed||l===tgt||(physHideEx&&!isVisible(l)))continue;
-    p.vx+=gx*dt;p.vy+=gy*dt;p.vx*=.999;p.vy*=.999;
-    let nx=l.fx*W+p.vx*dt,ny=l.fy*H+p.vy*dt;
-    const r=S0*l.size*.5*(p.rs===undefined?.8:p.rs);
-    if(physFloor&&ny+r>H){ny=H-r;if(p.vy>0)p.vy=-p.vy*p.e;p.vx*=.9}
-    if(ny-r<0){ny=r;if(p.vy<0)p.vy=-p.vy*p.e}
-    if(physWall){if(nx-r<0){nx=r;if(p.vx<0)p.vx=-p.vx*p.e}if(nx+r>W){nx=W-r;if(p.vx>0)p.vx=-p.vx*p.e}}
-    l.fx=nx/W;l.fy=ny/H;
-  }
-  if(physCollide)for(let i=0;i<AC.length;i++)for(let j=i+1;j<AC.length;j++){
-    const a=AC[i],b=AC[j];if(!a.phys?.on||!b.phys?.on||a===tgt||b===tgt||(physHideEx&&(!isVisible(a)||!isVisible(b))))continue;
-    if(a.phys.fixed&&b.phys.fixed)continue;
-    const ax=a.fx*W,ay=a.fy*H,bx=b.fx*W,by=b.fy*H,ar=S0*a.size*.5*(a.phys.rs===undefined?.8:a.phys.rs),br=S0*b.size*.5*(b.phys.rs===undefined?.8:b.phys.rs),dx=bx-ax,dy=by-ay,d=Math.hypot(dx,dy)||.01,min=ar+br;
-    if(d>=min)continue;
-    const nx=dx/d,ny=dy/d,ov=min-d,ma=a.phys.fixed?1e9:a.phys.m,mb=b.phys.fixed?1e9:b.phys.m,tot=ma+mb;
-    if(!a.phys.fixed){a.fx-=nx*ov*(mb/tot)/W;a.fy-=ny*ov*(mb/tot)/H}
-    if(!b.phys.fixed){b.fx+=nx*ov*(ma/tot)/W;b.fy+=ny*ov*(ma/tot)/H}
-    const rvx=b.phys.vx-a.phys.vx,rvy=b.phys.vy-a.phys.vy,rel=rvx*nx+rvy*ny;
-    if(rel<0){const e=Math.min(a.phys.e,b.phys.e),jimp=-(1+e)*rel/(1/ma+1/mb);
-      if(!a.phys.fixed){a.phys.vx-=jimp/ma*nx;a.phys.vy-=jimp/ma*ny}
-      if(!b.phys.fixed){b.phys.vx+=jimp/mb*nx;b.phys.vy+=jimp/mb*ny}}
-  }
-}
-function physUi(){
-  const l=sel,p=l?ensurePhys(l):null;
-  $('pOn').classList.toggle('on',physOn);$('pFloor').classList.toggle('on',physFloor);$('pWall').classList.toggle('on',physWall);$('pCol').classList.toggle('on',physCollide);
-  $('pG').value=physG;$('pGd').value=physGDir;$('pT').value=physTimeScale;$('pTv').textContent='×'+physTimeScale.toFixed(2);
-  if(p){$('pSelOn').classList.toggle('on',p.on);$('pFix').classList.toggle('on',p.fixed);$('pM').value=p.m;$('pE').value=p.e;$('pR').value=p.rs===undefined?.8:p.rs}
-  scnUi();
-}
-$('pOn').onclick=()=>{physOn=!physOn;physUi()};
-$('pFloor').onclick=()=>{physFloor=!physFloor;physUi()};
-$('pWall').onclick=()=>{physWall=!physWall;physUi()};
-$('pCol').onclick=()=>{physCollide=!physCollide;physUi()};
-$('pG').oninput=e=>{physG=+e.target.value};
-$('pGd').oninput=e=>{physGDir=+e.target.value};
-$('pT').oninput=e=>{physTimeScale=+e.target.value;$('pTv').textContent='×'+physTimeScale.toFixed(2)};
-function rulerTxUpdate(){$('pRulerTx').textContent='現在：'+Math.round(pxPerM)+'px ＝ 1m'}
-$('pRuler').onclick=()=>{rulerOn=!rulerOn;$('pRuler').classList.toggle('on',rulerOn);if(!rulerOn){rulerPt=null;$('pRulerSet').style.display='none'}};
-$('pRulerOk').onclick=()=>{const m=+$('pRulerLen').value||1;pxPerM=pendingRulerPx/m;rulerTxUpdate();$('pRulerSet').style.display='none';rulerOn=false;$('pRuler').classList.remove('on')};
-$('pRulerCancel').onclick=()=>{$('pRulerSet').style.display='none';rulerPt=null};
-$('pSelOn').onclick=()=>{const p=ensurePhys(sel);p.on=!p.on;physUi()};
-$('pFix').onclick=()=>{const p=ensurePhys(sel);p.fixed=!p.fixed;physUi()};
-$('pM').oninput=e=>{ensurePhys(sel).m=+e.target.value};
-$('pE').oninput=e=>{ensurePhys(sel).e=+e.target.value};
-$('pR').oninput=e=>{ensurePhys(sel).rs=+e.target.value};
-$('pStop').onclick=()=>{const p=ensurePhys(sel);p.vx=0;p.vy=0};
-
+/* ===== 毎フレームのループ。物理の本体は 51〜58（絵に物理を付ける標準の形は 56-phys-art.js）。
+   旧・簡易の物理（絵ごとの l.phys・床・壁・定規）は台帳Z-197 で新しい物理に統合して消した。このファイル名は、読み込み順と台帳の参照のため残している ===== */
 function loop(ts){
   const raw=ts-last,dt=Math.min(raw/1000,.05);last=ts;perfTick(warpMs);if(++fc%12===0)syncNums();
   if(!paused)for(const l of AC){for(const[k]of K){const c=l.ch[k];c.ph=(c.ph+dt*gs*c.hz)%1}for(const p of l.pins)p.ph=(p.ph+dt*gs*p.hz)%1}
-  if(SCN.on)scnTick(dt);else physStep(dt*physTimeScale);wbTick(dt);paintFrame();crdTick();lupeTick();adjPump();
+  if(SCN.on)scnTick(dt);wbTick(dt);paintFrame();crdTick();lupeTick();adjPump();
   const zz=Z.s!==1||Z.x!==0||Z.y!==0;if(zz!==zshown){zshown=zz;$('zr').disabled=!zz}
   requestAnimationFrame(loop);
 }
@@ -2086,7 +2105,7 @@ function fit(rows,f,scn){
 function toCSV(cols,rows){const esc=v=>typeof v==='number'?String(+v.toPrecision(8)):String(v);return[cols.join(',')].concat(rows.map(r=>cols.map(c=>esc(r[c])).join(','))).join('\n')}
 function seriesCSV(res,names){const cols=['t'].concat(names||Object.keys(res.series));const rows=res.ts.map((t,i)=>{const r={t};for(const c of cols.slice(1))r[c]=res.series[c][i];return r});return toCSV(cols,rows)}
 
-/* 作者向けの雛形（最小の有効なシナリオ） */
+/* 作者向けのプロトタイプ（最小の有効なシナリオ） */
 function template(){return{id:'my-scenario',title:'題名',tags:['力学'],source:'オリジナル（型の名前）',level:'basic',problem:'（問題文は自分の言葉で書く）',
   params:{theta:{v:30,min:5,max:60,step:1,unit:'°',label:'斜面の角度'},mu:{v:.2,min:0,max:1,step:.05,label:'動摩擦係数'}},
   vars:{L:'2'},world:{g:9.8},view:{x0:0,y0:0,w:6},
@@ -2130,6 +2149,14 @@ const scnClone=o=>o==null?o:JSON.parse(JSON.stringify(o));
 function scnSplit(s){const r=[];let d=0,cur='';for(const c of String(s||'')){if(c==='(')d++;else if(c===')')d--;if((c===','||c==='、')&&d<=0){if(cur.trim())r.push(cur.trim());cur=''}else cur+=c}if(cur.trim())r.push(cur.trim());return r}
 function scnDefaultGraph(src){const ys=[];for(const q of(src&&src.graphs)||[])for(const y of[].concat(q.y||[]))if(typeof y==='string')ys.push(y);return ys.join(', ')}
 const scnROpt=()=>Object.assign({},PHR.DEFOPT,SCN.opt,{vec:SCN.opt.vec||{}});
+/* 非表示の絵につないだ物体は、物理から外す（当たり判定を無くす）。レイヤー一覧の「非表示レイヤーを物理の計算から除外する」（physHideEx）がオンの時。台帳Z-188 */
+function scnHiddenIds(){
+  if(!physHideEx||!SCN.src)return[];const o=[];
+  for(const id of Object.keys(SCN.link)){const a=byId(SCN.link[id].a);if(a&&!isVisible(a))o.push(id)}
+  return o}
+function scnEffSrc(){   /* 計算に使うシナリオ：SCN.src そのもの（隠れた絵が無ければ）か、隠れた物体を collide:false にした複製。物体の並びは変えない */
+  const h=scnHiddenIds();RUN.hid=h.join(',');if(!h.length)return SCN.src;
+  const c=scnClone(SCN.src);for(const b of c.bodies)if(h.includes(b.id))b.collide=false;return c}
 
 /* ---------- 作る・やり直す ---------- */
 function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻して進め直す時だけ）。それ以外は、条件が変わるので記録を捨てる */
@@ -2141,8 +2168,9 @@ function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻�
     const V=PHS.validate(SCN.src);RUN.warns=V.warns.slice();
     if(V.errors.length)throw new Error(V.errors.join('\n'));
     const ex=scnSplit(SCN.graph);let sess;
-    try{sess=PHS.session(SCN.src,{params:SCN.params,series:ex})}
-    catch(e){if(!ex.length)throw e;RUN.warns.push('グラフの式: '+e.message);sess=PHS.session(SCN.src,{params:SCN.params})}
+    const eff=scnEffSrc();
+    try{sess=PHS.session(eff,{params:SCN.params,series:ex})}
+    catch(e){if(!ex.length)throw e;RUN.warns.push('グラフの式: '+e.message);sess=PHS.session(eff,{params:SCN.params})}
     sess.W.logContacts=true;
     RUN.sess=sess;sess.setHook(scnHook);RUN.a0=sess.W.bodies.map(b=>b.a);RUN.p0=sess.W.bodies.map(b=>[b.px,b.py]);
     const view=Object.assign({x0:0,y0:0,w:6},SCN.src.view||{});RUN.view=view;
@@ -2153,7 +2181,7 @@ function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻�
   }catch(e){RUN.err=String(e&&e.message||e);RUN.sess=null;RUN.R=null}
 }
 function scnReset(){RUN.playing=false;scnBuild();scnSyncLinks();scnUi()}
-/* シナリオを開く（サンプル・貼り付け・雛形）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
+/* シナリオを開く（サンプル・貼り付け・プロトタイプ）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
 function scnSetSource(src,o){
   o=o||{};const V=PHS.validate(src);
   if(V.errors.length)return{ok:false,errors:V.errors,warns:V.warns};
@@ -2167,7 +2195,7 @@ function scnSetSource(src,o){
   return{ok:true,warns:V.warns}}
 function scnLoadSample(id){const s=typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.find(x=>x.id===id);if(!s)return{ok:false,errors:['サンプル「'+id+'」がありません']};return scnSetSource(s)}
 function scnClose(o){
-  o=o||{};pushUndo();if(!o.keepActors)scnClearAuto();else AC.forEach(a=>{delete a.scnAuto});
+  o=o||{};if(!o.noUndo)pushUndo();if(!o.keepActors)scnClearAuto();else AC.forEach(a=>{delete a.scnAuto});
   SCN.src=null;SCN.on=false;SCN.link={};SCN.params={};SCN.graph='';RUN.playing=false;scnBuild();RUN.rev++;dirtyProj=true;scnUi()}
 function scnSetParam(k,v){SCN.params[k]=v;RUN.dirty=true;dirtyProj=true}
 function scnResetParams(){SCN.params={};RUN.dirty=true;RUN.rev++;dirtyProj=true}
@@ -2357,6 +2385,8 @@ const scnArtSig=a=>a?[a.cvv|0,a.bsv|0,a.pnv|0,a.face||1].join('|'):'';
    ・絵から作った物体（art_）：形を作り直す。編集の途中（指が下りている間）は待ち、止まって350ms後に1回だけ（scnArtRefresh）
    ・それ以外（絵文字など、物体の形は別にある）：絵の見た目の倍率（link.k）・向き（link.rot0）にする */
 function scnWatch(){
+  if(SCN.src&&SCN.src.id==='art-scene'&&!SCN.src.bodies.some(b=>/^art_/.test(b.id))){scnClose({noUndo:true});return}   /* 絵の物体が1つも無くなった「絵に物理を付けた」シーンは閉じる（外した・絵を消した後。台帳Z-197） */
+  if(RUN.sess&&!RUN.dirty&&(physHideEx||RUN.hid)&&scnHiddenIds().join(',')!==(RUN.hid||'')){RUN.dirty=true;note('絵の表示・非表示が変わったので、物理を最初に戻しました（非表示の絵は物理に参加しません）',4000)}
   if(!RUN.sess||!RUN.al.size)return;
   const now=performance.now();let restyle=false;
   for(const[aid,o]of RUN.al){const a=byId(aid),L=SCN.link[o.id];if(!a||!L)continue;const art=/^art_/.test(o.id);let ch=false;
@@ -2469,7 +2499,9 @@ function scnUiTime(force){
 }
 function scnUi(){
   const g=$('scGrp');if(!g)return;
-  const has=!!SCN.src;$('scBody').hidden=!has;$('scOff').hidden=!has;
+  const has=!!SCN.src;$('scBody').hidden=!has;$('scOff').hidden=!has;$('scHowRow').hidden=!has;
+  if(!has){$('scTitle').textContent='';$('scProb').style.display='none';RUN.advId=null}
+  else if(RUN.advId!==SCN.src.id){RUN.advId=SCN.src.id;if(SCN.src.id!=='art-scene')$('scAdv').open=true}   /* サンプル・自作のシナリオを開いた時は「くわしく」も開く */
   const sel_=$('scSel');if(typeof PHYS_SAMPLES!=='undefined'&&sel_.options.length<=1){PHYS_SAMPLES.forEach(s=>{const o=scnEl('option');o.value=s.id;o.textContent=(s.title||s.id)+(s.level==='olympiad'?'（物理オリンピック級）':'');sel_.append(o)})}
   sel_.value=has&&typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.some(s=>s.id===SCN.src.id)?SCN.src.id:'';
   const ac=AC.map(a=>a.id+':'+a.name).join('|');
@@ -2487,17 +2519,21 @@ function scnRoleOf(a){
   return null}
 function scnUiRole(){
   if(!$('scArtSt'))return;const r=scnRoleOf(sel);
-  $('scArtB').classList.toggle('on',!!r&&r.kind==='body');$('scArtT').classList.toggle('on',!!r&&r.kind==='terrain');$('scArtX').classList.toggle('on',!r&&!!sel&&!!SCN.src);
-  for(const id of['scArtB','scArtT','scArtX'])$(id).disabled=!sel;
+  $('scArtB').classList.toggle('on',!!r&&r.kind==='body');$('scArtF').classList.toggle('on',!!r&&r.kind==='fixed');$('scArtT').classList.toggle('on',!!r&&r.kind==='terrain');
+  for(const id of['scArtB','scArtF','scArtT'])$(id).disabled=!sel;
+  $('scArtX').disabled=!sel||!r;
   $('scArtS').disabled=!sel;
-  $('scArtSt').textContent=!sel?'絵（オブジェクト）を選ぶと、ここで物理での役割を決められます。':!r?'この絵は物理に参加していません。「動く物体」か「地形」を押すと、見えている輪郭がそのまま当たり判定になります。':
+  $('scArtSt').textContent=!sel?'絵（オブジェクト）を選ぶと、ここで物理を付けられます。':!r?'この絵には物理が付いていません。「動く」を押すと、見えている輪郭がそのまま当たり判定になり、▶ で動きます。（動かない台は「固定」、坂や丘は「地形」）':
     r.kind==='terrain'?'この絵は地形です（上から乗る物が対象）。止まっている間にドラッグすると置き直せます。描き足すと、当たり判定も追従します。':
-    r.kind==='fixed'?'この絵は固定の障害物です（動きません）。':
-    r.kind==='body'?'この絵は動く物体です。質量・反発・摩擦は上の条件のスライダーで変えられます。実行中はドラッグでつかめます。':
-    '「'+r.label+'」につないであります（シナリオの物体）。'}
+    r.kind==='fixed'?'この絵は固定の土台です（動きません。台・壁・障害物）。':
+    r.kind==='body'?'この絵は物理で動きます。下のつまみで、この絵だけの質量・反発・摩擦・初速を変えられます。実行中はドラッグでつかめます。':
+    '「'+r.label+'」につないであります（シナリオの物体）。';
+  artPropsUi(r);artWorldUi()}
 /* キャンバスのメニュー（🎬）の物理の項目：開いていない時は隠す。実行の表示をタブと合わせる */
 function scnMenuSync(){
-  const on=!!SCN.on&&!!SCN.src;for(const id of['mPh','mPlay','mRst','mGrab'])if($(id))$(id).hidden=!on;
+  const on=!!SCN.on&&!!SCN.src;for(const id of['mPlay','mRst','mGrab'])if($(id))$(id).hidden=!on;
+  if($('mPh'))$('mPh').hidden=!(on||sel);   /* 見出し：シナリオが開いている時、または絵を選んでいる時（絵に物理を付けられる） */
+  if($('mPhArt')){$('mPhArt').hidden=!sel;$('mPhArt').textContent=scnRoleOf(sel)?'🌍 この絵の物理を外す':'🌍 この絵に物理を付ける'}
   if(!on)return;const S=RUN.sess;RUN.menuPlaying=RUN.playing;
   $('mPlay').textContent=RUN.playing?'⏸ 物理を一時停止':(S&&S.done?'↺ 物理をもう一度':'▶ 物理を実行');
   for(const id of['scGrab','mGrab']){$(id).classList.toggle('on',PTR.on);$(id).setAttribute('aria-pressed',PTR.on?'true':'false')}}
@@ -2840,13 +2876,13 @@ const ART={W:8,MAXR:320,TOL_M:.02,MINTH_M:.04,HULL_N:12,CIRC:.9,RECT:.93,last:nu
 
 function artNewScene(){const w=ART.W;
   return{id:'art-scene',title:'お絵かき×物理',tags:['お絵かき'],source:'お絵かき（このアプリで作ったシーン）',level:'basic',problem:'',
-    params:{gacc:{v:9.8,min:0,max:30,step:.1,unit:'m/s²',label:'重力の強さ'},e:{v:.5,min:0,max:1,step:.05,label:'反発係数'},mu:{v:.4,min:0,max:1.5,step:.05,label:'摩擦係数'}},
-    world:{g:'gacc'},view:{x0:0,y0:0,w},
+    params:{gacc:{v:9.8,min:0,max:30,step:.1,unit:'m/s²',label:'重力の強さ'},gdir:{v:-90,min:-180,max:180,step:5,unit:'°',label:'重力の向き（−90°＝下）'},e:{v:.5,min:0,max:1,step:.05,label:'反発係数'},mu:{v:.4,min:0,max:1.5,step:.05,label:'摩擦係数'}},
+    world:{g:'gacc',gdir:'gdir'},view:{x0:0,y0:0,w},
     bodies:[{id:'frame',type:'static',mu:'mu',e:1,label:'',shapes:[{t:'plane',normal:[0,1],d:0},{t:'plane',normal:[1,0],d:0},{t:'plane',normal:[-1,0],d:-w}]}],
     probes:{},run:{t:60}}}
-function artEnsure(){
+function artEnsure(o){
   if(SCN.src)return true;
-  const r=scnSetSource(artNewScene());if(!r.ok){note('シーンを作れませんでした：'+r.errors.join(' / '));return false}
+  const r=scnSetSource(artNewScene(),{noUndo:!!(o&&o.noUndo)});if(!r.ok){note('シーンを作れませんでした：'+r.errors.join(' / '));return false}
   Object.assign(SCN.opt,{statics:false,grid:false,axes:false,labels:false,jointsBelow:true});RUN.rev++;return true}
 
 /* 絵を、画面に見えているとおりにラスターへ。戻り値{w,h,k,al}：k＝ラスター1画素あたりの、画面(CSS px)に対する倍率（ラスター座標＝画面座標×k） */
@@ -2879,10 +2915,13 @@ const artR=x=>+x.toFixed(4);
 function artRemove(id){if(!SCN.src)return;SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);delete(SCN.src.params||{})['m_'+id];delete SCN.link[id]}
 /* 作ったシーンに物体を足して、世界を作り直し、絵につなぐ（原点＝絵の中心） */
 function artCommit(a,body,massParam,rot0,noUndo){   /* noUndo＝絵の編集に追従して作り直す時（絵の編集のUndoに乗る。台帳Z-185） */
-  if(!noUndo)pushUndo();const id=body.id;artRemove(id);
+  if(!noUndo)pushUndo();const id=body.id,old=SCN.src.bodies.find(b=>b.id===id);artRemove(id);
+  if(old){for(const k of['e','mu'])if(typeof old[k]==='number')body[k]=old[k];   /* 絵ごとの反発・摩擦・初速・当たり判定は、作り直しても保つ（台帳Z-197） */
+    if(old.vel!==undefined&&body.type==='dynamic')body.vel=old.vel;if(old.collide===false)body.collide=false}
   SCN.src.bodies.push(body);
   if(massParam){SCN.src.params=SCN.src.params||{};SCN.src.params['m_'+id]={v:1,min:.1,max:20,step:.1,unit:'kg',label:a.name+'の質量'}}
   const V=PHS.validate(SCN.src);if(V.errors.length){note('物体を足せませんでした：'+V.errors.slice(0,2).join(' / '));SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);return false}
+  for(const k of Object.keys(SCN.link))if(k!==id&&SCN.link[k].a===a.id&&/^art_/.test(k)){const j=SCN.src.joints||[];if(!j.some(x=>[x.a,x.b].concat(x.via||[],x.path||[]).some(y=>y===k||(y&&y.body===k))))artRemove(k)}   /* 1つの絵の役割は1つ（動く・固定・地形の付け替え）。台帳Z-197 */
   RUN.playing=false;scnBuild();RUN.dirty=false;
   const b=RUN.sess&&RUN.sess.W.byId.get(id);if(!b){note('物体を作れませんでした：'+(RUN.err||'不明'));return false}
   const iw=a.img.naturalWidth||a.img.width||1,ih=a.img.naturalHeight||a.img.height||1,kpm=W/RUN.view.w,Lm=S0*a.size/kpm;
@@ -2892,7 +2931,7 @@ function artCommit(a,body,massParam,rot0,noUndo){   /* noUndo＝絵の編集に�
 /* ---------- 地形 ---------- */
 function artTerrain(a,opt){opt=opt||{};
   if(!a||!a.img){note('絵を選んでください');return false}
-  if(!artEnsure())return false;
+  if(!artEnsure(opt))return false;
   const v=RUN.view,kpm=W/v.w,R=artRaster(a),step=Math.max(1,Math.round(R.w/220)),cols=[];
   for(let x=0;x<R.w;x+=step){let top=-1;for(let y=0;y<R.h;y++)if(R.al[y*R.w+x]){top=y;break}
     if(top<0){cols.push(null);continue}let bot=top;while(bot<R.h&&R.al[bot*R.w+x])bot++;cols.push({x:x+step/2,top,bot})}
@@ -2915,7 +2954,7 @@ function artTerrain(a,opt){opt=opt||{};
 /* ---------- 物体 ---------- */
 function artBody(a,opt){
   opt=opt||{};if(!a||!a.img){note('絵を選んでください');return false}
-  if(!artEnsure())return false;
+  if(!artEnsure(opt))return false;
   const v=RUN.view,kpm=W/v.w,R=artRaster(a),pts=[];
   for(let y=0;y<R.h;y++)for(let x=0;x<R.w;x++){if(!R.al[y*R.w+x])continue;
     if(x>0&&x<R.w-1&&y>0&&y<R.h-1&&R.al[y*R.w+x-1]&&R.al[y*R.w+x+1]&&R.al[(y-1)*R.w+x]&&R.al[(y+1)*R.w+x])continue;   /* 内側は輪郭の点にならない */
@@ -2940,9 +2979,84 @@ function artBody(a,opt){
   ART.last={id:body.id,kind:asCircle?'circle':asBox?'box':'poly',hull,box:bx,center:G,area,com,topAbove:poly?[com[0],topAt(com[0])]:[com[0],com[1]+(asCircle?shape.r:bx.h/2)],top:hull.reduce((t,p)=>p[1]>t[1]?p:t,hull[0])};   /* topAbove＝重心の真上で、輪郭の上の端（釘をかける所） */
   if(!opt.quiet)note('「'+a.name+'」を'+(fixed?'固定の障害物':'物体')+'にしました（'+(asCircle?'円':asBox?'四角':hull.length+'角形')+'）。質量・反発・摩擦はスライダーで変えられます。▶で動かせます',7000);return body.id}
 
-/* ---------- 物理タブのボタン ---------- */
-$('scArtT').onclick=()=>{if(!sel){note('先に絵（オブジェクト）を選んでください');return}artTerrain(sel)};
-$('scArtB').onclick=()=>{if(!sel){note('先に絵（オブジェクト）を選んでください');return}const m=$('scArtS').value;artBody(sel,{shape:m==='static'?'auto':m,fixed:m==='static'})};
+/* ---------- 物理タブのボタン・絵ごとの物理のつまみ（台帳Z-197）----------
+   「絵に物理を付ける」が標準の入口：絵を選んで 動く／固定／地形 を押すと、見えている輪郭が当たり判定になる。質量・反発・摩擦・初速・当たり判定は、その絵だけのつまみ。
+   つまみは物体（SCN.src.bodies）の項目を直接書き、RUN.dirty で作り直す（最初に戻る）。Undoは操作窓のpointerdownが積む。 */
+const AP={t:0};   /* UIの一時状態：つまみを動かした時刻（動かしている間は、画面の値で上書きしない） */
+const apBusy=()=>performance.now()-AP.t<500;
+const artNeedSel=()=>{if(!sel){note('先に絵（オブジェクト）を選んでください');return false}return true};
+$('scArtT').onclick=()=>{if(artNeedSel())artTerrain(sel)};
+$('scArtB').onclick=()=>{if(!artNeedSel())return;const m=$('scArtS').value;artBody(sel,{shape:m==='static'?'auto':m,fixed:m==='static'})};
+$('scArtF').onclick=()=>{if(!artNeedSel())return;const m=$('scArtS').value;artBody(sel,{shape:m==='static'?'auto':m,fixed:true})};
+/* 項目の値（数、または条件（params）の名前）→ いまの数 */
+function artVal(x,d){
+  if(typeof x==='number')return x;
+  if(typeof x==='string'){if(x in SCN.params)return SCN.params[x];const q=SCN.src&&SCN.src.params&&SCN.src.params[x];if(q!==undefined)return typeof q==='object'?q.v:q}
+  return d}
+function artVelOf(b){   /* 初速 → {speed(m/s), angle(°。0＝右・90＝上)} */
+  const v=b.vel;if(v===undefined)return{speed:0,angle:0};
+  if(Array.isArray(v)){const x=artVal(v[0],0),y=artVal(v[1],0);return{speed:Math.hypot(x,y),angle:Math.atan2(y,x)*180/Math.PI}}
+  return{speed:artVal(v.speed,0),angle:artVal(v.angle,0)}}
+const artRoleBody=()=>{const r=scnRoleOf(sel);return r&&r.art?r:null};
+function artPropsUi(r){   /* 選んでいる絵の物理のつまみ。scnUiRole から呼ぶ */
+  const P=$('scArtP');if(!P)return;
+  const ok=!!(r&&r.art&&SCN.src);P.hidden=!ok;if(!ok)return;
+  const b=r.b,dyn=r.kind==='body',show=(id,on)=>{const e=$(id).closest('.row');if(e)e.hidden=!on};
+  show('apM',dyn);show('apA',dyn);show('apV',dyn);
+  $('apHit').classList.toggle('on',b.collide!==false);$('apHit').setAttribute('aria-pressed',b.collide!==false?'true':'false');
+  if(apBusy())return;
+  const sh=artVal('e',.5),mu0=artVal('mu',.4),set=(id,v,txt)=>{const e=$(id);if(e)e.value=v;const t=$(id+'v');if(t)t.textContent=txt};
+  const m=artVal('m_'+r.id,1),e=artVal(b.e,sh),mu=artVal(b.mu,mu0),v=artVelOf(b);
+  set('apM',m,scnFmt(m)+' kg');set('apE',e,scnFmt(e));set('apU',mu,scnFmt(mu));
+  set('apA',Math.round(v.angle/5)*5,Math.round(v.angle)+'°');set('apV',v.speed,scnFmt(+v.speed.toFixed(2))+' m/s')}
+$('apM').oninput=e=>{const r=artRoleBody();if(!r)return;AP.t=performance.now();const x=+e.target.value;scnSetParam('m_'+r.id,x);$('apMv').textContent=scnFmt(x)+' kg'};
+$('apE').oninput=e=>{const r=artRoleBody();if(!r)return;AP.t=performance.now();const x=+e.target.value;r.b.e=x;RUN.dirty=true;dirtyProj=true;$('apEv').textContent=scnFmt(x)};
+$('apU').oninput=e=>{const r=artRoleBody();if(!r)return;AP.t=performance.now();const x=+e.target.value;r.b.mu=x;RUN.dirty=true;dirtyProj=true;$('apUv').textContent=scnFmt(x)};
+function artSetVel(){
+  const r=artRoleBody();if(!r)return;AP.t=performance.now();const sp=+$('apV').value,an=+$('apA').value;
+  if(sp>0)r.b.vel={speed:sp,angle:an};else delete r.b.vel;
+  RUN.dirty=true;dirtyProj=true;$('apAv').textContent=an+'°';$('apVv').textContent=scnFmt(sp)+' m/s'}
+$('apA').oninput=artSetVel;$('apV').oninput=artSetVel;
+$('apHit').onclick=()=>{const r=artRoleBody();if(!r)return;if(r.b.collide===false)delete r.b.collide;else r.b.collide=false;RUN.dirty=true;dirtyProj=true;scnUi()};
+
+/* まわり（床・左右の壁・天井）：お絵かきのシーンの枠 frame の面を足し引きする */
+const artFrame=()=>SCN.src&&SCN.src.id==='art-scene'?SCN.src.bodies.find(x=>x.id==='frame')||null:null;
+function artFrameFlags(){
+  const f=artFrame();if(!f)return null;const pl=(nx,ny,d)=>f.shapes.some(s=>s.t==='plane'&&s.normal&&s.normal[0]===nx&&s.normal[1]===ny&&(d===undefined||s.d===d));
+  return{floor:pl(0,1,0),wall:pl(1,0,0),top:pl(0,-1)}}
+function artFrameToggle(k){
+  const fl=artFrameFlags();if(!fl)return;fl[k]=!fl[k];
+  scnEdit(sc=>{const f=sc.bodies.find(x=>x.id==='frame'),w=(sc.view&&sc.view.w)||ART.W,hm=w*H/W,sh=[];
+    if(fl.floor)sh.push({t:'plane',normal:[0,1],d:0});
+    if(fl.wall)sh.push({t:'plane',normal:[1,0],d:0},{t:'plane',normal:[-1,0],d:-w});
+    if(fl.top)sh.push({t:'plane',normal:[0,-1],d:-artR(hm)});
+    if(!sh.length)sh.push({t:'plane',normal:[0,1],d:-1000});   /* 面が1つも無いと作れないので、遠い所に1枚（実質なし） */
+    f.shapes=sh})}
+function artWorldUi(){
+  const row=$('scWorld');if(!row)return;const fl=artFrameFlags();row.hidden=!fl;if(!fl)return;
+  for(const[id,k]of[['wlFloor','floor'],['wlWall','wall'],['wlTop','top']]){$(id).classList.toggle('on',!!fl[k]);$(id).setAttribute('aria-pressed',fl[k]?'true':'false')}}
+$('wlFloor').onclick=()=>artFrameToggle('floor');$('wlWall').onclick=()=>artFrameToggle('wall');$('wlTop').onclick=()=>artFrameToggle('top');
+
+/* 🎬メニュー：選んでいる絵に物理を付ける／外す */
+$('mPhArt').onclick=()=>{
+  if(!artNeedSel())return;const r=scnRoleOf(sel);
+  if(r){if(r.art)scnRemoveBody(r.id);else{pushUndo();scnUnlinkBody(r.id);scnUi()}}else artBody(sel,{})};
+
+/* 旧・簡易の物理（絵ごとの l.phys）の置き換え（読込時。台帳Z-197）。on の絵は新しい物理の物体にし（固定なら固定の土台）、質量・反発・初速を引き継ぐ。on でない絵は設定だけ捨てる。
+   旧の速さは px/秒＝画面の横幅が ART.W m になる倍率で m/秒に直す。旧の全体設定（重力・床・壁）は保存されていなかったので、新しいシーンの既定（床・左右の壁・重力9.8）になる */
+function artMigrateOld(){
+  const olds=AC.filter(a=>a.phys&&typeof a.phys==='object');if(!olds.length)return 0;let n=0;
+  for(const a of olds){
+    const p=a.phys;delete a.phys;
+    if(!p.on||!a.img||Object.keys(SCN.link||{}).some(k=>SCN.link[k].a===a.id))continue;
+    const id=artBody(a,{fixed:!!p.fixed,quiet:true,noUndo:true});if(!id)continue;n++;
+    const b=SCN.src.bodies.find(x=>x.id===id);if(!b)continue;
+    if(!p.fixed)SCN.params['m_'+id]=Math.min(20,Math.max(.1,+p.m||1));
+    if(isFinite(p.e))b.e=Math.min(1,Math.max(0,+p.e));
+    const vx=+p.vx||0,vy=+p.vy||0,sp=Math.hypot(vx,vy)/Math.max(1,W)*ART.W;
+    if(!p.fixed&&sp>.05)b.vel={speed:+sp.toFixed(3),angle:+(Math.atan2(-vy,vx)*180/Math.PI).toFixed(2)}}
+  if(n){RUN.dirty=true;dirtyProj=true;scnUi();note('旧・簡易の物理の設定を、新しい物理に置き換えました（'+n+'個）。▶ で動かせます',7000)}
+  return n}
 /* ===== お絵かき×物理のサンプル（台帳Z-177）=====
    「🎬 サンプルを見る」の c〜h。絵はコードで描いた（描画キャンバス・絵文字）もので、地形・物体は 56-phys-art.js の「絵→物理」で作る。
    物理の計算・答え合わせ（ask）はシナリオ（PHS）に任せるので、どれも「見た目はお絵かき、中身は物理として正しい」。
@@ -3146,13 +3260,13 @@ const RULE_ACTS={
   stop:{label:'実行を止める',fields:[]},
   note:{label:'メッセージを出す',fields:[T('text','text','','文字',{req:1})]}
 };
-const RULE_FIELDS=[T('id','text','','ルールの名前'),T('when','num','','条件の式（真なら動作）',{req:1,hint:'例 ball.y<0.3'}),T('mode','enum','','いつ動作するか',{options:['rise','once'],labels:['成り立った瞬間ごと','最初の1回だけ']}),T('do','acts','','動作の並び',{req:1})];
+const RULE_FIELDS=[T('id','text','','ルールの名前'),T('when','num','','条件の式（真なら動作）',{req:1,hint:'例 ball.y<0.3'}),T('mode','enum','','いつ動作するか',{options:['rise','once'],labels:['成り立った瞬間ごと','最初の1回だけ']}),T('do','acts','','動作の並び',{req:1}),T('label','text','','画面の名前'),T('note','text','','メモ')];
 const SCN_PARTS=[
-  {id:'params',label:'条件（スライダーで変えられる量）',fields:[T('v','num','','値',{req:1}),T('min','num','','最小'),T('max','num','','最大'),T('step','num','','刻み'),T('unit','text','','単位'),T('label','text','','画面の名前')]},
-  {id:'probes',label:'測定（時系列→1つの数）',fields:[T('expr','num','','測る式',{req:1}),T('reduce','enum','','集計',{options:Object.keys(RED_LABELS),labels:Object.values(RED_LABELS)}),T('when','num','','この条件の間だけ'),T('after','text','','この出来事／時刻より後だけ'),T('unit','text','','単位'),T('label','text','','画面の名前')]},
-  {id:'ask',label:'答え合わせ（測定値と理論値）',fields:[T('q','text','','問い'),T('probe','text','','測定の名前'),T('theory','num','','理論値の式',{req:1}),T('tol','num','','許容する相対誤差（既定0.02）'),T('abs','num','','許容する絶対誤差'),T('unit','text','','単位')]},
-  {id:'events',label:'出来事（条件が最初に成り立つ時刻）',fields:[T('when','num','','条件の式',{req:1}),T('label','text','','画面の名前')]},
-  {id:'checks',label:'不変量の検査（保存則など）',fields:[T('name','text','','名前'),T('probe','text','','測定の名前'),T('conserved','num','','許容する変動の割合'),T('min','num','','最小'),T('max','num','','最大')]}
+  {id:'params',label:'条件（スライダーで変えられる量）',fields:[T('v','num','','値',{req:1}),T('min','num','','最小'),T('max','num','','最大'),T('step','num','','刻み'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'probes',label:'測定（時系列→1つの数）',fields:[T('expr','num','','測る式',{req:1}),T('reduce','enum','','集計',{options:Object.keys(RED_LABELS),labels:Object.values(RED_LABELS)}),T('when','num','','この条件の間だけ'),T('after','text','','この出来事／時刻より後だけ'),T('at','text','','この出来事／時刻の値（その時の値を読む）'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'ask',label:'答え合わせ（測定値と理論値）',fields:[T('q','text','','問い'),T('probe','text','','測定の名前'),T('expr','num','','測定の名前の代わりに、その場で測る式'),T('theory','num','','理論値の式',{req:1}),T('tol','num','','許容する相対誤差（既定0.02）'),T('abs','num','','許容する絶対誤差'),T('unit','text','','単位'),T('label','text','','画面の名前'),T('note','text','','メモ')]},
+  {id:'events',label:'出来事（条件が最初に成り立つ時刻）',fields:[T('when','num','','条件の式',{req:1}),T('label','text','','画面の名前'),T('first','bool','','最初の1回だけ'),T('note','text','','メモ')]},
+  {id:'checks',label:'不変量の検査（保存則など）',fields:[T('name','text','','名前'),T('probe','text','','測定の名前'),T('expr','num','','測定の名前の代わりに、その場で測る式'),T('conserved','num','','許容する変動の割合'),T('min','num','','最小'),T('max','num','','最大'),T('scale','num','','変動を測る基準の大きさ'),T('tol','num','','許容する誤差'),T('note','text','','メモ')]}
 ];
 
 /* ---------- 部品表 ---------- */
@@ -3193,8 +3307,8 @@ const pick=(o,keys)=>{const r={};for(const k of keys)if(o[k]!==undefined)r[k]=o[
 const BODY_SET=BODY_FIELDS.map(f=>f.k).filter(k=>k!=='id');
 /* 各命令：label・kind（scenario＝シナリオJSONを直す／runtime＝実行を操作する）・args（入力欄）・do(s,a)（シナリオを直接直す。idなどを返す） */
 const OPS={
-  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
-    make(a){const s={id:'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
+  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('id','id','','シナリオの名前',{hint:'省略するとmy-scene'}),T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
+    make(a){const s={id:a.id||'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
       if(a.floor!==false)s.bodies.push({id:'floor',type:'static',mu:.5,e:0,label:'床',shapes:[{t:'plane',normal:[0,1],d:0}]});return s}},
   addBody:{label:'物体を置く',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id)}),T('shape','shape','','形（{t:"circle",r:0.1}など。部品表のshapes）',{req:1}),T('pos','vec2','m','位置'),T('set','object','','その他の項目（部品表のbodyFields）')],returns:'物体id',
     do(s,a){need(a.shape&&a.shape.t,'shape（形）が必要です');const id=a.id||uniq(s.bodies,'b'),b={id,type:a.type||'dynamic',shapes:[a.shape]};
@@ -3209,17 +3323,26 @@ const OPS={
   removeJoint:{label:'つなぎを外す',kind:'scenario',args:[T('id','text','','拘束id',{req:1})],do(s,a){const n=(s.joints||[]).length;s.joints=(s.joints||[]).filter(j=>j.id!==a.id);need(s.joints.length<n,'拘束「'+a.id+'」がありません');return a.id}},
   addField:{label:'力場を足す',kind:'scenario',args:[T('type','enum','','種類',{req:1,options:Object.keys(FIELDS),labels:Object.values(FIELDS).map(f=>f.label)}),T('set','object','','項目（ax・ay・bz・region・targetsなど）')],returns:'力場の番号',do(s,a){need(a.type,'type（種類）が必要です');(s.fields=s.fields||[]).push(Object.assign({type:a.type},a.set||{}));return s.fields.length-1}},
   removeField:{label:'力場を消す',kind:'scenario',args:[T('index','num','','力場の番号',{req:1})],do(s,a){need(s.fields&&s.fields[a.index],'力場['+a.index+']がありません');s.fields.splice(a.index,1);return a.index}},
-  setParam:{label:'条件（スライダー）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1})].concat(SCN_PARTS[0].fields),do(s,a){need(a.name,'name（名前）が必要です');const p=(s.params=s.params||{});const cur=p[a.name]&&typeof p[a.name]==='object'?p[a.name]:{v:p[a.name]};p[a.name]=Object.assign(cur,pick(a,['v','min','max','step','unit','label']));return a.name}},
+  setParam:{label:'条件（スライダー）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1})].concat(SCN_PARTS[0].fields),do(s,a){need(a.name,'name（名前）が必要です');const p=(s.params=s.params||{});const cur=p[a.name]&&typeof p[a.name]==='object'?p[a.name]:{v:p[a.name]};p[a.name]=Object.assign(cur,pick(a,['v','min','max','step','unit','label','note']));return a.name}},
   setVar:{label:'途中計算の名前（式）を決める',kind:'scenario',args:[T('name','id','','名前',{req:1}),T('expr','num','','式',{req:1})],do(s,a){need(a.name&&a.expr!==undefined,'name と expr が必要です');(s.vars=s.vars||{})[a.name]=a.expr;return a.name}},
-  addProbe:{label:'測定を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[1].fields),do(s,a){need(a.id&&a.expr,'id と expr が必要です');(s.probes=s.probes||{})[a.id]=pick(a,['expr','reduce','when','after','unit','label']);return a.id}},
-  addAsk:{label:'答え合わせを足す',kind:'scenario',args:SCN_PARTS[2].fields,returns:'番号',do(s,a){need(a.theory!==undefined&&(a.probe!==undefined||a.expr!==undefined),'theory と、probe（または expr）が必要です');(s.ask=s.ask||[]).push(pick(a,['q','probe','expr','theory','tol','abs','unit']));return s.ask.length-1}},
-  addEvent:{label:'出来事を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[3].fields),do(s,a){need(a.id&&a.when,'id と when が必要です');(s.events=s.events||{})[a.id]={when:a.when,label:a.label};return a.id}},
-  addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max']));return s.checks.length-1}},
-  addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push({id,when:a.when,mode:a.mode,do:a.do});return id}},
+  addProbe:{label:'測定を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[1].fields),do(s,a){need(a.id&&a.expr,'id と expr が必要です');(s.probes=s.probes||{})[a.id]=pick(a,['expr','reduce','when','after','at','unit','label','note']);return a.id}},
+  addAsk:{label:'答え合わせを足す',kind:'scenario',args:SCN_PARTS[2].fields,returns:'番号',do(s,a){need(a.theory!==undefined&&(a.probe!==undefined||a.expr!==undefined),'theory と、probe（または expr）が必要です');(s.ask=s.ask||[]).push(pick(a,['q','probe','expr','theory','tol','abs','unit','label','note']));return s.ask.length-1}},
+  addEvent:{label:'出来事を足す',kind:'scenario',args:[T('id','id','','名前',{req:1})].concat(SCN_PARTS[3].fields),do(s,a){need(a.id&&a.when,'id と when が必要です');(s.events=s.events||{})[a.id]=Object.assign({when:a.when,label:a.label},pick(a,['first','note']));if(a.label===undefined)delete s.events[a.id].label;return a.id}},
+  addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max','scale','tol','note']));return s.checks.length-1}},
+  addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push(Object.assign({id,when:a.when,mode:a.mode,do:a.do},pick(a,['label','note'])));if(a.mode===undefined)delete s.rules[s.rules.length-1].mode;return id}},
   removeRule:{label:'ルールを消す',kind:'scenario',args:[T('id','text','','ルールの名前',{req:1})],do(s,a){const n=(s.rules||[]).length;s.rules=(s.rules||[]).filter(r=>r.id!==a.id);need(s.rules.length<n,'ルール「'+a.id+'」がありません');return a.id}},
-  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample']));return 'run'}},
+  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔'),T('note','text','','メモ')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample','note']));return 'run'}},
   setView:{label:'画面（位置・横幅m）',kind:'scenario',args:[T('x0','num','m','左端x'),T('y0','num','m','下端y'),T('w','num','m','横幅'),T('grid','bool','','格子'),T('follow','text','','追う物体')],do(s,a){s.view=Object.assign(s.view||{},pick(a,['x0','y0','w','grid','ruler','follow']));return 'view'}},
-  setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir']));return 'world'}},
+  setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir','maxStep','cfg','canvas','note']));return 'world'}},
+  /* ---- 題名・摩擦の組・グラフ・掃引（サンプルを命令の列だけで組み立て直せるように。台帳Z-192） ---- */
+  setMeta:{label:'題名・問題文などを書く',kind:'scenario',args:[T('title','text','','題名'),T('tags','object','','タグ（文字の配列）'),T('source','text','','出どころ（例: オリジナル（○○型））'),T('level','enum','','難しさ',{options:['basic','standard','advanced','olympiad'],labels:['基礎','標準','発展','物理オリンピック級']}),T('problem','text','','問題文（{名前}は条件の値に置き換わる）'),T('notes','text','','メモ・解説'),T('solution','text','','解答'),T('hint','text','','ヒント'),T('style','object','','見た目の指定')],
+    do(s,a){const k=pick(a,['title','tags','source','level','problem','notes','solution','hint','style']);need(Object.keys(k).length,'title・tags・source・level・problem・notes・solution・hint・style のどれかが必要です');Object.assign(s,k);return 'meta'}},
+  addPair:{label:'2つの物体の摩擦・反発を決める',kind:'scenario',args:[T('a','body','','物体A',{req:1}),T('b','body','','物体B',{req:1}),T('mu','num','','摩擦係数'),T('mus','num','','静止摩擦係数'),T('muk','num','','動摩擦係数'),T('e','num','','反発係数',{min:0,max:1})],returns:'番号',
+    do(s,a){need(a.a&&a.b,'a と b（物体）が必要です');body(s,a.a);body(s,a.b);(s.pairs=s.pairs||[]).push(Object.assign({a:a.a,b:a.b},pick(a,['mu','mus','muk','e'])));return s.pairs.length-1}},
+  addGraph:{label:'グラフを足す',kind:'scenario',args:[T('title','text','','題名'),T('x','num','','横軸の式（省略すると時刻）'),T('y','object','','縦軸の式の配列',{req:1}),T('xlabel','text','','横軸の名前'),T('ylabel','text','','縦軸の名前')],returns:'番号',
+    do(s,a){need(a.y!==undefined,'y（縦軸の式）が必要です');(s.graphs=s.graphs||[]).push(pick(a,['title','x','y','xlabel','ylabel','label']));return s.graphs.length-1}},
+  setSweep:{label:'条件を振る設定（現象考察）',kind:'scenario',args:[T('param','text','','振る条件の名前',{req:1}),T('values','object','','値の配列'),T('from','num','','最初の値'),T('to','num','','最後の値'),T('n','num','','個数'),T('probes','object','','測定の名前の配列'),T('fit','object','','直線あてはめ {x,y}')],
+    do(s,a){need(a.param,'param（振る条件の名前）が必要です');s.sweep=pick(a,['param','values','from','to','n','probes','fit']);return 'sweep'}},
   /* ---- 実行の操作（アプリの中だけ。純粋な apply には使えない） ---- */
   play:{label:'再生',kind:'runtime',args:[]},pause:{label:'とめる',kind:'runtime',args:[]},reset:{label:'最初へ戻す',kind:'runtime',args:[]},
   seek:{label:'その時刻へ',kind:'runtime',args:[T('t','num','s','時刻',{req:1})]},step:{label:'1刻み（1/120秒）ずつ進める',kind:'runtime',args:[T('n','num','','刻み数')]},
@@ -3250,7 +3373,11 @@ function applyAll(src,ops){
   return{ok:!errors.length,errors,warns,src:s,value}}
 
 /* ---------- アプリへの反映（SCN・RUN があるときだけ）---------- */
-function exec(op){
+const TAPS=[];
+/* 成功した exec を見張る（タイムラプスの記録用）。cb(op,結果)。返す関数で解除。再生中の命令（タイムラプスの再生）は、TL.busy の間は知らせない */
+function tap(cb){TAPS.push(cb);return()=>{const i=TAPS.indexOf(cb);if(i>=0)TAPS.splice(i,1)}}
+function exec(op){const r=exec0(op);if(r&&r.ok&&!(typeof TL!=='undefined'&&TL.busy))for(const cb of TAPS.slice())try{cb(op,r)}catch(_){}return r}
+function exec0(op){
   if(typeof SCN==='undefined'||typeof RUN==='undefined')return{ok:false,errors:['アプリの外では使えません（apply を使ってください）']};
   const d=OPS[op&&op.op];if(!d)return{ok:false,errors:['未知の命令「'+(op&&op.op)+'」'+PHS.suggest(String(op&&op.op),Object.keys(OPS))]};
   try{
@@ -3279,7 +3406,305 @@ function exec(op){
 const LISTEN=[];
 function listen(cb){LISTEN.push(cb);return()=>{const i=LISTEN.indexOf(cb);if(i>=0)LISTEN.splice(i,1)}}
 function emit(e){for(const cb of LISTEN.slice())try{cb(e)}catch(_){}}
-return{catalog,coverage,OPS,apply,applyAll,exec,listen,emit,SHAPES,JOINTS,FIELDS}
+return{catalog,coverage,OPS,apply,applyAll,exec,tap,listen,emit,SHAPES,JOINTS,FIELDS}
+})();
+/* ===== タイムラプス（操作手順の記録・再生・書き出し）TL（台帳Z-192）=====
+   ねらい：「どう作るか」を、操作の手順（データ）として作る・再生する・文章にする部品。将来のビジュアルプログラミング（ブロックを置く→入力欄を埋める→つなぐ）の一部になる前提で、
+   画面（DOM）に触れない核（このファイル）と、アプリにつなぐ部分（241-timelapse-ui.js）を分ける。純JS。58-phys-api.js（PHAPI）の後に置く。
+   【手順書 script】 {v:1, id, title, about, steps:[step…], x?}  未知のキーは捨てずに保つ（norm は元のオブジェクトの複製を返す）。作品ファイルには入れない（書き出し・読み込みはJSON）。
+   【手順 step】 {k:ドライバ名, say:字幕（何をするか）, how:[操作の手順の文…], cat:分類, blk:{c,t,f:[{l,v}]}＝ブロックの見え方, d:見せる時間ms（×1）, t:記録した時刻ms, …ドライバごとの項目}
+   【ドライバ drv】 表に1行足せば増える：{label, apply(step,host,quiet,i)}。k が未知の手順は、捨てずに保ち、再生では「この版では再生できない」と出して飛ばす。
+     note＝説明だけ／phys＝PHAPI.OPSの命令（step.op）／ui＝画面の部品の操作（step.do＝click・set・tab・check、step.id、step.v）／gesture＝キャンバスをなぞる（見せるだけ。作品には反映しない）。
+   【ホスト host】 再生の相手：{reset(), begin?(), phys?(op,quiet), ui?(step,quiet), gesture?(step), sync?(step,i)}。アプリでは241、検査では pureHost（PHAPIだけで組み立てる）。
+   【再生 player】 固定の時計を持たず、tick(dtMs) を外から呼ぶ（検査で時間を進められる）。戻る・飛ぶ時は reset してから先頭へ再生し直す（手順がデータなので、同じ結果になる）。
+   【速さ】 モード auto＝各手順の d を倍率で割る／recorded＝記録した時刻の間隔（待ちは maxGap までに詰める）／manual＝自動では進まない（次へで1手順ずつ）。
+   【ブロックの置き場所 layout】 手順 → 組み立て台（幅12の studs）の上の場所 {i,x,y,w,kind}。純JS・決定的。手順を時間順に積むので、どのブロックも必ず下のブロックの上に載る（浮かない）。物体は塔（幅4）、つなぎは塔をまたぐ橋、測定・答え合わせは幅6、実行は幅12（台帳Z-196）。
+   【つなぐまで（lead）】 player の o.lead（ms）＞0 なら、手順の「ブロックが置かれる動き」の間（lead）、舞台の変化を待つ（置かれた瞬間に舞台の物体が増える）。待っている間は pre を知らせ、終わったら適用して step を知らせる。goto／first／last／prev は待たず、すぐ適用（飛んだ時は動きを見せない）。 */
+const TL=(function(){
+const V=1;
+const CAT={setup:'設定',cond:'条件',body:'物体',link:'つなぎ',field:'力場',measure:'測定',check:'答え合わせ',rule:'ルール',run:'実行',note:'説明',ui:'画面の操作'};
+const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup',setRun:'setup',setParam:'cond',setVar:'cond',addBody:'body',addShape:'body',setBody:'body',removeBody:'body',
+  addJoint:'link',removeJoint:'link',addPair:'link',addField:'field',removeField:'field',addProbe:'measure',addEvent:'measure',addGraph:'measure',setSweep:'measure',addAsk:'check',addCheck:'check',
+  addRule:'rule',removeRule:'rule',play:'run',pause:'run',reset:'run',seek:'run',step:'run',speed:'run',read:'run',result:'run',sweep:'run',open:'run',close:'run'};
+/* ブロックの見出し（短い名前。組み立て台のブロックに書く。台帳Z-196） */
+const SHORT={newScenario:'シナリオ',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
+  addJoint:'つなぎ',removeJoint:'つなぎを外す',addPair:'接触の設定',addField:'力場',removeField:'力場を消す',addProbe:'測定',addEvent:'出来事',addGraph:'グラフ',setSweep:'条件をふる',addAsk:'答え合わせ',addCheck:'検査',
+  addRule:'ルール',removeRule:'ルールを消す',play:'▶ 実行',pause:'一時停止',reset:'最初へ',seek:'時刻へ',step:'1コマ',speed:'速さ',read:'読む',result:'答え合わせ',sweep:'条件をふる',open:'サンプルを開く',close:'閉じる'};
+const SPEEDS=[.25,.5,1,2,4,8,16,32];
+const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const num=x=>typeof x==='number'&&isFinite(x)?String(+x.toPrecision(6)):String(x);
+const NUMS='①②③④⑤⑥⑦⑧⑨⑩⑪⑫';
+const short=l=>{const s=String(l).replace(/（[^）]*）/g,'').replace(/\{[^}]*\}/g,'').replace(/\s+/g,' ').trim();return s||String(l)};
+
+/* ---------- 部品表からの名前（日本語名・単位）---------- */
+let LM=null;
+function lm(){if(LM)return LM;const C=PHAPI.catalog(),M={body:{},shape:{},joint:{},field:{},red:{},act:{}};
+  C.bodyFields.forEach(f=>M.body[f.k]=f);
+  for(const s of C.shapes){M.shape[s.id]={label:s.label,f:{}};s.fields.forEach(f=>M.shape[s.id].f[f.k]=f)}
+  for(const s of C.joints){M.joint[s.id]={label:s.label,f:{}};s.fields.forEach(f=>M.joint[s.id].f[f.k]=f)}
+  for(const s of C.fields){M.field[s.id]={label:s.label,f:{}};s.fields.forEach(f=>M.field[s.id].f[f.k]=f)}
+  C.reducers.forEach(r=>M.red[r.id]=r.label);C.rules.acts.forEach(a=>M.act[a.id]=a);LM=M;return M}
+
+/* ---------- 値を、人が読む形にする ---------- */
+function anc(a){if(typeof a==='string')return'物体 '+a;if(a&&a.body!==undefined)return'物体 '+a.body+' の '+fv(a.at||[0,0]);return'世界の点 '+fv(a&&a.at)}
+function shapeText(sh){const S=lm().shape[sh&&sh.t];if(!S)return JSON.stringify(sh);
+  const ps=Object.keys(sh).filter(k=>k!=='t').map(k=>{const f=S.f[k];return(f?f.label:k)+' '+fv(sh[k],f&&f.unit)});return S.label+(ps.length?'（'+ps.join('、')+'）':'')}
+function fv(v,unit){const u=unit?' '+unit:'';
+  if(v===undefined||v===null)return'（なし）';
+  if(typeof v==='number')return num(v)+u;if(typeof v==='boolean')return v?'はい':'いいえ';if(typeof v==='string')return v+u;
+  if(Array.isArray(v)){if(v.every(x=>typeof x==='number'||typeof x==='string'))return'('+v.map(x=>typeof x==='number'?num(x):x).join(', ')+')'+u;return v.map(x=>fv(x)).join(' → ')}
+  if(typeof v==='object'){if('body'in v||'at'in v)return anc(v);if(v.t)return shapeText(v);return Object.keys(v).map(k=>k+'＝'+fv(v[k])).join('、')}
+  return String(v)}
+function fmtBy(f,v){const t=f&&f.type;
+  if(t==='anchor')return anc(v);if(t==='anchors')return(v||[]).map(anc).join(' → ');
+  if(t==='enum'&&f.options){const i=f.options.indexOf(v);return i>=0&&f.labels?f.labels[i]:String(v)}
+  return fv(v,f&&f.unit)}
+function actText(x){const A=lm().act[x&&x.op];const ps=Object.keys(x||{}).filter(k=>k!=='op').map(k=>k+'＝'+fv(x[k]));return(A?A.label:(x&&x.op))+(ps.length?'（'+ps.join('、')+'）':'')}
+/* 「set」の中の項目の日本語名（命令と種類で、引く表が変わる） */
+function fdef(op,k){const M=lm();
+  if(op.op==='addBody'||op.op==='setBody'||op.op==='addShape')return M.body[k]||{k,label:k};
+  if(op.op==='addJoint'){const J=M.joint[op.type];return(J&&J.f[k])||{k,label:k}}
+  if(op.op==='addField'){const F=M.field[op.type];return(F&&F.f[k])||{k,label:k}}
+  return{k,label:k}}
+/* 命令の入力欄 → [{l:名前, v:値の文字, list?:[…]}] */
+function fields(op){const D=PHAPI.OPS[op.op],out=[];
+  if(!D)return Object.keys(op).filter(k=>k!=='op').map(k=>({l:k,v:fv(op[k])}));
+  const push=(l,f,v)=>{const e={l:short(l),v:fmtBy(f,v)};if(f&&f.type==='anchors'&&Array.isArray(v)&&v.length>2)e.list=v.map(anc);out.push(e)};
+  for(const a of D.args){const v=op[a.k];if(v===undefined)continue;
+    if(a.k==='shape'){out.push({l:'形',v:shapeText(v)});continue}
+    if(a.k==='set'&&v&&typeof v==='object'){for(const k of Object.keys(v)){const f=fdef(op,k);push(f.label||k,f,v[k])}continue}
+    if(a.k==='do'&&Array.isArray(v)){v.forEach(x=>out.push({l:'動作',v:actText(x)}));continue}
+    push(a.label||a.k,a,v)}
+  return out}
+
+/* ---------- 字幕（say）と操作の手順（how）---------- */
+const LV={basic:'基礎',standard:'標準',advanced:'発展',olympiad:'物理オリンピック級'};
+const has=(o,k)=>o[k]!==undefined;
+const SAY={
+  newScenario:o=>'空のシナリオ「'+(o.title||'無題')+'」を作る'+(o.floor===false?'（床は置かない）':'（床つき）')+(o.width?'。画面の横幅は '+fv(o.width,'m'):''),
+  setMeta:o=>'題名・タグ・問題文を書き込む'+(o.level?'（難しさ：'+(LV[o.level]||o.level)+'）':''),
+  setWorld:o=>'世界の決まりを書く：'+[has(o,'g')?'重力加速度 '+fv(o.g,'m/s²'):'',has(o,'gdir')?'重力の向き '+fv(o.gdir,'°'):''].filter(Boolean).join('、'),
+  setView:o=>'画面の範囲を決める：横幅 '+(has(o,'w')?fv(o.w,'m'):'そのまま')+(has(o,'x0')||has(o,'y0')?'、左下 '+fv([o.x0||0,o.y0||0]):''),
+  setParam:o=>'条件（スライダー）「'+(o.label||o.name)+'」を作る：初めは '+fv(o.v,o.unit)+(has(o,'min')&&has(o,'max')?'（'+num(o.min)+'〜'+num(o.max)+'）':''),
+  setVar:o=>'途中計算「'+o.name+'」を決める：'+o.name+' ＝ '+o.expr,
+  addBody:o=>'物体「'+(o.id||'')+'」を置く：'+(o.shape?shapeText(o.shape):'')+(o.type==='static'?'（固定）':o.type==='kinematic'?'（決めた動きをする台）':'')+(o.pos?'。位置 '+fv(o.pos,'m'):''),
+  addShape:o=>'物体「'+o.body+'」に形を足す：'+shapeText(o.shape),
+  setBody:o=>'物体「'+o.id+'」の項目を変える：'+Object.keys(o.set||{}).join('・'),
+  removeBody:o=>'物体「'+o.id+'」を消す',
+  addJoint:o=>'「'+((lm().joint[o.type]||{}).label||o.type)+'」でつなぐ'+(o.id?'（'+o.id+'）':''),
+  removeJoint:o=>'つなぎ「'+o.id+'」を外す',
+  addPair:o=>'物体「'+o.a+'」と「'+o.b+'」がふれた時の摩擦・反発を決める',
+  addField:o=>'力場を足す：'+((lm().field[o.type]||{}).label||o.type),
+  removeField:o=>'力場['+o.index+']を消す',
+  addProbe:o=>'測定「'+(o.label||o.id)+'」を足す：'+o.expr+(o.reduce?'（'+(lm().red[o.reduce]||o.reduce)+'）':''),
+  addEvent:o=>'出来事「'+(o.label||o.id)+'」を足す：'+o.when+' が最初に成り立つ時刻',
+  addRule:o=>'ルールを足す：「'+o.when+'」になったら '+(o.do||[]).map(actText).join('、'),
+  removeRule:o=>'ルール「'+o.id+'」を消す',
+  setRun:o=>'実行する長さを決める'+(has(o,'t')?'：'+fv(o.t,'秒'):''),
+  addAsk:o=>'答え合わせ「'+(o.q||'')+'」：理論値 '+o.theory+' と比べる',
+  addCheck:o=>'検査「'+(o.name||'')+'」を足す'+(has(o,'conserved')?'（変動 '+num(o.conserved*100)+'% 以内）':''),
+  addGraph:o=>'グラフ「'+(o.title||'')+'」を足す',
+  setSweep:o=>'条件「'+o.param+'」を振って測る設定をする',
+  play:()=>'▶ 実行して、動きを見る',
+  result:()=>'答え合わせを見る（測定値と理論値の比較）'};
+function sayOf(op,fs){const f=SAY[op.op];if(f)try{return f(op)}catch(_){}
+  const D=PHAPI.OPS[op.op];return '「'+(D?D.label:op.op)+'」を行う'+(fs.length?'：'+fs.slice(0,3).map(x=>x.l+' '+x.v).join('、'):'')}
+function howOf(op,cat,fs){
+  const D=PHAPI.OPS[op.op],lab=D?D.label:op.op;
+  if(op.op==='play')return['画面の「▶ 実行」を押す（ブロック列の最後に「▶ 実行」ブロックを置いてもよい）','物体が動き、測定値がたまっていく'];
+  if(op.op==='result')return['「検査する」を押す（ブロック列の最後に「答え合わせ」ブロックを置いてもよい）','測定値と理論値、保存則の検査が一覧で出る'];
+  const L=['「＋ブロック」→ パレットの「'+CAT[cat]+'」→「'+lab+'」をタップ'];
+  const cut=s=>s.length>70?s.slice(0,68)+'…':s;
+  for(const f of fs.slice(0,8)){
+    if(f.list)L.push('「'+f.l+'」に、順に足す：'+f.list.map((x,i)=>(NUMS[i]||'・')+cut(x)).join('　'));
+    else L.push('「'+f.l+'」を '+cut(f.v)+' にする')}
+  if(fs.length>8)L.push('そのほか：'+fs.slice(8).map(f=>f.l+'＝'+cut(f.v)).join('、'));
+  L.push('「決定」を押すと、ブロック列の最後に加わる');
+  return L}
+/* 命令1つ → 手順1つ */
+function stepOf(op,extra){
+  const D=PHAPI.OPS[op.op],cat=OPCAT[op.op]||'setup',fs=fields(op);
+  const s={k:'phys',op:clone(op),cat,say:sayOf(op,fs),how:howOf(op,cat,fs),blk:{c:cat,t:D?D.label:op.op,s:SHORT[op.op]||(D?D.label:op.op),f:fs.map(f=>({l:f.l,v:f.v}))},d:clamp(1100+260*Math.min(fs.length,8),1300,3800)};
+  return extra?Object.assign(s,extra):s}
+
+/* ---------- シナリオ → 命令の列 → 手順書 ---------- */
+/* 検証に通る順（条件→物体→つなぎ→測定→答え合わせ）。サンプルのJSONから、PHAPIの命令だけで同じシナリオを組み立て直せる（検査＝tools/tl_test.js） */
+function opsOf(S){
+  const O=[],P=op=>O.push(op),view=S.view||{},world=S.world||{};
+  P({op:'newScenario',id:S.id,title:S.title||'無題',floor:false,width:view.w||6});
+  const meta={};for(const k of['tags','source','level','problem','notes','solution','hint','style'])if(S[k]!==undefined)meta[k]=S[k];
+  if(Object.keys(meta).length)P(Object.assign({op:'setMeta'},meta));
+  if(Object.keys(world).length&&!(Object.keys(world).length===1&&world.g===9.8))P(Object.assign({op:'setWorld'},world));
+  const vk=Object.keys(view).filter(k=>!(k==='w'||((k==='x0'||k==='y0')&&view[k]===0)));if(vk.length)P(Object.assign({op:'setView'},view));
+  for(const k of Object.keys(S.params||{})){const p=S.params[k];P(Object.assign({op:'setParam',name:k},p&&typeof p==='object'?p:{v:p}))}
+  for(const k of Object.keys(S.vars||{}))P({op:'setVar',name:k,expr:S.vars[k]});
+  for(const b of S.bodies||[]){
+    const {id,type,pos,shapes,...rest}=b,sh=shapes||[],set={};for(const k of Object.keys(rest))set[k]=rest[k];
+    P(Object.assign({op:'addBody',id,type:type||'dynamic',shape:sh[0]},pos!==undefined?{pos}:{},Object.keys(set).length?{set}:{}));
+    for(let i=1;i<sh.length;i++)P({op:'addShape',body:id,shape:sh[i]});
+    if((type||'dynamic')==='dynamic'&&set.m===undefined)P({op:'setBody',id,set:{m:null}})}
+  for(const q of S.pairs||[])P(Object.assign({op:'addPair'},q));
+  for(const j of S.joints||[]){const {id,type,a,b,...rest}=j;P(Object.assign({op:'addJoint',id,type},a!==undefined?{a}:{},b!==undefined?{b}:{},Object.keys(rest).length?{set:rest}:{}))}
+  for(const f of S.fields||[]){const {type,...rest}=f;P(Object.assign({op:'addField',type},Object.keys(rest).length?{set:rest}:{}))}
+  for(const k of Object.keys(S.probes||{}))P(Object.assign({op:'addProbe',id:k},S.probes[k]));
+  for(const k of Object.keys(S.events||{}))P(Object.assign({op:'addEvent',id:k},S.events[k]));
+  for(const r of S.rules||[])P(Object.assign({op:'addRule'},r));
+  if(S.run&&Object.keys(S.run).length)P(Object.assign({op:'setRun'},S.run));
+  for(const a of S.ask||[])P(Object.assign({op:'addAsk'},a));
+  for(const c of S.checks||[])P(Object.assign({op:'addCheck'},c));
+  for(const g of S.graphs||[])P(Object.assign({op:'addGraph'},g));
+  if(S.sweep)P(Object.assign({op:'setSweep'},S.sweep));
+  return O}
+function fromScenario(src,o){
+  o=o||{};const S=clone(src),ops=opsOf(S),steps=[];
+  const hasAns=(S.ask||[]).length||(S.checks||[]).length,tail=1+(hasAns?1:0);
+  const prob=S.problem?String(S.problem).replace(/\{(\w+)\}/g,(m,k)=>{const p=(S.params||{})[k];return p===undefined?m:num(p&&typeof p==='object'?p.v:p)}):'';
+  steps.push({k:'note',cat:'note',say:'「'+(S.title||S.id)+'」を、ブロックを順に置いて作ります（全'+(ops.length+tail)+'手順）',
+    how:(prob?['問題：'+prob]:[]).concat(['ブロックは「設定→条件→物体→つなぎ→力場→測定→答え合わせ」の順に積むと、いつでも検証に通る形で組み上がる','各手順では、パレットから選ぶ → 入力欄を埋める → 決定、の3つの操作をする']),
+    blk:{c:'note',t:'はじめに',f:[]},d:2800});
+  for(const op of ops)steps.push(stepOf(op));
+  steps.push(stepOf({op:'play'},{d:2200}));
+  if(hasAns)steps.push(stepOf({op:'result'},{d:3200}));
+  return{v:V,id:'tl-'+S.id,title:'「'+(S.title||S.id)+'」の作り方',about:o.about||'ビジュアルプログラミングで、ブロックを置いて作る手順（完成イメージ。ブロックの見た目は、今後の実装で変わることがある）',steps,src:{kind:'scenario',id:S.id}}}
+
+/* ---------- 検証・読み書き ---------- */
+function norm(o){
+  const E=[],W=[];
+  if(!o||typeof o!=='object'||Array.isArray(o))return{ok:false,errors:['手順書はオブジェクト（{…}）で書いてください'],warns:[]};
+  if(!Array.isArray(o.steps))E.push('steps（手順の配列）が必要です');
+  if(o.v!==undefined&&o.v>V)W.push('新しい版（v'+o.v+'）の手順書です。読めるだけ読みます');
+  (o.steps||[]).forEach((s,i)=>{if(!s||typeof s!=='object'||Array.isArray(s)||typeof s.k!=='string')E.push('steps['+i+']: k（種類）が必要です');else if(!drv[s.k])W.push('steps['+i+']: 未知の種類「'+s.k+'」（再生では飛ばします）')});
+  if(E.length)return{ok:false,errors:E,warns:W};
+  const script=clone(o);if(script.v===undefined)script.v=V;return{ok:true,errors:[],warns:W,script}}
+function parse(text){let o;try{o=JSON.parse(text)}catch(e){return{ok:false,errors:['JSONの書き方が正しくありません：'+e.message],warns:[]}}return norm(o)}
+const stringify=s=>JSON.stringify(s,null,1);
+/* 手順書 → 文章（「操作手順書」。手順ごとに、字幕と操作の手順） */
+function toText(script){
+  const L=['■ '+(script.title||'操作の手順')];if(script.about)L.push(script.about);L.push('');let n=0;
+  for(const s of script.steps){
+    if(s.cat==='note'||s.k==='note'){L.push(s.say||'');(s.how||[]).forEach(h=>L.push('  '+h));L.push('');continue}
+    n++;L.push(n+'. '+(s.say||labelOf(s)));(s.how||[]).forEach(h=>L.push('   ・'+h));L.push('')}
+  return L.join('\n').replace(/\n+$/,'\n')}
+const labelOf=s=>(drv[s.k]&&drv[s.k].label||s.k)+(s.op?'：'+s.op.op:'')+(s.id?'：'+s.id:'');
+function stats(script){const c={};for(const s of script.steps){const k=s.cat||s.k;c[k]=(c[k]||0)+1}return c}
+
+/* ---------- 組み立て台の配置（台帳Z-196）：手順 → ブロックの場所 ---------- */
+const COLS=12,TSLOT=[0,4,8];
+function layout(script){
+  const steps=(script&&script.steps)||[],h=new Array(COLS).fill(0),tw={},out=[];
+  const top=(x,w)=>{let m=0;for(let k=x;k<x+w;k++)m=Math.max(m,h[k]);return m};
+  const put=(i,x,w,kind)=>{const y=top(x,w);for(let k=x;k<x+w;k++)h[k]=y+1;out.push({i,x,y,w,kind});return y};
+  const low=(w,xs)=>{let bx=-1,by=1e9;for(const x of xs){if(x+w>COLS)continue;const y=top(x,w);if(y<by){by=y;bx=x}}return bx<0?0:bx};
+  const bodyOf=a=>typeof a==='string'?a:(a&&typeof a==='object'&&!Array.isArray(a)&&typeof a.body==='string'?a.body:null);
+  const newTower=id=>{const used=new Set(Object.values(tw));let cand=TSLOT.filter(x=>!used.has(x));if(!cand.length)cand=TSLOT;const x=low(4,cand);tw[id]=x;return x};
+  const towerOf=id=>id!==null&&id!==undefined&&tw[id]!==undefined?tw[id]:newTower(id===null||id===undefined?'?':id);
+  steps.forEach((s,i)=>{
+    const cat=s.cat||s.k,op=s.op&&s.op.op,o=s.op||{};
+    if(op==='addBody')put(i,newTower(o.id),4,'body');
+    else if(op==='addShape'||op==='setBody'||op==='removeBody')put(i,towerOf(op==='addShape'?o.body:o.id),4,'body');
+    else if(op==='addJoint'||op==='addPair'||op==='removeJoint'){
+      const xs=[bodyOf(o.a),bodyOf(o.b)].filter(x=>x).map(towerOf);
+      if(!xs.length)put(i,low(4,TSLOT),4,'link');else{const x0=Math.min(...xs),x1=Math.max(...xs);put(i,x0,x1-x0+4,'link')}}
+    else if(cat==='note')put(i,0,COLS,'note');
+    else if(cat==='field'||cat==='run')put(i,0,COLS,cat);
+    else if(cat==='measure'||cat==='check'||cat==='rule')put(i,low(6,[0,6]),6,cat);
+    else if(cat==='setup')put(i,low(6,[0,6]),6,'setup');
+    else put(i,low(4,TSLOT),4,cat==='cond'?'cond':'other')});
+  return{cols:COLS,levels:Math.max(0,...h),bricks:out,towers:tw}}
+
+/* ---------- ドライバ（表に1行足せば増える）---------- */
+const drv={
+  note:{label:'説明',apply(){return{ok:true}}},
+  phys:{label:'物理の命令',apply(s,h,q){return h.phys?h.phys(s.op,q):{ok:false,errors:['この画面では、物理の命令は実行できません']}}},
+  ui:{label:'画面の操作',apply(s,h,q){return h.ui?h.ui(s,q):{ok:false,errors:['この画面では、画面の操作は再現できません']}}},
+  gesture:{label:'なぞる（見せるだけ）',apply(s,h,q){if(h.gesture&&!q)h.gesture(s);return{ok:true}}}};
+
+/* ---------- 再生 ---------- */
+function player(script,host,o){
+  o=o||{};
+  const P={script,host,i:-1,playing:false,speed:o.speed||1,mode:o.mode||'auto',acc:0,errs:{},cb:o.cb||{},maxGap:o.maxGap||1500,began:false,lead:o.lead>0?+o.lead:0,wait:0,leadMs:0};
+  const N=()=>P.script.steps.length,emit=ev=>{try{P.cb[ev]&&P.cb[ev](P)}catch(_){}};
+  function run(step,i,quiet){
+    const d=drv[step.k];if(!d){P.errs[i]='この版では再生できない手順です（'+step.k+'）';return false}
+    try{const r=d.apply(step,P.host,quiet,i);if(r&&r.ok===false){P.errs[i]=(r.errors&&r.errors[0])||'できませんでした';return false}delete P.errs[i];return true}
+    catch(e){P.errs[i]=String(e&&e.message||e);return false}}
+  function flush(quiet){if(P.wait>0){P.wait=0;run(P.script.steps[P.i],P.i,!!quiet)}}   /* 待っていた手順を、いま適用する */
+  function rewind(){P.errs={};P.i=-1;P.wait=0;if(P.host.reset)P.host.reset()}
+  function advance(n,quiet){   /* acc に触れない。n まで（今より先）を順に適用 */
+    if(!P.began){P.began=true;if(P.host.begin)P.host.begin()}
+    flush(true);
+    for(let k=P.i+1;k<=n;k++){run(P.script.steps[k],k,quiet||k<n);P.i=k}
+    if(P.host.sync)P.host.sync(P.script.steps[P.i],P.i)}
+  P.goto=function(n,o2){
+    n=clamp(n|0,-1,N()-1);if(n<P.i)rewind();
+    if(n>P.i)advance(n,!!(o2&&o2.quiet));else if(n===P.i){flush(false);if(P.host.sync)P.host.sync(P.script.steps[P.i],P.i)}
+    P.acc=0;emit('step')};
+  /* 1手順だけ進める（lead があれば、ブロックが置かれる動きの間は舞台を変えず、終わった時に適用する） */
+  P.fwd=function(){
+    const n=P.i+1;if(n>=N())return false;
+    if(!(P.lead>0)){advance(n,false);return true}
+    if(!P.began){P.began=true;if(P.host.begin)P.host.begin()}
+    flush(false);   /* 前の手順がまだ待っていたら、ふつうに（見せる動きも含めて）適用してから次へ */
+    P.i=n;P.wait=P.leadMs=Math.min(P.lead,.6*P.hold(n));
+    if(P.wait<=0){P.wait=0;run(P.script.steps[n],n,false);if(P.host.sync)P.host.sync(P.script.steps[n],n);return true}
+    emit('pre');return true};
+  P.next=function(){if(P.i<N()-1){if(P.lead>0&&P.i>=0){P.acc=0;P.fwd();emit('step')}else P.goto(P.i+1)}else{P.playing=false;emit('play');emit('end')}};
+  P.prev=function(){P.goto(P.i-1)};P.first=function(){P.goto(-1)};P.last=function(){P.goto(N()-1)};
+  P.play=function(){if(!N())return;if(P.i>=N()-1)P.goto(-1);P.playing=true;P.acc=0;emit('play');if(P.i<0)P.goto(0)};
+  P.pause=function(){P.playing=false;emit('play')};
+  P.toggle=function(){P.playing?P.pause():P.play()};
+  P.setSpeed=function(x){P.speed=x>0?+x:1;emit('state')};
+  P.setMode=function(m){P.mode=['auto','recorded','manual'].includes(m)?m:'auto';P.acc=0;emit('state')};
+  P.hold=function(i){const s=P.script.steps[i];if(!s)return 0;
+    if(P.mode==='recorded'){const nx=P.script.steps[i+1];if(nx&&nx.t!==undefined&&s.t!==undefined)return clamp(nx.t-s.t,300,P.maxGap)}
+    return s.d||1400};
+  P.tick=function(dt){
+    if(!(dt>0))return;
+    if(P.wait>0){P.wait-=dt*P.speed;if(P.wait<=0){const i=P.i;P.wait=0;run(P.script.steps[i],i,false);if(P.host.sync)P.host.sync(P.script.steps[i],i);emit('step')}}
+    if(!P.playing||P.mode==='manual')return;
+    P.acc+=dt*P.speed;let g=0;
+    while(P.playing&&g++<256){const h=P.hold(P.i);if(P.acc<h)break;P.acc-=h;
+      if(P.i>=N()-1){P.playing=false;P.acc=0;emit('play');emit('end');break}
+      const keep=P.acc;P.fwd();P.acc=keep;if(!(P.wait>0))emit('step')}};
+  P.info=()=>({i:P.i,n:N(),playing:P.playing,speed:P.speed,mode:P.mode,step:P.script.steps[P.i]||null,err:P.errs[P.i]||'',flying:P.wait>0,lead:P.leadMs});
+  return P}
+/* 全体の長さ（ms）。倍率と方式を指定 */
+function totalMs(script,speed,mode){let t=0;const st=script.steps;
+  for(let i=0;i<st.length;i++){let h=st[i].d||1400;if(mode==='recorded'){const nx=st[i+1];if(nx&&nx.t!==undefined&&st[i].t!==undefined)h=clamp(nx.t-st[i].t,300,1500)}t+=h}
+  return t/(speed>0?speed:1)}
+
+/* ---------- 検査・書き出し用：PHAPIだけで組み立てるホスト ---------- */
+function pureHost(){const H={src:null,errors:[],log:[],
+  reset(){H.src=null;H.errors=[]},
+  phys(op){const D=PHAPI.OPS[op.op];if(!D)return{ok:false,errors:['未知の命令「'+op.op+'」']};if(D.kind!=='scenario')return{ok:true};
+    const r=PHAPI.apply(D.make?null:H.src,op);if(r.src)H.src=r.src;H.errors=r.errors;H.log.push({op:op.op,ok:r.ok,errors:r.errors});return{ok:true}}};
+  return H}
+function replay(script,n){const H=pureHost(),P=player(script,H);P.goto(n===undefined?script.steps.length-1:n,{quiet:true});return H.src}
+
+/* ---------- 編集（手順書を直す。元は書き換えず、新しい手順書を返す）---------- */
+const edit={
+  say:(sc,i,t)=>{const r=clone(sc);if(r.steps[i])r.steps[i].say=String(t);return r},
+  remove:(sc,i)=>{const r=clone(sc);r.steps.splice(i,1);return r},
+  move:(sc,i,j)=>{const r=clone(sc);if(!r.steps[i]||j<0||j>=r.steps.length)return r;const[x]=r.steps.splice(i,1);r.steps.splice(j,0,x);return r},
+  slice:(sc,a,b)=>{const r=clone(sc);r.steps=r.steps.slice(a,b+1);return r}};
+
+/* ---------- 記録 ---------- */
+/* add(step)：時刻を付けて溜める。step.co（まとめる印）が前の手順と同じで、間が coMs 以内なら、前の手順を置き換える（スライダーを動かし続けた時に1手順にする） */
+function recorder(o){
+  o=o||{};const now=o.now||(()=>Date.now()),R={steps:[],t0:now(),coMs:o.coMs||700};
+  R.add=function(step){
+    const t=Math.round(now()-R.t0),L=R.steps[R.steps.length-1];step.t=t;
+    if(L&&step.co&&L.co===step.co&&t-(L.t2!==undefined?L.t2:L.t)<=R.coMs){const t0=L.t;Object.assign(L,step);L.t=t0;L.t2=t;return L}
+    R.steps.push(step);return step};
+  R.finish=function(title){
+    const st=R.steps.map(s=>{const c=clone(s);delete c.co;delete c.t2;return c});
+    for(let i=0;i<st.length;i++){const nx=st[i+1];st[i].d=clamp(nx?nx.t-st[i].t:1500,500,3000)}
+    return{v:V,id:'rec-'+R.t0,title:title||'記録した操作',about:'操作を記録した手順書（再生すると、いまの作品に同じ操作が行われます。「戻す」で元に戻せます）',steps:st}};
+  return R}
+
+const busy=false;
+return{V,CAT,OPCAT,SPEEDS,COLS,busy,drv,layout,fv,shapeText,fields,stepOf,opsOf,fromScenario,norm,parse,stringify,toText,stats,player,totalMs,pureHost,replay,edit,recorder}
 })();
 
 /* 入力: ドラッグ・2本指ズーム・空き地ドラッグで画面移動 */
@@ -3426,9 +3851,8 @@ function pdown(e){
   }
   if(pickFor){pickAt(q);return}
   if(handMode){if(!vLock){pid=e.pointerId;pan={x:q.x-Z.x,y:q.y-Z.y}}return}
-  if(!sel){pid=e.pointerId;if(!rulerOn&&tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、シナリオの物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
+  if(!sel){pid=e.pointerId;if(tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、シナリオの物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
   pushUndo();pid=e.pointerId;const p=wp(q);
-  if(rulerOn){drawing=true;rulerPt={x0:p.x,y0:p.y,x1:p.x,y1:p.y};return}
   if(paint){if(blocked(sel))return;drawing=true;lp=null;stroke(q);return}
   if(adjMode){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;adjBrushAt(q,pl);return}
   if(pbox){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;boxStart=loc(pl,q);boxEnd={...boxStart};return}
@@ -3440,7 +3864,7 @@ function pdown(e){
   if(scnPtrDown(p,e))return;   /* 物理が開いている：実行中は物をつかむ／つつく、止まっている時は物体を置き直す（台帳Z-185。53-phys-run.js） */
   const h=hit(p);
   if(h){
-    tgt=h;editing=true;setSel(h);dragOff=null;thist=[];tgtBak={a:h,fx:h.fx,fy:h.fy,ox:h.ox,oy:h.oy};
+    tgt=h;editing=true;setSel(h);dragOff=null;tgtBak={a:h,fx:h.fx,fy:h.fy,ox:h.ox,oy:h.oy};
     const par=h.att&&byId(h.to);
     if(par&&par.F){
       const qq=par.F.inverse().transformPoint(new DOMPoint((p.x*Z.s+Z.x)*dpr,(p.y*Z.s+Z.y)*dpr)),u=S0*par.size;
@@ -3457,12 +3881,11 @@ cv.addEventListener('pointermove',e=>{
     const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},s=cl(pz0.Z.s*d/pz0.d,.5,6),w0={x:(pz0.m.x-pz0.Z.x)/pz0.Z.s,y:(pz0.m.y-pz0.Z.y)/pz0.Z.s};
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
-  if(rulerOn&&rulerPt){const p=wp(q);rulerPt.x1=p.x;rulerPt.y1=p.y;return}
-  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p);if(tgt.phys){thist.push({t:performance.now(),x:p.x,y:p.y});if(thist.length>6)thist.shift()}}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
+  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p)}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
 });
-let thist=[],firstDownTs=0;
+let firstDownTs=0;
 const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)pz0=null;
-  if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){thist=[];up()}}}
+  if(!ptrs.size){try{endAll()}finally{if(!ptrs.size){up()}}}
 };
 function endAll(){
   scnPtrEnd();  /* つかんでいた物を離す／つつく／物体の置き直しを確定（53-phys-run.js） */
@@ -3470,18 +3893,9 @@ function endAll(){
   rtEnd(drawing);  /* 修整：スタンプはここで1回写す（2本指などで取り消された時は写さない） */
   paCommit();  /* ペンの補正：溜めた点列を、補正した線として一度に描く（台帳Z-108。補正オフなら何もしない） */
   if(strokeActor){strokeActor.wd=true;adjStrokeEnd(strokeActor);strokeActor=null}
-  if(rulerOn&&rulerPt){
-    const px=Math.hypot(rulerPt.x1-rulerPt.x0,rulerPt.y1-rulerPt.y0);
-    if(px>4){pendingRulerPx=px;$('pRulerSet').style.display='flex'}
-    rulerPt=null;drawing=false;pid=-1;return;
-  }
-  if(tgt&&tgt.phys&&tgt.phys.on&&!tgt.phys.fixed&&thist.length>=2){
-    const a=thist[0],b=thist[thist.length-1],dt=(b.t-a.t)/1000;
-    if(dt>0.01){tgt.phys.vx=cl((b.x-a.x)/dt,-2000,2000);tgt.phys.vy=cl((b.y-a.y)/dt,-2000,2000)}
-  }
   if(tgt)scnPlaceActor(tgt);  /* 物理につないだ絵を置き直した：初期位置にする */
   if(pbox&&drawing&&pl&&boxStart&&boxEnd){rectSel(pl,boxStart,boxEnd);flashUntil=performance.now()+500}
-  thist=[];up();
+  up();
 }
 addEventListener('pointerup',end);addEventListener('pointercancel',end);
 addEventListener('blur',()=>{ptrs.clear();ptyp.clear();pz0=null;up()});
@@ -3567,7 +3981,7 @@ function setSel(l){
   $('em').style.display='none';$('emTgl').style.display=l.sp?'none':'';
   const ex=$('ex');ex.innerHTML='';
   ex.appendChild(tog('向きを反転',0,()=>{l.face*=-1}));
-  physUi();
+  scnUi();
   const s=document.createElement('select');s.setAttribute('aria-label','対象');
   s.innerHTML='<option value="">対象なし</option>'+AC.filter(a=>a!==l).map(o=>`<option value="${o.id}"${l.toType!=='layer'&&l.to===o.id?' selected':''}>${o.name}</option>`).join('')+LAYERS.map(y=>`<option value="L${y.id}"${l.toType==='layer'&&l.to===y.id?' selected':''}>🗂 ${y.name}</option>`).join('');
   s.onchange=()=>{if(l.att)detach(l);const v=s.value;if(v[0]==='L'){l.to=+v.slice(1);l.toType='layer'}else{l.to=+v||null;l.toType='actor'}if(!l.to)l.maskTo=false;setSel(l)};
@@ -4836,8 +5250,8 @@ function pushUndo(){const sn=snap();if(US.length&&US[US.length-1].sig===sn.sig)r
 function undo(){if(!US.length)return;const sn=snap();sn._uh=++undoSeq;RS.push(sn);restore(US.pop());trimHistory()}
 function redo(){if(!RS.length)return;const sn=snap();sn._uh=++undoSeq;US.push(sn);restore(RS.pop());trimHistory()}
 $('undo').onclick=undo;$('un2').onclick=undo;$('redo').onclick=redo;$('rd2').onclick=redo;
-$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#grip2,#tpz,#pnud'))pushUndo()},true);
-$('tp').addEventListener('focusin',e=>{if(e.target.type==='number'||e.target.type==='text')pushUndo()});
+$('tp').addEventListener('pointerdown',e=>{if(!e.target.closest('#tabs,#grip,#grip2,#tpz,#pnud,#tlp'))pushUndo()},true);
+$('tp').addEventListener('focusin',e=>{if(e.target.closest('#tlp'))return;if(e.target.type==='number'||e.target.type==='text')pushUndo()});
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!/^(text|number)$/.test(document.activeElement.type||'')){if(e.key==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(e.key==='y'){e.preventDefault();redo()}}});
 
 /* ===== 作品の保存・読み込み ===== */
@@ -4887,6 +5301,7 @@ async function loadProj(txt){
   /* キャンバスの大きさ（台帳Z-98）。旧データには無い＝自動 */
   DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit(true);canvasUi();
   scnLoad(d.SCN);   /* 物理シナリオ（無い作品では空にする） */
+  try{artMigrateOld()}catch(e){}   /* 旧・簡易の物理（絵ごとの phys）を、新しい物理の物体に置き換える（台帳Z-197） */
   setSel(AC[d.sel]||AC[0]||null);
   if(PROJ.v)note('新しい版（v'+PROJ.v+'）で保存された作品です。このアプリが知らない項目は、そのまま残して保存します。読めない部分があるかもしれないので、上書きは避け、自動保存は別の入れ物に入ります',9000);
 }
@@ -4898,7 +5313,7 @@ $('sv').onclick=saveProj;
 $('pf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadProj(r.result).catch(()=>{$('rtx').textContent='読み込めませんでした'});r.readAsText(f)};
 $('rs').onclick=()=>{try{loadProj(localStorage.getItem('am_auto'))}catch(_){}};
 addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnValue=''}});
-function autosave(){if(!dirtyProj)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
+function autosave(){if(!dirtyProj||TL.busy)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
 function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document)}
 
@@ -5117,7 +5532,7 @@ function makeClip(l,maskFn,cut){
   let fx0=null,fy0=null;
   if(l.M){const t=l.M.transformPoint(new DOMPoint(ux*S0,uy*S0));fx0=((t.x/dpr-Z.x)/Z.s)/W;fy0=((t.y/dpr-Z.y)/Z.s)/H}
   return{c:p,W:pw0,H:ph0,size:l.size,src:l.name,sx:l.fx,sy:l.fy,ux,uy,fx0,fy0,cut:!!cut,lid:l.layerId,rot:l.rot||0,face:l.face||1,wxk,
-    inh:ptInh,ch:ptInh&&l.ch?JSON.parse(JSON.stringify(l.ch)):null,phys:ptInh&&l.phys?JSON.parse(JSON.stringify(l.phys)):null,pv:l.pv||0,rr:l.rr||0};
+    inh:ptInh,ch:ptInh&&l.ch?JSON.parse(JSON.stringify(l.ch)):null,pv:l.pv||0,rr:l.rr||0};
 }
 function takePart(cut,o){
   o=o||{};
@@ -5147,7 +5562,7 @@ function clipToObj(k,o){
   const R2=Math.max(k.W||512,k.H||512),id=++uid,exact=o.exact||(o.off?false:ptPos==='orig'||(ptPos==='auto'&&!!k.cut)),dd=exact?0:.04;
   const fx=k.fx0!=null?k.fx0+dd:k.sx+k.ux*S0/W+dd,fy=k.fy0!=null?k.fy0+dd:k.sy+k.uy*S0/H+dd;
   const a={id,sp:'p',name:o.name||'切り抜き'+id,img:k.c,fx,fy,size:Math.max(.04,k.size*(k.wxk||1)*Math.max(k.c.width,k.c.height)/R2),pv:0,face:k.face||1,rot:k.rot||0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false};
-  if(k.inh&&k.ch){a.ch=JSON.parse(JSON.stringify(k.ch));a.pv=k.pv||0;a.rr=k.rr||0;if(k.phys)a.phys=JSON.parse(JSON.stringify(k.phys))}  /* 動き・物理を引き継ぐ（台帳Z-91②） */
+  if(k.inh&&k.ch){a.ch=JSON.parse(JSON.stringify(k.ch));a.pv=k.pv||0;a.rr=k.rr||0}  /* 動きを引き継ぐ（台帳Z-91②）。旧・簡易の物理の設定は、物理を統合した（Z-197）ので引き継がない */
   {const ly=k.lid!=null&&LAYERS.find(y=>y.id===k.lid);if(ly&&ly.visible&&!ly.locked)a.layerId=k.lid}  /* 元と同じレイヤーに置く（非表示・ロック中のレイヤーには置かない） */
   return a;
 }
@@ -5687,7 +6102,6 @@ async function cmCommit(){
   const ca=adjActive(l),cf=lfActive(l);
   if(!ca&&!cf){note('確定する色調整・質感がありません');return}
   if(cmTooBig(l,cf))return;
-  if(cmAsLayer&&l.phys&&l.phys.on){note('物理が有効なオブジェクトは、レイヤーとして保存できません（物理を切るか、通常の確定にしてください）');return}
   cmBusy=true;note('確定しています…');await cmFrame();
   try{
     const asLy=cmAsLayer,cov=cmCover(l,[...(ca?['adjm']:[]),...(cf?['lfm']:[])]);
@@ -5732,7 +6146,6 @@ async function cmMatch(){
   const l=sel;if(!l||cmBusy||blocked(l))return;
   const r=byId(+$('cmRef').value);if(!r||r===l){note('先に「合わせる先」のオブジェクトを選んでください');return}
   if(cmTooBig(l,lfActive(l)))return;
-  if(cmAsLayer&&l.phys&&l.phys.on){note('物理が有効なオブジェクトは、レイヤーとして保存できません（物理を切るか、通常の確定にしてください）');return}
   const rs=cmStats(r),ts=cmStats(l);
   if(!rs||!ts){note(rs?'このオブジェクトの範囲に絵がありません':'合わせる先の範囲に絵がありません');return}
   cmBusy=true;note('色を合わせています…');await cmFrame();
@@ -5838,7 +6251,7 @@ async function mgMerge(layers,dest){
   mgBusy=true;note('統合しています…');await cmFrame();
   try{
     const r=mgRender(mem);
-    const motion=mem.filter(a=>(a.phys&&a.phys.on)||K.some(([k])=>a.ch&&a.ch[k]&&a.ch[k].a)).length;
+    const motion=mem.filter(a=>scnRoleOf(a)||K.some(([k])=>a.ch&&a.ch[k]&&a.ch[k].a)).length;
     const outer=AC.filter(x=>!mem.includes(x)&&x.maskTo&&mem.some(m=>m.id===x.to&&x.toType!=='layer')).length;   /* 統合する物をマスク対象にしていた、外のオブジェクト */
     pushUndo();
     const top=Math.max(...mem.map(a=>AC.indexOf(a)));
@@ -6840,12 +7253,337 @@ document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement
 if(window.ResizeObserver)new ResizeObserver(()=>fit()).observe($('wrap'));
 addEventListener('resize',()=>{fit();tpClamp();if(UIS.tpf)tpPos()});
 
-setFrame('b',true);tpApply();pzSync();fit();canvasUi();add();add();setSel(AC[0]);setTab('pl');initExtra();armTips(document);rulerTxUpdate();
+setFrame('b',true);tpApply();pzSync();fit();canvasUi();add();add();setSel(AC[0]);setTab('pl');initExtra();armTips(document);
 requestAnimationFrame(t=>{last=t;loop(t)});
 
 /* ロック中レイヤーの編集ボタンを止める（B-2） */
 ['pcut','pcopy','pdup','wbake','bbake','bfill','wc','wu'].forEach(id=>{const b=$(id),f=b&&b.onclick;if(f)b.onclick=function(...a){if(blocked(sel))return;return f.apply(this,a)}});
 layUi();
+/* ===== タイムラプスのアプリ側（台帳Z-192。核は 59-timelapse.js の TL）=====
+   ・枠（#tlp。操作窓の先頭）：手順書を選ぶ／記録する → 再生（⏮◀▶▶|⏭・速さ・進め方・位置のバー・字幕・操作の手順・ブロックの列・書き出し・字幕を直す）。
+   ・再生の相手（ホスト tlHost）：物理の命令は PHAPI.apply（純粋）→ scnSetSource({noUndo})で画面に出す（検証に通らない途中の姿は空の舞台）。画面の操作は、実際の部品を押す・動かす。
+   ・非破壊：再生を始める時の姿を snap() で預かり、閉じると restore() で戻す（「この状態で続ける」なら、預かった姿をUndoに積んで残す）。再生中は TL.busy＝自動保存しない・記録しない。
+     snap() の中の絵のオブジェクト（s.p）は restore() が実物として使ってしまうので、何度も戻す時は複製を渡す（tlCloneSnap）。
+   ・記録：画面のボタン・バー・選ぶ・チェック・文字（id か data-*／aria-label で場所を決める）、PHAPI.exec で実行した命令、キャンバスのなぞり（見せるだけ＝gesture）。
+   ・UIの一時状態（TLA）は、作品・Undo・保存に入れない。 */
+const TLA={hid:null,sc:null,P:null,saved:null,base:null,dirty0:false,tab0:'pl',src:null,rec:null,recSnap:null,raf:0,t0:0,hiT:0,fgT:0,stroke:null,untap:null,hasPhys:false};
+
+/* ---------- 預かった姿を、何度でも戻せるようにする ---------- */
+function tlCloneSnap(sn){
+  return Object.assign({},sn,{acs:sn.acs.map(x=>Object.assign({},x,{p:JSON.parse(JSON.stringify(x.p)),bite:x.bite?cloneC(x.bite):x.bite})),B:Object.assign({},sn.B),L:sn.L?sn.L.map(y=>Object.assign({},y)):sn.L,D:sn.D?Object.assign({},sn.D):sn.D})}
+function tlRestore(sn){try{restore(tlCloneSnap(sn))}catch(e){note('タイムラプス：元の姿に戻せませんでした（'+(e&&e.message||e)+'）',6000)}}
+const tlEl=id=>document.getElementById(id);
+const tlTab=()=>{const b=document.querySelector('#tabs [data-t].on');return b?b.dataset.t:'pl'};
+
+/* ---------- 光らせる・指（見せるだけ） ---------- */
+function tlFlash(el){
+  if(!el)return;try{el.scrollIntoView({block:'nearest',inline:'nearest'})}catch(_){}
+  document.querySelectorAll('.tlhi').forEach(e=>e.classList.remove('tlhi'));el.classList.add('tlhi');clearTimeout(TLA.hiT);TLA.hiT=setTimeout(()=>el.classList.remove('tlhi'),1500)}
+function tlFinger(s){   /* キャンバスをなぞる手順：指の印が、記録した順に動く（作品には反映しない） */
+  const p=s.path;if(!Array.isArray(p)||!p.length)return;
+  let fg=tlEl('tlFg');if(!fg){fg=document.createElement('div');fg.id='tlFg';tlEl('wrap').append(fg)}
+  const w=tlEl('wrap'),cr=cv.getBoundingClientRect(),wr=w.getBoundingClientRect(),T=Math.max(300,Math.min(2500,p[p.length-1][2]||600));
+  const at=t=>{let i=0;while(i<p.length-1&&p[i+1][2]<=t)i++;const a=p[i],b=p[Math.min(i+1,p.length-1)],k=b[2]>a[2]?(t-a[2])/(b[2]-a[2]):0;return[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k]};
+  clearInterval(TLA.fgT);const t0=performance.now();fg.hidden=false;
+  const put=t=>{const q=at(t);fg.style.left=(cr.left-wr.left+q[0]*cr.width)+'px';fg.style.top=(cr.top-wr.top+q[1]*cr.height)+'px'};put(0);
+  TLA.fgT=setInterval(()=>{const t=(performance.now()-t0)*(TLA.P?TLA.P.speed:1);if(t>=T){clearInterval(TLA.fgT);setTimeout(()=>{fg.hidden=true},250);return}put(t*(p[p.length-1][2]/T))},30)}
+
+/* ---------- 再生の相手（ホスト） ---------- */
+/* 「シナリオをブロックで組み立てる」手順書（fromScenario が作る。src.kind==='scenario'）は、空の舞台から始める（見る前のシナリオは、閉じると戻る） */
+function tlEmpty(){
+  if(!(TLA.sc&&TLA.sc.src&&TLA.sc.src.kind==='scenario'))return;
+  if(SCN.src)scnClose({noUndo:true});
+  /* 絵のあるレイヤーだけ隠す（空のレイヤーまで隠すと、再生中に足した物体が「非表示のレイヤー」に入り、消せなくなる） */
+  const used=new Set(AC.map(a=>layOf(a).id));
+  TLA.hid=LAYERS.filter(y=>y.visible!==false&&used.has(y.id)).map(y=>y.id);LAYERS.forEach(y=>{if(TLA.hid.includes(y.id))y.visible=false})}
+const tlHost={
+  begin(){if(TLA.base!==TLA.saved)tlRestore(TLA.base);tlEmpty();tlStage(true)},
+  reset(){TLA.src=null;tlRestore(TLA.base);tlEmpty();tlStage(true)},
+  phys(op,quiet){
+    const D=PHAPI.OPS[op.op];if(!D)return{ok:false,errors:['未知の命令「'+op.op+'」']};
+    if(D.kind==='scenario'){
+      /* 土台：いま開いているシナリオ（画面の操作で開いたものを含む）。無い時（物体がまだ無い途中の姿）だけ、手順の中で持っている途中のシナリオ */
+      const r=PHAPI.apply(D.make?null:(SCN.src?scnClone(SCN.src):TLA.src),op);if(!r.src)return{ok:false,errors:r.errors};
+      TLA.src=r.src;RUN.playing=false;
+      if(!r.errors.length){const o=scnSetSource(r.src,{noUndo:true});if(!o.ok)return{ok:false,errors:o.errors};if(op.op==='addBody'&&SCN.auto)scnAutoActors()}
+      else if(SCN.src)scnClose({noUndo:true});   /* 検証に通らない途中の姿（物体がまだ無い）は、空の舞台 */
+      if(!quiet)tlStage();return{ok:true}}
+    switch(op.op){
+      case 'play':if(!SCN.src)return{ok:false,errors:['まだシナリオができていません']};if(!quiet){RUN.playing=false;scnPlay();tlStage()}return{ok:true};
+      case 'result':if(!SCN.src)return{ok:false,errors:['まだシナリオができていません']};if(!quiet){tlStage();scnCheckNow()}return{ok:true};
+      case 'open':{const s=typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.find(x=>x.id===op.id);if(!s)return{ok:false,errors:['サンプル「'+op.id+'」がありません']};TLA.src=scnClone(s);const o=scnSetSource(s,{noUndo:true});return{ok:!!o.ok,errors:o.errors||[]}}
+      case 'close':TLA.src=null;if(SCN.src)scnClose({noUndo:true});return{ok:true};
+      default:return PHAPI.exec(op)}},   /* pause・reset・seek・step・speed・read・sweep（TL.busy の間は記録に知らせない） */
+  ui(s,quiet){
+    const el=s.sel&&document.querySelector(s.sel);
+    if(!el)return{ok:false,errors:['画面に「'+(s.sel||'')+'」が見つかりません（この画面では再現できません）']};
+    if(el.disabled)return{ok:false,errors:['「'+(s.sel||'')+'」は、いまは使えません']};
+    const fire=t=>el.dispatchEvent(new Event(t,{bubbles:true}));
+    switch(s.do){
+      case 'click':el.click();break;
+      case 'check':if(el.checked!==!!s.v)el.click();break;
+      case 'set':if(el.type==='checkbox'||el.type==='radio'){if(el.checked!==!!s.v)el.click()}else{el.value=s.v;fire('input');fire('change')}break;
+      default:return{ok:false,errors:['未知の操作「'+s.do+'」']}}
+    if(!quiet)tlFlash(el);return{ok:true}},
+  gesture(s){tlFinger(s)},
+  sync(){tlRender()}};
+/* 物理の手順がある手順書では、物理タブを前に出す（再生中の舞台はキャンバス） */
+function tlStage(force){if(TLA.hasPhys&&(force||tlTab()!=='ph'))setTab('ph')}
+
+/* ---------- 枠の出し入れ ---------- */
+function tlShow(mode){   /* mode: pick（手順書を選ぶ）／rec（記録中）／play */
+  tlEl('tlp').hidden=false;tlEl('tlPick').hidden=mode!=='pick';tlEl('tlRc').hidden=mode!=='rec';tlEl('tlPl').hidden=mode!=='play';
+  tlEl('tlTitle').textContent=mode==='play'?'🎞 '+(TLA.sc&&TLA.sc.title||'タイムラプス'):mode==='rec'?'🎞 記録中':'🎞 タイムラプス';
+  tlEl('tlX').textContent='✕ 閉じる'}
+function tlOpen(){
+  if(TLA.P||TLA.rec){tlEl('tlp').hidden=false;return}
+  tlEl('tlPickErr').textContent='';tlShow('pick');
+  try{tlEl('tlp').scrollIntoView({block:'nearest'})}catch(_){}}
+function tlStart(script,o){
+  o=o||{};if(TLA.P)tlStop(false);
+  const N=TL.norm(script);if(!N.ok){tlEl('tlPickErr').textContent='⚠ '+N.errors.join(' / ');tlShow('pick');return false}
+  TLA.sc=N.script;TLA.saved=snap();TLA.base=o.base||TLA.saved;TLA.dirty0=dirtyProj;TLA.tab0=tlTab();TLA.src=null;
+  TLA.hasPhys=TLA.sc.steps.some(s=>s.k==='phys');TL.busy=true;
+  TLA.P=TL.player(TLA.sc,tlHost,{speed:+tlEl('tlSpd').value||1,mode:tlEl('tlMode').value,lead:tlbReduce()?0:TLB_LEAD,cb:{pre:tlPre,step:tlRender,state:tlRender,play:tlPlayUi,end:tlRender}});
+  tlBuild();tlShow('play');
+  if(N.warns.length)tlEl('tlErr').textContent=N.warns.join(' / ');
+  tlRender();if(o.auto!==false)TLA.P.play();return true}
+/* 閉じる。keep＝この状態のまま続ける（預かった姿をUndoに積む）。そうでなければ見る前の姿へ戻す */
+function tlStop(keep){
+  const P=TLA.P;
+  if(P){P.pause();tlbCancel();TLA.P=null;TL.busy=false;cancelAnimationFrame(TLA.raf);TLA.raf=0;clearInterval(TLA.fgT);const fg=tlEl('tlFg');if(fg)fg.hidden=true;
+    document.querySelectorAll('.tlhi').forEach(e=>e.classList.remove('tlhi'));
+    if(keep){if(TLA.hid)LAYERS.forEach(y=>{if(TLA.hid.includes(y.id))y.visible=true});TLA.saved._uh=++undoSeq;US.push(TLA.saved);RS.length=0;trimHistory();dirtyProj=true;note('この状態で続けます（「戻す」で、見る前に戻せます）',4000)}
+    else{tlRestore(TLA.saved);dirtyProj=TLA.dirty0;if(tlTab()!==TLA.tab0)setTab(TLA.tab0)}
+    TLA.saved=TLA.base=null;TLA.sc=null;TLA.src=null;TLA.hid=null}
+  tlEl('tlp').hidden=true}
+function tlClose(keep){if(TLA.rec)tlRecStop(true);tlStop(keep);tlEl('tlp').hidden=true}
+
+/* ---------- 表示 ---------- */
+function tlBuild(){tlbBuild();tlEl('tlSk').max=TLA.sc.steps.length}   /* ブロックの台は 242-timelapse-board.js */
+function tlRender(){
+  const P=TLA.P;if(!P)return;const I=P.info(),N=I.n,st=I.step;
+  tlEl('tlPos').textContent=I.i<0?'はじめ（全'+N+'）':(I.i+1)+' / '+N;
+  const sk=tlEl('tlSk');sk.max=N;if(document.activeElement!==sk)sk.value=I.i+1;
+  tlEl('tlCap').textContent=st?(st.say||''):'▶ 再生 を押すと、はじめから見られます（全'+N+'手順）';
+  tlEl('tlErr').textContent=I.err?'⚠ '+I.err:'';
+  const ol=tlEl('tlHow');ol.textContent='';
+  if(st)(st.how||[]).forEach(h=>{const li=document.createElement('li');li.textContent=h;ol.append(li)});
+  tlEl('tlHowBox').hidden=!(st&&(st.how||[]).length);
+  tlbSet(I.i);if(I.i!==TLB.cardI)tlbCard(st||null,false);   /* 置いている最中の手順の入力欄は、置かれたあと1つずつ埋まる（tlbFly）。ここでは作り直さない */
+  if(document.activeElement!==tlEl('tlEd'))tlEl('tlEd').value=st?(st.say||''):'';
+  tlPlayUi()}
+/* ブロックを置く動きの長さ（×1の時のms。置かれた瞬間に舞台が変わる） */
+const TLB_LEAD=900;
+function tlPre(){tlRender();if(TLA.P)tlbFly(TLA.P.i)}
+function tlPlayUi(){
+  const P=TLA.P;if(!P)return;const I=P.info();
+  tlEl('tlPlay').textContent=I.playing?'⏸ 一時停止':(I.i>=I.n-1&&I.n?'↺ もう一度':'▶ 再生');
+  if((I.playing||I.flying)&&!TLA.raf){TLA.t0=performance.now();TLA.raf=requestAnimationFrame(tlLoop)}}
+function tlLoop(t){
+  TLA.raf=0;const P=TLA.P;if(!P||!(P.playing||P.wait>0))return;
+  const dt=Math.min(250,Math.max(0,t-TLA.t0));TLA.t0=t;P.tick(dt);
+  if(TLA.P&&(TLA.P.playing||TLA.P.wait>0))TLA.raf=requestAnimationFrame(tlLoop)}
+
+/* ---------- 枠の操作 ---------- */
+(function(){
+  const E=tlEl,sel=E('tlSpd');
+  TL.SPEEDS.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent='×'+v;if(v===1)o.selected=true;sel.append(o)});
+  const src=E('tlSrc');(typeof PHYS_SAMPLES!=='undefined'?PHYS_SAMPLES:[]).forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent='作り方：'+(s.title||s.id);src.append(o)});
+  src.onchange=()=>{const s=PHYS_SAMPLES.find(x=>x.id===src.value);src.value='';if(s)tlStart(TL.fromScenario(s))};
+  const cur=()=>{if(!SCN.src){E('tlPickErr').textContent='物理シナリオが開いていません（物理タブで、サンプルを開くか「＋プロトタイプ」を押してください）';tlOpen();return}tlStart(TL.fromScenario(JSON.parse(scnJson())))};
+  E('tlCur').onclick=cur;E('scHow').onclick=()=>{if(TLA.rec){note('記録中です。先に「■ 止める」を押してください');return}cur()};
+  E('mTl').onclick=tlOpen;E('tlX').onclick=()=>tlClose(false);E('tlKeep').onclick=()=>tlClose(true);
+  E('tlMin').onclick=()=>{const m=E('tlp').classList.toggle('min');E('tlMin').setAttribute('aria-pressed',m);E('tlMin').textContent=m?'▸':'▾'};
+  E('tlLd').onclick=()=>{E('tlLdBox').hidden=!E('tlLdBox').hidden};
+  E('tlLdGo').onclick=()=>{const r=TL.parse(E('tlJson').value);if(!r.ok){E('tlPickErr').textContent='⚠ '+r.errors.join(' / ');return}E('tlPickErr').textContent='';E('tlLdBox').hidden=true;tlStart(r.script)};
+  E('tlFirst').onclick=()=>{TLA.P&&(TLA.P.pause(),TLA.P.first())};E('tlPrev').onclick=()=>{TLA.P&&(TLA.P.pause(),TLA.P.prev())};
+  E('tlNext').onclick=()=>{TLA.P&&(TLA.P.pause(),TLA.P.next())};E('tlLast').onclick=()=>{TLA.P&&(TLA.P.pause(),TLA.P.last())};
+  E('tlPlay').onclick=()=>TLA.P&&TLA.P.toggle();
+  E('tlSk').oninput=e=>{if(!TLA.P)return;TLA.P.pause();TLA.P.goto(+e.target.value-1)};
+  sel.onchange=()=>TLA.P&&TLA.P.setSpeed(+sel.value);E('tlMode').onchange=()=>TLA.P&&TLA.P.setMode(E('tlMode').value);
+  /* 書き出し・直す */
+  const out=(t,msg)=>{const o=E('tlOut');o.value=t;o.hidden=false;try{navigator.clipboard.writeText(t).then(()=>note(msg+'をコピーしました',3000),()=>{o.select();note('コピーできませんでした。枠の中を選んでコピーしてください')})}catch(_){o.select()}};
+  E('tlTxt').onclick=()=>TLA.sc&&out(TL.toText(TLA.sc),'操作手順書（文章）');
+  E('tlJs').onclick=()=>TLA.sc&&out(TL.stringify(TLA.sc),'手順書（JSON）');
+  const setSc=(sc,i)=>{TLA.sc=sc;TLA.P.script=sc;tlBuild();TLA.P.goto(Math.min(i,sc.steps.length-1))};
+  E('tlEd').onchange=()=>{const P=TLA.P;if(!P||P.i<0)return;const i=P.i;setSc(TL.edit.say(TLA.sc,i,E('tlEd').value),i)};
+  E('tlDel').onclick=()=>{const P=TLA.P;if(!P||P.i<0||TLA.sc.steps.length<2)return;const i=P.i;P.pause();setSc(TL.edit.remove(TLA.sc,i),Math.max(0,i-1))};
+  /* 記録 */
+  E('tlRec').onclick=tlRecStart;E('tlRcX').onclick=()=>tlRecStop(false);
+})();
+
+/* ---------- 記録 ---------- */
+const tlSkipSel='#tlp,#tlFg,#mTl';   /* 枠そのもの・指の印・タイムラプスを開く項目は、記録しない */
+function tlLabel(el){
+  if(!el)return'';
+  const row=el.closest&&el.closest('.row'),lab=row&&row.querySelector(':scope>.lab');
+  let t=(el.tagName==='BUTTON'?(el.textContent||'').trim():'')||(lab&&lab.textContent.trim())||el.getAttribute('aria-label')||el.title||el.id||'';
+  t=t.replace(/\s+/g,' ');return t.length>26?t.slice(0,24)+'…':t}
+function tlSelOf(el){   /* 場所を表すCSSセレクタ。見つからない・一意でないなら空（記録しない） */
+  const one=s=>{try{return document.querySelectorAll(s).length===1?s:''}catch(_){return''}};
+  if(el.id)return'#'+(window.CSS&&CSS.escape?CSS.escape(el.id):el.id);
+  if(el.dataset){if(el.dataset.t&&el.closest('#tabs'))return one('#tabs [data-t="'+el.dataset.t+'"]');if(el.dataset.fr)return one('#frSeg [data-fr="'+el.dataset.fr+'"]');if(el.dataset.tool)return one('#tp [data-tool="'+el.dataset.tool+'"]')}
+  const a=el.getAttribute('aria-label');return a?one(el.tagName.toLowerCase()+'[aria-label="'+a.replace(/"/g,'\\"')+'"]'):''}
+function tlUiStep(el,kind,v,co){
+  const sel=tlSelOf(el);if(!sel)return null;const name=tlLabel(el)||sel,tab=el.closest('#tabs')&&el.dataset.t;
+  let say,how;
+  if(kind==='click'){say=tab?'「'+name+'」タブを開く':'「'+name+'」を押す';how=[tab?'操作窓の上の並びから「'+name+'」タブをタップ':'「'+name+'」をタップ']}
+  else if(kind==='check'){say='「'+name+'」を'+(v?'オンにする':'オフにする');how=['「'+name+'」を'+(v?'オン':'オフ')+'にする']}
+  else if(el.tagName==='SELECT'){const op=el.options[el.selectedIndex],ot=op?op.textContent.trim():String(v);say='「'+name+'」で「'+ot+'」を選ぶ';how=['「'+name+'」をタップして開く','一覧から「'+ot+'」を選ぶ']}
+  else{say='「'+name+'」を '+v+' にする';how=el.type==='range'?['「'+name+'」のつまみを '+v+' の位置まで動かす（つまみを押したまま縦に離すと、細かく動かせる）']:['「'+name+'」の欄に '+v+' と入れる']}
+  const s={k:'ui',cat:'ui',do:kind==='click'?'click':kind,sel,say,how,blk:{c:'ui',t:say,f:[]}};if(kind!=='click')s.v=v;if(co)s.co=co;return s}
+function tlRecStart(){
+  if(TLA.P||TLA.rec){return}
+  TLA.rec=TL.recorder();TLA.recSnap=snap();
+  TLA.untap=PHAPI.tap(op=>{if(!TLA.rec||TL.busy)return;const st=TL.stepOf(op);TLA.rec.add(st);tlRecN()});
+  tlShow('rec');tlRecN()}
+function tlRecN(){const n=TLA.rec?TLA.rec.steps.length:0;tlEl('tlRcN').textContent='● 記録中（'+n+'手順）'}
+function tlRecStop(quiet){
+  const R=TLA.rec;if(!R)return;TLA.rec=null;if(TLA.untap){TLA.untap();TLA.untap=null}
+  const base=TLA.recSnap;TLA.recSnap=null;
+  if(!R.steps.length){if(!quiet){tlEl('tlPickErr').textContent='操作が記録されませんでした（ボタン・バー・選ぶ・物理の命令を触ってから止めてください）';tlShow('pick')}return}
+  if(quiet)return;
+  const d=new Date(),two=n=>String(n).padStart(2,'0'),sc=R.finish('記録した操作 '+two(d.getHours())+':'+two(d.getMinutes()));
+  tlStart(sc,{auto:false,base})}
+(function(){
+  const live=e=>TLA.rec&&!TL.busy&&e.isTrusted!==false&&!(e.target.closest&&e.target.closest(tlSkipSel));
+  document.addEventListener('click',e=>{
+    if(!live(e))return;const el=e.target.closest&&e.target.closest('button,summary,[data-t],[data-fr],[data-tool]');if(!el||/^(INPUT|SELECT|TEXTAREA|LABEL)$/.test(el.tagName))return;
+    const s=tlUiStep(el,'click');if(s){TLA.rec.add(s);tlRecN()}},true);
+  document.addEventListener('input',e=>{
+    if(!live(e))return;const el=e.target;if(!el||el.tagName!=='INPUT'||el.type!=='range')return;
+    const s=tlUiStep(el,'set',+el.value,'set:'+(el.id||''));if(s){TLA.rec.add(s);tlRecN()}},true);
+  document.addEventListener('change',e=>{
+    if(!live(e))return;const el=e.target;if(!el)return;let s=null;
+    if(el.tagName==='SELECT')s=tlUiStep(el,'set',el.value);
+    else if(el.tagName==='INPUT'&&(el.type==='checkbox'||el.type==='radio'))s=tlUiStep(el,'check',el.checked);
+    else if(el.tagName==='INPUT'&&(el.type==='text'||el.type==='number'))s=tlUiStep(el,'set',el.type==='number'&&el.value!==''&&isFinite(+el.value)?+el.value:el.value);
+    if(s){TLA.rec.add(s);tlRecN()}},true);
+  /* キャンバスのなぞり（見せるだけ。再生では作品に反映しない） */
+  cv.addEventListener('pointerdown',e=>{if(!TLA.rec||TL.busy||e.isTrusted===false)return;const r=cv.getBoundingClientRect();TLA.stroke={t0:performance.now(),r,p:[[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,0]],lt:0}},true);
+  cv.addEventListener('pointermove',e=>{const s=TLA.stroke;if(!s||!TLA.rec)return;const t=Math.round(performance.now()-s.t0);if(t-s.lt<40||s.p.length>=60)return;s.lt=t;s.p.push([+((e.clientX-s.r.left)/s.r.width).toFixed(4),+((e.clientY-s.r.top)/s.r.height).toFixed(4),t])},true);
+  const end=()=>{const s=TLA.stroke;TLA.stroke=null;if(!s||!TLA.rec)return;const p=s.p.map(q=>[+q[0].toFixed(4),+q[1].toFixed(4),q[2]]);if(p.length<2)p.push([p[0][0],p[0][1],300]);
+    const say='キャンバスをなぞる（動きの目安。再生では作品に反映しません）';TLA.rec.add({k:'gesture',cat:'ui',path:p,say,how:['キャンバスの上を、指の印のとおりになぞる'],blk:{c:'ui',t:'キャンバスをなぞる',f:[{l:'点の数',v:String(p.length)}]}});tlRecN()};
+  ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,end,true));
+})();
+/* ===== タイムラプスの「組み立て台」（台帳Z-196。核は 59-timelapse.js の TL.layout と player の lead）=====
+   ねらい：手順を、レゴブロックのように、台の上へ1個ずつ組み上げていく絵で見せる（ただ文字が動くだけにしない）。
+   ・手順 → ブロックの場所は TL.layout（純JS・決定的）。物体は塔、つなぎは塔をまたぐ橋、測定・答え合わせは幅6、実行は幅12。まだ置かれていない場所は、点線の設計図（ゴースト）で見える＝全体の形が先に分かる。
+   ・手順が始まると、パレット（#tlPal）の分類のチップから、指の印がブロックを運び、台の上へカチッと置く。置かれた瞬間（player の lead が終わった時）に、舞台の物体が増え、入力欄（#tlFlds）が1つずつ埋まる。
+   ・飛ぶ・戻る・ブロックをタップした時は、動きを見せず、その手順の姿へ（舞台は reset→再生し直し）。
+   ・見た目は CSS 変数だけ（色は分類の色 --c を黒と混ぜた面。文字は白）。ホバー演出なし。動きは Web Animations API（無ければ動き無しで置く）。UIの一時状態（TLB）は作品・Undo・保存に入れない。 */
+const TLB={u:28,lv:34,pl:16,L:null,flyI:-1,anims:[],clone:null,shown:-9,cardI:-9,fit:false};
+const tlbReduce=()=>{try{return!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)}catch(_){return false}};
+
+/* ---------- 作る ---------- */
+function tlbBuild(){
+  const box=tlEl('tlBlocks'),sc=TLA.sc;box.textContent='';tlbCancel();TLB.shown=-9;TLB.cardI=-9;
+  const L=TLB.L=TL.layout(sc);
+  L.bricks.forEach(k=>{
+    const s=sc.steps[k.i],b=s.blk||{c:s.cat||s.k,t:s.say||s.k,f:[]},c=b.c||s.cat||s.k;
+    const d=document.createElement('div'),t=document.createElement('div'),v=document.createElement('div');
+    d.className='tlb';d.dataset.i=k.i;d.dataset.c=c;d.dataset.kind=k.kind;d.setAttribute('role','button');d.tabIndex=0;
+    d.style.setProperty('--x',k.x);d.style.setProperty('--y',k.y);d.style.setProperty('--w',k.w);
+    t.className='tlbt';t.textContent=b.s||b.t||'';
+    const n=k.w>=12?3:k.w>=6?2:1,fs=(b.f||[]).slice(0,n);
+    v.className='tlbv';v.textContent=fs.map(f=>f.v).join(' ・ ');
+    d.setAttribute('aria-label',(k.i+1)+'手順目：'+(s.say||b.t||''));
+    d.append(t,v);
+    const go=()=>{if(!TLA.P)return;TLA.P.pause();TLA.P.goto(k.i)};
+    d.onclick=go;d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+    box.append(d)});
+  /* パレット：使う分類だけ（CAT の順） */
+  const pal=tlEl('tlPal');pal.textContent='';
+  const used=new Set(sc.steps.map(s=>(s.blk&&s.blk.c)||s.cat||s.k));
+  Object.keys(TL.CAT).filter(c=>used.has(c)).forEach(c=>{const d=document.createElement('div');d.className='tlchip';d.dataset.c=c;d.textContent=TL.CAT[c];pal.append(d)});
+  tlbSize()}
+
+/* 大きさ：幅12の1段（stud）の幅は、台の幅から。段の高さは既定34px（「全体」では台に収まるまで縮める） */
+function tlbSize(){
+  const sc=tlEl('tlBoard'),bd=tlEl('tlBd');if(!sc||!bd||!TLB.L)return;
+  const w=sc.clientWidth||(tlEl('tlp').clientWidth-16)||320,n=TLB.L.levels,vh=sc.clientHeight||240;
+  TLB.u=Math.max(16,Math.min(44,Math.floor((w-6)/TL.COLS)));
+  TLB.lv=TLB.fit?Math.max(12,Math.min(34,Math.floor((vh-TLB.pl-16)/Math.max(1,n)))):34;
+  bd.style.setProperty('--u',TLB.u+'px');bd.style.setProperty('--lv',TLB.lv+'px');bd.style.setProperty('--pl',TLB.pl+'px');bd.style.setProperty('--n',n);
+  bd.classList.toggle('tiny',TLB.lv<24);
+  bd.style.width=(TLB.u*TL.COLS+6)+'px'}
+
+/* 見える所へ（その段が台の真ん中あたりに来る） */
+function tlbReveal(i,smooth){
+  const sc=tlEl('tlBoard'),L=TLB.L;if(!sc||!L)return;const k=L.bricks.find(b=>b.i===i);if(!k)return;
+  const H=TLB.pl+TLB.lv*L.levels+14,top=H-TLB.pl-(k.y+1)*TLB.lv,want=Math.max(0,Math.min(sc.scrollHeight-sc.clientHeight,top-sc.clientHeight*.45));
+  if(smooth&&sc.scrollTo&&Math.abs(want-sc.scrollTop)>2)sc.scrollTo({top:want,behavior:'smooth'});else sc.scrollTop=want}
+
+/* ---------- 姿を合わせる（動きなし） ---------- */
+function tlbSet(i){
+  const kids=tlEl('tlBlocks').children;
+  if(!(TLB.flyI>=0&&TLB.flyI===i))tlbCancel();   /* いま置いている最中の手順なら、その動きは続ける。それ以外（飛んだ・戻った・ほかへ）は止める */
+  for(let j=0;j<kids.length;j++){const k=kids[j],n=+k.dataset.i;k.classList.toggle('done',n<i);k.classList.toggle('cur',n===i);k.setAttribute('aria-current',n===i?'step':'false')}
+  if(i!==TLB.shown){TLB.shown=i;if(i>=0)tlbReveal(i,false);else tlEl('tlBoard').scrollTop=tlEl('tlBoard').scrollHeight}}
+function tlbCancel(){
+  TLB.anims.forEach(a=>{try{a.cancel()}catch(_){}});TLB.anims=[];
+  if(TLB.clone){TLB.clone.remove();TLB.clone=null}
+  const h=tlEl('tlHand');if(h)h.hidden=true;
+  document.querySelectorAll('#tlBlocks .tlb.fly').forEach(e=>e.classList.remove('fly'));
+  document.querySelectorAll('#tlPal .tlchip.act').forEach(e=>e.classList.remove('act'));
+  TLB.flyI=-1}
+
+/* ---------- ブロックを運んで置く（手順が始まった時：player の pre） ---------- */
+function tlbFly(i){
+  const P=TLA.P,real=tlEl('tlBlocks').querySelector('.tlb[data-i="'+i+'"]'),wrap=tlEl('tlBw');
+  tlbSet(i);
+  const dur=P?P.info().lead/Math.max(.1,P.speed):0;
+  if(!real||!wrap||!real.animate||dur<90||tlbReduce()||tlEl('tlBlkBox').offsetParent===null){tlbCard(TLA.sc.steps[i],false);return}
+  tlbReveal(i,false);
+  const chip=document.querySelector('#tlPal .tlchip[data-c="'+real.dataset.c+'"]')||tlEl('tlPal');
+  const wr=wrap.getBoundingClientRect(),tr=real.getBoundingClientRect(),cr=chip.getBoundingClientRect();
+  if(!tr.width||!cr.width)return tlbCard(TLA.sc.steps[i],false);
+  const dx=cr.left+cr.width/2-(tr.left+tr.width/2),dy=cr.top+cr.height/2-(tr.top+tr.height/2);
+  const f=real.cloneNode(true);f.classList.add('tlfly','done');f.classList.remove('cur');f.removeAttribute('role');f.removeAttribute('tabindex');f.setAttribute('aria-hidden','true');
+  Object.assign(f.style,{left:(tr.left-wr.left)+'px',top:(tr.top-wr.top)+'px',width:tr.width+'px',height:tr.height+'px',bottom:'auto'});
+  wrap.append(f);TLB.clone=f;TLB.flyI=i;real.classList.add('fly');chip.classList.add('act');
+  const A=[];
+  A.push(f.animate([
+    {transform:'translate('+dx+'px,'+dy+'px) scale(.42) rotate(-10deg)',opacity:0,offset:0},
+    {opacity:1,offset:.14},
+    {transform:'translate('+dx*.3+'px,'+(dy*.3-20)+'px) scale(1.1) rotate(3deg)',offset:.6},
+    {transform:'translate(0,-8px) scale(1.04) rotate(0deg)',offset:.82},
+    {transform:'translate(0,0) scale(1) rotate(0deg)',opacity:1,offset:1}],{duration:dur,easing:'cubic-bezier(.3,.7,.4,1)',fill:'both'}));
+  /* 指の印：パレットで取って、運んで、置く（押す） */
+  const hand=tlEl('tlHand');hand.hidden=false;
+  Object.assign(hand.style,{left:(cr.left-wr.left+cr.width/2)+'px',top:(cr.top-wr.top+cr.height/2)+'px'});
+  A.push(hand.animate([
+    {transform:'translate(0,0) scale(1.15)',opacity:0,offset:0},
+    {opacity:1,offset:.1},
+    {transform:'translate('+(-dx*.7)+'px,'+(-dy*.7-14)+'px) scale(1)',offset:.55},
+    {transform:'translate('+(-dx)+'px,'+(-dy-4)+'px) scale(.78)',offset:.86},
+    {transform:'translate('+(-dx)+'px,'+(-dy)+'px) scale(.95)',opacity:.9,offset:1}],{duration:dur,easing:'cubic-bezier(.3,.7,.4,1)',fill:'both'}));
+  TLB.anims=A;
+  tlbCard(TLA.sc.steps[i],true,dur);
+  const fin=()=>{if(TLB.flyI!==i)return;TLB.anims=[];if(TLB.clone){TLB.clone.remove();TLB.clone=null}hand.hidden=true;real.classList.remove('fly');chip.classList.remove('act');TLB.flyI=-1;
+    real.classList.add('snap');setTimeout(()=>real.classList.remove('snap'),420)};
+  A[0].onfinish=fin;
+}
+
+/* ---------- いまのブロックの入力欄（置かれたあと、1つずつ埋まる） ---------- */
+function tlbCard(st,anim,wait){
+  const box=tlEl('tlFlds');if(!box)return;box.textContent='';TLB.cardI=st?TLA.sc.steps.indexOf(st):-9;if(!st)return;
+  const b=st.blk||{c:st.cat||st.k,t:st.say||'',f:[]},sp=(TLA.P&&TLA.P.speed)||1;
+  const h=document.createElement('div'),tag=document.createElement('span'),t=document.createElement('b');
+  h.className='tlfh';h.dataset.c=b.c||st.cat||st.k;tag.className='tltag';tag.textContent=TL.CAT[b.c||st.cat||st.k]||(b.c||'');t.textContent=b.t||'';h.append(tag,t);box.append(h);
+  const fs=b.f||[],show=fs.slice(0,10);
+  show.forEach((f,k)=>{
+    const r=document.createElement('div'),l=document.createElement('span'),v=document.createElement('b');
+    r.className='tlpill'+(anim?' in':'');r.style.setProperty('--dl',Math.round((anim?wait:0)+k*(110/sp))+'ms');
+    l.textContent=f.l;v.textContent=f.v;v.title=f.v;r.append(l,v);box.append(r)});
+  if(fs.length>show.length){const m=document.createElement('div');m.className='tlpill more';m.textContent='…ほか '+(fs.length-show.length)+' 項目（「書き出し・直す」で全部）';box.append(m)}}
+
+/* ---------- 全体を見る／大きく見る ---------- */
+(function(){
+  const fit=tlEl('tlFit');if(fit)fit.onclick=()=>{TLB.fit=!TLB.fit;fit.setAttribute('aria-pressed',TLB.fit);fit.textContent=TLB.fit?'大きく':'全体';tlbSize();if(TLA.P&&TLA.P.i>=0)tlbReveal(TLA.P.i,false)};
+  try{if(window.ResizeObserver)new ResizeObserver(()=>{if(TLB.L&&!tlEl('tlp').hidden)tlbSize()}).observe(tlEl('tlBoard'))}catch(_){}
+})();
 </script>
 </body>
 </html>

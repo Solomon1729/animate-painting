@@ -71,19 +71,23 @@ def main():
         chk('名前が同じ（順番も）', names == [a['name'] for a in fixture['AC']], names)
         chk('レイヤーが同じ', pg.evaluate("LAYERS.map(y=>y.name)") == [y['name'] for y in fixture['LAY']['L']])
         chk('キャンバスのpxが同じ', pg.evaluate("[DOC.w,DOC.h]") == [fixture['DOC']['w'], fixture['DOC']['h']], pg.evaluate("[DOC.w,DOC.h]"))
-        chk('マスク・動き・物理・文字が読めている', pg.evaluate("AC.some(a=>a.hasMask)&&AC.some(a=>Object.values(a.ch).some(c=>c.a))&&AC.some(a=>a.phys&&a.phys.on)&&AC.some(a=>a.sp==='t')"))
+        chk('マスク・動き・文字が読めている', pg.evaluate("AC.some(a=>a.hasMask)&&AC.some(a=>Object.values(a.ch).some(c=>c.a))&&AC.some(a=>a.sp==='t')"))
+        # 旧・簡易の物理（絵ごとの phys。台帳Z-197）：オンだった絵は新しい物理の物体になり、phys は残らない（旧データの置き換え）
+        mg = pg.evaluate("({left:AC.filter(a=>a.phys).length,role:(()=>{const a=AC.find(x=>x.name==='ふうせん');const r=a&&scnRoleOf(a);return r?[r.kind,r.art,+(SCN.params['m_'+r.id]||0),r.b.e]:null})(),others:AC.filter(a=>a.name!=='ふうせん'&&scnRoleOf(a)).length})")
+        chk('旧物理がオンだった絵（ふうせん）が、新しい物理の「動く物」になる（質量・反発を引き継ぐ）', mg['role'] == ['body', True, 0.5, 0.7], mg)
+        chk('旧物理が無かった絵は物理に参加せず、phys は全部消える', mg['left'] == 0 and mg['others'] == 0, mg)
         s1 = ser()
-        chk('書き直してもキーの並びが同じ', list(s1.keys()) == list(fixture.keys()), list(s1.keys()))
+        chk('書き直してもキーの並びが同じ（物理に置き換えた SCN が増える以外）', [k for k in s1.keys() if k != 'SCN'] == list(fixture.keys()) and 'SCN' in s1, list(s1.keys()))
         chk('書き直してもv:1', s1['v'] == 1)
         a, c = strip_img(fixture), strip_img(s1)
         # 読み込みが元から整える項目（旧ビルドと同じ。今回の変更ではない）：dmv・hasLFM・layerId の補い、LAY.cur（選択に追従）。2026-10-15に旧ビルド（ddb13b5）と新ビルドで、見本の読み書きが同じ結果になることを確認した
-        NORM = ('dmv', 'hasLFM', 'layerId')
+        NORM = ('dmv', 'hasLFM', 'layerId', 'phys')
         diffs = []
         for i, (x, y) in enumerate(zip(a['AC'], c['AC'])):
             for k in sorted(set(x) | set(y)):
                 if k not in NORM and x.get(k) != y.get(k):
                     diffs.append((i, k))
-        chk('書き直しても、画像以外の全項目が同じ（アクター。読込が補う3項目を除く）', not diffs, diffs[:6])
+        chk('書き直しても、画像以外の全項目が同じ（アクター。読込が補う3項目と、物理に置き換えた旧 phys を除く）', not diffs, diffs[:6])
         top = [k for k in a if k not in ('AC', 'LAY', 'BG') and a[k] != c[k]] + [k for k in a['BG'] if k != 'v' and a['BG'][k] != c['BG'].get(k)]
         chk('書き直しても、アクター以外の全項目が同じ（uid・sel・DOC・BG）', not top, top)
         chk('書き直しても、レイヤーの中身が同じ（LAY.L・hx）', a['LAY']['L'] == c['LAY']['L'] and a['LAY']['hx'] == c['LAY']['hx'])
