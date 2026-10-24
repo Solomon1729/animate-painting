@@ -83,14 +83,14 @@ function tlStart(script,o){
   const N=TL.norm(script);if(!N.ok){tlEl('tlPickErr').textContent='⚠ '+N.errors.join(' / ');tlShow('pick');return false}
   TLA.sc=N.script;TLA.saved=snap();TLA.base=o.base||TLA.saved;TLA.dirty0=dirtyProj;TLA.tab0=tlTab();TLA.src=null;
   TLA.hasPhys=TLA.sc.steps.some(s=>s.k==='phys');TL.busy=true;
-  TLA.P=TL.player(TLA.sc,tlHost,{speed:+tlEl('tlSpd').value||1,mode:tlEl('tlMode').value,cb:{step:tlRender,state:tlRender,play:tlPlayUi,end:tlRender}});
+  TLA.P=TL.player(TLA.sc,tlHost,{speed:+tlEl('tlSpd').value||1,mode:tlEl('tlMode').value,lead:tlbReduce()?0:TLB_LEAD,cb:{pre:tlPre,step:tlRender,state:tlRender,play:tlPlayUi,end:tlRender}});
   tlBuild();tlShow('play');
   if(N.warns.length)tlEl('tlErr').textContent=N.warns.join(' / ');
   tlRender();if(o.auto!==false)TLA.P.play();return true}
 /* 閉じる。keep＝この状態のまま続ける（預かった姿をUndoに積む）。そうでなければ見る前の姿へ戻す */
 function tlStop(keep){
   const P=TLA.P;
-  if(P){P.pause();TLA.P=null;TL.busy=false;cancelAnimationFrame(TLA.raf);TLA.raf=0;clearInterval(TLA.fgT);const fg=tlEl('tlFg');if(fg)fg.hidden=true;
+  if(P){P.pause();tlbCancel();TLA.P=null;TL.busy=false;cancelAnimationFrame(TLA.raf);TLA.raf=0;clearInterval(TLA.fgT);const fg=tlEl('tlFg');if(fg)fg.hidden=true;
     document.querySelectorAll('.tlhi').forEach(e=>e.classList.remove('tlhi'));
     if(keep){if(TLA.hid)LAYERS.forEach(y=>{if(TLA.hid.includes(y.id))y.visible=true});TLA.saved._uh=++undoSeq;US.push(TLA.saved);RS.length=0;trimHistory();dirtyProj=true;note('この状態で続けます（「戻す」で、見る前に戻せます）',4000)}
     else{tlRestore(TLA.saved);dirtyProj=TLA.dirty0;if(tlTab()!==TLA.tab0)setTab(TLA.tab0)}
@@ -99,15 +99,7 @@ function tlStop(keep){
 function tlClose(keep){if(TLA.rec)tlRecStop(true);tlStop(keep);tlEl('tlp').hidden=true}
 
 /* ---------- 表示 ---------- */
-function tlBuild(){
-  const box=tlEl('tlBlocks');box.textContent='';
-  TLA.sc.steps.forEach((s,i)=>{
-    const b=s.blk||{c:s.cat||s.k,t:s.say||s.k,f:[]},d=document.createElement('div'),t=document.createElement('div');
-    d.className='tlb';d.dataset.i=i;d.dataset.c=b.c||s.cat||s.k;t.className='tlbt';t.textContent=b.t||'';d.append(t);
-    (b.f||[]).slice(0,6).forEach(f=>{const r=document.createElement('div'),l=document.createElement('span'),v=document.createElement('b');r.className='tlbf';l.textContent=f.l;v.textContent=f.v;v.title=f.v;r.append(l,v);d.append(r)});
-    if((b.f||[]).length>6){const m=document.createElement('div');m.className='tlbf';m.textContent='…ほか '+(b.f.length-6)+' 項目';d.append(m)}
-    d.onclick=()=>{if(!TLA.P)return;TLA.P.pause();TLA.P.goto(i)};box.append(d)});
-  const sk=tlEl('tlSk');sk.max=TLA.sc.steps.length}
+function tlBuild(){tlbBuild();tlEl('tlSk').max=TLA.sc.steps.length}   /* ブロックの台は 242-timelapse-board.js */
 function tlRender(){
   const P=TLA.P;if(!P)return;const I=P.info(),N=I.n,st=I.step;
   tlEl('tlPos').textContent=I.i<0?'はじめ（全'+N+'）':(I.i+1)+' / '+N;
@@ -117,19 +109,20 @@ function tlRender(){
   const ol=tlEl('tlHow');ol.textContent='';
   if(st)(st.how||[]).forEach(h=>{const li=document.createElement('li');li.textContent=h;ol.append(li)});
   tlEl('tlHowBox').hidden=!(st&&(st.how||[]).length);
-  const kids=tlEl('tlBlocks').children;let cur=null;
-  for(let j=0;j<kids.length;j++){const k=kids[j];k.classList.toggle('done',j<I.i);k.classList.toggle('cur',j===I.i);if(j===I.i)cur=k}
-  if(cur){const box=tlEl('tlBlocks');box.scrollTop=Math.max(0,cur.offsetTop-box.clientHeight/3)}
+  tlbSet(I.i);if(I.i!==TLB.cardI)tlbCard(st||null,false);   /* 置いている最中の手順の入力欄は、置かれたあと1つずつ埋まる（tlbFly）。ここでは作り直さない */
   if(document.activeElement!==tlEl('tlEd'))tlEl('tlEd').value=st?(st.say||''):'';
   tlPlayUi()}
+/* ブロックを置く動きの長さ（×1の時のms。置かれた瞬間に舞台が変わる） */
+const TLB_LEAD=900;
+function tlPre(){tlRender();if(TLA.P)tlbFly(TLA.P.i)}
 function tlPlayUi(){
   const P=TLA.P;if(!P)return;const I=P.info();
   tlEl('tlPlay').textContent=I.playing?'⏸ 一時停止':(I.i>=I.n-1&&I.n?'↺ もう一度':'▶ 再生');
-  if(I.playing&&!TLA.raf){TLA.t0=performance.now();TLA.raf=requestAnimationFrame(tlLoop)}}
+  if((I.playing||I.flying)&&!TLA.raf){TLA.t0=performance.now();TLA.raf=requestAnimationFrame(tlLoop)}}
 function tlLoop(t){
-  TLA.raf=0;const P=TLA.P;if(!P||!P.playing)return;
+  TLA.raf=0;const P=TLA.P;if(!P||!(P.playing||P.wait>0))return;
   const dt=Math.min(250,Math.max(0,t-TLA.t0));TLA.t0=t;P.tick(dt);
-  if(TLA.P&&TLA.P.playing)TLA.raf=requestAnimationFrame(tlLoop)}
+  if(TLA.P&&(TLA.P.playing||TLA.P.wait>0))TLA.raf=requestAnimationFrame(tlLoop)}
 
 /* ---------- 枠の操作 ---------- */
 (function(){

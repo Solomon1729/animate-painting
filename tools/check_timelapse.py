@@ -15,6 +15,7 @@
   T6 書き出し・直す：文章・JSON・字幕を直す・手順を消す・JSONを読み込む／誤りを日本語で出す・知らない種類・見つからない部品でも最後まで進む
   T7 記録：画面のタブ・選ぶ・バー・物理の命令・キャンバスのなぞりが手順になる／止めて再生すると、記録した時の状態になる
   T8 画面：幅420pxで横にはみ出さない・既定では枠が出ていない
+  T9 組み立て台（レゴ風のブロック。台帳Z-196）：手順ごとに1個のブロック・設計図（点線）と置いたもの・パレット・運んで置く動き・置かれた瞬間に舞台が変わる・入力欄が埋まる・飛ぶと動きなし・全体表示・動きを減らす設定・文字の対比・狭い幅
 """
 import sys, json
 from playwright.sync_api import sync_playwright
@@ -299,6 +300,79 @@ def main():
         chk('T8 幅420pxで、横にはみ出さない', sw <= iw and r['x'] >= 0 and r['x'] + r['width'] <= iw + 1, (sw, iw, r))
         chk('T8 枠は大きくなりすぎない（画面の高さの8割以内）', r['height'] <= 900 * 0.8 + 2, r['height'])
         pg.click('#tlX')
+
+        # ---------- T9 組み立て台 ----------
+        ev("setTab('ph')")
+        ev("()=>{tlEl('tlSpd').value='1';tlEl('tlMode').value='auto'}")   # 前の群で変えた速さ・進め方を戻す
+        ev("()=>{tlStart(TL.fromScenario(__sample('orig-block-on-cart')),{auto:false})}")
+        pg.wait_for_timeout(200)
+        n = ev("TLA.sc.steps.length")
+        chk('T9 手順ごとに1個のブロックが、台の上に並ぶ', ev("tlEl('tlBlocks').children.length") == n and ev("TLB.L.bricks.length") == n, n)
+        chk('T9 パレット（分類のチップ）は、使う分類だけ', ev("[...document.querySelectorAll('#tlPal .tlchip')].map(c=>c.dataset.c).sort().join()") == ev("[...new Set(TLA.sc.steps.map(s=>(s.blk&&s.blk.c)||s.cat||s.k))].sort().join()"))
+        chk('T9 はじめは、全部が点線の設計図（置いたブロックは無い）', ev("document.querySelectorAll('#tlBlocks .tlb.done,#tlBlocks .tlb.cur').length") == 0)
+        chk('T9 ブロックは重ならず、台の幅の中に収まる', ev("""()=>{const b=[...document.querySelectorAll('#tlBlocks .tlb')].map(e=>e.getBoundingClientRect()),W=tlEl('tlBd').getBoundingClientRect();
+          for(const r of b)if(r.left<W.left-1||r.right>W.right+1)return 'out';
+          for(let i=0;i<b.length;i++)for(let j=i+1;j<b.length;j++){const a=b[i],c=b[j];if(a.left<c.right-1&&c.left<a.right-1&&a.top<c.bottom-1&&c.top<a.bottom-1)return 'overlap '+i+','+j}return 'ok'}""") == 'ok')
+        chk('T9 台は横にはみ出さない（スクロールは縦だけ）', ev("tlEl('tlBoard').scrollWidth<=tlEl('tlBoard').clientWidth+1"))
+        # 飛ぶ：動きなし
+        ev("()=>{TLA.P.pause();TLA.P.goto(10)}"); pg.wait_for_timeout(150)
+        chk('T9 飛ぶと、そこまでが置かれて（done）、いまのが1個（cur）・動きは出ない', ev("[document.querySelectorAll('#tlBlocks .tlb.done').length,document.querySelectorAll('#tlBlocks .tlb.cur').length,!!document.querySelector('.tlfly')]") == [10, 1, False])
+        chk('T9 置いたブロックは色（分類の色）の面で、設計図は点線', ev("""()=>{const d=getComputedStyle(document.querySelector('#tlBlocks .tlb.done')),g=getComputedStyle(document.querySelector('#tlBlocks .tlb:not(.done):not(.cur)'));
+          return [d.backgroundColor!=='rgba(0, 0, 0, 0)',g.backgroundColor==='rgba(0, 0, 0, 0)',g.outlineStyle==='dashed']}""") == [True, True, True])
+        # 運んで置く：addBody の手順の直前から1手順進める
+        fi = ev("TLA.sc.steps.findIndex(s=>s.op&&s.op.op==='addBody')")
+        ev("(i)=>{TLA.P.pause();TLA.P.goto(i-1)}", fi); pg.wait_for_timeout(150)
+        b0 = ev("SCN.src?SCN.src.bodies.length:0")
+        ev("()=>{TLA.P.next()}"); pg.wait_for_timeout(300)
+        st = ev("""()=>({fly:document.querySelectorAll('#tlBlocks .tlb.fly').length,clone:!!document.querySelector('#tlBw .tlfly'),hand:!tlEl('tlHand').hidden,act:document.querySelectorAll('#tlPal .tlchip.act').length,
+          bodies:SCN.src?SCN.src.bodies.length:0,flying:TLA.P.info().flying,i:TLA.P.i,pills:document.querySelectorAll('#tlFlds .tlpill').length})""")
+        chk('T9 手順が始まると、パレットから指の印がブロックを運ぶ（運ぶ最中の本物は隠れ、分身が飛ぶ）', st['fly'] == 1 and st['clone'] and st['hand'] and st['act'] == 1 and st['flying'] and st['i'] == fi, st)
+        chk('T9 運んでいる間は、舞台の物体が増えない', st['bodies'] == b0, (b0, st['bodies']))
+        chk('T9 いまのブロックの入力欄（ピル）が出る', st['pills'] >= 1, st)
+        pg.wait_for_timeout(1100)
+        st = ev("""()=>({fly:document.querySelectorAll('#tlBlocks .tlb.fly').length,clone:!!document.querySelector('#tlBw .tlfly'),hand:!tlEl('tlHand').hidden,act:document.querySelectorAll('#tlPal .tlchip.act').length,
+          bodies:SCN.src?SCN.src.bodies.length:0,flying:TLA.P.info().flying,cur:document.querySelectorAll('#tlBlocks .tlb.cur').length})""")
+        chk('T9 置かれたあと、分身・指の印・チップの強調が消え、ブロックが残る', st['fly'] == 0 and not st['clone'] and not st['hand'] and st['act'] == 0 and st['cur'] == 1, st)
+        chk('T9 置かれた瞬間に、舞台の物体が増える', st['bodies'] == b0 + 1 and not st['flying'], (b0, st))
+        # 再生中は、手順ごとに運んで置く（自動）
+        ev("(i)=>{TLA.P.pause();TLA.P.goto(i-1);TLA.P.play()}", fi); pg.wait_for_timeout(500)
+        chk('T9 ▶（自動）でも運んで置く動きが出る', ev("!!document.querySelector('#tlBw .tlfly')||TLA.P.info().flying||TLA.P.i>0"))
+        ev("()=>{TLA.P.pause()}")
+        # タップ→飛ぶ
+        pg.click('#tlBlocks .tlb:nth-child(8)'); pg.wait_for_timeout(200)
+        chk('T9 ブロックをタップすると、その手順へ飛び、動きは出ない', ev("[TLA.P.i,!!document.querySelector('#tlBw .tlfly'),document.querySelectorAll('#tlBlocks .tlb.fly').length]") == [7, False, 0])
+        # 全体表示
+        pg.click('#tlFit'); pg.wait_for_timeout(200)
+        fv = ev("[TLB.fit,parseFloat(getComputedStyle(tlEl('tlBd')).getPropertyValue('--lv')),tlEl('tlBd').offsetHeight<=tlEl('tlBoard').clientHeight+2,tlEl('tlBd').classList.contains('tiny')]")
+        chk('T9 「全体」で、台の全体が見える高さに縮む（文字は隠れる）', fv[0] and fv[1] < 34 and fv[2] and fv[3], fv)
+        pg.click('#tlFit'); pg.wait_for_timeout(150)
+        chk('T9 もう一度で、元の大きさ', ev("!TLB.fit&&parseFloat(getComputedStyle(tlEl('tlBd')).getPropertyValue('--lv'))===34"))
+        # 文字の対比（置いたブロックは、白い文字×分類の色を黒と混ぜた面）
+        ev("()=>{TLA.P.pause();TLA.P.last()}"); pg.wait_for_timeout(200)
+        cr = ev("""()=>{const lum=c=>{const m=c.match(/[\d.]+/g).map(Number),f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};return .2126*f(m[0])+.7152*f(m[1])+.0722*f(m[2])};
+          const seen={};let worst=99;for(const e of document.querySelectorAll('#tlBlocks .tlb.done')){const k=e.dataset.c;if(seen[k])continue;seen[k]=1;
+            const a=lum(getComputedStyle(e).backgroundColor),w=lum('rgb(255,255,255)');worst=Math.min(worst,(w+.05)/(a+.05))}return [Object.keys(seen).length,+worst.toFixed(2)]}""")
+        chk('T9 どの分類のブロックも、白い文字との対比が4.5以上', cr[0] >= 6 and cr[1] >= 4.5, cr)
+        # 動きを減らす設定：運ぶ動きなし・舞台はすぐ変わる
+        pg.click('#tlX')
+        pg.emulate_media(reduced_motion='reduce')
+        ev("()=>{tlStart(TL.fromScenario(__sample('orig-block-on-cart')),{auto:false})}"); pg.wait_for_timeout(150)
+        ev("(i)=>{TLA.P.pause();TLA.P.goto(i-1)}", fi); pg.wait_for_timeout(100)
+        b0 = ev("SCN.src?SCN.src.bodies.length:0")
+        ev("()=>{TLA.P.next()}"); pg.wait_for_timeout(120)
+        chk('T9 「動きを減らす」設定では、運ぶ動きが出ず、舞台がすぐ変わる', ev("[!!document.querySelector('#tlBw .tlfly'),TLA.P.info().flying,SCN.src.bodies.length]") == [False, False, b0 + 1])
+        pg.click('#tlX'); pg.emulate_media(reduced_motion='no-preference')
+        # 狭い幅（360px）
+        pg.set_viewport_size({'width': 360, 'height': 800}); pg.wait_for_timeout(200)
+        ev("()=>{tlStart(TL.fromScenario(__sample('orig-atwood-pulley')),{auto:false});TLA.P.goto(TLA.sc.steps.length-1)}"); pg.wait_for_timeout(300)
+        nw = ev("[document.documentElement.scrollWidth<=innerWidth,tlEl('tlBoard').scrollWidth<=tlEl('tlBoard').clientWidth+1,TLB.u]")
+        chk('T9 幅360pxでも、横にはみ出さない（台の1段の幅が16px以上）', nw[0] and nw[1] and nw[2] >= 16, nw)
+        pg.click('#tlX'); pg.set_viewport_size({'width': 420, 'height': 900})
+        # 設計図は全サンプルで作れる
+        ok = ev("""()=>{const bad=[];for(const S of PHYS_SAMPLES){try{tlStart(TL.fromScenario(S),{auto:false});const n=TLA.sc.steps.length;if(tlEl('tlBlocks').children.length!==n)bad.push(S.id);tlClose(false)}catch(e){bad.push(S.id+':'+e.message)}}return bad}""")
+        chk('T9 全サンプルで、手順の数だけブロックの台が作れる', ok == [], ok)
+        chk('T9 ページエラーが出ていない', not errs, errs)
+        pg.click('#tlX') if ev("!tlEl('tlp').hidden") else None
         chk('T8 ページエラーが一度も出ていない', not errs, errs)
 
         print('\nOK %d  NG %d' % tuple(OKN))

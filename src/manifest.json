@@ -49,6 +49,7 @@
     "js/239-skin.js",
     "js/240-tooling-and-init.js",
     "js/241-timelapse-ui.js",
+    "js/242-timelapse-board.js",
     "document-suffix.html"
   ]
 }

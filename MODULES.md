@@ -21,7 +21,7 @@
 | `src/js/56-phys-art.js` | **絵→物理**（台帳Z-177）：描いた線→凸の多角形の地形`artTerrain`、絵→円・箱・多角形の物体`artBody`、`ART.last`（直近の寸法）、**絵に物理を付ける標準のUI（台帳Z-197）**：絵ごとのつまみ`artPropsUi`（質量・反発・摩擦・初速・当たり判定）・役割ボタン（動く／固定／地形／外す。1つの絵の役割は1つ）・まわり`artWorldUi`（床・左右の壁・天井）・メニュー🌍`#mPhArt`・旧作品の`l.phys`の置き換え`artMigrateOld` |
 | `src/js/57-phys-demos.js` | **お絵かき×物理のデモ**`ARTDEMOS`（c〜h：描いた丘・絵のふりこ・ばね・ドミノ・ニュートンのゆりかご・積み木くずし） |
 | `src/js/58-phys-api.js` | **窓口`PHAPI`**（台帳Z-178。DOMなし）：型つき部品表`catalog()`・足し忘れ検査`coverage()`・命令`OPS`・純粋な`apply`/`applyAll`・アプリの`exec`・`listen`。ビジュアルプログラミングの入口 |
-| `src/js/59-timelapse.js` | **タイムラプス`TL`**（台帳Z-192。DOMなし）：操作の手順（手順書`script`＝`{v:1,id,title,about,steps:[…]}`。未知のキーは捨てず保つ）を、作る・再生する・文章にする部品。ドライバ表`drv`（`note`説明／`phys`＝`PHAPI.OPS`の命令／`ui`＝画面の部品の操作／`gesture`＝キャンバスをなぞる＝見せるだけ）に1行足せば種類が増える。`fromScenario(sc)`＝物理シナリオ→命令の列（全サンプルを命令だけで組み立て直せる）、`player`（時計は外から`tick(dt)`。auto／recorded／manual・速さ0.25〜32倍・戻る＝先頭から静かに再生し直す）、`toText`（操作手順書）・`edit`（字幕・削除・移動・切る）・`recorder`（連続操作の併合）・`pureHost`/`replay`（PHAPIだけで再現。検査用）。`TL.busy`＝再生中は自動保存・記録を止める旗 |
+| `src/js/59-timelapse.js` | **タイムラプス`TL`**（台帳Z-192。DOMなし）：操作の手順（手順書`script`＝`{v:1,id,title,about,steps:[…]}`。未知のキーは捨てず保つ）を、作る・再生する・文章にする部品。ドライバ表`drv`（`note`説明／`phys`＝`PHAPI.OPS`の命令／`ui`＝画面の部品の操作／`gesture`＝キャンバスをなぞる＝見せるだけ）に1行足せば種類が増える。`fromScenario(sc)`＝物理シナリオ→命令の列（全サンプルを命令だけで組み立て直せる）、`player`（時計は外から`tick(dt)`。auto／recorded／manual・速さ0.25〜32倍・戻る＝先頭から静かに再生し直す。**`lead`**＝ブロックが置かれる動きの間、舞台の変化を待つ：`pre`→待つ→適用→`step`。飛ぶ・戻るは待たない。台帳Z-196）、`layout(script)`（**組み立て台の場所**：手順→幅12の台の上のブロック`{i,x,y,w,kind}`。時間順に積むので浮かない・重ならない。物体＝塔・つなぎ＝橋・測定／答え合わせ＝幅6・実行＝幅12）、`blk.s`（ブロックの短い見出し）、`toText`（操作手順書）・`edit`（字幕・削除・移動・切る）・`recorder`（連続操作の併合）・`pureHost`/`replay`（PHAPIだけで再現。検査用）。`TL.busy`＝再生中は自動保存・記録を止める旗 |
 | `src/js/60-input-state.js` | ポインター座標・入力状態の共通ヘルパー |
 | `src/js/70-layers.js` | レイヤー `LAYERS`、可視・ロック判定、ツリーUI `layUi` |
 | `src/js/80-pointer-events.js` | ヒット判定、ドラッグ、ズーム、Canvasポインターイベント |
@@ -51,7 +51,8 @@
 | `src/js/238-size-hint.js` | 太さの目安表示（台帳Z-146）：バーを触っている間・直後にビューワー中央へ実寸の輪。表`SZH`、`sizeHintDraw`（`paintFrame`から） |
 | `src/js/239-skin.js` | 見た目（台帳Z-186）：`SKIN`（表`T`・設定`cur`）、`skinSet`/`skinReset`/`skinApply`、丸ゴシックの遅延読み込み`skinFont`。`<html>`の`data-skin／font／round／dens／icon`に反映し、localStorage（`am_skin`）に覚える。ちらつき防止の早い適用は`document-prefix.html`の先頭。CSSの変数は`styles.css`先頭 |
 | `src/js/240-tooling-and-init.js` | ツール・タブ、メニュー、枠3段`setFrame`、操作窓`UIS`/`tpClamp`/`tpApply`（上下2つの持ち手・四辺へ掃ける・透過オン/オフ）、画像追加`pickImages`/`addImages`、初期化、ロック用ラッパー |
-| `src/js/241-timelapse-ui.js` | **タイムラプスのアプリ側**（台帳Z-192）：枠`#tlp`（操作窓`#tpb`の先頭）、🎬メニュー`#mTl`、物理タブの「作り方を見る」`#scHow`。再生ホスト`tlHost`（物理は`scnSetSource({noUndo})`・画面の操作は実物を押す）。**非破壊**：開始時に`snap()`を預かり、閉じると`restore(tlCloneSnap())`で元の作品に戻す（「この状態で続ける」は預かった姿をUndoに積む）。記録（ボタン・バー・選択・文字・`PHAPI.tap`）と、指の表示`#tlFg`。UIの一時状態`TLA`は作品・Undo・保存に入れない |
+| `src/js/241-timelapse-ui.js` | **タイムラプスのアプリ側**（台帳Z-192）：枠`#tlp`（操作窓`#tpb`の先頭）、🎬メニュー`#mTl`、物理タブの「作り方を見る」`#scHow`。再生ホスト`tlHost`（物理は`scnSetSource({noUndo})`・画面の操作は実物を押す）、ブロックの台は`242-timelapse-board.js`。**非破壊**：開始時に`snap()`を預かり、閉じると`restore(tlCloneSnap())`で元の作品に戻す（「この状態で続ける」は預かった姿をUndoに積む）。記録（ボタン・バー・選択・文字・`PHAPI.tap`）と、指の表示`#tlFg`。UIの一時状態`TLA`は作品・Undo・保存に入れない |
+| `src/js/242-timelapse-board.js` | **タイムラプスの「組み立て台」**（台帳Z-196）：手順をレゴブロックのように台の上へ組み上げて見せる。`tlbBuild`（`TL.layout`からブロック・パレット`#tlPal`を作る。点線＝まだ置かれていない設計図／色の面＝置いた／枠＝いま）、`tlbFly`（`player`の`pre`で、パレットのチップから指の印`#tlHand`がブロックの分身を運び、台にカチッと置く。Web Animations API。置かれた瞬間に`lead`が終わり、舞台が変わる）、`tlbCard`（入力欄`#tlFlds`が1つずつ埋まる）、`tlbSet`（飛ぶ・戻る時は動きなしで姿を合わせる）、`tlbSize`（1段の幅は台の幅÷12・「全体」で縮む）。色は分類の色`--c`を黒と混ぜた面＋白い文字（対比4.5以上）。UIの一時状態`TLB`は作品・Undo・保存に入れない |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 
 ## 開発手順
@@ -77,8 +78,8 @@
 | `tools/phys_engine_test.js` | `node tools/phys_engine_test.js`。物理エンジン`PHE`を解析解と比べる（62項目：自由落下・斜面・振り子・衝突・円弧・ばね・磁場・連鎖衝突…）。台帳Z-167・Z-183 |
 | `tools/phys_check.js` | `node tools/phys_check.js 見本.json`（検証→実行→答え合わせの表）／`--all`（全サンプル13件）／`--sweep`／`--csv`／`--param`／`--template`。台帳Z-169 |
 | `tools/phys_api_test.js` | `node tools/phys_api_test.js`。窓口`PHAPI`と部品表（70項目）：エンジンの表との一致・例が検証に通る・命令で組み立てて解析解と比べる・ルールの決定性・手引き`PHYSICS_SAMPLES.md`に全項目が載っている。台帳Z-178 |
-| `tools/tl_test.js` | `node tools/tl_test.js`。タイムラプスの核`TL`（109項目）：全サンプル13件を`fromScenario`→命令だけで再生して元と一致・時計・戻る・未知のキー／未知のドライバの保持・書き出し／読み込み／壊れた入力・字幕の編集・記録の併合 |
-| `tools/check_timelapse.py` | `python3 tools/check_timelapse.py <HTMLの絶対パス>`。タイムラプスのアプリ内検査（T1〜T8・82項目）：全サンプルの再生が元と一致・時計・実際のクリック・非破壊（Undo・自動保存・レイヤーの表示）・「作り方を見る」・書き出し／字幕の編集／読み込み・記録・窓の配置 |
+| `tools/tl_test.js` | `node tools/tl_test.js`。タイムラプスの核`TL`（127項目。8＝組み立て台の配置・9＝置く動き`lead`）：全サンプル13件を`fromScenario`→命令だけで再生して元と一致・時計・戻る・未知のキー／未知のドライバの保持・書き出し／読み込み／壊れた入力・字幕の編集・記録の併合 |
+| `tools/check_timelapse.py` | `python3 tools/check_timelapse.py <HTMLの絶対パス>`。タイムラプスのアプリ内検査（T1〜T9・103項目。T9＝組み立て台）：全サンプルの再生が元と一致・時計・実際のクリック・非破壊（Undo・自動保存・レイヤーの表示）・「作り方を見る」・書き出し／字幕の編集／読み込み・記録・窓の配置 |
 | `tools/check_physics.py` | `python3 tools/check_physics.py <HTMLの絶対パス>`。物理のアプリ内検査（S1〜S13・65項目）：サンプル全件・固定刻み・条件・絵とのつなぎ・保存・Undo・画面・JSON貼り付け・絵→物理・デモc〜h・窓口。ヘッドレスのみ（実機は未確認）。台帳Z-172 |
 | `tools/check_phys_std.py` | `python3 tools/check_phys_std.py <HTMLの絶対パス>`。絵に物理を付ける標準の形の検査（P1〜P8・48項目）：役割（動く・固定・地形・外す）・絵ごとのつまみ・床と壁と天井・非表示レイヤー・メニュー・保存/Undo・旧`phys`の置き換え・動きとの併用。ヘッドレスのみ（実機は未確認）。台帳Z-197 |
 | `tools/jaggy_test.js` | `node tools/jaggy_test.js`。ジャギー修正の核`IO.jaggy`（14項目）：ギザギザの合成画像を正解（16倍の超サンプリング）と比べる・平らな所／ノイズ／細い線／角・アルファの縁・色の縁。台帳Z-180 |

@@ -7,13 +7,19 @@
      note＝説明だけ／phys＝PHAPI.OPSの命令（step.op）／ui＝画面の部品の操作（step.do＝click・set・tab・check、step.id、step.v）／gesture＝キャンバスをなぞる（見せるだけ。作品には反映しない）。
    【ホスト host】 再生の相手：{reset(), begin?(), phys?(op,quiet), ui?(step,quiet), gesture?(step), sync?(step,i)}。アプリでは241、検査では pureHost（PHAPIだけで組み立てる）。
    【再生 player】 固定の時計を持たず、tick(dtMs) を外から呼ぶ（検査で時間を進められる）。戻る・飛ぶ時は reset してから先頭へ再生し直す（手順がデータなので、同じ結果になる）。
-   【速さ】 モード auto＝各手順の d を倍率で割る／recorded＝記録した時刻の間隔（待ちは maxGap までに詰める）／manual＝自動では進まない（次へで1手順ずつ）。 */
+   【速さ】 モード auto＝各手順の d を倍率で割る／recorded＝記録した時刻の間隔（待ちは maxGap までに詰める）／manual＝自動では進まない（次へで1手順ずつ）。
+   【ブロックの置き場所 layout】 手順 → 組み立て台（幅12の studs）の上の場所 {i,x,y,w,kind}。純JS・決定的。手順を時間順に積むので、どのブロックも必ず下のブロックの上に載る（浮かない）。物体は塔（幅4）、つなぎは塔をまたぐ橋、測定・答え合わせは幅6、実行は幅12（台帳Z-196）。
+   【つなぐまで（lead）】 player の o.lead（ms）＞0 なら、手順の「ブロックが置かれる動き」の間（lead）、舞台の変化を待つ（置かれた瞬間に舞台の物体が増える）。待っている間は pre を知らせ、終わったら適用して step を知らせる。goto／first／last／prev は待たず、すぐ適用（飛んだ時は動きを見せない）。 */
 const TL=(function(){
 const V=1;
 const CAT={setup:'設定',cond:'条件',body:'物体',link:'つなぎ',field:'力場',measure:'測定',check:'答え合わせ',rule:'ルール',run:'実行',note:'説明',ui:'画面の操作'};
 const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup',setRun:'setup',setParam:'cond',setVar:'cond',addBody:'body',addShape:'body',setBody:'body',removeBody:'body',
   addJoint:'link',removeJoint:'link',addPair:'link',addField:'field',removeField:'field',addProbe:'measure',addEvent:'measure',addGraph:'measure',setSweep:'measure',addAsk:'check',addCheck:'check',
   addRule:'rule',removeRule:'rule',play:'run',pause:'run',reset:'run',seek:'run',step:'run',speed:'run',read:'run',result:'run',sweep:'run',open:'run',close:'run'};
+/* ブロックの見出し（短い名前。組み立て台のブロックに書く。台帳Z-196） */
+const SHORT={newScenario:'シナリオ',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
+  addJoint:'つなぎ',removeJoint:'つなぎを外す',addPair:'接触の設定',addField:'力場',removeField:'力場を消す',addProbe:'測定',addEvent:'出来事',addGraph:'グラフ',setSweep:'条件をふる',addAsk:'答え合わせ',addCheck:'検査',
+  addRule:'ルール',removeRule:'ルールを消す',play:'▶ 実行',pause:'一時停止',reset:'最初へ',seek:'時刻へ',step:'1コマ',speed:'速さ',read:'読む',result:'答え合わせ',sweep:'条件をふる',open:'サンプルを開く',close:'閉じる'};
 const SPEEDS=[.25,.5,1,2,4,8,16,32];
 const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -109,7 +115,7 @@ function howOf(op,cat,fs){
 /* 命令1つ → 手順1つ */
 function stepOf(op,extra){
   const D=PHAPI.OPS[op.op],cat=OPCAT[op.op]||'setup',fs=fields(op);
-  const s={k:'phys',op:clone(op),cat,say:sayOf(op,fs),how:howOf(op,cat,fs),blk:{c:cat,t:D?D.label:op.op,f:fs.map(f=>({l:f.l,v:f.v}))},d:clamp(1100+260*Math.min(fs.length,8),1300,3800)};
+  const s={k:'phys',op:clone(op),cat,say:sayOf(op,fs),how:howOf(op,cat,fs),blk:{c:cat,t:D?D.label:op.op,s:SHORT[op.op]||(D?D.label:op.op),f:fs.map(f=>({l:f.l,v:f.v}))},d:clamp(1100+260*Math.min(fs.length,8),1300,3800)};
   return extra?Object.assign(s,extra):s}
 
 /* ---------- シナリオ → 命令の列 → 手順書 ---------- */
@@ -173,6 +179,30 @@ function toText(script){
 const labelOf=s=>(drv[s.k]&&drv[s.k].label||s.k)+(s.op?'：'+s.op.op:'')+(s.id?'：'+s.id:'');
 function stats(script){const c={};for(const s of script.steps){const k=s.cat||s.k;c[k]=(c[k]||0)+1}return c}
 
+/* ---------- 組み立て台の配置（台帳Z-196）：手順 → ブロックの場所 ---------- */
+const COLS=12,TSLOT=[0,4,8];
+function layout(script){
+  const steps=(script&&script.steps)||[],h=new Array(COLS).fill(0),tw={},out=[];
+  const top=(x,w)=>{let m=0;for(let k=x;k<x+w;k++)m=Math.max(m,h[k]);return m};
+  const put=(i,x,w,kind)=>{const y=top(x,w);for(let k=x;k<x+w;k++)h[k]=y+1;out.push({i,x,y,w,kind});return y};
+  const low=(w,xs)=>{let bx=-1,by=1e9;for(const x of xs){if(x+w>COLS)continue;const y=top(x,w);if(y<by){by=y;bx=x}}return bx<0?0:bx};
+  const bodyOf=a=>typeof a==='string'?a:(a&&typeof a==='object'&&!Array.isArray(a)&&typeof a.body==='string'?a.body:null);
+  const newTower=id=>{const used=new Set(Object.values(tw));let cand=TSLOT.filter(x=>!used.has(x));if(!cand.length)cand=TSLOT;const x=low(4,cand);tw[id]=x;return x};
+  const towerOf=id=>id!==null&&id!==undefined&&tw[id]!==undefined?tw[id]:newTower(id===null||id===undefined?'?':id);
+  steps.forEach((s,i)=>{
+    const cat=s.cat||s.k,op=s.op&&s.op.op,o=s.op||{};
+    if(op==='addBody')put(i,newTower(o.id),4,'body');
+    else if(op==='addShape'||op==='setBody'||op==='removeBody')put(i,towerOf(op==='addShape'?o.body:o.id),4,'body');
+    else if(op==='addJoint'||op==='addPair'||op==='removeJoint'){
+      const xs=[bodyOf(o.a),bodyOf(o.b)].filter(x=>x).map(towerOf);
+      if(!xs.length)put(i,low(4,TSLOT),4,'link');else{const x0=Math.min(...xs),x1=Math.max(...xs);put(i,x0,x1-x0+4,'link')}}
+    else if(cat==='note')put(i,0,COLS,'note');
+    else if(cat==='field'||cat==='run')put(i,0,COLS,cat);
+    else if(cat==='measure'||cat==='check'||cat==='rule')put(i,low(6,[0,6]),6,cat);
+    else if(cat==='setup')put(i,low(6,[0,6]),6,'setup');
+    else put(i,low(4,TSLOT),4,cat==='cond'?'cond':'other')});
+  return{cols:COLS,levels:Math.max(0,...h),bricks:out,towers:tw}}
+
 /* ---------- ドライバ（表に1行足せば増える）---------- */
 const drv={
   note:{label:'説明',apply(){return{ok:true}}},
@@ -183,22 +213,33 @@ const drv={
 /* ---------- 再生 ---------- */
 function player(script,host,o){
   o=o||{};
-  const P={script,host,i:-1,playing:false,speed:o.speed||1,mode:o.mode||'auto',acc:0,errs:{},cb:o.cb||{},maxGap:o.maxGap||1500,began:false};
+  const P={script,host,i:-1,playing:false,speed:o.speed||1,mode:o.mode||'auto',acc:0,errs:{},cb:o.cb||{},maxGap:o.maxGap||1500,began:false,lead:o.lead>0?+o.lead:0,wait:0,leadMs:0};
   const N=()=>P.script.steps.length,emit=ev=>{try{P.cb[ev]&&P.cb[ev](P)}catch(_){}};
   function run(step,i,quiet){
     const d=drv[step.k];if(!d){P.errs[i]='この版では再生できない手順です（'+step.k+'）';return false}
     try{const r=d.apply(step,P.host,quiet,i);if(r&&r.ok===false){P.errs[i]=(r.errors&&r.errors[0])||'できませんでした';return false}delete P.errs[i];return true}
     catch(e){P.errs[i]=String(e&&e.message||e);return false}}
-  function rewind(){P.errs={};P.i=-1;if(P.host.reset)P.host.reset()}
+  function flush(quiet){if(P.wait>0){P.wait=0;run(P.script.steps[P.i],P.i,!!quiet)}}   /* 待っていた手順を、いま適用する */
+  function rewind(){P.errs={};P.i=-1;P.wait=0;if(P.host.reset)P.host.reset()}
   function advance(n,quiet){   /* acc に触れない。n まで（今より先）を順に適用 */
     if(!P.began){P.began=true;if(P.host.begin)P.host.begin()}
+    flush(true);
     for(let k=P.i+1;k<=n;k++){run(P.script.steps[k],k,quiet||k<n);P.i=k}
     if(P.host.sync)P.host.sync(P.script.steps[P.i],P.i)}
   P.goto=function(n,o2){
     n=clamp(n|0,-1,N()-1);if(n<P.i)rewind();
-    if(n>P.i)advance(n,!!(o2&&o2.quiet));else if(n===P.i&&P.host.sync)P.host.sync(P.script.steps[P.i],P.i);
+    if(n>P.i)advance(n,!!(o2&&o2.quiet));else if(n===P.i){flush(false);if(P.host.sync)P.host.sync(P.script.steps[P.i],P.i)}
     P.acc=0;emit('step')};
-  P.next=function(){if(P.i<N()-1)P.goto(P.i+1);else{P.playing=false;emit('play');emit('end')}};
+  /* 1手順だけ進める（lead があれば、ブロックが置かれる動きの間は舞台を変えず、終わった時に適用する） */
+  P.fwd=function(){
+    const n=P.i+1;if(n>=N())return false;
+    if(!(P.lead>0)){advance(n,false);return true}
+    if(!P.began){P.began=true;if(P.host.begin)P.host.begin()}
+    flush(false);   /* 前の手順がまだ待っていたら、ふつうに（見せる動きも含めて）適用してから次へ */
+    P.i=n;P.wait=P.leadMs=Math.min(P.lead,.6*P.hold(n));
+    if(P.wait<=0){P.wait=0;run(P.script.steps[n],n,false);if(P.host.sync)P.host.sync(P.script.steps[n],n);return true}
+    emit('pre');return true};
+  P.next=function(){if(P.i<N()-1){if(P.lead>0&&P.i>=0){P.acc=0;P.fwd();emit('step')}else P.goto(P.i+1)}else{P.playing=false;emit('play');emit('end')}};
   P.prev=function(){P.goto(P.i-1)};P.first=function(){P.goto(-1)};P.last=function(){P.goto(N()-1)};
   P.play=function(){if(!N())return;if(P.i>=N()-1)P.goto(-1);P.playing=true;P.acc=0;emit('play');if(P.i<0)P.goto(0)};
   P.pause=function(){P.playing=false;emit('play')};
@@ -209,12 +250,14 @@ function player(script,host,o){
     if(P.mode==='recorded'){const nx=P.script.steps[i+1];if(nx&&nx.t!==undefined&&s.t!==undefined)return clamp(nx.t-s.t,300,P.maxGap)}
     return s.d||1400};
   P.tick=function(dt){
-    if(!P.playing||P.mode==='manual'||!(dt>0))return;
+    if(!(dt>0))return;
+    if(P.wait>0){P.wait-=dt*P.speed;if(P.wait<=0){const i=P.i;P.wait=0;run(P.script.steps[i],i,false);if(P.host.sync)P.host.sync(P.script.steps[i],i);emit('step')}}
+    if(!P.playing||P.mode==='manual')return;
     P.acc+=dt*P.speed;let g=0;
     while(P.playing&&g++<256){const h=P.hold(P.i);if(P.acc<h)break;P.acc-=h;
       if(P.i>=N()-1){P.playing=false;P.acc=0;emit('play');emit('end');break}
-      const keep=P.acc;advance(P.i+1,false);P.acc=keep;emit('step')}};
-  P.info=()=>({i:P.i,n:N(),playing:P.playing,speed:P.speed,mode:P.mode,step:P.script.steps[P.i]||null,err:P.errs[P.i]||''});
+      const keep=P.acc;P.fwd();P.acc=keep;if(!(P.wait>0))emit('step')}};
+  P.info=()=>({i:P.i,n:N(),playing:P.playing,speed:P.speed,mode:P.mode,step:P.script.steps[P.i]||null,err:P.errs[P.i]||'',flying:P.wait>0,lead:P.leadMs});
   return P}
 /* 全体の長さ（ms）。倍率と方式を指定 */
 function totalMs(script,speed,mode){let t=0;const st=script.steps;
@@ -251,5 +294,5 @@ function recorder(o){
   return R}
 
 const busy=false;
-return{V,CAT,OPCAT,SPEEDS,busy,drv,fv,shapeText,fields,stepOf,opsOf,fromScenario,norm,parse,stringify,toText,stats,player,totalMs,pureHost,replay,edit,recorder}
+return{V,CAT,OPCAT,SPEEDS,COLS,busy,drv,layout,fv,shapeText,fields,stepOf,opsOf,fromScenario,norm,parse,stringify,toText,stats,player,totalMs,pureHost,replay,edit,recorder}
 })();

@@ -55,13 +55,20 @@
     </div>
     <div id="tlRc" hidden><div class="row"><b id="tlRcN">● 記録中</b><button id="tlRcX" aria-label="記録を止めて、記録した手順を再生できる形にする">■ 止める</button></div><div class="note">いま画面で触った操作（ボタン・バー・選ぶ・物理の命令）が、手順として貯まります。キャンバスをなぞった跡は「動きの目安」としてだけ残ります（再生では作品に反映しません）。</div></div>
     <div id="tlPl" hidden>
-      <div class="row" id="tlBar"><button id="tlFirst" aria-label="最初へ">⏮</button><button id="tlPrev" aria-label="1つ前の手順へ">◀</button><button id="tlPlay" aria-label="再生・一時停止">▶ 再生</button><button id="tlNext" aria-label="1つ先の手順へ">▶|</button><button id="tlLast" aria-label="最後へ（できあがり）">⏭</button></div>
-      <div class="row"><input id="tlSk" type="range" data-e="1" min="0" max="1" step="1" value="0" aria-label="手順の位置（動かすと、その手順の姿になります）"><b class="v" id="tlPos" style="min-width:5em">はじめ</b></div>
-      <div class="row"><span class="lab" style="min-width:2.6em">速さ</span><select id="tlSpd" aria-label="再生の速さ"></select><select id="tlMode" aria-label="進め方"><option value="auto">自動で進む</option><option value="recorded">記録した間隔どおり</option><option value="manual">1手順ずつ（◀▶|で）</option></select></div>
+      <div class="row" id="tlBar"><button id="tlFirst" aria-label="最初へ">⏮</button><button id="tlPrev" aria-label="1つ前の手順へ">◀</button><button id="tlPlay" aria-label="再生・一時停止">▶ 再生</button><button id="tlNext" aria-label="1つ先の手順へ">▶|</button><button id="tlLast" aria-label="最後へ（できあがり）">⏭</button><b class="v" id="tlPos" style="min-width:4.6em;text-align:right;flex:1">はじめ</b></div>
+      <div id="tlBlkBox">
+        <div id="tlBw">
+          <div class="tlpr"><div id="tlPal" aria-hidden="true"></div><button id="tlFit" aria-pressed="false" aria-label="組み立て台の全体を縮めて見る／大きく見る">全体</button></div>
+          <div id="tlBoard" role="group" aria-label="組み立て台。ブロックが1つずつ組み上がります。ブロックをタップすると、その手順へ移ります"><div id="tlBd"><div id="tlBlocks"></div><div id="tlPlate" aria-hidden="true"></div></div></div>
+          <div id="tlHand" hidden aria-hidden="true"></div>
+        </div>
+      </div>
       <div class="tlcap" id="tlCap" role="status" aria-live="polite"></div>
+      <div id="tlFlds"></div>
+      <div class="row"><input id="tlSk" type="range" data-e="1" min="0" max="1" step="1" value="0" aria-label="手順の位置（動かすと、その手順の姿になります）"></div>
+      <div class="row"><span class="lab" style="min-width:2.6em">速さ</span><select id="tlSpd" aria-label="再生の速さ"></select><select id="tlMode" aria-label="進め方"><option value="auto">自動で進む</option><option value="recorded">記録した間隔どおり</option><option value="manual">1手順ずつ（◀▶|で）</option></select></div>
       <div class="tlerr" id="tlErr"></div>
       <div id="tlHowBox"><div class="gh tlsub">操作の手順</div><ol id="tlHow"></ol></div>
-      <div id="tlBlkBox"><div class="gh tlsub">ブロック（タップでその手順へ）</div><div id="tlBlocks"></div></div>
       <details id="tlMore"><summary>書き出し・直す</summary>
         <div class="row"><button id="tlTxt" aria-label="操作手順書（文章）をコピー">📄 手順書をコピー</button><button id="tlJs" aria-label="手順書（JSON）をコピー">JSONをコピー</button></div>
         <div class="row"><span class="lab" style="min-width:2.6em">字幕</span><input id="tlEd" type="text" aria-label="いまの手順の字幕を直す" style="flex:1;min-width:8em"><button id="tlDel" aria-label="いまの手順を消す">この手順を消す</button></div>

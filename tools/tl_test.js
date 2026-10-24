@@ -138,4 +138,57 @@ console.log('7) どんな有効なシナリオでも、命令だけで組み立�
  const nm={id:'nomass',title:'t',bodies:[{id:'floor',type:'static',shapes:[{t:'plane',normal:[0,1],d:0}]},{id:'b',type:'dynamic',pos:[0,1],shapes:[{t:'circle',r:.1,m:1}]}],run:{t:1}};
  chk('質量を持たない動く物体も同じに組み立て直せる',canon(TL.replay(TL.fromScenario(nm)))===canon(nm))}
 
+console.log('8) 組み立て台の配置（layout。台帳Z-196）');
+{let allOk=true,bad=[];
+ for(const S of samples){
+  const sc=TL.fromScenario(S),L=TL.layout(sc),L2=TL.layout(sc);
+  const n=sc.steps.length,occ=new Map();let inb=true,ovl=false,sup=true;
+  /* 時間順に積んだ時、どのブロックも下が埋まっている（浮かない）・重ならない・幅12の中 */
+  const hh=new Array(L.cols).fill(0);
+  for(const b of L.bricks){
+    if(b.x<0||b.x+b.w>L.cols||b.w<1)inb=false;
+    let m=0;for(let k=b.x;k<b.x+b.w;k++)m=Math.max(m,hh[k]);
+    if(b.y!==m)sup=false;
+    for(let k=b.x;k<b.x+b.w;k++){const key=k+','+b.y;if(occ.has(key))ovl=true;occ.set(key,b.i);hh[k]=b.y+1}}
+  const ids=L.bricks.map(b=>b.i).join(',')===Array.from({length:n},(_,i)=>i).join(',');
+  const det=J(L)===J(L2);
+  const towers=sc.steps.filter(s=>s.op&&s.op.op==='addBody').length;
+  const ok1=L.bricks.length===n&&ids&&inb&&!ovl&&sup&&det&&Object.keys(L.towers).length===towers&&L.levels>=1;
+  if(!ok1){allOk=false;bad.push(S.id+':'+J({n:L.bricks.length,ids,inb,ovl,sup,det,tw:Object.keys(L.towers).length,towers}))}}
+ chk('全サンプル：手順の数だけブロックが、幅12の中に・重ならず・浮かず・毎回同じ場所に置かれる',allOk,bad.join(' | '));
+ const sc=TL.fromScenario(samples.find(s=>s.id==='orig-atwood-pulley')),L=TL.layout(sc);
+ const bd=L.bricks.filter(b=>b.kind==='body'),ln=L.bricks.filter(b=>b.kind==='link');
+ chk('物体は塔（幅4）になり、別々の列に立つ',bd.length>=2&&bd.every(b=>b.w===4)&&new Set(bd.map(b=>b.x)).size===Object.keys(L.towers).length);
+ chk('つなぎは、つなぐ物体の塔をまたぐ橋（幅4以上）になり、塔の上に載る',ln.length>=1&&ln.every(b=>b.w>=4&&b.y>=1));
+ const run=L.bricks.filter(b=>b.kind==='run');chk('実行のブロックは幅12で、いちばん上に載る',run.length>=1&&run.every(b=>b.w===12)&&Math.max(...run.map(b=>b.y))===L.levels-1);
+ const rec={steps:[{k:'ui',cat:'ui',say:'a'},{k:'ui',cat:'ui',say:'b'},{k:'gesture',cat:'ui',say:'c'},{k:'zzz',say:'未知'},{k:'note',cat:'note',say:'n'}]},LR=TL.layout(rec);
+ chk('記録した手順（画面の操作・未知の手順）も、全部に場所がある',LR.bricks.length===5&&LR.bricks.every(b=>b.x>=0&&b.x+b.w<=12));
+ const E=TL.layout({steps:[]});chk('手順が空でも壊れない',E.bricks.length===0&&E.levels===0)}
+
+console.log('9) 置く動きの間は舞台を変えない（lead）');
+{const sc=TL.fromScenario(samples.find(s=>s.id==='orig-projectile'));
+ const mk=(lead)=>{const H=TL.pureHost(),ev=[];const P=TL.player(sc,H,{lead,cb:{pre:()=>ev.push('pre:'+P.i),step:()=>ev.push('step:'+P.i)}});return{H,P,ev}};
+ /* lead=0：従来どおり、すぐ適用 */
+ {const a=mk(0);a.P.goto(0);a.P.play();a.P.tick(5000);chk('lead=0 は従来どおり（pre が出ない）',!a.ev.some(x=>x.startsWith('pre')))}
+ /* lead>0：進み始めた手順は、待つ間は未適用で、待ち終わると適用 */
+ {const a=mk(600);a.P.goto(1);const nBodies=()=>a.H.src?(a.H.src.bodies||[]).length:0;
+  const i0=a.P.i;a.P.next();
+  chk('next で pre（置く動きの始まり）が出て、手順の番号だけが進む',a.ev.some(x=>x==='pre:'+(i0+1))&&a.P.i===i0+1&&a.P.info().flying,J(a.ev));
+  const stepIdx=sc.steps.findIndex(s=>s.op&&s.op.op==='addBody');
+  a.P.goto(stepIdx-1);const before=nBodies();a.P.next();
+  chk('待っている間は、舞台（シナリオ）に物体が増えない',a.P.i===stepIdx&&nBodies()===before,before+'/'+nBodies());
+  a.P.tick(100);chk('途中ではまだ増えない（lead 600 ms の約 1/6）',nBodies()===before);
+  a.P.tick(900);chk('待ち終わると、物体が増える（置かれた瞬間）',nBodies()===before+1&&!a.P.info().flying,nBodies()+'');
+  chk('適用のあとに step が出る',a.ev[a.ev.length-1]==='step:'+stepIdx)}
+ /* 速さ×4 なら待つ時間も1/4 */
+ {const a=mk(800);a.P.goto(1);a.P.setSpeed(4);a.P.next();a.P.tick(150);const f1=a.P.info().flying;a.P.tick(100);chk('速さ×4：待つ実時間が1/4（800ms→200ms）',f1&&!a.P.info().flying)}
+ /* 待っている途中で goto：待っていた手順も適用してから進む（結果は直接 goto した時と同じ） */
+ {const a=mk(900),b=mk(0);a.P.goto(3);a.P.next();a.P.goto(8);b.P.goto(8);chk('待ちの途中で飛んでも、結果は同じ',J(a.H.src)===J(b.H.src)&&!a.P.info().flying)}
+ {const a=mk(900),b=mk(0);a.P.goto(5);a.P.next();a.P.goto(a.P.i);b.P.goto(6);chk('待ちの途中で同じ手順へ goto すると、その手順が適用される',J(a.H.src)===J(b.H.src))}
+ {const a=mk(900),b=mk(0);a.P.goto(5);a.P.next();a.P.goto(2);b.P.goto(2);chk('待ちの途中で戻ると、待ちは消えて戻った姿になる',J(a.H.src)===J(b.H.src)&&!a.P.info().flying)}
+ /* 再生（自動）で最後まで通すと、lead があってもなくても同じ結果 */
+ {const a=mk(700),b=mk(0);for(const x of[a,b]){x.P.goto(-1);x.P.play();for(let t=0;t<400&&x.P.playing;t++)x.P.tick(250);x.P.tick(2000)}
+  chk('自動再生で最後まで通すと、lead の有無によらず同じシナリオになる',J(a.H.src)===J(b.H.src)&&a.P.i===b.P.i&&!a.P.info().flying,'')}
+ {const a=mk(2000);const long=Object.assign({},sc,{steps:sc.steps.map(s=>Object.assign({},s,{d:500}))});const P=TL.player(long,TL.pureHost(),{lead:2000});P.goto(1);P.next();chk('待ちは手順の長さの6割まで（500ms→300ms）',Math.abs(P.info().lead-300)<1,P.info().lead)}}
+
 console.log('\n結果: OK='+ok+' NG='+ng);process.exit(ng?1:0);
