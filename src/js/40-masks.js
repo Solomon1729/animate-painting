@@ -37,13 +37,6 @@ function paintFrame(){
   if(drawOnly)return;   /* 統合の描画（226-merge.js）：背景・補助表示は描かない */
   drawBrushRing();paPreview();rtOverlay();selOverlay();sizeHintDraw();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
-  if(rulerPt){
-    ctx.save();ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
-    ctx.strokeStyle='#ffb020';ctx.lineWidth=3/Z.s;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(rulerPt.x0,rulerPt.y0);ctx.lineTo(rulerPt.x1,rulerPt.y1);ctx.stroke();
-    for(const[x,y]of[[rulerPt.x0,rulerPt.y0],[rulerPt.x1,rulerPt.y1]]){ctx.beginPath();ctx.arc(x,y,5/Z.s,0,6.283);ctx.fillStyle='#ffb020';ctx.fill()}
-    ctx.restore();
-  }
 }
 function drawRangeBox(){
   ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);

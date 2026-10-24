@@ -170,7 +170,7 @@ document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement
 if(window.ResizeObserver)new ResizeObserver(()=>fit()).observe($('wrap'));
 addEventListener('resize',()=>{fit();tpClamp();if(UIS.tpf)tpPos()});
 
-setFrame('b',true);tpApply();pzSync();fit();canvasUi();add();add();setSel(AC[0]);setTab('pl');initExtra();armTips(document);rulerTxUpdate();
+setFrame('b',true);tpApply();pzSync();fit();canvasUi();add();add();setSel(AC[0]);setTab('pl');initExtra();armTips(document);
 requestAnimationFrame(t=>{last=t;loop(t)});
 
 /* ロック中レイヤーの編集ボタンを止める（B-2） */

@@ -37,7 +37,7 @@ canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-
 .hint{position:absolute;left:10px;bottom:8px;right:10px;font-size:12px;opacity:.75;pointer-events:none}
 .pane{background:var(--pane);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px);padding:10px;margin-top:10px}
 .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:calc(var(--dp,1)*6px)}
-.row:first-child{margin-top:0}
+.row:first-child{margin-top:0}.row[hidden]{display:none}
 .lab{font-size:13px;font-weight:var(--fw,900);min-width:3em}
 /* バーの行：ラベルを上の段へ分け、バーを長くする（台帳Z-88④）。1行を消せば元に戻る */
 .row>.lab:first-child:has(~input[type=range]){flex:0 0 100%;min-width:0}

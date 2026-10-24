@@ -70,7 +70,7 @@ function setSel(l){
   $('em').style.display='none';$('emTgl').style.display=l.sp?'none':'';
   const ex=$('ex');ex.innerHTML='';
   ex.appendChild(tog('向きを反転',0,()=>{l.face*=-1}));
-  physUi();
+  scnUi();
   const s=document.createElement('select');s.setAttribute('aria-label','対象');
   s.innerHTML='<option value="">対象なし</option>'+AC.filter(a=>a!==l).map(o=>`<option value="${o.id}"${l.toType!=='layer'&&l.to===o.id?' selected':''}>${o.name}</option>`).join('')+LAYERS.map(y=>`<option value="L${y.id}"${l.toType==='layer'&&l.to===y.id?' selected':''}>🗂 ${y.name}</option>`).join('');
   s.onchange=()=>{if(l.att)detach(l);const v=s.value;if(v[0]==='L'){l.to=+v.slice(1);l.toType='layer'}else{l.to=+v||null;l.toType='actor'}if(!l.to)l.maskTo=false;setSel(l)};

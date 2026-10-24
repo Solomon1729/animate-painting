@@ -91,7 +91,7 @@ function makeClip(l,maskFn,cut){
   let fx0=null,fy0=null;
   if(l.M){const t=l.M.transformPoint(new DOMPoint(ux*S0,uy*S0));fx0=((t.x/dpr-Z.x)/Z.s)/W;fy0=((t.y/dpr-Z.y)/Z.s)/H}
   return{c:p,W:pw0,H:ph0,size:l.size,src:l.name,sx:l.fx,sy:l.fy,ux,uy,fx0,fy0,cut:!!cut,lid:l.layerId,rot:l.rot||0,face:l.face||1,wxk,
-    inh:ptInh,ch:ptInh&&l.ch?JSON.parse(JSON.stringify(l.ch)):null,phys:ptInh&&l.phys?JSON.parse(JSON.stringify(l.phys)):null,pv:l.pv||0,rr:l.rr||0};
+    inh:ptInh,ch:ptInh&&l.ch?JSON.parse(JSON.stringify(l.ch)):null,pv:l.pv||0,rr:l.rr||0};
 }
 function takePart(cut,o){
   o=o||{};
@@ -121,7 +121,7 @@ function clipToObj(k,o){
   const R2=Math.max(k.W||512,k.H||512),id=++uid,exact=o.exact||(o.off?false:ptPos==='orig'||(ptPos==='auto'&&!!k.cut)),dd=exact?0:.04;
   const fx=k.fx0!=null?k.fx0+dd:k.sx+k.ux*S0/W+dd,fy=k.fy0!=null?k.fy0+dd:k.sy+k.uy*S0/H+dd;
   const a={id,sp:'p',name:o.name||'切り抜き'+id,img:k.c,fx,fy,size:Math.max(.04,k.size*(k.wxk||1)*Math.max(k.c.width,k.c.height)/R2),pv:0,face:k.face||1,rot:k.rot||0,rr:0,ch:mkc(),to:null,att:false,maskTo:false,ox:.5,oy:.05,front:true,keep:0,eat:false,bite:nb(),mask:nb(),hasMask:false,wx:0,wy:0,pins:[],blur:0,bm:null,hasBm:false,bmOn:false};
-  if(k.inh&&k.ch){a.ch=JSON.parse(JSON.stringify(k.ch));a.pv=k.pv||0;a.rr=k.rr||0;if(k.phys)a.phys=JSON.parse(JSON.stringify(k.phys))}  /* 動き・物理を引き継ぐ（台帳Z-91②） */
+  if(k.inh&&k.ch){a.ch=JSON.parse(JSON.stringify(k.ch));a.pv=k.pv||0;a.rr=k.rr||0}  /* 動きを引き継ぐ（台帳Z-91②）。旧・簡易の物理の設定は、物理を統合した（Z-197）ので引き継がない */
   {const ly=k.lid!=null&&LAYERS.find(y=>y.id===k.lid);if(ly&&ly.visible&&!ly.locked)a.layerId=k.lid}  /* 元と同じレイヤーに置く（非表示・ロック中のレイヤーには置かない） */
   return a;
 }

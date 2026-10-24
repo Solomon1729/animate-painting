@@ -29,6 +29,7 @@
 <div class="cmenu" id="mA" hidden>
   <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
   <div class="cmh" id="mPh" hidden>物理</div>
+  <button id="mPhArt" aria-label="選んでいる絵に物理を付ける／外す（付けると、見えている輪郭が当たり判定になって動く）" hidden>🌍 この絵に物理を付ける</button>
   <button id="mPlay" aria-label="物理を実行・一時停止" hidden>▶ 物理を実行</button>
   <button id="mRst" aria-label="物理を最初に戻す" hidden>⟲ 物理を最初へ</button>
   <button id="mGrab" aria-label="実行中にキャンバスを触って物を動かす（つかむ・つつく）のオン／オフ" aria-pressed="true" hidden>🖐 つかんで動かす</button>
@@ -263,19 +264,24 @@
 
   <div class="tab" data-tab="ph">
     <div class="grp" id="scGrp"><div class="gh">物理</div>
-    <div class="note" id="scHelp">絵を選んで「動く物体」か「地形」にして、▶ で動かします。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。絵を描き足したり大きさを変えたりすると、当たり判定も追従します。サンプルを開くと、問題づくり・実験もできます。</div>
-    <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="プロトタイプ（最小のシナリオ）から新しいシナリオを作る">＋プロトタイプ</button><button id="scOff" aria-label="シナリオを閉じる（自動で作った絵も消えます）" hidden>閉じる</button></div>
-    <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の役割</div>
-      <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理の物体（絵の輪郭が当たり判定）にする">動く物体</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵を物理に参加させない（絵は残ります）">参加しない</button></div>
+    <div class="note" id="scHelp">絵を選んで「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
+    <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の物理</div>
+      <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理で動く物体にする（絵の輪郭が当たり判定）">🌍 動く</button><button id="scArtF" aria-label="選んでいる絵を、固定の土台にする（物理には参加するが動かない。台・壁・障害物）">固定</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵から物理を外す（絵は残ります）">外す</button></div>
       <div class="row"><span class="lab">形</span><select id="scArtS" aria-label="物体の形"><option value="auto">自動</option><option value="circle">丸</option><option value="box">四角</option><option value="hull">輪郭</option><option value="static">固定の障害物</option></select></div>
+      <div id="scArtP" hidden>
+        <div class="row"><span class="lab">質量</span><input id="apM" type="range" min="0.1" max="20" step="0.1" value="1" aria-label="質量（kg）"><b class="v" id="apMv">1 kg</b></div>
+        <div class="row"><span class="lab">反発</span><input id="apE" type="range" min="0" max="1" step="0.05" value="0.5" aria-label="反発係数（大きいほどよく跳ねる）"><b class="v" id="apEv">0.5</b></div>
+        <div class="row"><span class="lab">摩擦</span><input id="apU" type="range" min="0" max="1.5" step="0.05" value="0.4" aria-label="摩擦係数（大きいほど滑りにくい）"><b class="v" id="apUv">0.4</b></div>
+        <div class="row" id="apVRow"><span class="lab">初速の向き</span><input id="apA" type="range" min="-180" max="180" step="5" value="0" data-snap="-180,-90,0,90,180" aria-label="初速の向き（0°＝右、90°＝上、−90°＝下）"><b class="v" id="apAv">0°</b></div>
+        <div class="row" id="apSRow"><span class="lab">初速</span><input id="apV" type="range" min="0" max="20" step="0.5" value="0" aria-label="初速（m/s）。投げ出す速さ"><b class="v" id="apVv">0 m/s</b></div>
+        <div class="row"><button id="apHit" class="on" aria-pressed="true" aria-label="他の物体とぶつかる（オフにするとすり抜けます）">当たり判定</button></div>
+      </div>
       <div class="note" id="scArtSt"></div>
     </div>
     <div id="scBody" hidden>
-      <div class="note" id="scTitle" style="font-weight:var(--fw,900);opacity:1"></div>
-      <div class="note" id="scProb" style="opacity:.85"></div>
-      <div class="row"><button id="scHow" aria-label="このシナリオの作り方を、ブロックを順に置く形のタイムラプスで見る（見終わると見る前に戻ります）">🎞 作り方をタイムラプスで見る</button></div>
       <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
-      <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span></div>
+      <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span><button id="scOff" aria-label="物理をすべて外す（自動で作った絵も消えます）" hidden>✕ 物理を全部外す</button></div>
+      <div class="row" id="scWorld" hidden><span class="lab">まわり</span><button id="wlFloor" class="on" aria-pressed="true" aria-label="床（下の面）">床</button><button id="wlWall" class="on" aria-pressed="true" aria-label="左右の壁">左右の壁</button><button id="wlTop" aria-pressed="false" aria-label="天井（上の面）">天井</button></div>
       <div class="row"><span class="lab">時刻</span><input id="scT" type="range" min="0" max="1" step="0.0083333" value="0" aria-label="時刻（動かすと、その時刻の姿になります）"><b class="v" id="scTv" style="min-width:7em">0.00 s</b></div>
       <div class="row" id="scLive"></div>
       <div id="scParams"></div>
@@ -295,30 +301,15 @@
         <div class="row"><button id="scApply">読み込む</button><button id="scCheck" aria-label="最後まで計算して、答え合わせと保存則の検査をする">検査する</button><button id="scCopy">コピー</button></div>
       </details>
     </div>
+    <details id="scAdv"><summary>くわしく：サンプル・問題づくり・作り方</summary>
+      <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="プロトタイプ（最小のシナリオ）から新しいシナリオを作る">＋プロトタイプ</button></div>
+      <div class="note" id="scTitle" style="font-weight:var(--fw,900);opacity:1"></div>
+      <div class="note" id="scProb" style="opacity:.85"></div>
+      <div class="row" id="scHowRow" hidden><button id="scHow" aria-label="このシナリオの作り方を、ブロックを順に置く形のタイムラプスで見る（見終わると見る前に戻ります）">🎞 作り方をタイムラプスで見る</button></div>
+      <div class="note">サンプル（東大物理・物理オリンピック風など）を開くと、条件・測定・答え合わせ・グラフ・JSONで、問題づくりや実験ができます。</div>
+    </details>
     <div class="note" id="scErr" style="color:#b91c1c;opacity:1"></div>
     </div>
-    <details class="grp" id="phOld"><summary>旧：かんたん物理（絵ごとの簡易設定）・単位の定規</summary>
-    <div class="note">上の物理（サンプル・「動く物体」「地形」）を使っている間は、こちらは止まります。以前の作品を開いた時のための互換の設定です。</div>
-    <div class="grp"><div class="gh">全体</div>
-    <div class="row"><button id="pOn">物理を有効にする</button><button id="pFloor" class="on">床</button><button id="pWall" class="on">壁</button><button id="pCol" class="on">当たり判定</button></div>
-    <div class="row"><span class="lab">重力</span><input id="pG" type="range" min="0" max="3" step="0.05" value="1" aria-label="重力の強さ（1で現実の重力相当。単位を設定していない場合は目安）"></div>
-    <div class="row"><span class="lab">重力の向き</span><input id="pGd" type="range" min="0" max="360" step="5" value="90" data-snap="0,90,180,270,360" aria-label="重力の向き（90度＝下、0度＝右、270度＝上）"></div>
-    <div class="row"><span class="lab">時間の流れ</span><input id="pT" type="range" min="0" max="3" step="0.05" value="1" aria-label="物理の時間の流れの速さ（1で現実と同じ、0で静止）"><b class="v" id="pTv">×1</b></div>
-    </div>
-    <div class="grp alt"><div class="gh">単位（定規）</div>
-    <div class="row"><button id="pRuler">📏 定規で測る</button><span class="note" id="pRulerTx" style="margin:0">現在：100px ＝ 1m（未設定・目安）</span></div>
-    <div class="row" id="pRulerSet" style="display:none"><span class="lab" style="min-width:0">この線の長さ＝</span><input id="pRulerLen" type="number" value="1" min="0.01" step="0.01" style="width:70px" aria-label="実際の長さ(m)"><span>m</span><button id="pRulerOk">設定</button><button id="pRulerCancel">やめる</button></div>
-    <div class="note">画面上でドラッグして線を引くと、その長さが実際にどれくらいかを指定できます。設定すると、重力・質量・速度をおおよそ現実の単位（m, kg, m/s）に対応づけられます。</div>
-    </div>
-    <div class="grp alt"><div class="gh">選んでいるオブジェクト</div>
-    <div class="row"><button id="pSelOn">このオブジェクトを物理で動かす</button><button id="pFix">固定する（土台にする）</button></div>
-    <div class="row"><span class="lab">質量</span><input id="pM" type="range" min="0.2" max="10" step="0.1" value="1" aria-label="質量"></div>
-    <div class="row"><span class="lab">反発係数</span><input id="pE" type="range" min="0" max="1.1" step="0.05" value="0.55" aria-label="反発係数（大きいほどよく跳ねる）"></div>
-    <div class="row"><span class="lab">当たり判定</span><input id="pR" type="range" min="0.2" max="1.3" step="0.05" value="0.8" aria-label="当たり判定の大きさ（見た目の絵より小さくして、離れた所での衝突を減らせます）"></div>
-    <div class="row"><button id="pStop">この子の速度をとめる</button></div>
-    <div class="note">ドラッグして離すと、その勢いで飛んでいきます。「固定する」を押すと、他のオブジェクトの土台や壁になりますが自分は動きません。</div>
-    </div>
-    </details>
   </div>
 
   <div class="tab" data-tab="bg">

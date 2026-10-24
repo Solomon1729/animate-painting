@@ -11,13 +11,13 @@ const ART={W:8,MAXR:320,TOL_M:.02,MINTH_M:.04,HULL_N:12,CIRC:.9,RECT:.93,last:nu
 
 function artNewScene(){const w=ART.W;
   return{id:'art-scene',title:'お絵かき×物理',tags:['お絵かき'],source:'お絵かき（このアプリで作ったシーン）',level:'basic',problem:'',
-    params:{gacc:{v:9.8,min:0,max:30,step:.1,unit:'m/s²',label:'重力の強さ'},e:{v:.5,min:0,max:1,step:.05,label:'反発係数'},mu:{v:.4,min:0,max:1.5,step:.05,label:'摩擦係数'}},
-    world:{g:'gacc'},view:{x0:0,y0:0,w},
+    params:{gacc:{v:9.8,min:0,max:30,step:.1,unit:'m/s²',label:'重力の強さ'},gdir:{v:-90,min:-180,max:180,step:5,unit:'°',label:'重力の向き（−90°＝下）'},e:{v:.5,min:0,max:1,step:.05,label:'反発係数'},mu:{v:.4,min:0,max:1.5,step:.05,label:'摩擦係数'}},
+    world:{g:'gacc',gdir:'gdir'},view:{x0:0,y0:0,w},
     bodies:[{id:'frame',type:'static',mu:'mu',e:1,label:'',shapes:[{t:'plane',normal:[0,1],d:0},{t:'plane',normal:[1,0],d:0},{t:'plane',normal:[-1,0],d:-w}]}],
     probes:{},run:{t:60}}}
-function artEnsure(){
+function artEnsure(o){
   if(SCN.src)return true;
-  const r=scnSetSource(artNewScene());if(!r.ok){note('シーンを作れませんでした：'+r.errors.join(' / '));return false}
+  const r=scnSetSource(artNewScene(),{noUndo:!!(o&&o.noUndo)});if(!r.ok){note('シーンを作れませんでした：'+r.errors.join(' / '));return false}
   Object.assign(SCN.opt,{statics:false,grid:false,axes:false,labels:false,jointsBelow:true});RUN.rev++;return true}
 
 /* 絵を、画面に見えているとおりにラスターへ。戻り値{w,h,k,al}：k＝ラスター1画素あたりの、画面(CSS px)に対する倍率（ラスター座標＝画面座標×k） */
@@ -50,10 +50,13 @@ const artR=x=>+x.toFixed(4);
 function artRemove(id){if(!SCN.src)return;SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);delete(SCN.src.params||{})['m_'+id];delete SCN.link[id]}
 /* 作ったシーンに物体を足して、世界を作り直し、絵につなぐ（原点＝絵の中心） */
 function artCommit(a,body,massParam,rot0,noUndo){   /* noUndo＝絵の編集に追従して作り直す時（絵の編集のUndoに乗る。台帳Z-185） */
-  if(!noUndo)pushUndo();const id=body.id;artRemove(id);
+  if(!noUndo)pushUndo();const id=body.id,old=SCN.src.bodies.find(b=>b.id===id);artRemove(id);
+  if(old){for(const k of['e','mu'])if(typeof old[k]==='number')body[k]=old[k];   /* 絵ごとの反発・摩擦・初速・当たり判定は、作り直しても保つ（台帳Z-197） */
+    if(old.vel!==undefined&&body.type==='dynamic')body.vel=old.vel;if(old.collide===false)body.collide=false}
   SCN.src.bodies.push(body);
   if(massParam){SCN.src.params=SCN.src.params||{};SCN.src.params['m_'+id]={v:1,min:.1,max:20,step:.1,unit:'kg',label:a.name+'の質量'}}
   const V=PHS.validate(SCN.src);if(V.errors.length){note('物体を足せませんでした：'+V.errors.slice(0,2).join(' / '));SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);return false}
+  for(const k of Object.keys(SCN.link))if(k!==id&&SCN.link[k].a===a.id&&/^art_/.test(k)){const j=SCN.src.joints||[];if(!j.some(x=>[x.a,x.b].concat(x.via||[],x.path||[]).some(y=>y===k||(y&&y.body===k))))artRemove(k)}   /* 1つの絵の役割は1つ（動く・固定・地形の付け替え）。台帳Z-197 */
   RUN.playing=false;scnBuild();RUN.dirty=false;
   const b=RUN.sess&&RUN.sess.W.byId.get(id);if(!b){note('物体を作れませんでした：'+(RUN.err||'不明'));return false}
   const iw=a.img.naturalWidth||a.img.width||1,ih=a.img.naturalHeight||a.img.height||1,kpm=W/RUN.view.w,Lm=S0*a.size/kpm;
@@ -63,7 +66,7 @@ function artCommit(a,body,massParam,rot0,noUndo){   /* noUndo＝絵の編集に�
 /* ---------- 地形 ---------- */
 function artTerrain(a,opt){opt=opt||{};
   if(!a||!a.img){note('絵を選んでください');return false}
-  if(!artEnsure())return false;
+  if(!artEnsure(opt))return false;
   const v=RUN.view,kpm=W/v.w,R=artRaster(a),step=Math.max(1,Math.round(R.w/220)),cols=[];
   for(let x=0;x<R.w;x+=step){let top=-1;for(let y=0;y<R.h;y++)if(R.al[y*R.w+x]){top=y;break}
     if(top<0){cols.push(null);continue}let bot=top;while(bot<R.h&&R.al[bot*R.w+x])bot++;cols.push({x:x+step/2,top,bot})}
@@ -86,7 +89,7 @@ function artTerrain(a,opt){opt=opt||{};
 /* ---------- 物体 ---------- */
 function artBody(a,opt){
   opt=opt||{};if(!a||!a.img){note('絵を選んでください');return false}
-  if(!artEnsure())return false;
+  if(!artEnsure(opt))return false;
   const v=RUN.view,kpm=W/v.w,R=artRaster(a),pts=[];
   for(let y=0;y<R.h;y++)for(let x=0;x<R.w;x++){if(!R.al[y*R.w+x])continue;
     if(x>0&&x<R.w-1&&y>0&&y<R.h-1&&R.al[y*R.w+x-1]&&R.al[y*R.w+x+1]&&R.al[(y-1)*R.w+x]&&R.al[(y+1)*R.w+x])continue;   /* 内側は輪郭の点にならない */
@@ -111,6 +114,81 @@ function artBody(a,opt){
   ART.last={id:body.id,kind:asCircle?'circle':asBox?'box':'poly',hull,box:bx,center:G,area,com,topAbove:poly?[com[0],topAt(com[0])]:[com[0],com[1]+(asCircle?shape.r:bx.h/2)],top:hull.reduce((t,p)=>p[1]>t[1]?p:t,hull[0])};   /* topAbove＝重心の真上で、輪郭の上の端（釘をかける所） */
   if(!opt.quiet)note('「'+a.name+'」を'+(fixed?'固定の障害物':'物体')+'にしました（'+(asCircle?'円':asBox?'四角':hull.length+'角形')+'）。質量・反発・摩擦はスライダーで変えられます。▶で動かせます',7000);return body.id}
 
-/* ---------- 物理タブのボタン ---------- */
-$('scArtT').onclick=()=>{if(!sel){note('先に絵（オブジェクト）を選んでください');return}artTerrain(sel)};
-$('scArtB').onclick=()=>{if(!sel){note('先に絵（オブジェクト）を選んでください');return}const m=$('scArtS').value;artBody(sel,{shape:m==='static'?'auto':m,fixed:m==='static'})};
+/* ---------- 物理タブのボタン・絵ごとの物理のつまみ（台帳Z-197）----------
+   「絵に物理を付ける」が標準の入口：絵を選んで 動く／固定／地形 を押すと、見えている輪郭が当たり判定になる。質量・反発・摩擦・初速・当たり判定は、その絵だけのつまみ。
+   つまみは物体（SCN.src.bodies）の項目を直接書き、RUN.dirty で作り直す（最初に戻る）。Undoは操作窓のpointerdownが積む。 */
+const AP={t:0};   /* UIの一時状態：つまみを動かした時刻（動かしている間は、画面の値で上書きしない） */
+const apBusy=()=>performance.now()-AP.t<500;
+const artNeedSel=()=>{if(!sel){note('先に絵（オブジェクト）を選んでください');return false}return true};
+$('scArtT').onclick=()=>{if(artNeedSel())artTerrain(sel)};
+$('scArtB').onclick=()=>{if(!artNeedSel())return;const m=$('scArtS').value;artBody(sel,{shape:m==='static'?'auto':m,fixed:m==='static'})};
+$('scArtF').onclick=()=>{if(!artNeedSel())return;const m=$('scArtS').value;artBody(sel,{shape:m==='static'?'auto':m,fixed:true})};
+/* 項目の値（数、または条件（params）の名前）→ いまの数 */
+function artVal(x,d){
+  if(typeof x==='number')return x;
+  if(typeof x==='string'){if(x in SCN.params)return SCN.params[x];const q=SCN.src&&SCN.src.params&&SCN.src.params[x];if(q!==undefined)return typeof q==='object'?q.v:q}
+  return d}
+function artVelOf(b){   /* 初速 → {speed(m/s), angle(°。0＝右・90＝上)} */
+  const v=b.vel;if(v===undefined)return{speed:0,angle:0};
+  if(Array.isArray(v)){const x=artVal(v[0],0),y=artVal(v[1],0);return{speed:Math.hypot(x,y),angle:Math.atan2(y,x)*180/Math.PI}}
+  return{speed:artVal(v.speed,0),angle:artVal(v.angle,0)}}
+const artRoleBody=()=>{const r=scnRoleOf(sel);return r&&r.art?r:null};
+function artPropsUi(r){   /* 選んでいる絵の物理のつまみ。scnUiRole から呼ぶ */
+  const P=$('scArtP');if(!P)return;
+  const ok=!!(r&&r.art&&SCN.src);P.hidden=!ok;if(!ok)return;
+  const b=r.b,dyn=r.kind==='body',show=(id,on)=>{const e=$(id).closest('.row');if(e)e.hidden=!on};
+  show('apM',dyn);show('apA',dyn);show('apV',dyn);
+  $('apHit').classList.toggle('on',b.collide!==false);$('apHit').setAttribute('aria-pressed',b.collide!==false?'true':'false');
+  if(apBusy())return;
+  const sh=artVal('e',.5),mu0=artVal('mu',.4),set=(id,v,txt)=>{const e=$(id);if(e)e.value=v;const t=$(id+'v');if(t)t.textContent=txt};
+  const m=artVal('m_'+r.id,1),e=artVal(b.e,sh),mu=artVal(b.mu,mu0),v=artVelOf(b);
+  set('apM',m,scnFmt(m)+' kg');set('apE',e,scnFmt(e));set('apU',mu,scnFmt(mu));
+  set('apA',Math.round(v.angle/5)*5,Math.round(v.angle)+'°');set('apV',v.speed,scnFmt(+v.speed.toFixed(2))+' m/s')}
+$('apM').oninput=e=>{const r=artRoleBody();if(!r)return;AP.t=performance.now();const x=+e.target.value;scnSetParam('m_'+r.id,x);$('apMv').textContent=scnFmt(x)+' kg'};
+$('apE').oninput=e=>{const r=artRoleBody();if(!r)return;AP.t=performance.now();const x=+e.target.value;r.b.e=x;RUN.dirty=true;dirtyProj=true;$('apEv').textContent=scnFmt(x)};
+$('apU').oninput=e=>{const r=artRoleBody();if(!r)return;AP.t=performance.now();const x=+e.target.value;r.b.mu=x;RUN.dirty=true;dirtyProj=true;$('apUv').textContent=scnFmt(x)};
+function artSetVel(){
+  const r=artRoleBody();if(!r)return;AP.t=performance.now();const sp=+$('apV').value,an=+$('apA').value;
+  if(sp>0)r.b.vel={speed:sp,angle:an};else delete r.b.vel;
+  RUN.dirty=true;dirtyProj=true;$('apAv').textContent=an+'°';$('apVv').textContent=scnFmt(sp)+' m/s'}
+$('apA').oninput=artSetVel;$('apV').oninput=artSetVel;
+$('apHit').onclick=()=>{const r=artRoleBody();if(!r)return;if(r.b.collide===false)delete r.b.collide;else r.b.collide=false;RUN.dirty=true;dirtyProj=true;scnUi()};
+
+/* まわり（床・左右の壁・天井）：お絵かきのシーンの枠 frame の面を足し引きする */
+const artFrame=()=>SCN.src&&SCN.src.id==='art-scene'?SCN.src.bodies.find(x=>x.id==='frame')||null:null;
+function artFrameFlags(){
+  const f=artFrame();if(!f)return null;const pl=(nx,ny,d)=>f.shapes.some(s=>s.t==='plane'&&s.normal&&s.normal[0]===nx&&s.normal[1]===ny&&(d===undefined||s.d===d));
+  return{floor:pl(0,1,0),wall:pl(1,0,0),top:pl(0,-1)}}
+function artFrameToggle(k){
+  const fl=artFrameFlags();if(!fl)return;fl[k]=!fl[k];
+  scnEdit(sc=>{const f=sc.bodies.find(x=>x.id==='frame'),w=(sc.view&&sc.view.w)||ART.W,hm=w*H/W,sh=[];
+    if(fl.floor)sh.push({t:'plane',normal:[0,1],d:0});
+    if(fl.wall)sh.push({t:'plane',normal:[1,0],d:0},{t:'plane',normal:[-1,0],d:-w});
+    if(fl.top)sh.push({t:'plane',normal:[0,-1],d:-artR(hm)});
+    if(!sh.length)sh.push({t:'plane',normal:[0,1],d:-1000});   /* 面が1つも無いと作れないので、遠い所に1枚（実質なし） */
+    f.shapes=sh})}
+function artWorldUi(){
+  const row=$('scWorld');if(!row)return;const fl=artFrameFlags();row.hidden=!fl;if(!fl)return;
+  for(const[id,k]of[['wlFloor','floor'],['wlWall','wall'],['wlTop','top']]){$(id).classList.toggle('on',!!fl[k]);$(id).setAttribute('aria-pressed',fl[k]?'true':'false')}}
+$('wlFloor').onclick=()=>artFrameToggle('floor');$('wlWall').onclick=()=>artFrameToggle('wall');$('wlTop').onclick=()=>artFrameToggle('top');
+
+/* 🎬メニュー：選んでいる絵に物理を付ける／外す */
+$('mPhArt').onclick=()=>{
+  if(!artNeedSel())return;const r=scnRoleOf(sel);
+  if(r){if(r.art)scnRemoveBody(r.id);else{pushUndo();scnUnlinkBody(r.id);scnUi()}}else artBody(sel,{})};
+
+/* 旧・簡易の物理（絵ごとの l.phys）の置き換え（読込時。台帳Z-197）。on の絵は新しい物理の物体にし（固定なら固定の土台）、質量・反発・初速を引き継ぐ。on でない絵は設定だけ捨てる。
+   旧の速さは px/秒＝画面の横幅が ART.W m になる倍率で m/秒に直す。旧の全体設定（重力・床・壁）は保存されていなかったので、新しいシーンの既定（床・左右の壁・重力9.8）になる */
+function artMigrateOld(){
+  const olds=AC.filter(a=>a.phys&&typeof a.phys==='object');if(!olds.length)return 0;let n=0;
+  for(const a of olds){
+    const p=a.phys;delete a.phys;
+    if(!p.on||!a.img||Object.keys(SCN.link||{}).some(k=>SCN.link[k].a===a.id))continue;
+    const id=artBody(a,{fixed:!!p.fixed,quiet:true,noUndo:true});if(!id)continue;n++;
+    const b=SCN.src.bodies.find(x=>x.id===id);if(!b)continue;
+    if(!p.fixed)SCN.params['m_'+id]=Math.min(20,Math.max(.1,+p.m||1));
+    if(isFinite(p.e))b.e=Math.min(1,Math.max(0,+p.e));
+    const vx=+p.vx||0,vy=+p.vy||0,sp=Math.hypot(vx,vy)/Math.max(1,W)*ART.W;
+    if(!p.fixed&&sp>.05)b.vel={speed:+sp.toFixed(3),angle:+(Math.atan2(-vy,vx)*180/Math.PI).toFixed(2)}}
+  if(n){RUN.dirty=true;dirtyProj=true;scnUi();note('旧・簡易の物理の設定を、新しい物理に置き換えました（'+n+'個）。▶ で動かせます',7000)}
+  return n}

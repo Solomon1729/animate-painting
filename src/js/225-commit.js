@@ -69,7 +69,6 @@ async function cmCommit(){
   const ca=adjActive(l),cf=lfActive(l);
   if(!ca&&!cf){note('確定する色調整・質感がありません');return}
   if(cmTooBig(l,cf))return;
-  if(cmAsLayer&&l.phys&&l.phys.on){note('物理が有効なオブジェクトは、レイヤーとして保存できません（物理を切るか、通常の確定にしてください）');return}
   cmBusy=true;note('確定しています…');await cmFrame();
   try{
     const asLy=cmAsLayer,cov=cmCover(l,[...(ca?['adjm']:[]),...(cf?['lfm']:[])]);
@@ -114,7 +113,6 @@ async function cmMatch(){
   const l=sel;if(!l||cmBusy||blocked(l))return;
   const r=byId(+$('cmRef').value);if(!r||r===l){note('先に「合わせる先」のオブジェクトを選んでください');return}
   if(cmTooBig(l,lfActive(l)))return;
-  if(cmAsLayer&&l.phys&&l.phys.on){note('物理が有効なオブジェクトは、レイヤーとして保存できません（物理を切るか、通常の確定にしてください）');return}
   const rs=cmStats(r),ts=cmStats(l);
   if(!rs||!ts){note(rs?'このオブジェクトの範囲に絵がありません':'合わせる先の範囲に絵がありません');return}
   cmBusy=true;note('色を合わせています…');await cmFrame();

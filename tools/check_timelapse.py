@@ -195,6 +195,7 @@ def main():
         ev("scnLoadSample('orig-pendulum-period')")
         ev("scnSetParam('theta0',25)")
         ev("RUN.dirty=true;scnTick(0)")
+        ev("$('scAdv').open=true")   # 「くわしく」の中（台帳Z-197）
         chk('T5 シナリオが開いていると「作り方」のボタンが見える', pg.is_visible('#scHow'))
         sigb = ev("snap().sig")
         pg.click('#scHow')
@@ -256,6 +257,7 @@ def main():
         pg.click('#tlRec')
         chk('T7 「記録」で、記録中の表示になる', pg.is_visible('#tlRc') and ev("!!TLA.rec"))
         pg.click('#tabs [data-t="ph"]')
+        ev("$('scAdv').open=true")
         pg.focus('#scSel'); pg.keyboard.press('ArrowDown'); pg.wait_for_timeout(150)
         sid = ev("SCN.src&&SCN.src.id")
         chk('T7 （準備）選ぶ操作で、サンプルが開いた', sid is not None, sid)
