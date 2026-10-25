@@ -76,10 +76,11 @@
 | `tools/check_assist.py` | `python3 tools/check_assist.py <HTMLの絶対パス>`。ペン補正（直線・円・曲線・消しゴム・Undo・取り残し・歪み・ロック）／拡大窓（既定オフ・対象の道具・隅へ逃げる・中身の一致・倍率の自動/固定・道具の表への追加）／ピンの微調整（刻み・長押し・Undo・動き量・ロック・拡大窓連携）の4群70項目（台帳Z-108〜Z-110・Z-124。始点固定・仮表示の一致・非正方形の位置を含む）。ヘッドレスのみ・実機未確認 |
 | `tools/check_ui.py` | `python3 tools/check_ui.py <HTMLの絶対パス>`。画面まわり8群133項目（持ち手の説明が消える／操作窓の大きさ・重ならない／✋・ピンチの自己修復／オブジェクト0個／キャンバスのpx・画像に合わせる・書き出しpx／座標の表示／並べ替えの点線／バーの縦距離スクラブ・吸着）。実際のタッチ（CDP）とマウス。全項目`OK`で`OK 133  NG 0`（台帳Z-95〜Z-99・Z-102・Z-106・Z-107・Z-88・Z-114） |
 | `tools/phys_engine_test.js` | `node tools/phys_engine_test.js`。物理エンジン`PHE`を解析解と比べる（62項目：自由落下・斜面・振り子・衝突・円弧・ばね・磁場・連鎖衝突…）。台帳Z-167・Z-183 |
-| `tools/phys_check.js` | `node tools/phys_check.js 見本.json`（検証→実行→答え合わせの表）／`--all`（全サンプル13件）／`--sweep`／`--csv`／`--param`／`--template`。台帳Z-169 |
+| `tools/phys_check.js` | `node tools/phys_check.js 見本.json`（検証→実行→答え合わせの表）／`--all`（全サンプル14件）／`--sweep`／`--csv`／`--param`／`--template`。台帳Z-169 |
 | `tools/phys_api_test.js` | `node tools/phys_api_test.js`。窓口`PHAPI`と部品表（70項目）：エンジンの表との一致・例が検証に通る・命令で組み立てて解析解と比べる・ルールの決定性・手引き`PHYSICS_SAMPLES.md`に全項目が載っている。台帳Z-178 |
-| `tools/tl_test.js` | `node tools/tl_test.js`。タイムラプスの核`TL`（127項目。8＝組み立て台の配置・9＝置く動き`lead`）：全サンプル13件を`fromScenario`→命令だけで再生して元と一致・時計・戻る・未知のキー／未知のドライバの保持・書き出し／読み込み／壊れた入力・字幕の編集・記録の併合 |
+| `tools/tl_test.js` | `node tools/tl_test.js`。タイムラプスの核`TL`（131項目。8＝組み立て台の配置・9＝置く動き`lead`）：全サンプル14件を`fromScenario`→命令だけで再生して元と一致・時計・戻る・未知のキー／未知のドライバの保持・書き出し／読み込み／壊れた入力・字幕の編集・記録の併合 |
 | `tools/check_timelapse.py` | `python3 tools/check_timelapse.py <HTMLの絶対パス>`。タイムラプスのアプリ内検査（T1〜T9・103項目。T9＝組み立て台）：全サンプルの再生が元と一致・時計・実際のクリック・非破壊（Undo・自動保存・レイヤーの表示）・「作り方を見る」・書き出し／字幕の編集／読み込み・記録・窓の配置 |
+| `tools/check_phys_view.py` | `python3 tools/check_phys_view.py <HTMLの絶対パス>`。物理の表示の長さ・追従カメラの検査（V1〜V6・33項目）：測定の窓の後の続き・結果の確定・表示選択の保存とUndo・追従の入切・絵に物理を付ける場合は動かない・ページエラー無し。台帳Z-208 |
 | `tools/check_physics.py` | `python3 tools/check_physics.py <HTMLの絶対パス>`。物理のアプリ内検査（S1〜S13・65項目）：サンプル全件・固定刻み・条件・絵とのつなぎ・保存・Undo・画面・JSON貼り付け・絵→物理・デモc〜h・窓口。ヘッドレスのみ（実機は未確認）。台帳Z-172 |
 | `tools/check_phys_std.py` | `python3 tools/check_phys_std.py <HTMLの絶対パス>`。絵に物理を付ける標準の形の検査（P1〜P8・48項目）：役割（動く・固定・地形・外す）・絵ごとのつまみ・床と壁と天井・非表示レイヤー・メニュー・保存/Undo・旧`phys`の置き換え・動きとの併用。ヘッドレスのみ（実機は未確認）。台帳Z-197 |
 | `tools/jaggy_test.js` | `node tools/jaggy_test.js`。ジャギー修正の核`IO.jaggy`（14項目）：ギザギザの合成画像を正解（16倍の超サンプリング）と比べる・平らな所／ノイズ／細い線／角・アルファの縁・色の縁。台帳Z-180 |

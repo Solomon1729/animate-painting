@@ -1,0 +1,54 @@
+{
+ "id": "orig-movable-pulley",
+ "title": "動滑車に物体をつるす装置（両端のB・Cは定滑車越し）",
+ "tags": ["力学", "滑車", "張力", "動滑車"],
+ "source": "オリジナル（動滑車＋2つの定滑車・軽い紐型）",
+ "level": "standard",
+ "problem": "質量の無視できる動滑車に物体A（質量{m1}kg）をつるし、動滑車にかけた軽い紐の両端を、それぞれ定滑車を通して物体B（質量{m2}kg）と物体C（質量{m3}kg）につなぐ。滑車と紐の質量・摩擦は無視し、静かに放す。",
+ "notes": "動滑車は質量ゼロとして、紐の1本の経路（Aの動滑車の左右を通る）で厳密に表している。紐の長さの限り（Aが床に着くか、BまたはCが定滑車に届くまで）動く。",
+ "params": {
+  "m1": {"v": 2.1, "min": 0.5, "max": 6, "step": 0.05, "unit": "kg", "label": "A（動滑車側）の質量"},
+  "m2": {"v": 1.0, "min": 0.5, "max": 3, "step": 0.05, "unit": "kg", "label": "Bの質量"},
+  "m3": {"v": 1.0, "min": 0.5, "max": 3, "step": 0.05, "unit": "kg", "label": "Cの質量"}
+ },
+ "vars": {
+  "mr": "4*m2*m3/(m2+m3)",
+  "a1": "(m1-mr)*g/(m1+mr)",
+  "ap": "(m2-m3)*(g+a1)/(m2+m3)",
+  "aBt": "-a1+ap",
+  "aCt": "-a1-ap",
+  "Tt": "m1*(g-a1)/2",
+  "amx": "max(abs(a1),abs(ap),abs(aBt),abs(aCt),0.001)"
+ },
+ "world": {"g": 9.8},
+ "view": {"x0": -1.6, "y0": -0.2, "w": 3.2},
+ "bodies": [
+  {"id": "floor", "type": "static", "shapes": [{"t": "plane", "normal": [0, 1], "d": 0}]},
+  {"id": "A", "type": "dynamic", "m": "m1", "pos": [0, 2.0], "label": "A", "fixedRot": true, "collide": false,
+   "shapes": [{"t": "box", "w": 0.14, "h": 0.14}, {"t": "circle", "r": 0.15, "oy": 0.22}]},
+  {"id": "B", "type": "dynamic", "m": "m2", "pos": [-0.15, 1.0], "label": "B", "fixedRot": true, "collide": false, "shapes": [{"t": "box", "w": 0.1, "h": 0.1}]},
+  {"id": "C", "type": "dynamic", "m": "m3", "pos": [0.15, 1.0], "label": "C", "fixedRot": true, "collide": false, "shapes": [{"t": "box", "w": 0.1, "h": 0.1}]}
+ ],
+ "joints": [
+  {"id": "rope", "type": "rope", "path": [
+   {"body": "B", "at": [0, 0.05]}, {"at": [-0.15, 4.4]},
+   {"body": "A", "at": [-0.15, 0.22]}, {"body": "A", "at": [0.15, 0.22]},
+   {"at": [0.15, 4.4]}, {"body": "C", "at": [0, 0.05]}]}
+ ],
+ "probes": {
+  "dA": {"expr": "-A.vy/t", "reduce": "last", "unit": "m/s²", "label": "Aの加速度（下向き）"},
+  "dB": {"expr": "-B.vy/t", "reduce": "last", "unit": "m/s²", "label": "Bの加速度（下向き）"},
+  "dC": {"expr": "-C.vy/t", "reduce": "last", "unit": "m/s²", "label": "Cの加速度（下向き）"},
+  "pT": {"expr": "rope.T", "reduce": "mean", "unit": "N", "label": "紐の張力"},
+  "E": {"expr": "E", "reduce": "last", "unit": "J", "label": "全エネルギー（時系列の変動を検査）"}
+ },
+ "ask": [
+  {"q": "Aの加速度 g(m1−μ)/(m1+μ), μ=4m2m3/(m2+m3)", "probe": "dA", "theory": "a1", "unit": "m/s²", "tol": 0.01, "abs": 0.003},
+  {"q": "Bの加速度（下向き）", "probe": "dB", "theory": "aBt", "unit": "m/s²", "tol": 0.01, "abs": 0.003},
+  {"q": "Cの加速度（下向き）", "probe": "dC", "theory": "aCt", "unit": "m/s²", "tol": 0.01, "abs": 0.003},
+  {"q": "動滑車の関係 2aA+aB+aC=0", "expr": "2*dA+dB+dC", "theory": "0", "unit": "m/s²", "abs": 0.005},
+  {"q": "紐の張力 m1(g−a1)/2（Aは紐2本で支えられる）", "probe": "pT", "theory": "Tt", "unit": "N", "tol": 0.01}
+ ],
+ "checks": [{"name": "力学的エネルギー保存", "probe": "E", "conserved": 0.003}],
+ "run": {"t": "min(2.5, 0.8*sqrt(3/amx))"}
+}

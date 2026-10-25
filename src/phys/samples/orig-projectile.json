@@ -1,13 +1,14 @@
 {
  "id": "orig-projectile",
- "title": "高さh0からの斜方投射",
+ "title": "高さh0からの斜方投射（床ではねかえる）",
  "tags": [
   "力学",
-  "放物運動"
+  "放物運動",
+  "反発"
  ],
  "source": "オリジナル（斜方投射の型）",
  "level": "basic",
- "problem": "高さ{h0}mの地点から、水平から{th}°上向きに、速さ{v0}m/sで小球を投げ出す。空気の抵抗は無視する。",
+ "problem": "高さ{h0}mの地点から、水平から{th}°上向きに、速さ{v0}m/sで小球を投げ出す。空気の抵抗は無視する。床はなめらかで、小球は床と反発係数{e}ではねかえる。",
  "params": {
   "v0": {
    "v": 10,
@@ -18,7 +19,7 @@
    "label": "初速"
   },
   "th": {
-   "v": 40,
+   "v": 50,
    "min": 0,
    "max": 80,
    "step": 5,
@@ -26,26 +27,37 @@
    "label": "投射角"
   },
   "h0": {
-   "v": 1.5,
-   "min": 0,
+   "v": 2.0,
+   "min": 0.5,
    "max": 5,
    "step": 0.5,
    "unit": "m",
    "label": "投げる高さ"
+  },
+  "e": {
+   "v": 0.75,
+   "min": 0,
+   "max": 1,
+   "step": 0.05,
+   "label": "床との反発係数"
   }
  },
  "vars": {
   "r": "0.05",
   "vx0": "v0*cosd(th)",
   "vy0": "v0*sind(th)",
-  "tf": "(vy0+sqrt(vy0^2+2*g*h0))/g",
+  "vyi": "sqrt(vy0^2+2*g*h0)",
+  "tf": "(vy0+vyi)/g",
   "hmax": "h0+vy0^2/(2*g)",
-  "Rng": "vx0*tf"
+  "Rng": "vx0*tf",
+  "tb": "2*e*vyi/g",
+  "hb": "(e*vyi)^2/(2*g)"
  },
  "view": {
   "x0": -1.0,
   "y0": -0.5,
-  "w": 14.0
+  "w": 14.0,
+  "follow": "ball"
  },
  "bodies": [
   {
@@ -99,15 +111,34 @@
    "unit": "s",
    "label": "最高点に達する時刻"
   },
-  "xend": {
+  "xland": {
    "expr": "ball.x",
-   "reduce": "last",
+   "at": "land",
    "unit": "m",
-   "label": "着地点（水平距離）"
+   "label": "1回目の着地点（水平距離）"
+  },
+  "tland": {
+   "expr": "t",
+   "at": "land",
+   "unit": "s",
+   "label": "1回目の着地の時刻"
+  },
+  "ytop2": {
+   "expr": "ball.y-r",
+   "reduce": "max",
+   "after": "land",
+   "unit": "m",
+   "label": "はねかえった後の最高点"
+  },
+  "vxe": {
+   "expr": "ball.vx",
+   "reduce": "last",
+   "unit": "m/s",
+   "label": "最後の水平方向の速さ"
   }
  },
  "run": {
-  "t": "tf+0.6"
+  "t": "tf+tb+0.2"
  },
  "ask": [
   {
@@ -125,11 +156,47 @@
    "tol": 0.002
   },
   {
-   "q": "到達距離（着地後は摩擦で止まる）",
-   "probe": "xend",
+   "q": "1回目の着地の時刻 (v0 sinθ+√(v0²sin²θ+2gh0))/g",
+   "probe": "tland",
+   "theory": "tf",
+   "unit": "s",
+   "tol": 0.02
+  },
+  {
+   "q": "1回目の着地点 v0 cosθ・t",
+   "probe": "xland",
    "theory": "Rng",
    "unit": "m",
    "tol": 0.02
+  },
+  {
+   "q": "はねかえった後の最高点 e²(v0²sin²θ+2gh0)/2g",
+   "probe": "ytop2",
+   "theory": "hb",
+   "unit": "m",
+   "tol": 0.03,
+   "abs": 0.01
+  },
+  {
+   "q": "水平方向の速さは変わらない（床がなめらか）",
+   "probe": "vxe",
+   "theory": "vx0",
+   "unit": "m/s",
+   "tol": 0.01
   }
- ]
+ ],
+ "pairs": [
+  {
+   "a": "ball",
+   "b": "floor",
+   "mu": 0,
+   "e": "e"
+  }
+ ],
+ "events": {
+  "land": {
+   "when": "normal('ball','floor')>0.001",
+   "label": "1回目の着地"
+  }
+ }
 }

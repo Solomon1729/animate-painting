@@ -17,8 +17,10 @@
    ・絵の大きさ・向きを変える／描き足す・消す・差し替える：scnWatch が見つけて、つないだ物体に反映する（絵から作った物体は形を作り直す＝scnArtRefresh。絵の編集と同じUndoに乗る）。
    ・絵を消す：絵から作った物体も一緒に消える（scnUnlinkActor）。時間：全体の速さgsが物理にも掛かる。 */
 const TIME={DT:1/120,MAXSTEP:16,BUDGET:10};
-const scnOpt0=()=>({grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,jointsBelow:false,hit:false,labels:true,contacts:false,energy:false,trail:false,strobe:false,vec:{}});
-const SCN={on:false,src:null,params:{},opt:scnOpt0(),link:{},speed:1,graph:'',auto:true};
+const scnOpt0=()=>({follow:true,grid:true,axes:true,fields:true,joints:true,shapes:true,statics:true,jointsBelow:false,hit:false,labels:true,contacts:false,energy:false,trail:false,strobe:false,vec:{}});
+const SCN={on:false,src:null,params:{},opt:scnOpt0(),link:{},speed:1,graph:'',auto:true,show:null};   /* show＝測定の窓のあとも見せる秒数（null＝既定：シナリオのrun.show、無ければ7.5秒。台帳Z-208） */
+const SHOW_DEF=7.5;
+const scnShow=()=>SCN.show!=null?SCN.show:(SCN.src&&SCN.src.run&&typeof SCN.src.run.show==='number'?SCN.src.run.show:SHOW_DEF);
 const RUN={sess:null,R:null,playing:false,acc:0,err:'',warns:[],res:null,al:new Map(),key:'',rev:0,uiRev:-1,acKey:'',dirty:false,a0:[],p0:[],view:{x0:0,y0:0,w:6},fr:0,
   inp:new Map(),inpMax:-1,grab:null,mv:null,pq:[],pulled:new Set(),pend:new Map()};   /* 人の手：inp＝刻み番号→入力の記録／grab＝いまつかんでいる物／mv＝配置のドラッグ／pq＝つつくの待ち行列／pend＝絵の変更の反映待ち（actor id→時刻） */
 const PTR={on:true};   /* UIの一時状態：キャンバスを触って物理を動かす（つかむ・つつく）。保存・Undoには入れない */
@@ -42,18 +44,18 @@ function scnEffSrc(){   /* 計算に使うシナリオ：SCN.src そのもの（
 function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻して進め直す時だけ）。それ以外は、条件が変わるので記録を捨てる */
   RUN.sess=null;RUN.R=null;RUN.res=null;RUN.err='';RUN.warns=[];RUN.al=new Map();RUN.acc=0;RUN.logI=0;RUN.quiet=false;
   if(!keepInp){RUN.inp=new Map();RUN.inpMax=-1}RUN.grab=null;RUN.mv=null;RUN.pq=[];RUN.pulled=new Set();RUN.pend=new Map();
-  RUN.key=JSON.stringify([SCN.src,SCN.params,SCN.graph]);
+  RUN.key=JSON.stringify([SCN.src,SCN.params,SCN.graph,SCN.show]);
   if(!SCN.src)return;
   try{
     const V=PHS.validate(SCN.src);RUN.warns=V.warns.slice();
     if(V.errors.length)throw new Error(V.errors.join('\n'));
     const ex=scnSplit(SCN.graph);let sess;
     const eff=scnEffSrc();
-    try{sess=PHS.session(eff,{params:SCN.params,series:ex})}
-    catch(e){if(!ex.length)throw e;RUN.warns.push('グラフの式: '+e.message);sess=PHS.session(eff,{params:SCN.params})}
+    try{sess=PHS.session(eff,{params:SCN.params,series:ex,show:scnShow()})}
+    catch(e){if(!ex.length)throw e;RUN.warns.push('グラフの式: '+e.message);sess=PHS.session(eff,{params:SCN.params,show:scnShow()})}
     sess.W.logContacts=true;
     RUN.sess=sess;sess.setHook(scnHook);RUN.a0=sess.W.bodies.map(b=>b.a);RUN.p0=sess.W.bodies.map(b=>[b.px,b.py]);
-    const view=Object.assign({x0:0,y0:0,w:6},SCN.src.view||{});RUN.view=view;
+    const view=Object.assign({x0:0,y0:0,w:6},SCN.src.view||{});RUN.view=view;RUN.v0=Object.assign({},view);   /* v0＝作者の決めた基準の視点（追従カメラで view が動いても変わらない。絵の配置↔世界の換算に使う） */
     const meta={};SCN.src.bodies.forEach((b,i)=>{meta[i]={color:b.color,label:b.label}});
     RUN.R=PHR.mkState({W:sess.W,view,cw:W||1,ch:H||1,px:1,meta,acc:sess.acc,opt:scnROpt()});
     scnAfter();
@@ -125,9 +127,9 @@ function scnBindLinks(){
   RUN.R.noShape=ns}
 /* アクターの配置（位置・大きさ・向き）を、物体の初期姿勢に合わせる */
 function scnSyncLinks(){
-  if(!RUN.sess||!W)return;const k=W/RUN.view.w;
+  if(!RUN.sess||!W)return;const k=W/RUN.view.w,V=RUN.v0||RUN.view;
   for(const[aid,o]of RUN.al){const a=byId(aid);if(!a)continue;const p=RUN.p0[o.i],c=Math.cos(o.a0),s=Math.sin(o.a0),cx=p[0]+o.ox*c-o.oy*s,cy=p[1]+o.ox*s+o.oy*c;
-    a.fx=(cx-RUN.view.x0)*k/W;a.fy=(H-(cy-RUN.view.y0)*k)/H;a.size=o.w*k/S0;a.rot=o.r0-o.a0*180/Math.PI;o.szSeen=a.size;o.rotSeen=a.rot}}
+    a.fx=(cx-V.x0)*k/W;a.fy=(H-(cy-V.y0)*k)/H;a.size=o.w*k/S0;a.rot=o.r0-o.a0*180/Math.PI;o.szSeen=a.size;o.rotSeen=a.rot}}
 /* 物体のimg（絵文字）から、アクターを自動で作る */
 function scnAutoActors(){
   if(!SCN.src||!RUN.sess)return;const keep=sel;let n=0;
@@ -149,6 +151,7 @@ function scnTick(dt){
   if(RUN.playing&&!paused&&!S.done){
     RUN.acc+=Math.min(dt,.05)*SCN.speed*gs;const t0=performance.now();let n=0;   /* 全体の速さgs（動きタブ）も掛ける＝0で止まる */
     while(RUN.acc>=TIME.DT&&!S.done){S.step();RUN.acc-=TIME.DT;n++;scnAfter();if(n>=TIME.MAXSTEP||performance.now()-t0>TIME.BUDGET){RUN.acc=Math.min(RUN.acc,TIME.DT*2);break}}
+    if(S.measured&&!RUN.res){try{RUN.res=S.finish()}catch(e){RUN.err=String(e&&e.message||e)}RUN.uiAns=1}   /* 測定の窓（run.t）が終わった：答え合わせは確定。続きの再生はこのあとも続く */
     if(S.done)scnEnd();
   }
   if(RUN.menuPlaying!==RUN.playing)scnMenuSync();
@@ -156,17 +159,24 @@ function scnTick(dt){
 function scnPlay(){
   if(!RUN.sess)return;if(RUN.sess.done||RUN.sess.W.t>=RUN.sess.T-1e-9){scnBuild();scnSyncLinks()}
   if(paused)$('pl').click();RUN.playing=!RUN.playing;RUN.acc=0;scnUi()}
-function scnStepN(n){if(!RUN.sess)return;RUN.playing=false;const S=RUN.sess;for(let i=0;i<n&&!S.done;i++){S.step();scnAfter()}if(S.done)scnEnd();scnUi()}
+function scnStepN(n){if(!RUN.sess)return;RUN.playing=false;const S=RUN.sess;for(let i=0;i<n&&!S.done;i++){S.step();scnAfter()}if(S.done)scnEnd();else if(S.measured&&!RUN.res){RUN.res=S.finish();RUN.uiAns=1}scnUi()}
 function scnSeek(t){   /* その時刻へ。進むだけなら今の状態から、戻るなら作り直して進める */
   if(!RUN.sess)return;RUN.playing=false;
   if(t<RUN.sess.W.t-1e-9){scnBuild(1);scnSyncLinks()}
   const S=RUN.sess,n=Math.round((t-S.W.t)/TIME.DT),t0=performance.now();RUN.quiet=true;
   for(let i=0;i<n&&!S.done;i++){S.step();scnAfter();if((i&63)===63&&performance.now()-t0>500)break}
   RUN.quiet=false;
-  if(S.done)scnEnd();else{RUN.res=null;RUN.uiAns=1}scnUiTime()}
+  if(S.done)scnEnd();else{RUN.res=S.measured?S.finish():null;RUN.uiAns=1}scnUiTime()}
 
 /* ---------- 描く（paintFrameから）---------- */
-function scnFrame(){const R=RUN.R;R.cw=W;R.ch=H;R.opt=scnROpt();R.T=PHR.mkT(R.view,W,H);return R}
+/* 追従カメラ（台帳Z-208）：シナリオの view.follow に書いた物体を追う（opt.follow が偽なら動かさない）。視点だけを動かし縮尺は変えない。
+   位置は「いまの姿」と「はじめの姿」だけで決まる（PHR.camShift）ので、巻き戻しても同じ。時刻0は必ず基準の視点＝絵に物理を付けた作品（followなし）は今までどおり動かない */
+function scnCam(){
+  const S=RUN.sess,v=RUN.view,v0=RUN.v0;if(!S||!v||!v0)return;
+  let dx=0,dy=0;const id=v0.follow&&String(v0.follow);
+  if(id&&SCN.opt.follow!==false&&S.W.t>0){const b=S.W.byId.get(id);if(b&&RUN.p0[b.idx]){const c=PHR.camShift(v0,W||1,H||1,[b.px,b.py],RUN.p0[b.idx]);dx=c.dx;dy=c.dy}}
+  v.x0=v0.x0+dx;v.y0=v0.y0+dy}
+function scnFrame(){scnCam();const R=RUN.R;R.cw=W;R.ch=H;R.opt=scnROpt();R.T=PHR.mkT(R.view,W,H);return R}
 function scnUnder(){if(!scnLive()||drawOnly)return;ctx.save();PHR.under(ctx,scnFrame());ctx.restore()}
 function scnOver(){if(!scnLive()||drawOnly)return;ctx.save();PHR.over(ctx,scnFrame());scnHandDraw();ctx.restore()}
 /* つないだアクターの、いまの姿勢（描く位置とm.rへの加算）。つないでいなければnull。ドラッグ中・他に付いているアクターは対象外 */
@@ -284,13 +294,13 @@ function scnArtRefresh(aid){
   if(r&&moved)note('絵を変えたので、物理を最初に戻しました',3500);return !!r}
 
 /* ---------- 保存・Undo ---------- */
-function scnSer(){if(!SCN.src)return null;return{on:SCN.on,src:SCN.src,params:SCN.params,opt:SCN.opt,link:SCN.link,speed:SCN.speed,graph:SCN.graph,auto:SCN.auto}}
+function scnSer(){if(!SCN.src)return null;return{on:SCN.on,src:SCN.src,params:SCN.params,opt:SCN.opt,link:SCN.link,speed:SCN.speed,graph:SCN.graph,auto:SCN.auto,show:SCN.show}}
 const scnSnapStr=()=>SCN.src?JSON.stringify(scnSer()):'';
 function scnApply(o,keep){
   const d=o&&o.src?o:{};
   SCN.src=d.src?scnClone(d.src):null;SCN.on=!!(d.on&&d.src);SCN.params=scnClone(d.params)||{};SCN.opt=Object.assign(scnOpt0(),scnClone(d.opt)||{});SCN.opt.vec=Object.assign({},SCN.opt.vec);
-  SCN.link=scnClone(d.link)||{};SCN.speed=d.speed>0?d.speed:1;SCN.graph=typeof d.graph==='string'?d.graph:'';SCN.auto=d.auto!==false;
-  const key=JSON.stringify([SCN.src,SCN.params,SCN.graph]);
+  SCN.link=scnClone(d.link)||{};SCN.speed=d.speed>0?d.speed:1;SCN.graph=typeof d.graph==='string'?d.graph:'';SCN.auto=d.auto!==false;SCN.show=typeof d.show==='number'&&d.show>=0?d.show:null;
+  const key=JSON.stringify([SCN.src,SCN.params,SCN.graph,SCN.show]);
   if(keep&&RUN.sess&&key===RUN.key)scnBindLinks();else{RUN.playing=false;scnBuild()}
   RUN.rev++;scnUi()}
 function scnRestore(str){let o=null;try{o=str?JSON.parse(str):null}catch(_){}scnApply(o,true)}
@@ -300,8 +310,8 @@ function scnLoad(o){scnApply(o,false)}
 /* 絵の位置・向き → シナリオの初期位置（数に置き換わる。式で書いてあった位置は失われる） */
 function scnPull(only){   /* only＝配置し直した絵のid集合（絵をドラッグして離した時）。省略＝つないだ絵ぜんぶ（ボタン） */
   if(!RUN.sess||!RUN.al.size){if(!only)note('絵につないだ物体がありません');return}
-  if(!only)pushUndo();const k=W/RUN.view.w;let n=0;
-  for(const[aid,o]of RUN.al){const a=byId(aid),b=RUN.sess.W.bodies[o.i];if(!a)continue;if(only&&!only.has(aid))continue;const cx=a.fx*W/k+RUN.view.x0,cy=RUN.view.y0+(H-a.fy*H)/k;
+  if(!only)pushUndo();const k=W/RUN.view.w,V=RUN.v0||RUN.view;let n=0;
+  for(const[aid,o]of RUN.al){const a=byId(aid),b=RUN.sess.W.bodies[o.i];if(!a)continue;if(only&&!only.has(aid))continue;const cx=a.fx*W/k+V.x0,cy=V.y0+(H-a.fy*H)/k;
     const a0=(o.r0-a.rot)*Math.PI/180,c=Math.cos(a0),s=Math.sin(a0),px=cx-(o.ox*c-o.oy*s),py=cy-(o.ox*s+o.oy*c),ox=px-(c*b.c[0]-s*b.c[1]),oy=py-(s*b.c[0]+c*b.c[1]);
     const sb=SCN.src.bodies[o.i];
     const cur=PHE.origin({px:RUN.p0[o.i][0],py:RUN.p0[o.i][1],cs:Math.cos(o.a0),sn:Math.sin(o.a0),c:b.c});
@@ -338,9 +348,10 @@ function scnUiBuild(){
   const vb=$('scVec');vb.innerHTML='';
   for(const v of PHR.VEC){const b=scnEl('button');b.textContent=({v:'速度',a:'加速度',Fg:'重力',N:'垂直抗力',fr:'摩擦力',Tn:'張力',Fs:'ばね',Ff:'場の力',net:'合力'})[v[0]]||v[1];b.setAttribute('aria-label',v[1]+'の矢印を見せる');b.classList.toggle('on',!!SCN.opt.vec[v[0]]);b.onclick=()=>{SCN.opt.vec[v[0]]=!SCN.opt.vec[v[0]];b.classList.toggle('on',!!SCN.opt.vec[v[0]]);dirtyProj=true};vb.append(b)}
   const db=$('scDisp');db.innerHTML='';
-  for(const[k,t,tip]of[['trail','軌跡','物体が通った跡'],['strobe','ストロボ','一定の時間おきの姿を残す'],['grid','格子','m単位の格子と目盛り'],['statics','固定物','床・斜面・レールの記号'],['fields','力場','電場・磁場などの範囲'],['joints','糸・ばね','糸・棒・ばねの線'],['labels','名前','物体の名前'],['hit','当たり線','絵に重ねて、物理の形（当たり判定）を赤い線で見せる'],['energy','エネルギー','運動・位置・全体のエネルギー'],['contacts','接点','接触している点']]){
+  for(const[k,t,tip]of[['follow','追従','視点が、動く物（シナリオのview.followの物体）を追う。画面の外へ出ていく現象を見続けられる'],['trail','軌跡','物体が通った跡'],['strobe','ストロボ','一定の時間おきの姿を残す'],['grid','格子','m単位の格子と目盛り'],['statics','固定物','床・斜面・レールの記号'],['fields','力場','電場・磁場などの範囲'],['joints','糸・ばね','糸・棒・ばねの線'],['labels','名前','物体の名前'],['hit','当たり線','絵に重ねて、物理の形（当たり判定）を赤い線で見せる'],['energy','エネルギー','運動・位置・全体のエネルギー'],['contacts','接点','接触している点']]){
+    if(k==='follow'&&!(s.view&&s.view.follow))continue;   /* 追う物の指定があるシナリオだけに出す */
     const b=scnEl('button');b.textContent=t;b.setAttribute('aria-label',tip);b.classList.toggle('on',!!SCN.opt[k]);b.onclick=()=>{SCN.opt[k]=!SCN.opt[k];b.classList.toggle('on',!!SCN.opt[k]);dirtyProj=true;if(k==='trail'||k==='strobe')if(RUN.R)PHR.resetTrails(RUN.R)};db.append(b)}
-  $('scGx').value=SCN.graph;$('scSpd').value=String(SCN.speed);
+  $('scGx').value=SCN.graph;$('scSpd').value=String(SCN.speed);$('scShow').value=SCN.show==null?'':String(SCN.show);
   /* 絵とのつなぎ */
   const lb=$('scLink');lb.innerHTML='';
   for(const b of s.bodies){const row=scnEl('div'),lab=scnEl('span'),sl=scnEl('select'),L=SCN.link[b.id];row.className='row';lab.className='lab';lab.style.minWidth='5em';lab.textContent=b.label||b.id;
@@ -433,6 +444,7 @@ $('mPlay').onclick=()=>scnPlay();$('mRst').onclick=()=>{scnReset();RUN.uiAns=1};
 $('scArtX').onclick=()=>{const r=scnRoleOf(sel);if(!r){note('この絵は物理に参加していません');return}if(r.art)scnRemoveBody(r.id);else{pushUndo();scnUnlinkBody(r.id);scnUi()}};
 $('scPlay').onclick=scnPlay;$('scStep').onclick=()=>scnStepN(2);$('scReset').onclick=()=>{scnReset();RUN.uiAns=1};
 $('scSpd').onchange=e=>{SCN.speed=+e.target.value||1;dirtyProj=true};
+$('scShow').onchange=e=>{const v=e.target.value;SCN.show=v===''?null:Math.max(0,+v||0);RUN.dirty=true;dirtyProj=true};   /* 表示の長さを変えたら作り直す（最初から） */
 $('scT').oninput=e=>scnSeek(+e.target.value);
 $('scGx').onchange=e=>{SCN.graph=e.target.value;RUN.dirty=true;dirtyProj=true};
 $('scPull').onclick=scnPull;$('scCommit').onclick=scnCommit;

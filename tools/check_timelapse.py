@@ -7,7 +7,7 @@
   アプリ内部の名前（TL・TLA・tlStart・tlClose・SCN・RUN・PHS・PHAPI・PHYS_SAMPLES・snap・US・undo・scnSnapStr）に依存する。改名したらここも直す。
 
 群：
-  T1 全サンプル（13件）：手順書を最後まで再生すると、元のサンプルと同じシナリオ（測定値・答え合わせが一致）になる。途中のどの手順でも例外が出ない
+  T1 全サンプル：手順書を最後まで再生すると、元のサンプルと同じシナリオ（測定値・答え合わせが一致）になる。途中のどの手順でも例外が出ない
   T2 再生の時計：速さ・進め方・最後で止まる・「play」で物理が動き出す・「result」で答え合わせが出る
   T3 枠の操作（実際のクリック）：メニューから開く・サンプルを選ぶ・▶/⏸・◀▶|⏮⏭・位置のバー・ブロックのタップ・速さ・進め方・小さくする・閉じる
   T4 見る前の作品に戻る：閉じると同じ姿に戻る・Undoの履歴が増えない・「この状態で続ける」はUndoで戻せる・再生中は自動保存しない・枠の操作でUndoが積まれない
@@ -17,8 +17,11 @@
   T8 画面：幅420pxで横にはみ出さない・既定では枠が出ていない
   T9 組み立て台（レゴ風のブロック。台帳Z-196）：手順ごとに1個のブロック・設計図（点線）と置いたもの・パレット・運んで置く動き・置かれた瞬間に舞台が変わる・入力欄が埋まる・飛ぶと動きなし・全体表示・動きを減らす設定・文字の対比・狭い幅
 """
-import sys, json
+import sys, json, glob, os
 from playwright.sync_api import sync_playwright
+
+# サンプルの件数は、固定の数でなく src/phys/samples/*.json の数（サンプルを足しても落ちない）
+NSAMP = len(glob.glob(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src', 'phys', 'samples', '*.json')))
 
 F = sys.argv[1]
 OKN = [0, 0]
@@ -64,7 +67,7 @@ def main():
 
         # ---------- T1 全サンプル ----------
         ids = ev("PHYS_SAMPLES.map(s=>s.id)")
-        chk('T1 サンプルが13件ある', len(ids) == 13, len(ids))
+        chk('T1 サンプルが全件ある（%d件）' % NSAMP, len(ids) == NSAMP, len(ids))
         bad = []
         for sid in ids:
             r = ev("""(id)=>{
@@ -117,7 +120,7 @@ def main():
         chk('T3 押すと枠が出て、手順書を選ぶ画面', pg.is_visible('#tlp') and pg.is_visible('#tlPick') and not pg.is_visible('#tlPl'))
         chk('T3 メニューは閉じる', not pg.is_visible('#mA'))
         opts = ev("[...tlEl('tlSrc').options].length")
-        chk('T3 物理サンプルが全件、選べる（+見出し1）', opts == 14, opts)
+        chk('T3 物理サンプルが全件、選べる（+見出し1）', opts == NSAMP + 1, opts)
         pg.select_option('#tlSrc', 'orig-atwood-pulley')
         pg.wait_for_timeout(200)
         chk('T3 選ぶと再生の画面になり、すぐ再生が始まる', pg.is_visible('#tlPl') and not pg.is_visible('#tlPick') and ev("TLA.P&&TLA.P.playing"))
