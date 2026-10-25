@@ -142,7 +142,7 @@ const KEYS={
   act:['op','body','vx','vy','text','note'],
   ask:['q','probe','expr','theory','tol','abs','unit','label','note'],
   check:['name','expr','probe','conserved','min','max','scale','tol','note'],
-  run:['t','stop','sample','note'],
+  run:['t','stop','sample','note','show'],
   sweep:['param','values','from','to','n','probes','fit','note'],
   graph:['title','x','y','xlabel','ylabel','label']
 };
@@ -203,6 +203,7 @@ function validate(scn){
   if(scn.view)checkKeys(scn.view,'view','view',V);
   if(scn.run)checkKeys(scn.run,'run','run',V);
   if(scn.run&&scn.run.t!==undefined&&!(isNum(scn.run.t)&&scn.run.t>0)&&typeof scn.run.t!=='string')V.err('run.t: 実行する秒数（正の数）か、式が必要です');
+  if(scn.run&&scn.run.show!==undefined&&!(isNum(scn.run.show)&&scn.run.show>=0))V.err('run.show: 表示する秒数（0以上の数）が必要です');
   const pn=Object.keys(scn.probes||{});for(const k of pn){checkKeys(scn.probes[k],'probe','probes.'+k,V);const p=scn.probes[k];
     if(!p||typeof p.expr!=='string')V.err('probes.'+k+'.expr: 式の文字列が必要です');if(p&&p.reduce&&!RED[p.reduce])V.err('probes.'+k+'.reduce: 未知の集計「'+p.reduce+'」'+suggest(p.reduce,Object.keys(RED)))}
   for(const k of Object.keys(scn.events||{}))checkKeys(scn.events[k],'event','events.'+k,V);
@@ -312,6 +313,9 @@ function session(scn,opt){
   opt=opt||{};
   const B=opt.built||build(scn,opt.params);const W=B.W,acc=mkAccess(B);EXTRA._W=W;
   const T=num0(opt.t!==undefined?opt.t:runT(B,scn),5),every=Math.max(1,Math.round(opt.every||(((scn.run&&scn.run.sample)||0)/(1/120)))||1);
+  /* 表示の長さ Tv（台帳Z-208）：測定の窓 T（run.t。答え合わせの時間）より長い時だけ、測定のあとも物理を続けて見せる。
+     測定・答え合わせ・出来事は T までで確定（snap）。続きは物理の時間のまま（引き延ばさない）。動きが止まれば、そこで自然に終わる（rested） */
+  const Tv=Math.max(T,num0(opt.show!==undefined?opt.show:(scn.run&&scn.run.show),0));
   const comp=(src,what)=>{try{return compile(src,acc.resolve)}catch(e){throw new Error(what+': '+e.message)}};
   const probes=Object.entries(scn.probes||{}).map(([k,p])=>({k,p,f:comp(p.expr,'probes.'+k+'.expr'),w:p.when?comp(p.when,'probes.'+k+'.when'):null}));
   const events=Object.entries(scn.events||{}).map(([k,e])=>({k,e,w:comp(e.when||e.first,'events.'+k+'.when'),t:NaN,i:-1}));
@@ -322,20 +326,28 @@ function session(scn,opt){
   const extra=(opt.series||[]).filter(s=>!(scn.probes&&s in scn.probes)).map(s=>({k:s,f:comp(s,'series「'+s+'」'),w:null}));
   const all=probes.concat(extra);
   const ts=[],ser={};for(const p of all)ser[p.k]=[];
-  const DT=1/120,n=Math.round(T/DT);
+  const DT=1/120,n=Math.round(T/DT),nv=Math.max(n,Math.round(Tv/DT));
   const nb=W.bodies.length;let prevV=W.bodies.map(b=>[b.vx,b.vy]);acc.ctx.acc=W.bodies.map(()=>[0,0]);
   const sample=(i)=>{ts.push(W.t);for(const p of all){let v=p.f();if(p.w&&!p.w())v=NaN;ser[p.k].push(v)}
     for(const e of events)if(isNaN(e.t)&&e.w()){e.t=W.t;e.i=ts.length-1}};
   /* t=0の力・加速度は、1刻み試しに進めて戻して求める（戻しても状態は変わらない） */
   {const sn=PHE.snapshot(W),v0=W.bodies.map(b=>[b.vx,b.vy]);PHE.advance(W,DT);
    W.bodies.forEach((b,k)=>{acc.ctx.acc[k][0]=(b.vx-v0[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-v0[k][1])/DT});PHE.restore(W,sn)}
-  sample(0);let stopped=false,i=0;
+  sample(0);let stopped=false,i=0,snap=null,rested=false,rest=0,rref=null;
+  /* 動きが止まったか（測定の窓のあと）：動く物体がどれも 0.5秒（REST_N刻み）の間、1cm・0.03rad以上動かなければ止まったと見なす。
+     速さではなく移動量で見るので、床の上の接触のこまかい震えでは止まりそこねない。動いている間（等速で遠ざかるなど）は続く */
+  const REST_N=60,REST_D=.01,REST_A=.03;
+  const calmStep=()=>{
+    if(!rref){rref=W.bodies.map(b=>[b.px,b.py,b.a]);rest=0;return false}
+    for(let k=0;k<nb;k++){const b=W.bodies[k];if(!(b.im>0||b.iI>0))continue;const r=rref[k];
+      if(Math.abs(b.px-r[0])>=REST_D||Math.abs(b.py-r[1])>=REST_D||Math.abs(b.a-r[2])>=REST_A){rref=W.bodies.map(c=>[c.px,c.py,c.a]);rest=0;return false}}
+    return++rest>=REST_N};
   /* 人の手（台帳Z-185）：アプリが、各刻みの直前に呼ばれる hook(S) で、つまみ（b.pull）を付け外し・つつく（S.poke）を入れる。
      速度を変えた分は、加速度の記録に入れない（ルールのkickと同じ）。hookが同じ刻みに同じ入力を入れれば、巻き戻して進め直しても同じ結果になる */
   let hook=null;
   const poke=(b,x,y,jx,jy)=>{const k=W.bodies.indexOf(b),ox=b.vx,oy=b.vy;if(k<0||!PHE.poke(W,b,x,y,jx,jy))return false;prevV[k][0]+=b.vx-ox;prevV[k][1]+=b.vy-oy;return true};
   const step=()=>{
-    if(stopped||i>=n)return false;
+    if(stopped||rested||i>=nv)return false;
     if(hook)hook(S);
     i++;
     PHE.advance(W,DT);
@@ -346,9 +358,11 @@ function session(scn,opt){
           const k0=W.bodies.indexOf(b),ox=b.vx,oy=b.vy;if(a.op==='kick'){b.vx+=vx;b.vy+=vy}else{b.vx=vx;b.vy=vy}
           prevV[k0][0]+=b.vx-ox;prevV[k0][1]+=b.vy-oy}}}   /* 速度を変えた分は、加速度の記録に入れない */
     for(let k=0;k<nb;k++){const b=W.bodies[k];acc.ctx.acc[k][0]=(b.vx-prevV[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-prevV[k][1])/DT;prevV[k][0]=b.vx;prevV[k][1]=b.vy}
-    if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}
-    return !(stopped||i>=n)};
-  const finish=()=>{
+    if(i<=n){if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}}
+    else if(!stopped&&calmStep())rested=true;   /* 測定の窓のあとは、記録も止める条件の判定もしない（測定の結果を変えない） */
+    if(i===n&&nv>n&&!snap)snap=compute();   /* 測定の窓の終わりで、答え合わせを確定する */
+    return !(stopped||rested||i>=nv)};
+  const compute=()=>{
   /* 集計 */
   const res={},evt={};for(const e of events)evt[e.k]=e.t;
   const ctxAt=(i)=>i;
@@ -376,9 +390,11 @@ function session(scn,opt){
       if(c.max!==undefined&&mx>c.max){okc=false;msg+=' 最大値 '+mx+' > '+c.max}
       return{name:c.name||'check'+i,ok:okc,msg}});
   return{ts,series:ser,probes:res,events:evt,ask:asks,checks,world:W,built:B,t:W.t,stopped}}
+  const finish=()=>snap||compute();   /* 測定の窓が終わっていれば、その時点で確定した結果（続きを見せていても変わらない） */
   /* いまの状態で式を評価する（ビジュアルプログラミングの「条件を見る」・画面の読み出し用）。式は使い回す */
   const ev=(src)=>{let f=cache.get(src);if(!f){f=compile(src,acc.resolve);cache.set(src,f)}return f()};
-  const S={B,W,ts,series:ser,T,n,DT,acc:acc.ctx.acc,step,finish,ev,log,poke,setHook:f=>{hook=f},get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get done(){return stopped||i>=n}};
+  /* T＝表示の長さ（実行バー・「最初へ戻す」の判定に使う）、Tm＝測定の窓（run.t）。measured＝測定の窓が終わった（答え合わせを出してよい） */
+  const S={B,W,ts,series:ser,T:Tv,Tm:T,n:nv,nm:n,DT,acc:acc.ctx.acc,step,finish,ev,log,poke,setHook:f=>{hook=f},get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get rested(){return rested},get measured(){return stopped||i>=n},get done(){return stopped||rested||i>=nv}};
   return S}
 function run(scn,opt){const S=session(scn,opt);while(S.step());return S.finish()}
 function runT(B,scn){const t=scn.run&&scn.run.t;if(typeof t==='string'){try{return compile(t,B.resolve)()}catch(e){throw new Error('run.t: '+e.message)}}return t}

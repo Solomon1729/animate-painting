@@ -27,6 +27,13 @@ const DEFOPT={grid:true,axes:true,fields:true,joints:true,shapes:true,statics:tr
 /* ---------- 座標変換：view={x0,y0,w}（左下の座標と、画面の横幅[m]）、cw×chピクセル ---------- */
 function mkT(view,cw,ch){const k=cw/view.w;return{k,cw,ch,view,X:x=>(x-view.x0)*k,Y:y=>ch-(y-view.y0)*k,
   wx:px=>px/k+view.x0,wy:py=>(ch-py)/k+view.y0,w:view.w,h:ch/k}}
+/* 追従カメラ（台帳Z-208）：追う物の位置 p が、画面の端の余白（25%）に入らないように、視点だけを動かす量{dx,dy}。縮尺は変えない。
+   「いまの位置」と「はじめの位置 p0」だけで決まる純関数（記憶なし）＝巻き戻しても同じ視点になる。許される範囲に p0 も含めるので、
+   時刻0では必ず{0,0}（はじめの画面が作者の決めた通りに出る）。p が範囲内の間は動かず、出たら出た分だけ連続して動く */
+function camShift(view,cw,ch,p,p0,margin){
+  const w=view.w,h=w*ch/cw,m=margin===undefined?.25:margin,zone=(lo,hi,q)=>[Math.min(lo+m*(hi-lo),q),Math.max(hi-m*(hi-lo),q)];
+  const X=zone(view.x0,view.x0+w,p0[0]),Y=zone(view.y0,view.y0+h,p0[1]);
+  return{dx:p[0]>X[1]?p[0]-X[1]:(p[0]<X[0]?p[0]-X[0]:0),dy:p[1]>Y[1]?p[1]-Y[1]:(p[1]<Y[0]?p[1]-Y[0]:0)}}
 function mkState(o){return Object.assign({W:null,T:null,cw:0,ch:0,px:1,opt:Object.assign({},DEFOPT,o&&o.opt||{}),meta:{},acc:null,ref:{v:1e-9,a:1e-9,F:1e-9},vs:{},
   trail:new Map(),trailMax:900,strobe:[],strobeEvery:.1,strobeLast:-1,view:{x0:0,y0:0,w:6}},o||{},{opt:Object.assign({},DEFOPT,o&&o.opt||{})})}
 const col=(S,b)=>{const m=S.meta[b.idx];if(m&&m.color)return m.color;if(b.type==='static')return COL.stat;if(b.type==='kinematic')return COL.kin;return COL.dyn[b.idx%COL.dyn.length]};
@@ -284,5 +291,5 @@ function graph(ctx,box,series,opt){opt=opt||{};const u=opt.px||1,{x,y,w,h}=box,p
   if(opt.title){ctx.textAlign='right';ctx.fillStyle='rgba(51,65,85,.9)';ctx.fillText(opt.title,x+w-6*u,y+2*u)}
   ctx.restore()}
 
-return{COL,VEC,FDRAW,JDRAW,DEFOPT,mkT,mkState,under,over,graph,pushTrail,pushStrobe,resetTrails,drawShapes,drawStatic,fmt,arrow,halo}
+return{COL,VEC,FDRAW,JDRAW,DEFOPT,mkT,camShift,mkState,under,over,graph,pushTrail,pushStrobe,resetTrails,drawShapes,drawStatic,fmt,arrow,halo}
 })();

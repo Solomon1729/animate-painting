@@ -50,7 +50,7 @@ console.log('2) 手順の中身（字幕・操作の手順・ブロックの見�
  chk('物体の字幕に、名前・形・位置が出る',bodyA&&/A/.test(bodyA.say)&&/長方形/.test(bodyA.say)&&/-0\.3/.test(bodyA.say),bodyA&&bodyA.say);
  chk('条件の字幕に、範囲と単位が出る',(()=>{const s=sc.steps.find(x=>x.k==='phys'&&x.op.op==='setParam');return s&&/Aの質量/.test(s.say)&&/0\.5〜5/.test(s.say)&&/kg/.test(s.say)})());
  chk('手順書は JSON にしても変わらない',J(TL.parse(TL.stringify(sc)).script)===J(sc));
- chk('分類ごとの数が数えられる',TL.stats(sc).body===3&&TL.stats(sc).cond===4,J(TL.stats(sc)));
+ chk('分類ごとの数が数えられる',TL.stats(sc).body===S.bodies.length&&TL.stats(sc).cond===Object.keys(S.params||{}).length+Object.keys(S.vars||{}).length,J(TL.stats(sc)));   /* 固定の数でなく、サンプル自身の数（物体・条件＝つまみ＋途中計算）から導く */
  const sum=sc.steps.reduce((a,s)=>a+s.d,0);chk('見せる時間が妥当（1手順1.1〜3.8秒）',sc.steps.every(s=>s.d>=1100&&s.d<=3800),'合計 '+(sum/1000).toFixed(1)+' 秒')}
 
 console.log('3) 再生：時間・速さ・方式・戻る・飛ぶ・終わり');

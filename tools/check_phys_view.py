@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+"""物理サンプルの「見せる長さ」と「追従カメラ」のアプリ内検査（台帳Z-208）。
+
+使い方：  python3 tools/check_phys_view.py <HTMLの絶対パス>     全項目 OK が正常（最後に `OK n  NG 0`）。**ヘッドレスのみ。実機（スマホ）では未確認**。
+  アプリ内部の名前（SCN・RUN・scn*・PHS・PHR・resetAll・setTab・ser・loadProj・undo・pushUndo）と、物理タブの部品のid（scShow・scDisp・scSpd）を使う。
+
+群：
+  V1 測定の窓（run.t）のあとも、物理は続く：答え合わせは窓の終わりで確定し（続きで変わらない）、既定は7.5秒まで見せる。自然に止まれば、そこで終わる
+  V2 見せる長さの選択：「測定のみ」「15秒」など。選ぶと作り直し、保存・読込・Undoで残る。シナリオの run.show は選ぶまでの既定になる
+  V3 追従カメラ：時刻0は基準の視点／追う物が画面の外へ出ない／巻き戻すと同じ視点／オフなら動かない／追う物の指定が無いシナリオ（作品）は動かない
+  V4 絵の配置は、カメラが動いても変わらない（走らせて最初へ戻しても、つないだ絵の位置・大きさが同じ）
+  V5 追従の切り替えボタンは、追う物の指定があるシナリオにだけ出る
+  V6 ページエラーが一度も出ていない
+"""
+import sys
+from playwright.sync_api import sync_playwright
+
+F = sys.argv[1]
+OKN = [0, 0]
+
+
+def chk(name, cond, info=''):
+    OKN[0 if cond else 1] += 1
+    print(('OK  ' if cond else 'NG  ') + name + (('   ' + str(info)) if info != '' else ''))
+
+
+def main():
+    with sync_playwright() as p:
+        b = p.chromium.launch(args=['--no-sandbox'])
+        pg = b.new_page(viewport={'width': 420, 'height': 900})
+        errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)[:300]))
+        pg.on('dialog', lambda d: d.dismiss())
+        pg.goto('file://' + F)
+        pg.wait_for_timeout(500)
+        ev = pg.evaluate
+
+        def load(sample):
+            ev("(id)=>{resetAll();setTab('ph');scnLoadSample(id)}", sample)
+            pg.wait_for_timeout(80)
+
+        def run_all():
+            """最後（done）まで進める。測定の窓が終わった瞬間の結果も返す"""
+            return ev("""()=>{const S=RUN.sess;let atWin=null,steps=0;
+              while(!S.done&&steps<20000){S.step();steps++;if(S.measured&&!atWin)atWin={t:S.W.t,res:JSON.stringify(S.finish().probes)}}
+              return {t:S.W.t,T:S.T,Tm:S.Tm,rested:S.rested,done:S.done,measured:S.measured,atWin,fin:JSON.stringify(S.finish().probes)}}""")
+
+        # ---------- V1 測定の窓のあとも続く ----------
+        load('orig-collision-1d')
+        r = ev("()=>({T:RUN.sess.T,Tm:RUN.sess.Tm,show:scnShow()})")
+        chk('V1 既定の見せる長さは7.5秒（測定の窓2秒より長い）', abs(r['T'] - 7.5) < 1e-9 and abs(r['Tm'] - 2.0) < 1e-9 and r['show'] == 7.5, r)
+        o = run_all()
+        chk('V1 7.5秒まで走る（動き続けるので止まらない）', abs(o['t'] - 7.5) < 0.01 and not o['rested'] and o['done'], o['t'])
+        chk('V1 測定の窓が終わった瞬間の結果と、最後の結果が同じ（続きで変わらない）', o['atWin'] and o['atWin']['res'] == o['fin'])
+        chk('V1 窓の終わりは2秒', o['atWin'] and abs(o['atWin']['t'] - 2.0) < 0.01, o['atWin'] and o['atWin']['t'])
+        ok = ev("()=>{const S=RUN.sess,r=S.finish();return r.ask.every(a=>a.ok)&&r.checks.every(c=>c.ok)}")
+        chk('V1 答え合わせは全部合う', ok)
+        ref = ev("()=>JSON.stringify(PHS.run(SCN.src,{params:SCN.params}).probes)")
+        chk('V1 見せる長さを伸ばしても、測定値は伸ばさない時と同じ', ref == o['fin'])
+
+        load('orig-arc-then-rough-floor')
+        o = run_all()
+        chk('V1 自然に止まる現象は、止まったところで終わる（引き延ばさない）', o['rested'] and o['t'] < 7.5 and o['t'] > o['Tm'] - 0.01, (o['t'], o['Tm'], o['rested']))
+        chk('V1 止まったあとも、測定の窓の結果は確定済み', ev("()=>RUN.sess.finish().ask.every(a=>a.ok)"))
+
+        # アプリの時計（scnTick）で進めても、窓が終わった時に答え合わせが出る
+        load('orig-collision-1d')
+        r = ev("""()=>{RUN.playing=true;const seen=[];for(let i=0;i<2000&&RUN.playing;i++){scnTick(1/60);if(RUN.res&&!seen.length)seen.push(RUN.sess.W.t)}
+                      return {resAt:seen[0],t:RUN.sess.W.t,playing:RUN.playing,hasRes:!!RUN.res}}""")
+        chk('V1 アプリの再生で、窓の終わり（約2秒）に答え合わせが出て、再生は続く', r['resAt'] is not None and abs(r['resAt'] - 2.0) < 0.1 and r['t'] > 2.5, r)
+
+        # ---------- V2 見せる長さの選択 ----------
+        load('orig-collision-1d')
+        for val, want in (('0', 2.0), ('15', 15.0), ('', 7.5)):
+            ev("(v)=>{const e=$('scShow');e.value=v;e.dispatchEvent(new Event('change'))}", val)
+            pg.wait_for_timeout(60)
+            ev("()=>scnTick(0)")
+            T = ev("()=>RUN.sess&&RUN.sess.T")
+            chk('V2 「%s」を選ぶと見せる長さが%s秒' % (val or '既定', want), T is not None and abs(T - want) < 1e-9, T)
+        ev("()=>{const e=$('scShow');e.value='10';e.dispatchEvent(new Event('change'));scnTick(0)}")
+        s = ev("()=>JSON.parse(scnSnapStr()).show")
+        chk('V2 選んだ長さは作品の保存に入る', s == 10, s)
+        ev("()=>{const str=scnSnapStr();SCN.show=null;scnRestore(str)}")
+        chk('V2 読み込むと同じ長さに戻る', ev("()=>SCN.show") == 10)
+        ev("()=>{pushUndo();const e=$('scShow');e.value='3';e.dispatchEvent(new Event('change'));scnTick(0)}")
+        ev("()=>undo()")
+        pg.wait_for_timeout(60)
+        chk('V2 Undoで前の長さに戻る', ev("()=>SCN.show") == 10, ev("()=>SCN.show"))
+        ev("""()=>{resetAll();setTab('ph');scnLoadSample('orig-collision-1d');SCN.show=null;SCN.src.run.show=4;RUN.dirty=true;scnTick(0)}""")
+        chk('V2 シナリオの run.show が、選ぶまでの既定になる', abs(ev("()=>RUN.sess.T") - 4.0) < 1e-9, ev("()=>RUN.sess.T"))
+        old = ev("""()=>{const o=JSON.parse(scnSnapStr());delete o.show;scnRestore(JSON.stringify(o));return SCN.show}""")
+        chk('V2 古い作品（showなし）は読める（既定のまま）', old is None)
+
+        # ---------- V3 追従カメラ ----------
+        load('orig-incline-friction')
+        v = ev("()=>({f:RUN.v0.follow,x0:RUN.view.x0,y0:RUN.view.y0,vx:RUN.v0.x0,vy:RUN.v0.y0,on:SCN.opt.follow})")
+        chk('V3 追う物の指定があり、追従は既定でオン', v['f'] == 'blk' and v['on'] is True, v)
+        chk('V3 時刻0は基準の視点（ずれない）', v['x0'] == v['vx'] and v['y0'] == v['vy'])
+        r = ev("""()=>{const S=RUN.sess,out=[];let bad=0;
+          for(let i=0;i<1200&&!S.done;i++){S.step();scnAfter();scnFrame();
+            const b=S.W.byId.get('blk'),X=(b.px-RUN.view.x0)/RUN.view.w,Y=(b.py-RUN.view.y0)/(RUN.view.w*H/W);
+            if(X<-1e-9||X>1+1e-9||Y<-1e-9||Y>1+1e-9)bad++; if(i%200===0)out.push([S.W.t,RUN.view.x0,RUN.view.y0])}
+          return {bad,out,x0:RUN.view.x0,y0:RUN.view.y0,t:S.W.t}}""")
+        chk('V3 追う物は、走っている間ずっと画面の中にいる', r['bad'] == 0, r['bad'])
+        chk('V3 視点が動いた（斜面を下る方向へ）', r['x0'] > v['vx'] + 1 and r['y0'] < v['vy'] - 0.5, (r['x0'], r['y0']))
+        same = ev("""()=>{const S=RUN.sess;const a=[RUN.view.x0,RUN.view.y0,S.W.t];
+          scnSeek(0.4);const b1=[RUN.view.x0,RUN.view.y0];scnFrame();const b1b=[RUN.view.x0,RUN.view.y0];
+          scnSeek(1.0);scnFrame();const c=[RUN.view.x0,RUN.view.y0];scnSeek(0.4);scnFrame();const b2=[RUN.view.x0,RUN.view.y0];
+          scnSeek(0);scnFrame();const z=[RUN.view.x0,RUN.view.y0,RUN.v0.x0,RUN.v0.y0];
+          return {b1b,b2,z}}""")
+        chk('V3 同じ時刻には同じ視点（行って戻っても）', abs(same['b1b'][0] - same['b2'][0]) < 1e-9 and abs(same['b1b'][1] - same['b2'][1]) < 1e-9, same)
+        chk('V3 最初へ戻すと基準の視点', same['z'][0] == same['z'][2] and same['z'][1] == same['z'][3], same['z'])
+        ev("()=>{SCN.opt.follow=false}")
+        r = ev("()=>{scnSeek(1.0);scnFrame();return {x0:RUN.view.x0,v0:RUN.v0.x0,y0:RUN.view.y0,w0:RUN.v0.y0}}")
+        chk('V3 追従をオフにすると視点は動かない', r['x0'] == r['v0'] and r['y0'] == r['w0'], r)
+        ev("()=>{SCN.opt.follow=true;scnFrame()}")
+        r = ev("()=>{scnSeek(3.0);scnFrame();return RUN.view.x0>RUN.v0.x0}")   # 余白の外へ出る時刻（1.0秒ではまだ内側＝動かないのが正しい）
+        chk('V3 オンに戻すとまた追う', r is True)
+
+        load('orig-pendulum-period')
+        r = ev("()=>{const S=RUN.sess;let moved=0;for(let i=0;i<600&&!S.done;i++){S.step();scnFrame();if(RUN.view.x0!==RUN.v0.x0||RUN.view.y0!==RUN.v0.y0)moved++}return {moved,f:RUN.v0.follow}}")
+        chk('V3 追う物の指定が無いシナリオ（ふりこ）は視点が動かない', r['moved'] == 0 and not r['f'], r)
+
+        # 絵に物理を付けた作品（シナリオにfollowなし）：画面の「動く」ボタンで付ける
+        ev("""()=>{resetAll();const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');g.fillStyle='#e55';g.fillRect(0,0,64,64);
+          window.A=add(null,c,{name:'玉',fx:.5,fy:.3,size:.5});setSel(A);setTab('ph')}""")
+        pg.wait_for_timeout(100)
+        pg.click('#scArtB'); pg.wait_for_timeout(200)
+        r = ev("""()=>{if(!RUN.sess)return {skip:true};const S=RUN.sess;let moved=0;for(let i=0;i<300&&!S.done;i++){S.step();scnFrame();if(RUN.view.x0!==RUN.v0.x0||RUN.view.y0!==RUN.v0.y0)moved++}return {moved,steps:S.i}}""")
+        chk('V3 絵に物理を付けた作品は視点が動かない（今までどおり）', not r.get('skip') and r['moved'] == 0 and r['steps'] > 100, r)
+
+        # ---------- V4 絵の配置は変わらない ----------
+        load('orig-incline-friction')
+        r = ev("""()=>{const ids=[...RUN.al.keys()];if(!ids.length)return {none:true};
+          const snap=()=>ids.map(id=>{const a=byId(id);return [a.fx,a.fy,a.size,a.rot]});
+          const before=snap();const S=RUN.sess;for(let i=0;i<500&&!S.done;i++){S.step();scnAfter()}scnFrame();
+          scnReset();const after=snap();
+          return {n:ids.length,before,after,same:JSON.stringify(before)===JSON.stringify(after)}}""")
+        if r.get('none'):
+            chk('V4 つないだ絵が無いサンプルなので、この項目は対象外', True)
+        else:
+            chk('V4 走らせて最初へ戻しても、つないだ絵の位置・大きさ・向きが同じ', r['same'], r)
+
+        # ---------- V5 追従ボタン ----------
+        load('orig-incline-friction')
+        has = ev("()=>[...$('scDisp').children].some(b=>b.textContent==='追従')")
+        load('orig-pendulum-period')
+        none = ev("()=>[...$('scDisp').children].some(b=>b.textContent==='追従')")
+        chk('V5 追う物の指定があるシナリオには「追従」ボタンが出る', has is True)
+        chk('V5 追う物の指定が無いシナリオには出ない', none is False)
+        load('orig-incline-friction')
+        ev("()=>[...$('scDisp').children].find(b=>b.textContent==='追従').click()")
+        chk('V5 ボタンで追従がオフになる', ev("()=>SCN.opt.follow") is False)
+        ev("()=>[...$('scDisp').children].find(b=>b.textContent==='追従').click()")
+        chk('V5 もう一度押すとオンに戻る', ev("()=>SCN.opt.follow") is True)
+
+        chk('V6 ページエラーが一度も出ていない', not errs, errs[:3])
+        b.close()
+    print('\nOK %d  NG %d' % (OKN[0], OKN[1]))
+    sys.exit(1 if OKN[1] else 0)
+
+
+main()
