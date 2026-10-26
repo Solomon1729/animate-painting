@@ -83,7 +83,7 @@ function catalog(){
     functions:Object.keys(PHS.FN).map(k=>({id:k,label:FN_LABELS[k]||k,arity:PHS.FN[k].length})).concat(EXTRA_FN),
     constants:[{id:'pi',label:'円周率'},{id:'tau',label:'2π'},{id:'g',label:'重力加速度（world.g）'}],
     reducers:Object.keys(PHS.RED).map(k=>({id:k,label:RED_LABELS[k]||k})),
-    parts:SCN_PARTS,
+    parts:SCN_PARTS,devices:PHDEV.catalog(),
     rules:{fields:RULE_FIELDS,acts:Object.entries(RULE_ACTS).map(([id,a])=>Object.assign({id},a))},
     ops:Object.entries(OPS).map(([id,o])=>({id,label:o.label,kind:o.kind,fields:o.args,returns:o.returns||''}))});
 }
@@ -94,6 +94,7 @@ function coverage(){
   need('集計',Object.keys(PHS.RED),Object.keys(RED_LABELS));need('関数',Object.keys(PHS.FN),Object.keys(FN_LABELS));
   need('物体の量',Object.keys(PHS.BP),Object.keys(LABELS));need('拘束の量',Object.keys(PHS.JP),Object.keys(LABELS));need('世界の量',Object.keys(PHS.WP),Object.keys(LABELS));
   need('ルールの動作',Object.keys(PHS.RULE_OPS),Object.keys(RULE_ACTS));
+  for(const d of PHDEV.DEVICES){if(!d.label||!d.icon||!d.desc)miss.push('装置「'+d.id+'」の名前・説明・アイコンがありません')}
   for(const k of PHS.KEYS.body)if(!BODY_FIELDS.some(f=>f.k===k)&&!['shapes'].includes(k)&&!['style','note','show','trail'].includes(k))miss.push('物体の項目「'+k+'」の説明がありません');
   return miss}
 
@@ -111,6 +112,8 @@ const OPS={
   addBody:{label:'物体を置く',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id)}),T('shape','shape','','形（{t:"circle",r:0.1}など。部品表のshapes）',{req:1}),T('pos','vec2','m','位置'),T('set','object','','その他の項目（部品表のbodyFields）')],returns:'物体id',
     do(s,a){need(a.shape&&a.shape.t,'shape（形）が必要です');const id=a.id||uniq(s.bodies,'b'),b={id,type:a.type||'dynamic',shapes:[a.shape]};
       if(b.type==='dynamic'&&!(a.set&&a.set.m!==undefined))b.m=1;if(a.pos)b.pos=a.pos;Object.assign(b,pick(a.set||{},BODY_SET));s.bodies.push(b);return id}},
+  addDevice:{label:'装置を置く（装置トレー）',kind:'scenario',args:[T('device','enum','','装置（部品表のdevices）',{req:1,options:PHDEV.DEVICES.map(d=>d.id),labels:PHDEV.DEVICES.map(d=>d.label)}),T('pos','vec2','m','置く位置（装置の中心あたり。装置ごとのanchor）'),T('params','object','','つまみの値 {つまみの名前:値}（装置ごと。部品表のdevices[].params）')],returns:'装置の名前（最初の物体のid）',
+    do(s,a){need(a.device,'device（装置）が必要です');const pos=a.pos===undefined?[0,0]:a.pos;need(Array.isArray(pos)&&pos.length>=2&&pos.every(x=>isFinite(+x)),'pos は [x,y]（数）で渡してください');return PHDEV.expand(s,a.device,pos.map(Number),{params:a.params}).key}},
   addShape:{label:'物体に形を足す',kind:'scenario',args:[T('body','body','','物体',{req:1}),T('shape','shape','','形',{req:1})],returns:'形の番号',do(s,a){const b=body(s,a.body);b.shapes.push(a.shape);return b.shapes.length-1}},
   setBody:{label:'物体の項目を変える',kind:'scenario',args:[T('id','body','','物体',{req:1}),T('set','object','','変える項目（値がnullなら消す）',{req:1})],do(s,a){const b=body(s,a.id);for(const k of Object.keys(a.set||{})){need(BODY_SET.includes(k),'物体の項目「'+k+'」は変えられません（使える項目: '+BODY_SET.join('・')+'）');if(a.set[k]===null)delete b[k];else b[k]=a.set[k]}return a.id}},
   removeBody:{label:'物体を消す（つないだ拘束・力場も外す）',kind:'scenario',args:[T('id','body','','物体',{req:1})],do(s,a){body(s,a.id);const uses=x=>x===a.id||(x&&typeof x==='object'&&x.body===a.id);
@@ -200,9 +203,23 @@ function exec0(op){
       case 'sweep':{const r=PHS.sweep(SCN.src,pick(op,['param','values','from','to','n']));return{ok:true,value:r}}}
   }catch(e){return{ok:false,errors:[String(e&&e.message||e)]}}
   return{ok:false,errors:['実装されていない命令です']}}
+/* 複数の scenario 命令を、1回のUndoでまとめて反映する（装置トレーから、シナリオが無い所へ最初の装置を置く時など）。
+   先頭が newScenario ならシナリオを開く（作り直し）。それ以外は今のシナリオに足す。成功したら、命令ごとに tap（タイムラプスの記録）へ知らせる */
+function execBatch(ops){
+  if(typeof SCN==='undefined'||typeof RUN==='undefined')return{ok:false,errors:['アプリの外では使えません（applyAll を使ってください）']};
+  if(!Array.isArray(ops)||!ops.length)return{ok:false,errors:['命令がありません']};
+  for(const op of ops){const d=OPS[op&&op.op];if(!d||d.kind!=='scenario')return{ok:false,errors:['命令「'+(op&&op.op)+'」はまとめて使えません（シナリオを直す命令だけ）']}}
+  const fresh=ops[0].op==='newScenario';
+  if(!fresh&&!SCN.src)return{ok:false,errors:['シナリオが開いていません（先頭を newScenario にしてください）']};
+  const r=applyAll(fresh?null:SCN.src,ops);if(!r.ok)return r;
+  let ok;
+  if(fresh){const o=scnSetSource(r.src);ok=!!(o&&o.ok);if(!ok)return{ok:false,errors:o&&o.errors||['シナリオを開けませんでした'],warns:r.warns}}
+  else{ok=scnEdit(s=>{for(const op of ops)OPS[op.op].do(s,op)});if(!ok)return{ok:false,errors:['シナリオを直せませんでした'],warns:r.warns}}
+  if(!(typeof TL!=='undefined'&&TL.busy))ops.forEach((op,i)=>{for(const cb of TAPS.slice())try{cb(op,{ok:true,value:r.value[i]})}catch(_){}});
+  return{ok:true,errors:[],warns:r.warns,value:r.value}}
 /* 実行中の出来事を受け取る：ルールの note・stop と、events の成立。cb({t,kind,rule,text}) を毎フレームの後で呼ぶ（巻き戻しの再実行中は呼ばない）。返す関数で解除 */
 const LISTEN=[];
 function listen(cb){LISTEN.push(cb);return()=>{const i=LISTEN.indexOf(cb);if(i>=0)LISTEN.splice(i,1)}}
 function emit(e){for(const cb of LISTEN.slice())try{cb(e)}catch(_){}}
-return{catalog,coverage,OPS,apply,applyAll,exec,tap,listen,emit,SHAPES,JOINTS,FIELDS}
+return{catalog,coverage,OPS,apply,applyAll,exec,execBatch,tap,listen,emit,SHAPES,JOINTS,FIELDS}
 })();

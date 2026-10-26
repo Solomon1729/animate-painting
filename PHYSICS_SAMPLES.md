@@ -219,6 +219,7 @@ SI（m・kg・s・N・J）。**x右・y上**。原点＝作品の左下（`view.
 |---|---|---|
 | `newScenario` | 空のシナリオを作る | 命令 |
 | `addBody` | 物体を置く | 命令 |
+| `addDevice` | 装置を置く（装置トレー） | 命令 |
 | `addShape` | 物体に形を足す | 命令 |
 | `setBody` | 物体の項目を変える | 命令 |
 | `removeBody` | 物体を消す（つないだ拘束・力場も外す） | 命令 |
@@ -253,11 +254,15 @@ SI（m・kg・s・N・J）。**x右・y上**。原点＝作品の左下（`view.
 | `open` | サンプルを開く | 実行 |
 | `close` | シナリオを閉じる | 実行 |
 
+**装置（台帳Z-210。`src/js/581-phys-devices.js`の`PHDEV`、部品表`catalog().devices`）**：球・箱・板・坂・床・ふりこ・ばね振り子・荷電粒子・電場・磁場を、シナリオJSONの断片（物体・つなぎ・力場・つまみ）として**1項目＝1オブジェクト**で持つ。`{op:'addDevice',device:'ball',pos:[x,y],params:{…}}`で今のシナリオに足す（名前は`ball`→`ball2`…。質量は条件`m_<id>`、つまみは条件`<名前>_<装置の名前>`＝画面のスライダーになる）。操作窓の上の**装置トレー**（物理タブ）は、この表から自動で並ぶ。**装置を増やす時は`DEVICES`に1項目足す**（断片の書き方は`581-phys-devices.js`の冒頭。`tools/phys_dev_test.js`が全部の装置を実際に動かして確かめる）。シナリオが無い所へ最初の装置を置く時は`PHAPI.execBatch([newScenario, addDevice床, addDevice…])`（1回のUndo）。
+
 ## 11. 検査道具
 | 道具 | 内容 |
 |---|---|
 | `node tools/phys_engine_test.js` | エンジンを解析解と比べる（自由落下・斜面・振り子・衝突・円弧・ばね・磁場・連鎖衝突…） |
 | `node tools/phys_check.js 〜` | シナリオの検証・実行・答え合わせ・掃引・CSV。`--all`で全件 |
+| `node tools/phys_dev_test.js` | 装置（`PHDEV`）の検査：全部の装置を置いて実際に動かす・名前の衝突・つまみ・位置・解析解との比較・誤り |
+| `python3 tools/check_phys_tray.py <HTMLの絶対パス>` | 装置トレーのアプリ内検査（タップ・ドラッグ・取り消し・保存・Undo）。49項目 |
 | `node tools/phys_api_test.js` | 窓口と部品表（この手引きの表の元）の検査。エンジンの表に足したら、ここも足さないと落ちる |
 | `python3 tools/check_physics.py <HTMLの絶対パス>` | アプリ内（固定刻み・保存・Undo・絵とのつなぎ・絵→物理・デモ・窓口）。ヘッドレスのみ。実機は未確認 |
 | `python3 tools/check_phys_view.py <HTMLの絶対パス>` | 表示の長さ（`run.show`）・測定の窓の後の続き・追従カメラ（`view.follow`）。33項目 |
