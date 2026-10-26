@@ -6,7 +6,7 @@
 const fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(root,'src/js',f),'utf8');
-const {PHE,PHS,PHAPI,TL}=new Function(read('51-phys-engine.js')+'\n'+read('52-phys-scenario.js')+'\n'+read('58-phys-api.js')+'\n'+read('59-timelapse.js')+'\nreturn {PHE,PHS,PHAPI,TL};')();
+const {PHE,PHS,PHAPI,TL}=new Function(read('51-phys-engine.js')+'\n'+read('52-phys-scenario.js')+'\n'+read('581-phys-devices.js')+'\n'+read('58-phys-api.js')+'\n'+read('59-timelapse.js')+'\nreturn {PHE,PHS,PHAPI,TL};')();
 let ok=0,ng=0;
 const chk=(name,cond,info)=>{(cond?ok++:ng++);console.log((cond?'  OK ':'  NG ')+name+(info!==undefined&&(!cond||info!=='')?'  '+info:''))};
 const J=o=>JSON.stringify(o);
@@ -190,5 +190,14 @@ console.log('9) 置く動きの間は舞台を変えない（lead）');
  {const a=mk(700),b=mk(0);for(const x of[a,b]){x.P.goto(-1);x.P.play();for(let t=0;t<400&&x.P.playing;t++)x.P.tick(250);x.P.tick(2000)}
   chk('自動再生で最後まで通すと、lead の有無によらず同じシナリオになる',J(a.H.src)===J(b.H.src)&&a.P.i===b.P.i&&!a.P.info().flying,'')}
  {const a=mk(2000);const long=Object.assign({},sc,{steps:sc.steps.map(s=>Object.assign({},s,{d:500}))});const P=TL.player(long,TL.pureHost(),{lead:2000});P.goto(1);P.next();chk('待ちは手順の長さの6割まで（500ms→300ms）',Math.abs(P.info().lead-300)<1,P.info().lead)}}
+
+console.log('装置トレーの命令（addDevice。台帳Z-210）が手順書に乗る');
+{const ops=[{op:'newScenario',id:'x',floor:false},{op:'addDevice',device:'floor',pos:[0,0]},{op:'addDevice',device:'ball',pos:[1,2]},{op:'addDevice',device:'ball',pos:[2,2]},{op:'addDevice',device:'ramp',pos:[3,1],params:{ang:35}}];
+ const r=TL.norm({v:1,title:'t',steps:ops.map(o=>TL.stepOf(o))});chk('手順書にできる',r.ok,r.errors.join(' / '));
+ const R=TL.replay(r.script);chk('再生すると装置が置かれる（floor・ball・ball2・ramp）',R.bodies.map(b=>b.id).join(',')==='floor,ball,ball2,ramp',R.bodies.map(b=>b.id).join(','));
+ chk('つまみが条件になる（ang_ramp=35）',R.params.ang_ramp&&R.params.ang_ramp.v===35&&R.params.m_ball2);
+ chk('説明の文に装置の名前（日本語）が出る',r.script.steps[2].say.includes('装置「球」')&&r.script.steps[4].say.includes('つまみ'),r.script.steps[2].say);
+ chk('見出し・分類（組み立て台のブロック）',r.script.steps[2].blk.s==='装置'&&r.script.steps[2].cat==='body');
+ const V=PHS.validate(R);chk('再生結果が検証に通る',!V.errors.length,V.errors.join(' / '))}
 
 console.log('\n結果: OK='+ok+' NG='+ng);process.exit(ng?1:0);

@@ -212,3 +212,12 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 .tlb[data-c="measure"],.tlchip[data-c="measure"]{--c:#d1486f}.tlb[data-c="check"],.tlchip[data-c="check"]{--c:#6aa22f}.tlb[data-c="rule"],.tlchip[data-c="rule"]{--c:#b8960f}.tlb[data-c="run"],.tlchip[data-c="run"]{--c:#5b6472}.tlb[data-c="note"],.tlchip[data-c="note"]{--c:#94a3b8}.tlb[data-c="ui"],.tlchip[data-c="ui"]{--c:#5a6fd6}
 .tlhi{outline:3px solid var(--acc)!important;outline-offset:2px}
 #tlFg{position:absolute;z-index:9;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:3px solid var(--acc);background:color-mix(in srgb,var(--acc) 35%,transparent);pointer-events:none}
+
+/* 装置トレー（台帳Z-210。物理タブの時だけ、操作窓の持ち手の下に付くアイテム欄。色・角・枠は変数だけで書く） */
+#dvtray{display:flex;gap:6px;flex:0 0 auto;overflow-x:auto;overflow-y:hidden;padding:6px 8px;position:sticky;top:0;z-index:3;background:var(--pane);border-bottom:var(--bw,2px) solid var(--line);scrollbar-width:thin;overscroll-behavior:contain}
+#dvtray[hidden]{display:none}
+#dvtray .dv{flex:0 0 auto;width:56px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:calc(var(--dp,1)*4px) 2px calc(var(--dp,1)*3px);touch-action:pan-x;user-select:none;-webkit-user-select:none;cursor:grab;color:var(--ink);background:var(--bg)}
+#dvtray .dv span{font-size:11px;line-height:1.15;font-weight:var(--fw,900);white-space:nowrap}
+#dvtray .dv svg{display:block}
+#dvghost{position:fixed;z-index:300;pointer-events:none;transform:translate(-50%,-50%);width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--ink);background:var(--pane);border:var(--bw,2px) solid var(--acc);border-radius:calc(var(--rk,1)*10px);opacity:.92}
+body.dvdrag,body.dvdrag *{cursor:grabbing!important}

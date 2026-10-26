@@ -220,6 +220,15 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 .tlb[data-c="measure"],.tlchip[data-c="measure"]{--c:#d1486f}.tlb[data-c="check"],.tlchip[data-c="check"]{--c:#6aa22f}.tlb[data-c="rule"],.tlchip[data-c="rule"]{--c:#b8960f}.tlb[data-c="run"],.tlchip[data-c="run"]{--c:#5b6472}.tlb[data-c="note"],.tlchip[data-c="note"]{--c:#94a3b8}.tlb[data-c="ui"],.tlchip[data-c="ui"]{--c:#5a6fd6}
 .tlhi{outline:3px solid var(--acc)!important;outline-offset:2px}
 #tlFg{position:absolute;z-index:9;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:3px solid var(--acc);background:color-mix(in srgb,var(--acc) 35%,transparent);pointer-events:none}
+
+/* 装置トレー（台帳Z-210。物理タブの時だけ、操作窓の持ち手の下に付くアイテム欄。色・角・枠は変数だけで書く） */
+#dvtray{display:flex;gap:6px;flex:0 0 auto;overflow-x:auto;overflow-y:hidden;padding:6px 8px;position:sticky;top:0;z-index:3;background:var(--pane);border-bottom:var(--bw,2px) solid var(--line);scrollbar-width:thin;overscroll-behavior:contain}
+#dvtray[hidden]{display:none}
+#dvtray .dv{flex:0 0 auto;width:56px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:calc(var(--dp,1)*4px) 2px calc(var(--dp,1)*3px);touch-action:pan-x;user-select:none;-webkit-user-select:none;cursor:grab;color:var(--ink);background:var(--bg)}
+#dvtray .dv span{font-size:11px;line-height:1.15;font-weight:var(--fw,900);white-space:nowrap}
+#dvtray .dv svg{display:block}
+#dvghost{position:fixed;z-index:300;pointer-events:none;transform:translate(-50%,-50%);width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--ink);background:var(--pane);border:var(--bw,2px) solid var(--acc);border-radius:calc(var(--rk,1)*10px);opacity:.92}
+body.dvdrag,body.dvdrag *{cursor:grabbing!important}
 </style>
 </head>
 <body>
@@ -265,6 +274,7 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 
 <div class="pane" id="tp">
   <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）"></span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
+  <div id="dvtray" role="toolbar" aria-label="装置トレー（装置を画面へドラッグして置く）" hidden></div>
   <div id="tpb">
   <div class="grp tlp" id="tlp" hidden>
     <div class="row tlh"><b class="gh" id="tlTitle">🎞 タイムラプス</b><button id="tlMin" aria-label="枠を小さくする／大きくする" aria-pressed="false">▾</button><button id="tlX" aria-label="タイムラプスを閉じる（見る前の作品に戻ります）">✕ 閉じる</button></div>
@@ -3236,6 +3246,89 @@ function demoH(){
   dmGo('鉄球が振り子のように振れて、積み木のお城に当たります。鉄球の質量・角度・摩擦を変えると、崩れ方が変わります。','')}
 
 const ARTDEMOS={c:demoC,d:demoD,e:demoE,f:demoF,g:demoG,h:demoH};
+/* ===== 装置の表 PHDEV（台帳Z-210。装置トレーの中身）=====
+   ねらい：「球・坂・板…」を、シナリオJSONの断片（物体・つなぎ・力場・つまみ）として1項目＝1オブジェクトで持つ。
+   命令 PHAPI.OPS.addDevice が expand() を呼んでシナリオに足す（だから Undo・巻き戻し・タイムラプス・ビジュアルプログラミングにそのまま乗る）。
+   純JS（DOMに触れない）。装置を増やす時は、DEVICES に1項目足すだけ（トレーの並び・部品表・検査は自動で追従する。tools/phys_dev_test.js が全部の装置を実際に動かして確かめる）。
+   書き方（断片）：
+   ・座標は装置の局所座標[m]。anchor＝「置いた点（ドラッグして離した点）に重ねる局所座標」（既定[0,0]）。
+   ・bodies／joints／fields／pairs は、シナリオの書き方（PHYSICS_SAMPLES.md）と同じ。物体の id は局所名。2個目以降は ball2・ball3…（装置の全部の物体・つなぎが同じ番号になる）。
+   ・size＝装置の大きさ（置いた点を中心にした半分の幅・高さ[m]。タップで置く時に、他の物と重ならない場所を選ぶのに使う）。rest＝床に載る装置（坂など）を置く高さ（置いた点のy[m]）。
+   ・つまみ params：{名前:{v,min,max,step,unit,label}}。断片の中の文字列で $名前 と書くと、そのつまみ（シナリオの条件 名前_装置の名前）に置き換わる。
+   ・動く物体の質量 m が数なら、条件 m_<id>（スライダー）にする（絵に物理を付ける時と同じ）。
+   ・既定の摩擦・反発は小さめ（現実の実験でも摩擦の小さい面を選ぶことがある。大きくする時はスライダーやJSONで）。接する2物体の摩擦・反発は「小さい方」（PHYSICS_SAMPLES.md §9）。 */
+const PHDEV=(function(){
+const DEVICES=[
+  {id:'ball',label:'球',group:'物体',desc:'転がる・跳ねる球（質量はスライダー）',icon:'<circle cx="20" cy="20" r="9"/>',size:[.12,.12],
+    bodies:[{id:'ball',type:'dynamic',m:1,mu:.3,e:.6,label:'球',shapes:[{t:'circle',r:.1}]}]},
+  {id:'box',label:'箱',group:'物体',desc:'すべる・積める箱',icon:'<rect x="11" y="14" width="18" height="13"/>',size:[.17,.12],
+    bodies:[{id:'box',type:'dynamic',m:1,mu:.3,e:.1,label:'箱',shapes:[{t:'box',w:.3,h:.2}]}]},
+  {id:'board',label:'板',group:'台',desc:'固定の板（角度をスライダーで。90°で壁）',icon:'<rect x="5" y="18" width="30" height="4"/>',size:[.85,.1],
+    params:{ang:{v:0,min:-90,max:90,step:1,unit:'°',label:'板の角度'}},
+    bodies:[{id:'board',type:'static',mu:.3,e:.5,angle:'$ang',label:'板',shapes:[{t:'box',w:1.6,h:.08}]}]},
+  {id:'ramp',label:'坂',group:'台',desc:'固定の坂（斜辺3m。角度をスライダーで）',icon:'<path d="M6 30 L34 30 L34 13 Z"/>',anchor:[1.3,.75],size:[1.4,.8],rest:.75,
+    params:{ang:{v:30,min:5,max:70,step:1,unit:'°',label:'坂の角度'}},
+    bodies:[{id:'ramp',type:'static',mu:.2,e:.3,label:'坂',shapes:[{t:'poly',pts:[[0,0],['3*cosd($ang)',0],['3*cosd($ang)','3*sind($ang)']]}]}]},
+  {id:'floor',label:'床',group:'台',desc:'どこまでも続く床（置いた高さが床の高さ）',icon:'<path d="M4 25 H36"/><path d="M9 25 l-4 6 M17 25 l-4 6 M25 25 l-4 6 M33 25 l-4 6"/>',size:[0,0],
+    bodies:[{id:'floor',type:'static',mu:.4,e:.5,label:'床',shapes:[{t:'plane',normal:[0,1],d:0}]}]},
+  {id:'pendulum',label:'ふりこ',group:'組み合わせ',desc:'棒でつるしたおもり（長さ1m・30°に傾けて始まる）',icon:'<path d="M20 7 L10 28"/><circle cx="9" cy="31" r="4"/><circle cx="20" cy="7" r="1.5" fill="currentColor"/>',anchor:[-.25,-.46],size:[.35,.55],
+    bodies:[{id:'bob',type:'dynamic',m:1,mu:.3,e:.5,pos:[-.5,-.866],label:'おもり',shapes:[{t:'circle',r:.06}]}],
+    joints:[{id:'rod',type:'rod',a:{at:[0,0]},b:{body:'bob',at:[0,0]}}]},
+  {id:'springmass',label:'ばね振り子',group:'組み合わせ',desc:'ばねでつるしたおもり（ばね定数をスライダーで）',icon:'<path d="M20 4 V8 L14 10 L26 14 L14 18 L26 22 L20 24 V27"/><circle cx="20" cy="31" r="4"/>',anchor:[0,-.4],size:[.2,.55],
+    params:{k:{v:30,min:2,max:200,step:1,unit:'N/m',label:'ばね定数'}},
+    bodies:[{id:'weight',type:'dynamic',m:1,mu:.3,e:.5,pos:[0,-.8],label:'おもり',shapes:[{t:'circle',r:.08}]}],
+    joints:[{id:'spr',type:'spring',a:{at:[0,0]},b:{body:'weight',at:[0,0]},k:'$k',len:.5}]},
+  {id:'particle',label:'荷電粒子',group:'物体',desc:'電荷をもつ小さな粒（電荷・初速をスライダーで。電場・磁場の中へ）',icon:'<circle cx="20" cy="20" r="6"/><path d="M20 16 v8 M16 20 h8"/>',size:[.1,.1],
+    params:{q:{v:.001,min:-.005,max:.005,step:.0005,unit:'C',label:'電荷'},v0:{v:3,min:0,max:20,step:.5,unit:'m/s',label:'初速（右向き）'}},
+    bodies:[{id:'p',type:'dynamic',m:.01,q:'$q',vel:['$v0',0],mu:0,e:.5,label:'荷電粒子',shapes:[{t:'circle',r:.04}]}]},
+  {id:'capacitor',label:'電場',group:'場',desc:'向かい合う極板のあいだの一様な電場（強さをスライダーで）',icon:'<path d="M7 12 H33 M7 28 H33"/><path d="M20 15 V25 M16 21 L20 25 L24 21"/>',size:[1.05,.6],
+    params:{E:{v:100,min:-500,max:500,step:10,unit:'N/C',label:'電場の強さ（上向きが正）'}},
+    bodies:[{id:'plateU',type:'static',collide:false,pos:[0,.52],label:'極板（上）',shapes:[{t:'box',w:2,h:.04}]},{id:'plateL',type:'static',collide:false,pos:[0,-.52],label:'極板（下）',shapes:[{t:'box',w:2,h:.04}]}],
+    fields:[{type:'E',ex:0,ey:'$E',region:{rect:[-1,-.5,1,.5]},label:'電場'}]},
+  {id:'bfield',label:'磁場',group:'場',desc:'紙面に垂直な一様な磁場の領域（強さをスライダーで）',icon:'<rect x="7" y="9" width="26" height="22" stroke-dasharray="3 2.5"/><circle cx="14" cy="16" r="1.4" fill="currentColor"/><circle cx="26" cy="16" r="1.4" fill="currentColor"/><circle cx="20" cy="20" r="1.4" fill="currentColor"/><circle cx="14" cy="25" r="1.4" fill="currentColor"/><circle cx="26" cy="25" r="1.4" fill="currentColor"/>',size:[1.55,1.25],
+    params:{B:{v:.5,min:-2,max:2,step:.05,unit:'T',label:'磁束密度（手前向きが正）'}},
+    fields:[{type:'B',bz:'$B',region:{rect:[-1.5,-1.2,1.5,1.2]},label:'磁場'}]}
+];
+const find=id=>DEVICES.find(d=>d.id===id);
+const r5=x=>+(+x).toFixed(5),nice=x=>+(+x).toPrecision(2);
+/* シナリオ s に、装置 devId を pos（装置の置いた点。[x,y] m）に足す（sを直接直す）。戻り値{key,ids}＝装置の名前（最初の物体のid。物体が無ければ装置のid）・足した物体のid。
+   opt.params＝つまみの値 {名前:値}（省略するとその装置の既定） */
+function expand(s,devId,pos,opt){
+  opt=opt||{};const dv=find(devId);
+  if(!dv)throw new Error('装置「'+devId+'」がありません（使える装置: '+DEVICES.map(d=>d.id).join('・')+'）');
+  pos=pos||[0,0];if(!Array.isArray(pos)||pos.length<2||!isFinite(+pos[0])||!isFinite(+pos[1]))throw new Error('pos は [x,y]（数）で渡してください');
+  const T=JSON.parse(JSON.stringify(dv)),P=T.params||{},pn=Object.keys(P),prm=s.params||{},have=new Set((s.bodies||[]).map(b=>b.id)),haveJ=new Set((s.joints||[]).map(j=>j.id));
+  const base=T.bodies&&T.bodies.length?T.bodies[0].id:dv.id;
+  /* 名前の衝突を避ける：全部の物体・つなぎ・つまみが同じ番号（なし→2→3…）になる最小の番号 */
+  let sfx='',n=1;
+  const free=()=>(T.bodies||[]).every(b=>!have.has(b.id+sfx))&&(T.joints||[]).every(j=>!haveJ.has(j.id+sfx))&&!have.has(base+sfx)&&!pn.some(p=>(p+'_'+base+sfx) in prm);
+  while(!free()&&n<999){n++;sfx=String(n)}
+  const key=base+sfx,tok=JSON.stringify(T).replace(/\$([A-Za-z_]\w*)/g,(m,k)=>k+'_'+key),U=JSON.parse(tok);
+  const loc=new Set((U.bodies||[]).map(b=>b.id)),rid=x=>loc.has(x)?x+sfx:x;
+  const an=U.anchor||[0,0],ox=+pos[0]-an[0],oy=+pos[1]-an[1],sh=p=>[r5(+p[0]+ox),r5(+p[1]+oy)];
+  const ra=a=>{if(typeof a==='string')return rid(a);if(a&&typeof a==='object'){const q=Object.assign({},a);if(q.body!==undefined)q.body=rid(q.body);else if(Array.isArray(q.at))q.at=sh(q.at);return q}return a};
+  s.bodies=s.bodies||[];const ids=[];
+  for(const b of U.bodies||[]){
+    b.id=rid(b.id);b.pos=sh(b.pos||[0,0]);
+    if(b.type==='dynamic'&&typeof b.m==='number'){const m=b.m;(s.params=s.params||{})['m_'+b.id]={v:m,min:nice(m/10),max:nice(m*20),step:nice(m/10),unit:'kg',label:(b.label||b.id)+'の質量'};b.m='m_'+b.id}
+    s.bodies.push(b);ids.push(b.id)}
+  for(const j of U.joints||[]){
+    const q=Object.assign({},j);q.id=j.id+sfx;if(q.a!==undefined)q.a=ra(q.a);if(q.b!==undefined)q.b=ra(q.b);if(q.via)q.via=q.via.map(ra);if(q.path)q.path=q.path.map(ra);
+    (s.joints=s.joints||[]).push(q)}
+  for(const f of U.fields||[]){
+    const q=Object.assign({},f);
+    if(q.region&&q.region.rect){const r=q.region.rect;q.region={rect:[r5(+r[0]+ox),r5(+r[1]+oy),r5(+r[2]+ox),r5(+r[3]+oy)]}}
+    else if(q.region&&q.region.circle){const r=q.region.circle;q.region={circle:[r5(+r[0]+ox),r5(+r[1]+oy),r[2]]}}
+    if(q.cx!==undefined)q.cx=r5(+q.cx+ox);if(q.cy!==undefined)q.cy=r5(+q.cy+oy);
+    if(q.targets)q.targets=q.targets.map(rid);
+    (s.fields=s.fields||[]).push(q)}
+  for(const p of U.pairs||[])(s.pairs=s.pairs||[]).push(Object.assign({},p,{a:rid(p.a),b:rid(p.b)}));
+  for(const name of pn){const d=Object.assign({},P[name]);if(opt.params&&opt.params[name]!==undefined&&isFinite(+opt.params[name]))d.v=+opt.params[name];(s.params=s.params||{})[name+'_'+key]=d}
+  return{key,ids}}
+/* 部品表用：1装置の説明（アイコン・断片そのものは含む。JSONにできる） */
+function catalog(){return JSON.parse(JSON.stringify(DEVICES.map(d=>({id:d.id,label:d.label,group:d.group,desc:d.desc,icon:d.icon,size:d.size||[.3,.3],rest:d.rest,anchor:d.anchor||[0,0],params:d.params||{},bodies:d.bodies||[],joints:d.joints||[],fields:d.fields||[],pairs:d.pairs||[]}))))}
+return{DEVICES,find,expand,catalog}
+})();
 /* ===== 物理モードの「窓口」（台帳Z-178。ビジュアルプログラミングから使う想定）=====
    ねらい：将来のビジュアルプログラミング（ブロックをつないで動かす）が、物理モードの中身を「データ」だけで使えるようにする。
    ①部品表 catalog()：形・拘束・力場・物体の項目・量・関数・集計・ルールの動作を、型つき（名前・日本語名・型・単位・範囲・例）で返す。ブロックの並びや入力欄は、これから自動で作れる。
@@ -3321,7 +3414,7 @@ function catalog(){
     functions:Object.keys(PHS.FN).map(k=>({id:k,label:FN_LABELS[k]||k,arity:PHS.FN[k].length})).concat(EXTRA_FN),
     constants:[{id:'pi',label:'円周率'},{id:'tau',label:'2π'},{id:'g',label:'重力加速度（world.g）'}],
     reducers:Object.keys(PHS.RED).map(k=>({id:k,label:RED_LABELS[k]||k})),
-    parts:SCN_PARTS,
+    parts:SCN_PARTS,devices:PHDEV.catalog(),
     rules:{fields:RULE_FIELDS,acts:Object.entries(RULE_ACTS).map(([id,a])=>Object.assign({id},a))},
     ops:Object.entries(OPS).map(([id,o])=>({id,label:o.label,kind:o.kind,fields:o.args,returns:o.returns||''}))});
 }
@@ -3332,6 +3425,7 @@ function coverage(){
   need('集計',Object.keys(PHS.RED),Object.keys(RED_LABELS));need('関数',Object.keys(PHS.FN),Object.keys(FN_LABELS));
   need('物体の量',Object.keys(PHS.BP),Object.keys(LABELS));need('拘束の量',Object.keys(PHS.JP),Object.keys(LABELS));need('世界の量',Object.keys(PHS.WP),Object.keys(LABELS));
   need('ルールの動作',Object.keys(PHS.RULE_OPS),Object.keys(RULE_ACTS));
+  for(const d of PHDEV.DEVICES){if(!d.label||!d.icon||!d.desc)miss.push('装置「'+d.id+'」の名前・説明・アイコンがありません')}
   for(const k of PHS.KEYS.body)if(!BODY_FIELDS.some(f=>f.k===k)&&!['shapes'].includes(k)&&!['style','note','show','trail'].includes(k))miss.push('物体の項目「'+k+'」の説明がありません');
   return miss}
 
@@ -3349,6 +3443,8 @@ const OPS={
   addBody:{label:'物体を置く',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id)}),T('shape','shape','','形（{t:"circle",r:0.1}など。部品表のshapes）',{req:1}),T('pos','vec2','m','位置'),T('set','object','','その他の項目（部品表のbodyFields）')],returns:'物体id',
     do(s,a){need(a.shape&&a.shape.t,'shape（形）が必要です');const id=a.id||uniq(s.bodies,'b'),b={id,type:a.type||'dynamic',shapes:[a.shape]};
       if(b.type==='dynamic'&&!(a.set&&a.set.m!==undefined))b.m=1;if(a.pos)b.pos=a.pos;Object.assign(b,pick(a.set||{},BODY_SET));s.bodies.push(b);return id}},
+  addDevice:{label:'装置を置く（装置トレー）',kind:'scenario',args:[T('device','enum','','装置（部品表のdevices）',{req:1,options:PHDEV.DEVICES.map(d=>d.id),labels:PHDEV.DEVICES.map(d=>d.label)}),T('pos','vec2','m','置く位置（装置の中心あたり。装置ごとのanchor）'),T('params','object','','つまみの値 {つまみの名前:値}（装置ごと。部品表のdevices[].params）')],returns:'装置の名前（最初の物体のid）',
+    do(s,a){need(a.device,'device（装置）が必要です');const pos=a.pos===undefined?[0,0]:a.pos;need(Array.isArray(pos)&&pos.length>=2&&pos.every(x=>isFinite(+x)),'pos は [x,y]（数）で渡してください');return PHDEV.expand(s,a.device,pos.map(Number),{params:a.params}).key}},
   addShape:{label:'物体に形を足す',kind:'scenario',args:[T('body','body','','物体',{req:1}),T('shape','shape','','形',{req:1})],returns:'形の番号',do(s,a){const b=body(s,a.body);b.shapes.push(a.shape);return b.shapes.length-1}},
   setBody:{label:'物体の項目を変える',kind:'scenario',args:[T('id','body','','物体',{req:1}),T('set','object','','変える項目（値がnullなら消す）',{req:1})],do(s,a){const b=body(s,a.id);for(const k of Object.keys(a.set||{})){need(BODY_SET.includes(k),'物体の項目「'+k+'」は変えられません（使える項目: '+BODY_SET.join('・')+'）');if(a.set[k]===null)delete b[k];else b[k]=a.set[k]}return a.id}},
   removeBody:{label:'物体を消す（つないだ拘束・力場も外す）',kind:'scenario',args:[T('id','body','','物体',{req:1})],do(s,a){body(s,a.id);const uses=x=>x===a.id||(x&&typeof x==='object'&&x.body===a.id);
@@ -3438,11 +3534,25 @@ function exec0(op){
       case 'sweep':{const r=PHS.sweep(SCN.src,pick(op,['param','values','from','to','n']));return{ok:true,value:r}}}
   }catch(e){return{ok:false,errors:[String(e&&e.message||e)]}}
   return{ok:false,errors:['実装されていない命令です']}}
+/* 複数の scenario 命令を、1回のUndoでまとめて反映する（装置トレーから、シナリオが無い所へ最初の装置を置く時など）。
+   先頭が newScenario ならシナリオを開く（作り直し）。それ以外は今のシナリオに足す。成功したら、命令ごとに tap（タイムラプスの記録）へ知らせる */
+function execBatch(ops){
+  if(typeof SCN==='undefined'||typeof RUN==='undefined')return{ok:false,errors:['アプリの外では使えません（applyAll を使ってください）']};
+  if(!Array.isArray(ops)||!ops.length)return{ok:false,errors:['命令がありません']};
+  for(const op of ops){const d=OPS[op&&op.op];if(!d||d.kind!=='scenario')return{ok:false,errors:['命令「'+(op&&op.op)+'」はまとめて使えません（シナリオを直す命令だけ）']}}
+  const fresh=ops[0].op==='newScenario';
+  if(!fresh&&!SCN.src)return{ok:false,errors:['シナリオが開いていません（先頭を newScenario にしてください）']};
+  const r=applyAll(fresh?null:SCN.src,ops);if(!r.ok)return r;
+  let ok;
+  if(fresh){const o=scnSetSource(r.src);ok=!!(o&&o.ok);if(!ok)return{ok:false,errors:o&&o.errors||['シナリオを開けませんでした'],warns:r.warns}}
+  else{ok=scnEdit(s=>{for(const op of ops)OPS[op.op].do(s,op)});if(!ok)return{ok:false,errors:['シナリオを直せませんでした'],warns:r.warns}}
+  if(!(typeof TL!=='undefined'&&TL.busy))ops.forEach((op,i)=>{for(const cb of TAPS.slice())try{cb(op,{ok:true,value:r.value[i]})}catch(_){}});
+  return{ok:true,errors:[],warns:r.warns,value:r.value}}
 /* 実行中の出来事を受け取る：ルールの note・stop と、events の成立。cb({t,kind,rule,text}) を毎フレームの後で呼ぶ（巻き戻しの再実行中は呼ばない）。返す関数で解除 */
 const LISTEN=[];
 function listen(cb){LISTEN.push(cb);return()=>{const i=LISTEN.indexOf(cb);if(i>=0)LISTEN.splice(i,1)}}
 function emit(e){for(const cb of LISTEN.slice())try{cb(e)}catch(_){}}
-return{catalog,coverage,OPS,apply,applyAll,exec,tap,listen,emit,SHAPES,JOINTS,FIELDS}
+return{catalog,coverage,OPS,apply,applyAll,exec,execBatch,tap,listen,emit,SHAPES,JOINTS,FIELDS}
 })();
 /* ===== タイムラプス（操作手順の記録・再生・書き出し）TL（台帳Z-192）=====
    ねらい：「どう作るか」を、操作の手順（データ）として作る・再生する・文章にする部品。将来のビジュアルプログラミング（ブロックを置く→入力欄を埋める→つなぐ）の一部になる前提で、
@@ -3459,11 +3569,11 @@ return{catalog,coverage,OPS,apply,applyAll,exec,tap,listen,emit,SHAPES,JOINTS,FI
 const TL=(function(){
 const V=1;
 const CAT={setup:'設定',cond:'条件',body:'物体',link:'つなぎ',field:'力場',measure:'測定',check:'答え合わせ',rule:'ルール',run:'実行',note:'説明',ui:'画面の操作'};
-const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup',setRun:'setup',setParam:'cond',setVar:'cond',addBody:'body',addShape:'body',setBody:'body',removeBody:'body',
+const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup',setRun:'setup',setParam:'cond',setVar:'cond',addBody:'body',addDevice:'body',addShape:'body',setBody:'body',removeBody:'body',
   addJoint:'link',removeJoint:'link',addPair:'link',addField:'field',removeField:'field',addProbe:'measure',addEvent:'measure',addGraph:'measure',setSweep:'measure',addAsk:'check',addCheck:'check',
   addRule:'rule',removeRule:'rule',play:'run',pause:'run',reset:'run',seek:'run',step:'run',speed:'run',read:'run',result:'run',sweep:'run',open:'run',close:'run'};
 /* ブロックの見出し（短い名前。組み立て台のブロックに書く。台帳Z-196） */
-const SHORT={newScenario:'シナリオ',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
+const SHORT={newScenario:'シナリオ',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addDevice:'装置',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
   addJoint:'つなぎ',removeJoint:'つなぎを外す',addPair:'接触の設定',addField:'力場',removeField:'力場を消す',addProbe:'測定',addEvent:'出来事',addGraph:'グラフ',setSweep:'条件をふる',addAsk:'答え合わせ',addCheck:'検査',
   addRule:'ルール',removeRule:'ルールを消す',play:'▶ 実行',pause:'一時停止',reset:'最初へ',seek:'時刻へ',step:'1コマ',speed:'速さ',read:'読む',result:'答え合わせ',sweep:'条件をふる',open:'サンプルを開く',close:'閉じる'};
 const SPEEDS=[.25,.5,1,2,4,8,16,32];
@@ -3525,6 +3635,7 @@ const SAY={
   setParam:o=>'条件（スライダー）「'+(o.label||o.name)+'」を作る：初めは '+fv(o.v,o.unit)+(has(o,'min')&&has(o,'max')?'（'+num(o.min)+'〜'+num(o.max)+'）':''),
   setVar:o=>'途中計算「'+o.name+'」を決める：'+o.name+' ＝ '+o.expr,
   addBody:o=>'物体「'+(o.id||'')+'」を置く：'+(o.shape?shapeText(o.shape):'')+(o.type==='static'?'（固定）':o.type==='kinematic'?'（決めた動きをする台）':'')+(o.pos?'。位置 '+fv(o.pos,'m'):''),
+  addDevice:o=>'装置「'+((typeof PHDEV!=='undefined'&&PHDEV.find(o.device))||{label:o.device}).label+'」を置く'+(o.pos?'。位置 '+fv(o.pos,'m'):'')+(o.params&&Object.keys(o.params).length?'（つまみ '+Object.keys(o.params).map(k=>k+'＝'+fv(o.params[k])).join('、')+'）':''),
   addShape:o=>'物体「'+o.body+'」に形を足す：'+shapeText(o.shape),
   setBody:o=>'物体「'+o.id+'」の項目を変える：'+Object.keys(o.set||{}).join('・'),
   removeBody:o=>'物体「'+o.id+'」を消す',
@@ -3637,7 +3748,7 @@ function layout(script){
   const towerOf=id=>id!==null&&id!==undefined&&tw[id]!==undefined?tw[id]:newTower(id===null||id===undefined?'?':id);
   steps.forEach((s,i)=>{
     const cat=s.cat||s.k,op=s.op&&s.op.op,o=s.op||{};
-    if(op==='addBody')put(i,newTower(o.id),4,'body');
+    if(op==='addBody'||op==='addDevice')put(i,newTower(op==='addBody'?o.id:o.device),4,'body');
     else if(op==='addShape'||op==='setBody'||op==='removeBody')put(i,towerOf(op==='addShape'?o.body:o.id),4,'body');
     else if(op==='addJoint'||op==='addPair'||op==='removeJoint'){
       const xs=[bodyOf(o.a),bodyOf(o.b)].filter(x=>x).map(towerOf);
@@ -6381,7 +6492,7 @@ function noObjUi(on){
   bd.classList.toggle('noobj',on);$('noobj').hidden=!on;
   const cur=(document.querySelector('.tab.on')||{dataset:{}}).dataset.tab;
   if(on&&!was){
-    if(cur!=='bg'){noObjAuto=true;setTab('bg')}
+    if(cur!=='bg'&&cur!=='ph'){noObjAuto=true;setTab('bg')}   /* 物理タブはオブジェクト0個でも使える（装置トレーで一から組み立てる。台帳Z-210）。Undoなどで0個になっても、物理タブからは動かさない */
   }else if(!on&&was&&noObjAuto){noObjAuto=false;if(document.querySelector('.tab.on')&&document.querySelector('.tab.on').dataset.tab==='bg')setTab('pl')}
   if(on)crdHide();
 }
@@ -7161,7 +7272,7 @@ function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bp
   if(pcolPk)pcolPk.style.display=t==='pen'?'':'none';
   if(t!=='move'&&!seen[t]){seen[t]=1;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},4500)}}
 const TT={adj:()=>'move',fx:()=>'move',pt:()=>lastPart,pl:()=>'move',mo:()=>'move',bg:()=>'move',ph:()=>'move',wp:()=>'warp',dr:()=>lastPen,mk:()=>lastMask};
-function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();if(t==='ph')scnUi();setTool(TT[t]())}
+function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();if(t==='ph')scnUi();if(typeof dvSync==='function')dvSync(t);setTool(TT[t]())}
 document.querySelectorAll('#tp [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 $('tc').onclick=()=>{const c=document.body.classList.toggle('tpc');$('tc').textContent=c?'▴':'▾'};
 $('gd').onclick=()=>{guide=!guide;$('gd').classList.toggle('on',guide)};
@@ -7620,6 +7731,73 @@ function tlbCard(st,anim,wait){
   const fit=tlEl('tlFit');if(fit)fit.onclick=()=>{TLB.fit=!TLB.fit;fit.setAttribute('aria-pressed',TLB.fit);fit.textContent=TLB.fit?'大きく':'全体';tlbSize();if(TLA.P&&TLA.P.i>=0)tlbReveal(TLA.P.i,false)};
   try{if(window.ResizeObserver)new ResizeObserver(()=>{if(TLB.L&&!tlEl('tlp').hidden)tlbSize()}).observe(tlEl('tlBoard'))}catch(_){}
 })();
+/* ===== 装置トレー（台帳Z-210）=====
+   物理タブの時だけ、操作窓の持ち手の下に付く「アイテム欄」。装置（PHDEV。581-phys-devices.js）を、ドラッグして画面（ビューワー）へ置く。タップなら画面の中ほどに置く。
+   置く操作は命令 PHAPI（addDevice）に落ちる＝Undo・巻き戻し・タイムラプス・ビジュアルプログラミングと同じ道を通る。シナリオが無い所へ最初に置く時は、床も一緒に置いて1回のUndoにする。
+   指（タッチ）：欄の上で横になぞると欄が動き（touch-action:pan-x）、上へ（画面のほうへ）ドラッグすると装置が運べる。マウス：どの向きでもドラッグで運べる。
+   UIの一時状態：作品・Undo・保存には入れない。 */
+const DVT={n:0};
+const dvIcon=(d,sz)=>'<svg viewBox="0 0 40 40" width="'+sz+'" height="'+sz+'" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+d.icon+'</svg>';
+function dvBuild(){
+  const el=$('dvtray');if(!el||typeof PHDEV==='undefined')return;
+  el.innerHTML=PHDEV.DEVICES.map(d=>'<button type="button" class="dv" data-dv="'+d.id+'" aria-label="'+d.label+'：'+d.desc+'（画面へドラッグして置く。タップで中ほどに置く）">'+dvIcon(d,30)+'<span>'+d.label+'</span></button>').join('')}
+function dvSync(t){const el=$('dvtray');if(!el)return;const want=t!=='ph';if(el.hidden!==want)el.hidden=want}
+/* 置く場所（世界のm）。シナリオが開いていれば今の視点、無ければ新しく作るシナリオの視点（床がy=0・下に0.4mの余白） */
+const DV_VIEW0={x0:0,y0:-.4,w:6};
+const dvView=()=>SCN.src&&RUN.view?RUN.view:DV_VIEW0;
+function dvWorld(p){const v=dvView(),k=W/v.w;return[+(v.x0+p.x/k).toFixed(4),+(v.y0+(H-p.y)/k).toFixed(4)]}
+/* いまのシナリオの、物体の「はじめの姿」の外接長方形（世界のm）。タップで置く場所を、重ならないように選ぶのに使う（床などの無限の面は除く） */
+function dvOcc(){
+  const out=[];if(!SCN.src||!RUN.sess||!RUN.p0)return out;
+  for(const b of RUN.sess.W.bodies){const bb=scnBodyBox(b);if(!bb||b.shapes.some(sh=>sh.k==='pl'))continue;
+    const p=RUN.p0[b.idx],a=RUN.a0[b.idx]||0,c=Math.cos(a),s=Math.sin(a);if(!p)continue;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(const q of[[bb.x0,bb.y0],[bb.x1,bb.y0],[bb.x1,bb.y1],[bb.x0,bb.y1]]){const x=p[0]+q[0]*c-q[1]*s,y=p[1]+q[0]*s+q[1]*c;x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)}
+    out.push({x0,y0,x1,y1})}
+  return out}
+/* タップで置く場所：画面の上のほうから、他の物と重ならない所を探す（床に載る装置は床の上）。無ければnull */
+function dvFreeSpot(d){
+  const v=dvView(),h=v.w*H/W,sz=d.size||[.3,.3],occ=dvOcc(),m=.06;
+  const fx=[.5,.25,.75,.12,.88,.38,.62],fy=d.rest!==undefined?[null]:[.78,.58,.4,.22];
+  for(const f of fy)for(const x of fx){const cx=v.x0+v.w*x,cy=f===null?d.rest:v.y0+h*f;
+    if(cx-sz[0]<v.x0+.05||cx+sz[0]>v.x0+v.w-.05)continue;
+    if(!occ.some(o=>o.x0<cx+sz[0]+m&&o.x1>cx-sz[0]-m&&o.y0<cy+sz[1]+m&&o.y1>cy-sz[1]-m))return[+cx.toFixed(4),+cy.toFixed(4)]}
+  return null}
+/* p＝キャンバスの座標（拡大前）。省略＝画面の上のほうで、他の物と重ならない所（無ければ中ほどを少しずつずらす） */
+function dvPlace(id,p){
+  const d=typeof PHDEV!=='undefined'&&PHDEV.find(id);if(!d)return{ok:false,errors:['装置がありません']};
+  let pos;
+  if(p)pos=dvWorld(p);
+  else if(id==='floor')pos=[0,SCN.src?+(dvView().y0+.4).toFixed(4):0];
+  else{pos=dvFreeSpot(d);if(!pos){const n=DVT.n++;pos=dvWorld({x:W*(.5+((n%5)-2)*.1),y:H*.3})}}
+  let r;
+  if(SCN.src)r=PHAPI.exec({op:'addDevice',device:id,pos});
+  else{
+    const ops=[{op:'newScenario',id:'tray',title:'装置で組み立てる',floor:false,width:DV_VIEW0.w},{op:'setView',x0:DV_VIEW0.x0,y0:DV_VIEW0.y0,w:DV_VIEW0.w}];
+    if(id!=='floor')ops.push({op:'addDevice',device:'floor',pos:[0,0]});
+    ops.push({op:'addDevice',device:id,pos});r=PHAPI.execBatch(ops)}
+  if(typeof note==='function')note(r.ok?'「'+d.label+'」を置きました（▶ 実行で動きます）':'置けませんでした：'+(r.errors||[]).slice(0,2).join(' / '),r.ok?2600:5000);
+  return r}
+/* 画面（ビューワー）の上で離したか。窓・ボタン・メニューの上なら取り消し。戻り値＝キャンバスの座標（拡大前）かnull */
+function dvCanvasPoint(cx,cy){
+  const r=cv.getBoundingClientRect();if(cx<r.left||cx>r.right||cy<r.top||cy>r.bottom)return null;
+  const el=document.elementFromPoint(cx,cy);if(!el||el.closest('#tp,#dvghost'))return null;
+  if(el!==cv&&(!el.closest('#wrap')||el.closest('button,select,input,.cmenu')))return null;
+  return wp({x:(cx-r.left)*W/r.width,y:(cy-r.top)*H/r.height})}
+function dvBind(){
+  const el=$('dvtray');if(!el)return;let st=null;
+  const stop=()=>{if(st&&st.ghost)st.ghost.remove();document.body.classList.remove('dvdrag');st=null};
+  el.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.dv');if(!b||e.button>0||st)return;
+    st={id:b.dataset.dv,b,x:e.clientX,y:e.clientY,pid:e.pointerId,drag:false,ghost:null};try{b.setPointerCapture(e.pointerId)}catch(_){}});
+  el.addEventListener('pointermove',e=>{if(!st||e.pointerId!==st.pid)return;
+    if(!st.drag&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>8){st.drag=true;document.body.classList.add('dvdrag');
+      const g=document.createElement('div');g.id='dvghost';g.innerHTML=dvIcon(PHDEV.find(st.id),30);document.body.appendChild(g);st.ghost=g}
+    if(st.drag&&st.ghost){st.ghost.style.left=e.clientX+'px';st.ghost.style.top=e.clientY+'px'}});
+  const end=(e,cancel)=>{if(!st||e.pointerId!==st.pid)return;const s=st;stop();
+    if(s.drag){s.b.dataset.dvskip='1';setTimeout(()=>{delete s.b.dataset.dvskip},0);   /* 離した直後に来るclickは、運んだ操作の続きなので無視 */
+      if(!cancel){const p=dvCanvasPoint(e.clientX,e.clientY);if(p)dvPlace(s.id,p)}}};
+  el.addEventListener('pointerup',e=>end(e,false));el.addEventListener('pointercancel',e=>end(e,true));
+  el.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.dv');if(!b||b.dataset.dvskip)return;dvPlace(b.dataset.dv,null)})}
+dvBuild();dvBind();
 </script>
 </body>
 </html>

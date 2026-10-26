@@ -5,7 +5,7 @@
 const fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(root,'src/js',f),'utf8');
-const {PHE,PHS,PHAPI}=new Function(read('51-phys-engine.js')+'\n'+read('52-phys-scenario.js')+'\n'+read('58-phys-api.js')+'\nreturn {PHE,PHS,PHAPI};')();
+const {PHE,PHS,PHAPI}=new Function(read('51-phys-engine.js')+'\n'+read('52-phys-scenario.js')+'\n'+read('581-phys-devices.js')+'\n'+read('58-phys-api.js')+'\nreturn {PHE,PHS,PHAPI};')();
 let ok=0,ng=0;
 const chk=(name,cond,info)=>{(cond?ok++:ng++);console.log((cond?'  OK ':'  NG ')+name+(info!==undefined?'  '+info:''))};
 const near=(name,got,want,tol)=>chk(name,Math.abs(got-want)<=tol,'got='+(+got).toPrecision(6)+' want='+(+want).toPrecision(6));

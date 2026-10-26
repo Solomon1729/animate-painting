@@ -13,11 +13,11 @@
 const TL=(function(){
 const V=1;
 const CAT={setup:'設定',cond:'条件',body:'物体',link:'つなぎ',field:'力場',measure:'測定',check:'答え合わせ',rule:'ルール',run:'実行',note:'説明',ui:'画面の操作'};
-const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup',setRun:'setup',setParam:'cond',setVar:'cond',addBody:'body',addShape:'body',setBody:'body',removeBody:'body',
+const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup',setRun:'setup',setParam:'cond',setVar:'cond',addBody:'body',addDevice:'body',addShape:'body',setBody:'body',removeBody:'body',
   addJoint:'link',removeJoint:'link',addPair:'link',addField:'field',removeField:'field',addProbe:'measure',addEvent:'measure',addGraph:'measure',setSweep:'measure',addAsk:'check',addCheck:'check',
   addRule:'rule',removeRule:'rule',play:'run',pause:'run',reset:'run',seek:'run',step:'run',speed:'run',read:'run',result:'run',sweep:'run',open:'run',close:'run'};
 /* ブロックの見出し（短い名前。組み立て台のブロックに書く。台帳Z-196） */
-const SHORT={newScenario:'シナリオ',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
+const SHORT={newScenario:'シナリオ',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addDevice:'装置',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
   addJoint:'つなぎ',removeJoint:'つなぎを外す',addPair:'接触の設定',addField:'力場',removeField:'力場を消す',addProbe:'測定',addEvent:'出来事',addGraph:'グラフ',setSweep:'条件をふる',addAsk:'答え合わせ',addCheck:'検査',
   addRule:'ルール',removeRule:'ルールを消す',play:'▶ 実行',pause:'一時停止',reset:'最初へ',seek:'時刻へ',step:'1コマ',speed:'速さ',read:'読む',result:'答え合わせ',sweep:'条件をふる',open:'サンプルを開く',close:'閉じる'};
 const SPEEDS=[.25,.5,1,2,4,8,16,32];
@@ -79,6 +79,7 @@ const SAY={
   setParam:o=>'条件（スライダー）「'+(o.label||o.name)+'」を作る：初めは '+fv(o.v,o.unit)+(has(o,'min')&&has(o,'max')?'（'+num(o.min)+'〜'+num(o.max)+'）':''),
   setVar:o=>'途中計算「'+o.name+'」を決める：'+o.name+' ＝ '+o.expr,
   addBody:o=>'物体「'+(o.id||'')+'」を置く：'+(o.shape?shapeText(o.shape):'')+(o.type==='static'?'（固定）':o.type==='kinematic'?'（決めた動きをする台）':'')+(o.pos?'。位置 '+fv(o.pos,'m'):''),
+  addDevice:o=>'装置「'+((typeof PHDEV!=='undefined'&&PHDEV.find(o.device))||{label:o.device}).label+'」を置く'+(o.pos?'。位置 '+fv(o.pos,'m'):'')+(o.params&&Object.keys(o.params).length?'（つまみ '+Object.keys(o.params).map(k=>k+'＝'+fv(o.params[k])).join('、')+'）':''),
   addShape:o=>'物体「'+o.body+'」に形を足す：'+shapeText(o.shape),
   setBody:o=>'物体「'+o.id+'」の項目を変える：'+Object.keys(o.set||{}).join('・'),
   removeBody:o=>'物体「'+o.id+'」を消す',
@@ -191,7 +192,7 @@ function layout(script){
   const towerOf=id=>id!==null&&id!==undefined&&tw[id]!==undefined?tw[id]:newTower(id===null||id===undefined?'?':id);
   steps.forEach((s,i)=>{
     const cat=s.cat||s.k,op=s.op&&s.op.op,o=s.op||{};
-    if(op==='addBody')put(i,newTower(o.id),4,'body');
+    if(op==='addBody'||op==='addDevice')put(i,newTower(op==='addBody'?o.id:o.device),4,'body');
     else if(op==='addShape'||op==='setBody'||op==='removeBody')put(i,towerOf(op==='addShape'?o.body:o.id),4,'body');
     else if(op==='addJoint'||op==='addPair'||op==='removeJoint'){
       const xs=[bodyOf(o.a),bodyOf(o.b)].filter(x=>x).map(towerOf);
