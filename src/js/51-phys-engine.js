@@ -597,5 +597,32 @@ function restore(W,s){W.t=s.t;W.tick=s.tick;W.hp=s.hp;s.b.forEach((v,i)=>{const 
   s.j.forEach((v,i)=>{W.joints[i].acc=Array.isArray(v)?v.slice():v});W.prevC=new Map(s.c.map(([k,v])=>[k,v.map(p=>({...p}))]));
   for(const b of W.bodies)updShapes(b)}
 
-return{DEF,SHP,FLD,JNT,COL,PULL,create,advance,step,energy,momentum,snapshot,restore,origin,setAngle,updShapes,isConvex,polyProps,ccw,anchorW,pathGeom,peBody,pullAt,poke}
+/* ---------- 実行中に変えてよい値（台帳Z-211）----------
+   質量・反発・摩擦・電荷・抵抗・重力・ばね定数・場の値・対の係数は、世界を作り直さず、いまの状態（位置・速度・時刻）のまま入れ替えられる。形・初期の位置と速さは変えない。
+   liveState＝いまの値を取り出す／setLive＝入れる（巻き戻して進め直す時に、記録した値を各刻みの直前に入れる）／
+   liveSpec＝シナリオから作った仕様（spec）の「変えてよい値」を、いまの世界に入れる形にして返す（重心が動く質量の変更など、入れられない時はnull＝作り直し）。 */
+const LIVE_B=['e','mus','muk','q','dragLin','dragQuad','dampLin','dampAng','gs','m','I','mg','im0','iI0'];
+const LIVE_SKIP={type:1,tg:1,targets:1};
+function liveState(W){
+  return{g:W.g.slice(),b:W.bodies.map(b=>LIVE_B.map(k=>b[k])),j:W.joints.map(j=>[j.k,j.c,j.len]),
+    f:W.fields.map(f=>{const o={};for(const k of Object.keys(f))if(!LIVE_SKIP[k])o[k]=f[k];return JSON.parse(JSON.stringify(o))}),
+    p:[...W.pair].map(([k,o])=>[k,Object.assign({},o)])}}
+function setLive(W,s){
+  W.g=s.g.slice();
+  s.b.forEach((v,i)=>{const b=W.bodies[i];if(!b)return;LIVE_B.forEach((k,m)=>{b[k]=v[m]});b.im=b.im0;b.iI=b.iI0});
+  s.j.forEach((v,i)=>{const j=W.joints[i];if(!j)return;j.k=v[0];j.c=v[1];if(v[2]!==undefined&&v[2]!==null)j.len=v[2]});
+  s.f.forEach((o,i)=>{const f=W.fields[i];if(!f)return;for(const k of Object.keys(f))if(!LIVE_SKIP[k]&&!(k in o))delete f[k];Object.assign(f,JSON.parse(JSON.stringify(o)))});
+  W.pair=new Map(s.p.map(([k,o])=>[k,Object.assign({},o)]))}
+function liveSpec(W,spec){
+  if(spec.bodies.length!==W.bodies.length||spec.joints.length!==W.joints.length||spec.fields.length!==W.fields.length)return null;
+  const s=liveState(W);s.g=spec.g.slice();
+  for(let i=0;i<spec.bodies.length;i++){const b=W.bodies[i],t=mkBody(spec.bodies[i],i);
+    if(abs(t.c[0]-b.c[0])>1e-9||abs(t.c[1]-b.c[1])>1e-9)return null;   /* 重心が動く変更（形ごとの質量が変わる等）は、その場では入れられない */
+    s.b[i]=LIVE_B.map(k=>t[k])}
+  spec.joints.forEach((sj,i)=>{const j=W.joints[i];s.j[i]=[num(sj.k,0),num(sj.c,0),(j.type==='spring'&&sj.len>=0)?sj.len:j.len]});
+  spec.fields.forEach((sf,i)=>{const o={};for(const k of Object.keys(sf))if(!LIVE_SKIP[k])o[k]=sf[k];s.f[i]=JSON.parse(JSON.stringify(o))});
+  s.p=[];for(const p of spec.pairs||[]){const a=W.byId.get(p.a),b=W.byId.get(p.b);if(a&&b)s.p.push([a.idx<b.idx?a.idx*65536+b.idx:b.idx*65536+a.idx,p])}
+  return s}
+
+return{DEF,SHP,FLD,JNT,COL,PULL,create,advance,step,energy,momentum,snapshot,restore,origin,setAngle,updShapes,isConvex,polyProps,ccw,anchorW,pathGeom,peBody,pullAt,poke,liveState,setLive,liveSpec}
 })();
