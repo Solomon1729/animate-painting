@@ -237,7 +237,7 @@ function mkEnv(scn,over){
     env[k]=typeof v==='string'?compile(v,resolveBase)():v;order.push(k)}
   for(const k of Object.keys(scn.vars||{})){const v=scn.vars[k];env[k]=compile(v,resolveBase)();order.push(k)}
   return{env,resolve:resolveBase}}
-function build(scn,over){
+function buildSpec(scn,over){   /* 仕様（spec）までを作る。世界（PHE.create）は作らない：実行中に条件を変える時（session.reparam）は、これだけで比べて入れ替える */
   const V=validate(scn);if(V.errors.length)throw new Error('シナリオに誤りがあります:\n  '+V.errors.join('\n  '));
   const{env,resolve}=mkEnv(scn,over);
   const num=(x,what,d)=>{if(x===undefined||x===null)return d;if(isNum(x))return x;if(typeof x==='string'){const v=compile(x,resolve)();if(!isNum(v))throw new Error(what+': 式「'+x+'」の値が数になりません');return v}throw new Error(what+': 数か式で書いてください')};
@@ -281,8 +281,21 @@ function build(scn,over){
   const pspec=(scn.pairs||[]).map((p,i)=>{const P='pairs['+i+']',o={a:p.a,b:p.b};for(const k of['mu','mus','muk','e'])if(p[k]!==undefined)o[k]=num(p[k],P+'.'+k);return o});
   const cfg=Object.assign({},world.cfg||{});const spec={g,bodies:bspec,joints:jspec,fields:fspec,pairs:pspec,cfg};
   if(world.maxStep!==undefined)spec.maxStep=num(world.maxStep,'world.maxStep');
-  const W=PHE.create(spec);
-  return{scn,W,env,resolve,spec,idx,over:over||{}}}
+  return{scn,env,resolve,spec,idx,over:over||{}}}
+function build(scn,over){const B=buildSpec(scn,over);B.W=PHE.create(B.spec);return B}
+
+/* ---------- 実行中に変えてよい値（台帳Z-211）----------
+   力・係数・質量・場・ばね定数・重力は、時間を保ったまま入れ替えられる。はじめの位置・速さ・形・つなぐ所は「はじめの値」なので、変えたら最初から作り直す。
+   liveStrip＝シナリオから「変えてよい値」を除いたもの（これが同じなら、違いは変えてよい値だけ）。specStrip＝仕様（spec）について同じ。 */
+const LIVE_BK=['m','e','q','gs','dragLin','dragQuad','dampLin','dampAng','mu','mus','muk','I'];
+function liveStrip(scn){
+  const o=JSON.parse(JSON.stringify(scn));delete o.params;if(o.world){delete o.world.g;delete o.world.gdir}
+  for(const b of o.bodies||[])for(const k of LIVE_BK)delete b[k];
+  for(const j of o.joints||[]){delete j.k;delete j.c;if(j.type==='spring')delete j.len}
+  o.fields=(o.fields||[]).map(f=>({type:f.type,targets:f.targets}));o.pairs=(o.pairs||[]).map(p=>({a:p.a,b:p.b}));return o}
+function specStrip(sp){return{bodies:sp.bodies.map(b=>{const o=Object.assign({},b);for(const k of LIVE_BK)delete o[k];return o}),
+  joints:sp.joints.map(j=>{const o=Object.assign({},j);delete o.k;delete o.c;if(j.type==='spring')delete o.len;return o}),
+  fields:sp.fields.map(f=>({type:f.type,targets:f.targets})),pairs:(sp.pairs||[]).map(p=>({a:p.a,b:p.b})),cfg:sp.cfg,maxStep:sp.maxStep}}
 
 /* ---------- 実行：測定の式を作り、固定刻みで進めて時系列を取る ---------- */
 function mkAccess(B){
@@ -316,6 +329,9 @@ function session(scn,opt){
   /* 表示の長さ Tv（台帳Z-208）：測定の窓 T（run.t。答え合わせの時間）より長い時だけ、測定のあとも物理を続けて見せる。
      測定・答え合わせ・出来事は T までで確定（snap）。続きは物理の時間のまま（引き延ばさない）。動きが止まれば、そこで自然に終わる（rested） */
   const Tv=Math.max(T,num0(opt.show!==undefined?opt.show:(scn.run&&scn.run.show),0));
+  /* endless（台帳Z-214。アプリが使う）：時間では止まらない。測定の窓（T）・止める条件は「答え合わせを確定する区切り」でしかなく、物理はそのあとも続く。
+     時刻（W.t）は数えるだけ。止まるのは、アプリが一時停止した時だけ（ON/OFFと時刻は別）。endlessでない使い方（run・掃引・検査）は、これまでどおり測定の窓（と表示の長さ）で終わる */
+  const endless=!!opt.endless;let taint=null,evk=1;
   const comp=(src,what)=>{try{return compile(src,acc.resolve)}catch(e){throw new Error(what+': '+e.message)}};
   const probes=Object.entries(scn.probes||{}).map(([k,p])=>({k,p,f:comp(p.expr,'probes.'+k+'.expr'),w:p.when?comp(p.when,'probes.'+k+'.when'):null}));
   const events=Object.entries(scn.events||{}).map(([k,e])=>({k,e,w:comp(e.when||e.first,'events.'+k+'.when'),t:NaN,i:-1}));
@@ -347,7 +363,7 @@ function session(scn,opt){
   let hook=null;
   const poke=(b,x,y,jx,jy)=>{const k=W.bodies.indexOf(b),ox=b.vx,oy=b.vy;if(k<0||!PHE.poke(W,b,x,y,jx,jy))return false;prevV[k][0]+=b.vx-ox;prevV[k][1]+=b.vy-oy;return true};
   const step=()=>{
-    if(stopped||rested||i>=nv)return false;
+    if(!endless&&(stopped||rested||i>=nv))return false;
     if(hook)hook(S);
     i++;
     PHE.advance(W,DT);
@@ -358,6 +374,12 @@ function session(scn,opt){
           const k0=W.bodies.indexOf(b),ox=b.vx,oy=b.vy;if(a.op==='kick'){b.vx+=vx;b.vy+=vy}else{b.vx=vx;b.vy=vy}
           prevV[k0][0]+=b.vx-ox;prevV[k0][1]+=b.vy-oy}}}   /* 速度を変えた分は、加速度の記録に入れない */
     for(let k=0;k<nb;k++){const b=W.bodies[k];acc.ctx.acc[k][0]=(b.vx-prevV[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-prevV[k][1])/DT;prevV[k][0]=b.vx;prevV[k][1]=b.vy}
+    if(endless){
+      if(!snap){
+        if(i<=n&&(i%every===0||i===n)){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}
+        if(stopped||i>=n)snap=compute();   /* 測定の窓が終わった（または止める条件が成り立った）：答え合わせを確定。物理は続く */
+      }else{rested=calmStep();if(i%(every*evk)===0){sample(i);if(ts.length>=8192)thin()}}   /* 窓のあとも、グラフ用の記録は続ける（長くなったら間引く）。rested＝いま静まっている（止めはしない） */
+      return true}
     if(i<=n){if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}}
     else if(!stopped&&calmStep())rested=true;   /* 測定の窓のあとは、記録も止める条件の判定もしない（測定の結果を変えない） */
     if(i===n&&nv>n&&!snap)snap=compute();   /* 測定の窓の終わりで、答え合わせを確定する */
@@ -389,12 +411,23 @@ function session(scn,opt){
       if(c.min!==undefined&&mn<c.min){okc=false;msg+=' 最小値 '+mn+' < '+c.min}
       if(c.max!==undefined&&mx>c.max){okc=false;msg+=' 最大値 '+mx+' > '+c.max}
       return{name:c.name||'check'+i,ok:okc,msg}});
-  return{ts,series:ser,probes:res,events:evt,ask:asks,checks,world:W,built:B,t:W.t,stopped}}
+  return{ts,series:ser,probes:res,events:evt,ask:asks,checks,world:W,built:B,t:W.t,stopped,taint}}   /* taint＝答え合わせを確定するまでに、条件を変えた（'param'）／手で触った（'hand'）。理論値は一定の条件の話なので、その回は「参考外」として表示する（台帳Z-211） */
+  /* 記録が長くなったら、半分に間引いて、以後の間隔を倍にする（グラフ用。測定の結果には影響しない＝窓の終わりに確定済み） */
+  const thin=()=>{const keep=a=>{let k=0;for(let q=0;q<a.length;q+=2)a[k++]=a[q];a.length=k};keep(ts);for(const p of all)keep(ser[p.k]);evk*=2};
+  /* 実行中に条件が変わった（台帳Z-211）：変わったのが「あとから変えてよい値」だけなら、時間・位置・速さを保ったまま、世界に入れる（true）。
+     はじめの位置・速さ・形・つなぐ所が変わっていたら何もしない（false）＝呼ぶ側が最初から作り直す。式の環境（params）も入れ替えるので、測定・ルール・答え合わせの式は新しい値を見る */
+  const reparam=(scn2,params)=>{
+    const B2=buildSpec(scn2,params);
+    if(JSON.stringify(specStrip(B2.spec))!==JSON.stringify(specStrip(B.spec)))return false;
+    const st=PHE.liveSpec(W,B2.spec);if(!st)return false;
+    PHE.setLive(W,st);for(const k of Object.keys(B.env))delete B.env[k];Object.assign(B.env,B2.env);B.spec=B2.spec;B.scn=scn2;B.over=B2.over;cache.clear();
+    if(i>0&&!snap&&!taint)taint='param';
+    return true};
   const finish=()=>snap||compute();   /* 測定の窓が終わっていれば、その時点で確定した結果（続きを見せていても変わらない） */
   /* いまの状態で式を評価する（ビジュアルプログラミングの「条件を見る」・画面の読み出し用）。式は使い回す */
   const ev=(src)=>{let f=cache.get(src);if(!f){f=compile(src,acc.resolve);cache.set(src,f)}return f()};
   /* T＝表示の長さ（実行バー・「最初へ戻す」の判定に使う）、Tm＝測定の窓（run.t）。measured＝測定の窓が終わった（答え合わせを出してよい） */
-  const S={B,W,ts,series:ser,T:Tv,Tm:T,n:nv,nm:n,DT,acc:acc.ctx.acc,step,finish,ev,log,poke,setHook:f=>{hook=f},get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get rested(){return rested},get measured(){return stopped||i>=n},get done(){return stopped||rested||i>=nv}};
+  const S={B,W,ts,series:ser,T:endless?Infinity:Tv,Tm:T,n:endless?Infinity:nv,nm:n,DT,acc:acc.ctx.acc,step,finish,ev,log,poke,reparam,endless,taint:r=>{if(!snap&&!taint)taint=r},setHook:f=>{hook=f},get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get rested(){return rested},get measured(){return stopped||i>=n},get done(){return endless?false:(stopped||rested||i>=nv)},get tainted(){return taint}};
   return S}
 function run(scn,opt){const S=session(scn,opt);while(S.step());return S.finish()}
 function runT(B,scn){const t=scn.run&&scn.run.t;if(typeof t==='string'){try{return compile(t,B.resolve)()}catch(e){throw new Error('run.t: '+e.message)}}return t}
@@ -427,5 +460,5 @@ function template(){return{id:'my-scenario',title:'題名',tags:['力学'],sourc
   probes:{t_end:{expr:'t',reduce:'last'},vmax:{expr:'blk.speed',reduce:'max'}},
   run:{t:1.5},ask:[],checks:[]}}
 
-return{FN,BP,JP,WP,RED,KEYS,RULE_OPS,compile,validate,build,session,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
+return{FN,BP,JP,WP,RED,KEYS,RULE_OPS,compile,validate,build,buildSpec,liveStrip,specStrip,session,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
 })();

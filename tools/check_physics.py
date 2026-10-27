@@ -50,7 +50,7 @@ def main():
         bad = []
         for sid in ids:
             r = ev("""(id)=>{const r=scnLoadSample(id);if(!r.ok)return 'LOAD:'+r.errors.join('|');
-              if(RUN.err)return 'ERR:'+RUN.err;const S=RUN.sess;while(!S.done)S.step();const res=S.finish();
+              if(RUN.err)return 'ERR:'+RUN.err;const S=RUN.sess;while(!S.measured)S.step();const res=S.finish();
               const ng=res.ask.filter(a=>!a.ok).map(a=>a.q).concat(res.checks.filter(c=>!c.ok).map(c=>c.name));return ng.length?'NG:'+ng.join(','):'ok'}""", sid)
             if r != 'ok':
                 bad.append((sid, r))
@@ -68,7 +68,7 @@ def main():
         same = lambda x, y: x['t'] == y['t'] and all(abs(u - v) < 1e-12 for p_, q_ in zip(x['bd'], y['bd']) for u, v in zip(p_, q_))
         chk('S2 60Hz と 30Hz で、同じ時刻の状態が一致する（固定刻み）', abs(a['t'] - c['t']) < 1e-9 and same(a, c) if abs(a['t'] - c['t']) < 1e-9 else False, (a['t'], c['t']))
         chk('S2 ふぞろいなフレーム間隔でも一致する', abs(a['t'] - d['t']) < 1e-9 and same(a, d) if abs(a['t'] - d['t']) < 1e-9 else abs(a['t'] - d['t']) < 0.01, (a['t'], d['t']))
-        r = ev("""()=>{scnLoadSample('orig-incline-friction');const S=RUN.sess;while(!S.done)S.step();const r1=JSON.stringify(S.finish().probes);scnReset();const S2=RUN.sess;while(!S2.done)S2.step();const r2=JSON.stringify(S2.finish().probes);return [r1===r2,r1.length]}""")
+        r = ev("""()=>{scnLoadSample('orig-incline-friction');const S=RUN.sess;while(!S.measured)S.step();const r1=JSON.stringify(S.finish().probes);scnReset();const S2=RUN.sess;while(!S2.measured)S2.step();const r2=JSON.stringify(S2.finish().probes);return [r1===r2,r1.length]}""")
         chk('S2 最初へ戻して再実行すると、測定値が完全に同じ（決定的）', r[0], r[1])
         ev("scnClose()")
 
@@ -77,7 +77,7 @@ def main():
           scnSetParam('theta',35);scnTick(0.016);const S1=RUN.sess;
           return {rebuilt:S1!==S0,t:S1.W.t,theta:SCN.params.theta,playing:RUN.playing,m0}}""")
         chk('S3 条件を変えると世界を作り直す（時刻0・停止）', r['rebuilt'] and r['t'] == 0 and not r['playing'], r)
-        r = ev("""()=>{const S=RUN.sess;while(!S.done)S.step();const a=S.finish();return {th:SCN.params.theta,ask:a.ask.map(x=>x.ok)}}""")
+        r = ev("""()=>{const S=RUN.sess;while(!S.measured)S.step();const a=S.finish();return {th:SCN.params.theta,ask:a.ask.map(x=>x.ok)}}""")
         chk('S3 条件を変えても、理論値とずれない（答え合わせが合う）', all(r['ask']) and r['th'] == 35, r)
         ev("scnClose()")
 
@@ -237,7 +237,7 @@ def main():
         # ---------- S12 お絵かき×物理のサンプル ----------
         for d in 'cdefgh':
             r = ev("""(d)=>{try{ARTDEMOS[d]()}catch(e){return {exc:e.message}}
-              if(RUN.err)return {err:RUN.err};const S=RUN.sess;while(!S.done)S.step();const res=S.finish();
+              if(RUN.err)return {err:RUN.err};const S=RUN.sess;while(!S.measured)S.step();const res=S.finish();
               const ng=res.ask.filter(a=>!a.ok).map(a=>a.q+':'+(+a.value).toPrecision(4)+'/'+(+a.theory).toPrecision(4)).concat(res.checks.filter(c=>!c.ok).map(c=>c.name+':'+c.msg));
               let out=0;for(const b of S.W.bodies){if(b.type==='dynamic'&&(b.px<-.5||b.px>ART.W+.5||b.py<-1))out++}
               return {n:SCN.src.bodies.length,links:Object.keys(SCN.link).length,asks:res.ask.length,ng,out,title:SCN.src.title}}""", d)
@@ -291,7 +291,7 @@ def main():
         d = json.loads(ev("ser()"))
         chk('S13 ルールは保存に乗り、読み込みで戻る', d['SCN']['src']['rules'][0]['do'][0]['op'] == 'stop')
         ev("(s)=>loadProj(s)", ev("ser()"))
-        chk('S13 読み込み後も実行できる（止める条件のルールで途中で止まる）', ev("()=>{PHAPI.exec({op:'reset'});const S=RUN.sess;while(!S.done)S.step();return S.stopped&&S.W.t<.2}"))
+        chk('S13 読み込み後も実行できる（止める条件のルールで途中で止まる）', ev("()=>{PHAPI.exec({op:'reset'});const S=RUN.sess;while(!S.measured)S.step();return S.stopped&&S.W.t<.2}"))
         ev("scnClose()")
 
         chk('ページエラーが一度も出ていない', not errs, errs[:3])

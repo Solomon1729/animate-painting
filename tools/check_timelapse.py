@@ -100,8 +100,8 @@ def main():
           P.setSpeed(32);let n=0;while(P.playing&&n++<5000){P.tick(100)}
           out.end=P.i===N-1&&!P.playing;out.steps=N;
           out.physPlaying=!!RUN.playing;                          /* play の手順で物理が動き出している */
-          out.ans=tlEl('scAns').children.length;                  /* result の手順で答え合わせが出ている */
-          out.ansOk=[...tlEl('scAns').children].every(c=>/^✔/.test(c.textContent));
+          out.ans=[...tlEl('scAns').children].filter(c=>!c.classList.contains('ansHead')).length;                  /* result の手順で答え合わせが出ている */
+          out.ansOk=[...tlEl('scAns').children].filter(c=>!c.classList.contains('ansHead')).every(c=>/^✔/.test(c.textContent));   /* 見出し行（ansHead）は数えない */
           const fi=sc.steps.findIndex(s=>s.op&&s.op.op==='addBody');P.goto(fi);out.back=P.i;out.stage=SCN.src&&SCN.src.bodies.length;out.fi=fi;   /* 戻る：最初の物体を置いた手順までの姿 */
           P.first();out.empty=!SCN.src;                           /* 最初：空の舞台 */
           tlClose(false);return out}""")
