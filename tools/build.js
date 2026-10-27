@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const manifestPath = path.join(root, 'src', 'manifest.json');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-/* 生成する断片：src/js/55-phys-samples.js ＝ src/phys/samples/*.json（物理シナリオのサンプル。台帳Z-173）を1つの配列にしたもの。
+/* 生成する断片：src/js/55-phys-samples.js ＝ src/phys/samples/*.json（物理の実験のサンプル。台帳Z-173）を1つの配列にしたもの。
    サンプルを足す・直す時は、JSONを編集して `node tools/build.js`。生成物を手で直さない（--check は、ずれていると失敗する）。 */
 function genSamples() {
   const dir = path.join(root, 'src', 'phys', 'samples');
@@ -20,7 +20,7 @@ function genSamples() {
     if (s.includes('</')) throw new Error(f + ': "</" は使えません（HTMLの<script>を閉じてしまうため）');
     return s;
   });
-  return '/* ===== 物理シナリオのサンプル（生成物。台帳Z-173）=====\n' +
+  return '/* ===== 物理の実験のサンプル（生成物。台帳Z-173）=====\n' +
     '   src/phys/samples/*.json から `node tools/build.js` が作る。直接は編集しない。形式は PHYSICS_SAMPLES.md と src/js/52-phys-scenario.js の KEYS。 */\n' +
     'const PHYS_SAMPLES=[\n' + items.join(',\n') + '\n];\n';
 }

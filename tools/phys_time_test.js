@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* 物理の「時刻」と「ON/OFF」の分離、実行中に条件を変えても作り直さない仕組みの検査（台帳Z-214・Z-211）。使い方: node tools/phys_time_test.js
-   ①endlessのセッションは時間では止まらない（測定の窓・止める条件・静止のあとも続く）。窓のあいだの動きと答え合わせは、これまでと1ビットも変わらない
+   ①endlessの実行は時間では止まらない（測定区間・止める条件・静止のあとも続く）。窓のあいだの動きと答え合わせは、これまでと1ビットも変わらない
    ②実行中に条件（摩擦・質量・場）を変えても、時間・位置・速さを保ち、変えたあとの運動は解析解と合う
    ③はじめの値（位置・速さ・形）を変えた時は入れ替えない（false＝作り直し）／重心が動く質量の変更も入れない
    ④変えた記録を各刻みの直前に入れれば、巻き戻して進め直しても同じ結果（1ビットも違わない）
@@ -28,7 +28,7 @@ console.log('1) endless：時間では止まらない。窓のあいだは、こ
  const F=PHS.session(clone(sc),{}),E=PHS.session(clone(sc),{endless:true});   /* F＝これまで（窓で終わる）／E＝時間で止まらない */
  const n=Math.round(.5/DT);let same=true;
  for(let k=0;k<n;k++){F.step();E.step();const a=B(F,'blk'),b=B(E,'blk');if(a.px!==b.px||a.vx!==b.vx||a.py!==b.py)same=false}
- chk('測定の窓（0.5秒）まで、位置・速さがビットまで同じ',same);
+ chk('測定区間（0.5秒）まで、位置・速さがビットまで同じ',same);
  chk('窓が終わった（measured）',E.measured&&F.measured);
  chk('これまでの版は、窓で終わる（done）',F.done===true&&F.step()===false);
  chk('endlessは、窓が終わっても続く（done=false・stepがtrue）',E.done===false&&E.step()===true);

@@ -1,12 +1,12 @@
 /* ===== 装置の表 PHDEV（台帳Z-210。装置トレーの中身）=====
-   ねらい：「球・坂・板…」を、シナリオJSONの断片（物体・つなぎ・力場・つまみ）として1項目＝1オブジェクトで持つ。
-   命令 PHAPI.OPS.addDevice が expand() を呼んでシナリオに足す（だから Undo・巻き戻し・タイムラプス・ビジュアルプログラミングにそのまま乗る）。
+   ねらい：「球・坂・板…」を、実験JSONの断片（物体・つなぎ・力場・つまみ）として1項目＝1オブジェクトで持つ。
+   命令 PHAPI.OPS.addDevice が expand() を呼んで実験に足す（だから Undo・巻き戻し・タイムラプス・ビジュアルプログラミングにそのまま乗る）。
    純JS（DOMに触れない）。装置を増やす時は、DEVICES に1項目足すだけ（トレーの並び・部品表・検査は自動で追従する。tools/phys_dev_test.js が全部の装置を実際に動かして確かめる）。
    書き方（断片）：
    ・座標は装置の局所座標[m]。anchor＝「置いた点（ドラッグして離した点）に重ねる局所座標」（既定[0,0]）。
-   ・bodies／joints／fields／pairs は、シナリオの書き方（PHYSICS_SAMPLES.md）と同じ。物体の id は局所名。2個目以降は ball2・ball3…（装置の全部の物体・つなぎが同じ番号になる）。
+   ・bodies／joints／fields／pairs は、実験の書き方（PHYSICS_SAMPLES.md）と同じ。物体の id は局所名。2個目以降は ball2・ball3…（装置の全部の物体・つなぎが同じ番号になる）。
    ・size＝装置の大きさ（置いた点を中心にした半分の幅・高さ[m]。タップで置く時に、他の物と重ならない場所を選ぶのに使う）。rest＝床に載る装置（坂など）を置く高さ（置いた点のy[m]）。
-   ・つまみ params：{名前:{v,min,max,step,unit,label}}。断片の中の文字列で $名前 と書くと、そのつまみ（シナリオの条件 名前_装置の名前）に置き換わる。
+   ・つまみ params：{名前:{v,min,max,step,unit,label}}。断片の中の文字列で $名前 と書くと、そのつまみ（実験の条件 名前_装置の名前）に置き換わる。
    ・動く物体の質量 m が数なら、条件 m_<id>（スライダー）にする（絵に物理を付ける時と同じ）。
    ・既定の摩擦・反発は小さめ（現実の実験でも摩擦の小さい面を選ぶことがある。大きくする時はスライダーやJSONで）。接する2物体の摩擦・反発は「小さい方」（PHYSICS_SAMPLES.md §9）。 */
 const PHDEV=(function(){
@@ -43,7 +43,7 @@ const DEVICES=[
 ];
 const find=id=>DEVICES.find(d=>d.id===id);
 const r5=x=>+(+x).toFixed(5),nice=x=>+(+x).toPrecision(2);
-/* シナリオ s に、装置 devId を pos（装置の置いた点。[x,y] m）に足す（sを直接直す）。戻り値{key,ids}＝装置の名前（最初の物体のid。物体が無ければ装置のid）・足した物体のid。
+/* 実験 s に、装置 devId を pos（装置の置いた点。[x,y] m）に足す（sを直接直す）。戻り値{key,ids}＝装置の名前（最初の物体のid。物体が無ければ装置のid）・足した物体のid。
    opt.params＝つまみの値 {名前:値}（省略するとその装置の既定） */
 function expand(s,devId,pos,opt){
   opt=opt||{};const dv=find(devId);

@@ -6,10 +6,10 @@
 
 群：
   D1 欄の表示：物理タブの時だけ出る／持ち手の下・本文の上／装置の数だけ並ぶ／横にはみ出さない
-  D2 タップで置く（重ならない所に置かれる＝D2b）：シナリオが無い所へ最初に置くと、床も一緒に置かれ1回のUndoで戻る／続けて置くと名前が変わり（ball2）・位置が重ならない
+  D2 タップで置く（重ならない所に置かれる＝D2b）：実験が無い所へ最初に置くと、床も一緒に置かれ1回のUndoで戻る／続けて置くと名前が変わり（ball2）・位置が重ならない
   D3 ドラッグで置く（マウス）：離した所に置かれる（世界の座標が一致）／窓の上で離すと取り消し／画面の外で離すと取り消し
   D4 ドラッグで置く（タッチ。CDP）：上へ運ぶと置かれる／横になぞると欄が動くだけで置かれない
-  D5 いまのシナリオへ足す：サンプルを開いたまま置く／絵に物理を付けた作品に置く／実行中に置くと最初に戻る
+  D5 いまの実験へ足す：サンプルを開いたまま置く／絵に物理を付けた作品に置く／実行中に置くと最初に戻る
   D6 つまみ：置いた装置のつまみが条件のスライダーに出る／保存→読み込みで残る／Undoで戻る
   D7 窓を浮かせても（🪟）欄は持ち手の下・本文の上
   D8 ページエラーが一度も出ていない
@@ -78,7 +78,7 @@ def main():
         # ---------- D2 ----------
         print('D2 タップで置く')
         fresh()
-        chk('D2 はじめはシナリオが無い', ids() is None)
+        chk('D2 はじめは実験が無い', ids() is None)
         pg.click('#dvtray .dv[data-dv="ball"]')
         pg.wait_for_timeout(100)
         b1 = ids()
@@ -96,7 +96,7 @@ def main():
         chk('D2 Undoは直前の1個だけ戻す', ids() == ['floor', 'ball'], ids())
         ev("()=>undo()")
         pg.wait_for_timeout(80)
-        chk('D2 もう1回のUndoで、最初の置く操作（シナリオ・床・球）がまとめて戻る', ids() is None, ids())
+        chk('D2 もう1回のUndoで、最初の置く操作（実験・床・球）がまとめて戻る', ids() is None, ids())
         pg.click('#dvtray .dv[data-dv="floor"]')
         pg.wait_for_timeout(100)
         chk('D2 最初に床を置くと、床は1枚だけ', ids() == ['floor'], ids())
@@ -198,13 +198,13 @@ def main():
         chk('D4 横になぞると欄が動く（欄に収まらない時）', sl1 > sl0 or ev("()=>$('dvtray').scrollWidth<=$('dvtray').clientWidth") is True, [sl0, sl1])
 
         # ---------- D5 ----------
-        print('D5 いまのシナリオへ足す')
+        print('D5 いまの実験へ足す')
         ev("()=>{resetAll();setTab('ph');scnLoadSample('orig-incline-friction')}")
         pg.wait_for_timeout(100)
         nb = len(ids())
         pg.click('#dvtray .dv[data-dv="ball"]')
         pg.wait_for_timeout(100)
-        chk('D5 サンプルを開いたまま置ける（今のシナリオに足す）', len(ids()) == nb + 1 and ev("()=>SCN.src.id")=='orig-incline-friction', ids())
+        chk('D5 サンプルを開いたまま置ける（今の実験に足す）', len(ids()) == nb + 1 and ev("()=>SCN.src.id")=='orig-incline-friction', ids())
         ev("()=>{scnStepN(30)}")
         t0 = ev("()=>RUN.sess.W.t")
         pg.click('#dvtray .dv[data-dv="box"]')

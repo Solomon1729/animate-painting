@@ -10,7 +10,7 @@
   L2 つつく：短いタップで、タップした点から重心の向きに押される
   L3 記録：つかんだ操作は記録され、巻き戻して進め直しても同じ結果／過去に戻って新しく触るとその先の記録は捨てる
   L4 配置：止まっている時に絵をドラッグすると、離した時に初期位置になる（戻らない）／動かしていなければ何も起きない／途中の時刻なら最初に戻す
-  L5 シナリオだけの物体（絵につないでいない）：最初の時刻なら、ドラッグで初期位置を動かせる・Undoで戻る
+  L5 実験だけの物体（絵につないでいない）：最初の時刻なら、ドラッグで初期位置を動かせる・Undoで戻る
   L6 絵の大きさ・向き：スライダーで変えると、絵から作った物体の形が追従する（350ms後）／絵文字などの物体は、絵の倍率になる
   L7 絵の描き足し：描いた後に、地形の当たり判定が作り直される（Undoは絵の編集と同じ1回）／作り直しが止まらず繰り返さない
   L8 絵を消す：絵から作った物体も消える
@@ -219,7 +219,7 @@ def main():
         pg.wait_for_timeout(150)
         chk('L4 Undoで、置き直す前の位置（5,4）に戻る', abs(ev("()=>SCN.src.bodies.find(x=>x.id===_id).pos[0]") - 5) < .12)
 
-        # ---------- L5 シナリオだけの物体 ----------
+        # ---------- L5 実験だけの物体 ----------
         ev("resetAll()")
         ev("""()=>{const r=scnSetSource({id:'pure',title:'pure',params:{},world:{g:9.8},view:{x0:0,y0:0,w:8},
           bodies:[{id:'floor',type:'static',shapes:[{t:'plane',normal:[0,1],d:0}]},{id:'ball',type:'dynamic',m:1,pos:[3,3],e:.2,shapes:[{t:'circle',r:.3}],color:'#e0245e'}],probes:{},run:{t:5}});
@@ -230,7 +230,7 @@ def main():
         mup()
         pg.wait_for_timeout(150)
         pos = ev("()=>SCN.src.bodies.find(x=>x.id==='ball').pos")
-        chk('L5 離すと、シナリオの初期位置が変わる', abs(pos[0] - 5) < .12 and abs(pos[1] - 2) < .12, pos)
+        chk('L5 離すと、実験の初期位置が変わる', abs(pos[0] - 5) < .12 and abs(pos[1] - 2) < .12, pos)
         ev("undo()")
         pg.wait_for_timeout(100)
         pos = ev("()=>SCN.src.bodies.find(x=>x.id==='ball').pos")
@@ -240,7 +240,7 @@ def main():
         pg.wait_for_timeout(120)
         b = ev("()=>{const b=RUN.sess.W.byId.get('ball');return {x:b.px,y:b.py}}")
         mdown(b['x'], b['y'])
-        chk('L5 実行中は、絵が0個でもシナリオの物体をつかめる', ev("()=>!!RUN.grab"))
+        chk('L5 実行中は、絵が0個でも実験の物体をつかめる', ev("()=>!!RUN.grab"))
         mup()
         ev("()=>{RUN.playing=false;scnClose()}")
 
@@ -259,7 +259,7 @@ def main():
         ev("undo()")
         pg.wait_for_timeout(150)
         chk('L6 Undoで、絵の大きさ・物体の形がいっしょに元に戻る', abs(ev("()=>SCN.src.bodies.find(x=>x.id===_id).shapes[0].r") - r0) < 1e-3 and abs(ev("()=>byId(_a.id).size") - sz0) < 1e-3, ev("()=>[SCN.src.bodies.find(x=>x.id===_id).shapes[0].r,byId(_a.id).size]"))   # Undo後のアクターは新しい物（_aは古い）
-        # 絵文字などシナリオの物体につないだ絵：倍率になる（サンプルには絵文字の物体が無いので、自分で作る）
+        # 絵文字など実験の物体につないだ絵：倍率になる（サンプルには絵文字の物体が無いので、自分で作る）
         ev("resetAll()")
         ev("""()=>{const r=scnSetSource({id:'emo',title:'emo',params:{},world:{g:9.8},view:{x0:0,y0:0,w:8},
           bodies:[{id:'floor',type:'static',shapes:[{t:'plane',normal:[0,1],d:0}]},{id:'ball',type:'dynamic',m:1,pos:[3,3],e:.2,shapes:[{t:'circle',r:.3}],img:'⚽'}],probes:{},run:{t:5}});
@@ -270,7 +270,7 @@ def main():
             pg.wait_for_timeout(300)
             k1 = ev("([id])=>SCN.link[id].k", [info['id']])
             r_after = ev("([id])=>SCN.src.bodies.find(x=>x.id===id).shapes[0].r".replace('===id','===id'), [info['id']])
-            chk('L6 シナリオの物体につないだ絵の大きさを変えると、絵の倍率（link.k）になる（物体の形は変えない）', 1.4 < k1 / info['k'] < 1.8 and abs(r_after - info['r']) < 1e-9, {'k0': info['k'], 'k1': k1, 'r0': info['r'], 'r1': r_after})
+            chk('L6 実験の物体につないだ絵の大きさを変えると、絵の倍率（link.k）になる（物体の形は変えない）', 1.4 < k1 / info['k'] < 1.8 and abs(r_after - info['r']) < 1e-9, {'k0': info['k'], 'k1': k1, 'r0': info['r'], 'r1': r_after})
         else:
             chk('L6 絵文字の物体に絵が自動でつく', False, info)
         ev("()=>{scnClose()}")

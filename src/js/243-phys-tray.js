@@ -1,6 +1,6 @@
 /* ===== 装置トレー（台帳Z-210）=====
    物理タブの時だけ、操作窓の持ち手の下に付く「アイテム欄」。装置（PHDEV。581-phys-devices.js）を、ドラッグして画面（ビューワー）へ置く。タップなら画面の中ほどに置く。
-   置く操作は命令 PHAPI（addDevice）に落ちる＝Undo・巻き戻し・タイムラプス・ビジュアルプログラミングと同じ道を通る。シナリオが無い所へ最初に置く時は、床も一緒に置いて1回のUndoにする。
+   置く操作は命令 PHAPI（addDevice）に落ちる＝Undo・巻き戻し・タイムラプス・ビジュアルプログラミングと同じ道を通る。実験が無い所へ最初に置く時は、床も一緒に置いて1回のUndoにする。
    指（タッチ）：欄の上で横になぞると欄が動き（touch-action:pan-x）、上へ（画面のほうへ）ドラッグすると装置が運べる。マウス：どの向きでもドラッグで運べる。
    UIの一時状態：作品・Undo・保存には入れない。 */
 const DVT={n:0};
@@ -9,11 +9,11 @@ function dvBuild(){
   const el=$('dvtray');if(!el||typeof PHDEV==='undefined')return;
   el.innerHTML=PHDEV.DEVICES.map(d=>'<button type="button" class="dv" data-dv="'+d.id+'" aria-label="'+d.label+'：'+d.desc+'（画面へドラッグして置く。タップで中ほどに置く）">'+dvIcon(d,30)+'<span>'+d.label+'</span></button>').join('')}
 function dvSync(t){const el=$('dvtray');if(!el)return;const want=t!=='ph';if(el.hidden!==want)el.hidden=want}
-/* 置く場所（世界のm）。シナリオが開いていれば今の視点、無ければ新しく作るシナリオの視点（床がy=0・下に0.4mの余白） */
+/* 置く場所（世界のm）。実験が開いていれば今の視点、無ければ新しく作る実験の視点（床がy=0・下に0.4mの余白） */
 const DV_VIEW0={x0:0,y0:-.4,w:6};
 const dvView=()=>SCN.src&&RUN.view?RUN.view:DV_VIEW0;
 function dvWorld(p){const v=dvView(),k=W/v.w;return[+(v.x0+p.x/k).toFixed(4),+(v.y0+(H-p.y)/k).toFixed(4)]}
-/* いまのシナリオの、物体の「はじめの姿」の外接長方形（世界のm）。タップで置く場所を、重ならないように選ぶのに使う（床などの無限の面は除く） */
+/* いまの実験の、物体の「はじめの姿」の外接長方形（世界のm）。タップで置く場所を、重ならないように選ぶのに使う（床などの無限の面は除く） */
 function dvOcc(){
   const out=[];if(!SCN.src||!RUN.sess||!RUN.p0)return out;
   for(const b of RUN.sess.W.bodies){const bb=scnBodyBox(b);if(!bb||b.shapes.some(sh=>sh.k==='pl'))continue;

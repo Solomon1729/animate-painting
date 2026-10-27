@@ -38,7 +38,7 @@ function pdown(e){
   }
   if(pickFor){pickAt(q);return}
   if(handMode){if(!vLock){pid=e.pointerId;pan={x:q.x-Z.x,y:q.y-Z.y}}return}
-  if(!sel){pid=e.pointerId;if(tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、シナリオの物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
+  if(!sel){pid=e.pointerId;if(tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、実験の物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
   pushUndo();pid=e.pointerId;const p=wp(q);
   if(paint){if(blocked(sel))return;drawing=true;lp=null;stroke(q);return}
   if(adjMode){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;adjBrushAt(q,pl);return}

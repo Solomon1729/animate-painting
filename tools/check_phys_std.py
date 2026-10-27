@@ -155,7 +155,7 @@ def main():
         ev("()=>{LAYERS.find(y=>y.id===9).visible=false}")
         pg.wait_for_timeout(250)
         eff = ev("()=>{const id=scnRoleOf(A).id;const s=scnEffSrc().bodies.find(b=>b.id===id);return {c:s.collide,ids:scnHiddenIds(),n:SCN.src.bodies.find(b=>b.id===id).collide}}")
-        chk('P4 非表示レイヤーの絵は、当たり判定が外れる（元のシナリオは変えない）', eff['c'] is False and eff['n'] is not False, eff)
+        chk('P4 非表示レイヤーの絵は、当たり判定が外れる（元の実験は変えない）', eff['c'] is False and eff['n'] is not False, eff)
         ev("()=>{LAYERS.find(y=>y.id===9).visible=true}")
         pg.wait_for_timeout(250)
         eff = ev("()=>{const id=scnRoleOf(A).id;return scnEffSrc().bodies.find(b=>b.id===id).collide}")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""物理シナリオ（アプリ統合）の検査（台帳Z-172。roadmap C-0）。
+"""物理の実験（アプリ統合）の検査（台帳Z-172。roadmap C-0）。
 
 使い方：  python3 tools/check_physics.py <HTMLの絶対パス>      （PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers が要る環境あり）
   ヘッドレスChromium（Playwright）。全項目 OK が正常（最後に `OK n  NG 0`）。**ヘッドレスのみ。実機（スマホ）では未確認**。
@@ -11,11 +11,11 @@
   S2 固定刻み：フレーム間隔（60Hz・30Hz・ふぞろい）が違っても、同じ時刻の状態が一致する／戻して再実行しても同じ
   S3 条件（params）を変えると作り直す（時刻0・結果が変わる）
   S4 絵とのつなぎ：配置（fx,fy,size,rot）は実行で書き換わらない・初期姿勢と一致・描画の姿勢は物体に追従
-  S5 保存・読み込み：往復で同じ／シナリオが無い作品の書き出しにSCNキーが出ない／旧作品の読み込みでシナリオが空になる
-  S6 Undo：シナリオの読み込み・閉じるが戻る／無関係な操作のUndoでは実行（時刻）が巻き戻らない
+  S5 保存・読み込み：往復で同じ／実験が無い作品の書き出しにSCNキーが出ない／旧作品の読み込みで実験が空になる
+  S6 Undo：実験の読み込み・閉じるが戻る／無関係な操作のUndoでは実行（時刻）が巻き戻らない
   S7 img（絵文字）の自動アクター：作られる・閉じると消える・確定すると残る
   S8 画面：描いて空白でない・ベクトル・軌跡・当たり線・エネルギーを全部オンにしても例外が出ない
-  S9 旧物理（50-physics.js）はシナリオが開いている間は止まる／既存の画面の壊れ（ページエラー）が無い
+  S9 旧物理（50-physics.js）は実験が開いている間は止まる／既存の画面の壊れ（ページエラー）が無い
   S10 JSONの貼り付け：誤り（構文・検証）を日本語で返す／正しいものは読める
   S11 絵→物理（56-phys-art.js）：描いた線が凸の地形になる／円・四角・多角形の物体／つなぎ／平らな地形に球を落とすと乗る
   S12 お絵かき×物理のサンプル（57-phys-demos.js、c〜h）：開ける・最後まで走る・答え合わせと検査がすべて合う・シーンの外へ出ない
@@ -112,34 +112,34 @@ def main():
         # ---------- S5 保存 ----------
         ev("resetAll()")
         plain = json.loads(ev("ser()"))
-        chk('S5 シナリオが無い作品の書き出しには SCN キーが出ない', 'SCN' not in plain, list(plain.keys()))
+        chk('S5 実験が無い作品の書き出しには SCN キーが出ない', 'SCN' not in plain, list(plain.keys()))
         ev("()=>{const a=add('🔷');window._a=a;scnLoadSample('orig-pendulum-period');scnSetParam('L',1.5);scnTick(.016);SCN.opt.vec.v=true;SCN.opt.trail=true;SCN.graph='bob.speed';RUN.dirty=true;scnTick(.016);scnLinkBody(SCN.src.bodies.find(b=>b.type!=='static').id,a);scnSeek(0.5)}")
         txt = ev("ser()")
         d = json.loads(txt)
-        chk('S5 SCN が書き出される（シナリオ・条件・つなぎ・表示）', 'SCN' in d and d['SCN']['src']['id'] == 'orig-pendulum-period' and d['SCN']['params'].get('L') == 1.5 and d['SCN']['opt']['vec']['v'] and len(d['SCN']['link']) == 1, list(d.get('SCN', {}).keys()))
+        chk('S5 SCN が書き出される（実験・条件・つなぎ・表示）', 'SCN' in d and d['SCN']['src']['id'] == 'orig-pendulum-period' and d['SCN']['params'].get('L') == 1.5 and d['SCN']['opt']['vec']['v'] and len(d['SCN']['link']) == 1, list(d.get('SCN', {}).keys()))
         chk('S5 RUN（時刻など実行中の状態）は書き出さない', 't' not in d['SCN'] and 'sess' not in d['SCN'], '')
         ev("resetAll()")
-        chk('S5 全消去でシナリオも空になる', ev("!SCN.src&&!SCN.on&&!RUN.sess"))
+        chk('S5 全消去で実験も空になる', ev("!SCN.src&&!SCN.on&&!RUN.sess"))
         r = ev("""async(t)=>{try{await loadProj(t)}catch(e){return 'ERR '+e.message}return JSON.stringify({id:SCN.src&&SCN.src.id,L:SCN.params.L,v:SCN.opt.vec.v,link:Object.keys(SCN.link).length,al:RUN.al.size,sess:!!RUN.sess,t:RUN.sess&&RUN.sess.W.t})}""", txt)
         j = json.loads(r) if r.startswith('{') else {}
-        chk('S5 読み込みで、シナリオ・条件・表示・つなぎが戻り、世界が作られる', j.get('id') == 'orig-pendulum-period' and j.get('L') == 1.5 and j.get('v') and j.get('link') == 1 and j.get('al') == 1 and j.get('sess'), r)
+        chk('S5 読み込みで、実験・条件・表示・つなぎが戻り、世界が作られる', j.get('id') == 'orig-pendulum-period' and j.get('L') == 1.5 and j.get('v') and j.get('link') == 1 and j.get('al') == 1 and j.get('sess'), r)
         chk('S5 読み込み直後は時刻0（実行状態は保存しない）', j.get('t') == 0, j.get('t'))
         d2 = json.loads(ev("ser()"))
         chk('S5 読み込んで書き出し直しても SCN が同じ', json.dumps(d2.get('SCN'), sort_keys=True) == json.dumps(d['SCN'], sort_keys=True))
         old = dict(plain)
         r = ev("""async(t)=>{try{await loadProj(t)}catch(e){return 'ERR '+e.message}return JSON.stringify({src:!!SCN.src,on:SCN.on,sess:!!RUN.sess})}""", json.dumps(old))
-        chk('S5 シナリオの無い（旧）作品を読むと、シナリオが空になる', json.loads(r) == {'src': False, 'on': False, 'sess': False}, r)
+        chk('S5 実験の無い（旧）作品を読むと、実験が空になる', json.loads(r) == {'src': False, 'on': False, 'sess': False}, r)
         ev("resetAll()")
 
         # ---------- S6 Undo ----------
         ev("resetAll()")
         ev("()=>{US.length=0;RS.length=0}")
         ev("()=>{pushUndo();scnLoadSample('orig-spring-oscillator')}")
-        chk('S6 シナリオを読み込んだ', ev("!!SCN.src"))
+        chk('S6 実験を読み込んだ', ev("!!SCN.src"))
         ev("undo()")
-        chk('S6 Undoでシナリオの読み込みが戻る', ev("!SCN.src&&!RUN.sess"))
+        chk('S6 Undoで実験の読み込みが戻る', ev("!SCN.src&&!RUN.sess"))
         ev("redo()")
-        chk('S6 やり直しでシナリオが戻る', ev("SCN.src&&SCN.src.id==='orig-spring-oscillator'&&!!RUN.sess"))
+        chk('S6 やり直しで実験が戻る', ev("SCN.src&&SCN.src.id==='orig-spring-oscillator'&&!!RUN.sess"))
         # 実行中に無関係な操作→Undo：時刻は巻き戻らない
         ev("()=>{scnSeek(0.8);window._t=RUN.sess.W.t;pushUndo();add('🍎');pushUndo()}")
         ev("undo()")
@@ -255,7 +255,7 @@ def main():
           o.r=X({op:'addRule',id:'kick',when:'t>0.3',mode:'once',do:[{op:'kick',body:'ball',vx:1.5},{op:'note',text:'キック'}]});
           o.run=X({op:'setRun',t:1.2});
           o.n=SCN.src.bodies.length;o.rules=(SCN.src.rules||[]).length;o.auto=AC.filter(a=>a.scnAuto).length;return o}""")
-        chk('S13 命令で、新しいシナリオ・物体・測定・ルールが作れる', r['new']['ok'] and r['b1']['ok'] and r['p']['ok'] and r['r']['ok'] and r['run']['ok'] and r['n'] == 2 and r['rules'] == 1, r)
+        chk('S13 命令で、新しい実験・物体・測定・ルールが作れる', r['new']['ok'] and r['b1']['ok'] and r['p']['ok'] and r['r']['ok'] and r['run']['ok'] and r['n'] == 2 and r['rules'] == 1, r)
         chk('S13 絵文字つきの物体には、絵（アクター）が自動で付く', r['auto'] >= 1, r)
         r = ev("""()=>{const o={ev:[]};const off=PHAPI.listen(e=>o.ev.push(e));
           PHAPI.exec({op:'reset'});
@@ -277,7 +277,7 @@ def main():
           o.open=X({op:'open',id:'orig-spring-oscillator'});o.id=SCN.src.id;X({op:'close'});o.closed=!SCN.src;o.noscn=X({op:'play'});return o}""")
         chk('S13 いまの結果を読める', r['res']['ok'] and 'vmax' in r['res']['value']['probes'], r['res'])
         chk('S13 条件を足して掃引できる（2点）', r['sw2']['ok'] and len(r['sw2']['value']['rows']) == 2, r['sw2'])
-        chk('S13 誤りは ok:false と日本語の理由で返り、シナリオは壊れない', (not r['bad']['ok']) and 'zzz' in r['bad']['errors'][0] and (not r['bad2']['ok']) and (not r['bad3']['ok']) and r['nbody'] == 2, r)
+        chk('S13 誤りは ok:false と日本語の理由で返り、実験は壊れない', (not r['bad']['ok']) and 'zzz' in r['bad']['errors'][0] and (not r['bad2']['ok']) and (not r['bad3']['ok']) and r['nbody'] == 2, r)
         chk('S13 サンプルを開く・閉じる・開いていないと誤り', r['open']['ok'] and r['id'] == 'orig-spring-oscillator' and r['closed'] and not r['noscn']['ok'], r)
         ev("resetAll()")
         ev("()=>{US.length=0;RS.length=0}")

@@ -19,7 +19,7 @@ function projMigrate(d){let v=projVersion(d);const v0=v;
   return{d,v0,v}}
 function ser(){
   const x=PROJ.x;
-  const sc=scnSer();   /* 物理シナリオ。無ければキー自体を出さない（従来の作品ファイルと同じ形） */
+  const sc=scnSer();   /* 物理の実験。無ければキー自体を出さない（従来の作品ファイルと同じ形） */
   return JSON.stringify({...x.top,v:Math.max(PROJ.V,PROJ.v),uid,sel:AC.indexOf(sel),DOC:{...x.DOC,w:DOC.w,h:DOC.h},LAY:{...x.LAY,L:LAYERS,cur:curLid,hx:physHideEx},BG:{...BG,img:u2(BG.img)},...(sc?{SCN:sc}:{}),
     AC:AC.map(a=>{const o=JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v));
       o.dm=encMesh(a.dm);o.img=u2(a.img);o.iscv=!!a.cv;o.mask=a.mask&&a.hasMask?u2(a.mask):null;o.bm=a.bm&&a.hasBm?u2(a.bm):null;o.bite=a.bite&&a.eat?u2(a.bite):null;o.adjm=a.adjm&&a.hasAdjM?u2(a.adjm):null;o.lfm=a.lfm&&a.hasLFM?u2(a.lfm):null;return o})});
@@ -45,7 +45,7 @@ async function loadProj(txt){
   Object.assign(BG,d.BG||{},{img:bgI,v:(BG.v||0)+1});bgUi();
   /* キャンバスの大きさ（台帳Z-98）。旧データには無い＝自動 */
   DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit(true);canvasUi();
-  scnLoad(d.SCN);   /* 物理シナリオ（無い作品では空にする） */
+  scnLoad(d.SCN);   /* 物理の実験（無い作品では空にする） */
   try{artMigrateOld()}catch(e){}   /* 旧・簡易の物理（絵ごとの phys）を、新しい物理の物体に置き換える（台帳Z-197） */
   setSel(AC[d.sel]||AC[0]||null);
   if(PROJ.v)note('新しい版（v'+PROJ.v+'）で保存された作品です。このアプリが知らない項目は、そのまま残して保存します。読めない部分があるかもしれないので、上書きは避け、自動保存は別の入れ物に入ります',9000);

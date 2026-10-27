@@ -28,7 +28,7 @@ function tlFinger(s){   /* キャンバスをなぞる手順：指の印が、�
   TLA.fgT=setInterval(()=>{const t=(performance.now()-t0)*(TLA.P?TLA.P.speed:1);if(t>=T){clearInterval(TLA.fgT);setTimeout(()=>{fg.hidden=true},250);return}put(t*(p[p.length-1][2]/T))},30)}
 
 /* ---------- 再生の相手（ホスト） ---------- */
-/* 「シナリオをブロックで組み立てる」手順書（fromScenario が作る。src.kind==='scenario'）は、空の舞台から始める（見る前のシナリオは、閉じると戻る） */
+/* 「実験をブロックで組み立てる」手順書（fromScenario が作る。src.kind==='scenario'）は、空の舞台から始める（見る前の実験は、閉じると戻る） */
 function tlEmpty(){
   if(!(TLA.sc&&TLA.sc.src&&TLA.sc.src.kind==='scenario'))return;
   if(SCN.src)scnClose({noUndo:true});
@@ -41,15 +41,15 @@ const tlHost={
   phys(op,quiet){
     const D=PHAPI.OPS[op.op];if(!D)return{ok:false,errors:['未知の命令「'+op.op+'」']};
     if(D.kind==='scenario'){
-      /* 土台：いま開いているシナリオ（画面の操作で開いたものを含む）。無い時（物体がまだ無い途中の姿）だけ、手順の中で持っている途中のシナリオ */
+      /* 土台：いま開いている実験（画面の操作で開いたものを含む）。無い時（物体がまだ無い途中の姿）だけ、手順の中で持っている途中の実験 */
       const r=PHAPI.apply(D.make?null:(SCN.src?scnClone(SCN.src):TLA.src),op);if(!r.src)return{ok:false,errors:r.errors};
       TLA.src=r.src;RUN.playing=false;
       if(!r.errors.length){const o=scnSetSource(r.src,{noUndo:true});if(!o.ok)return{ok:false,errors:o.errors};if(op.op==='addBody'&&SCN.auto)scnAutoActors()}
       else if(SCN.src)scnClose({noUndo:true});   /* 検証に通らない途中の姿（物体がまだ無い）は、空の舞台 */
       if(!quiet)tlStage();return{ok:true}}
     switch(op.op){
-      case 'play':if(!SCN.src)return{ok:false,errors:['まだシナリオができていません']};if(!quiet){RUN.playing=false;scnPlay();tlStage()}return{ok:true};
-      case 'result':if(!SCN.src)return{ok:false,errors:['まだシナリオができていません']};if(!quiet){tlStage();scnCheckNow()}return{ok:true};
+      case 'play':if(!SCN.src)return{ok:false,errors:['まだ実験ができていません']};if(!quiet){RUN.playing=false;scnPlay();tlStage()}return{ok:true};
+      case 'result':if(!SCN.src)return{ok:false,errors:['まだ実験ができていません']};if(!quiet){tlStage();scnCheckNow()}return{ok:true};
       case 'open':{const s=typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.find(x=>x.id===op.id);if(!s)return{ok:false,errors:['サンプル「'+op.id+'」がありません']};TLA.src=scnClone(s);const o=scnSetSource(s,{noUndo:true});return{ok:!!o.ok,errors:o.errors||[]}}
       case 'close':TLA.src=null;if(SCN.src)scnClose({noUndo:true});return{ok:true};
       default:return PHAPI.exec(op)}},   /* pause・reset・seek・step・speed・read・sweep（TL.busy の間は記録に知らせない） */
@@ -130,7 +130,7 @@ function tlLoop(t){
   TL.SPEEDS.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent='×'+v;if(v===1)o.selected=true;sel.append(o)});
   const src=E('tlSrc');(typeof PHYS_SAMPLES!=='undefined'?PHYS_SAMPLES:[]).forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent='作り方：'+(s.title||s.id);src.append(o)});
   src.onchange=()=>{const s=PHYS_SAMPLES.find(x=>x.id===src.value);src.value='';if(s)tlStart(TL.fromScenario(s))};
-  const cur=()=>{if(!SCN.src){E('tlPickErr').textContent='物理シナリオが開いていません（物理タブで、サンプルを開くか「＋プロトタイプ」を押してください）';tlOpen();return}tlStart(TL.fromScenario(JSON.parse(scnJson())))};
+  const cur=()=>{if(!SCN.src){E('tlPickErr').textContent='物理の実験が開いていません（物理タブで、サンプルを開くか「＋白紙の実験」を押してください）';tlOpen();return}tlStart(TL.fromScenario(JSON.parse(scnJson())))};
   E('tlCur').onclick=cur;E('scHow').onclick=()=>{if(TLA.rec){note('記録中です。先に「■ 止める」を押してください');return}cur()};
   E('mTl').onclick=tlOpen;E('tlX').onclick=()=>tlClose(false);E('tlKeep').onclick=()=>tlClose(true);
   E('tlMin').onclick=()=>{const m=E('tlp').classList.toggle('min');E('tlMin').setAttribute('aria-pressed',m);E('tlMin').textContent=m?'▸':'▾'};

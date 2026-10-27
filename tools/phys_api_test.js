@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* 物理モードの「窓口」PHAPI（src/js/58-phys-api.js）の検査（台帳Z-178）。使い方: node tools/phys_api_test.js
    ①部品表がエンジンの表（形・拘束・力場・量・関数・集計・ルールの動作）と食い違っていないか ②部品表の「例」が検証に通るか
-   ③命令（apply）で組み立てたシナリオが解析解どおりに動くか ④ルール（条件→動作）の動作・巻き戻しても同じ結果になること ⑤誤りの出し方 */
+   ③命令（apply）で組み立てた実験が解析解どおりに動くか ④ルール（条件→動作）の動作・巻き戻しても同じ結果になること ⑤誤りの出し方 */
 const fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(root,'src/js',f),'utf8');
@@ -28,7 +28,7 @@ console.log('2) 部品表の「例」が検証に通る');
  for(const [id,j] of Object.entries(PHAPI.JOINTS)){const s=base({joints:[Object.assign({id:'j'},j.example)]});s.bodies[1].id='B';const V=PHS.validate(s);chk('拘束 '+id,!V.errors.length,V.errors.join(' / '))}
  for(const [id,f] of Object.entries(PHAPI.FIELDS)){const s=base({fields:[f.example]});const V=PHS.validate(s);chk('力場 '+id,!V.errors.length,V.errors.join(' / '))}}
 
-console.log('3) 命令だけでシナリオを組み立てて、解析解と比べる（自由落下）');
+console.log('3) 命令だけで実験を組み立てて、解析解と比べる（自由落下）');
 {const r=PHAPI.applyAll(null,[
   {op:'newScenario',title:'落下'},
   {op:'addBody',id:'b1',shape:{t:'circle',r:.1},pos:[0,1.1],set:{m:2,e:0}},
