@@ -81,7 +81,7 @@
   <div class="row" id="ch1"></div>
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
-  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
@@ -272,8 +272,8 @@
 
   <div class="tab" data-tab="ph">
     <div class="grp" id="scGrp"><div class="gh">物理</div>
-    <div class="note" id="scHelp">絵を選んで「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
-    <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の物理</div>
+    <div class="note" id="scHelp">絵（オブジェクト）を選ぶと「オブジェクトを対象化」が出ます。「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
+    <div class="grp alt" id="scArt" hidden><div class="gh">オブジェクトを対象化</div>
       <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理で動く物体にする（絵の輪郭が当たり判定）">🌍 動く</button><button id="scArtF" aria-label="選んでいる絵を、固定の土台にする（物理には参加するが動かない。台・壁・障害物）">固定</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵から物理を外す（絵は残ります）">外す</button></div>
       <div class="row"><span class="lab">形</span><select id="scArtS" aria-label="物体の形"><option value="auto">自動</option><option value="circle">丸</option><option value="box">四角</option><option value="hull">輪郭</option><option value="static">固定の障害物</option></select></div>
       <div id="scArtP" hidden>

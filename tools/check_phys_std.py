@@ -6,13 +6,14 @@
   アプリ内部の名前（SCN・RUN・scn*・art*・AC・add・setSel・setTab・ser・loadProj・undo・LAYERS）と、物理タブ・メニューの部品のid（scArt*・ap*・wl*・mPhArt…）に依存する。改名したらここも直す。
 
 群：
-  P1 物理タブの「選んでいる絵の物理」：動く／固定／地形／外す。役割ごとに出るつまみが変わる（固定には質量・初速が出ない）
+  P1 物理タブの「オブジェクトを対象化」：動く／固定／地形／外す。役割ごとに出るつまみが変わる（固定には質量・初速が出ない）
   P2 絵ごとのつまみ：質量・反発・摩擦・初速（速さ＋向き）・当たり判定。動かすと、その通りに動く（初速で進む・当たり判定オフでぶつからない）
   P3 まわり（床・左右の壁・天井）：床を外すと落ちる／壁を外すと出ていく／天井で跳ね返る
   P4 非表示レイヤーの絵は物理から外れる（Z-188）：当たり判定が無くなり、また出すと戻る
   P5 メニュー「🌍 この絵に物理を付ける」：付ける・外す・選んでいない時は出ない
   P6 Undo・保存・読込：付けた物理・つまみの値が、Undoで戻り、保存→読込で残る
   P7 旧・簡易の物理（絵ごとの phys）の読込時の置き換え：オンだった絵が動く物になり、質量・反発・初速（px/秒→m/秒）・固定を引き継ぐ。旧データは壊れない
+  P9 操作窓の一番上の「オブジェクトを対象化」（台帳Z-218）：絵を選んでいて物理タブでない時だけ出る／押すと物理が付いて物理タブへ／絵が無い・物理タブでは出ない／物理タブの枠は絵を選んでいる時だけ
   P8 同じ▶・時計で動き・歪みと一緒に使える（動きタブの動きがある絵も物理で動く）／ページエラーが出ない
 """
 import sys, os, json
@@ -246,6 +247,28 @@ def main():
         r = ev("()=>({role:!!scnRoleOf(A),t:RUN.sess.W.t,m:A.ch.m.a})")
         chk('P8 動き（動きタブ）がある絵にも物理が付き、一緒に実行できる', r['role'] and r['t'] > 0 and r['m'] == .3, r)
         chk('P8 絵の物理は、同じ ▶ で動く（時計は物理の時刻を表示）', ev("$('scTv').textContent") != '' and pg.is_visible('#scPlay'))
+
+        # ---------- P9 オブジェクトを対象化（操作窓の一番上） ----------
+        ev("()=>{resetAll();window.A=MK('玉',.5,.3,.7);setSel(A);setTab('pl')}")
+        r = ev("()=>{const b=$('tabObj'),t=$('tabs');return{vis:!b.hidden,first:t.firstElementChild===b,txt:b.textContent,sc:$('scArt').hidden}}")
+        chk('P9 絵を選んでいて配置タブの時、操作窓の一番上に「オブジェクトを対象化」が出る', r['vis'] and r['first'] and '対象化' in r['txt'], r)
+        pg.click('#tabObj')
+        pg.wait_for_timeout(150)
+        r = ev("()=>({role:scnRoleOf(A)&&scnRoleOf(A).kind,tab:document.querySelector('#tabs [data-t].on').dataset.t,btn:!$('tabObj').hidden,sc:!$('scArt').hidden})")
+        chk('P9 押すと、物理が付いて（動く物体）物理タブへ移り、上のボタンは隠れる・物理タブの枠が出る', r['role'] == 'body' and r['tab'] == 'ph' and not r['btn'] and r['sc'], r)
+        ev("()=>setTab('pl')")
+        r = ev("()=>({vis:!$('tabObj').hidden,txt:$('tabObj').textContent})")
+        chk('P9 物理が付いた絵では「対象化済み」と出て、押すと物理タブへ移るだけ（付け直さない）', r['vis'] and '対象化済み' in r['txt'], r)
+        n0 = ev("()=>SCN.src.bodies.length")
+        pg.click('#tabObj')
+        pg.wait_for_timeout(100)
+        chk('P9 付いている絵で押しても物体は増えない', ev("()=>SCN.src.bodies.length") == n0 and ev("()=>document.querySelector('#tabs [data-t].on').dataset.t") == 'ph')
+        ev("()=>{setSel(null);setTab('pl')}")
+        chk('P9 絵を選んでいない時は出ない', ev("()=>$('tabObj').hidden"))
+        ev("()=>{window.A=MK('玉',.5,.3,.7);setSel(A);setTab('ph')}")
+        chk('P9 物理タブでは上のボタンは出さず、枠（オブジェクトを対象化）が出る', ev("()=>$('tabObj').hidden&&!$('scArt').hidden"))
+        ev("()=>{setSel(null)}")
+        chk('P9 物理タブでも、絵を選んでいなければ枠は出ない', ev("()=>$('scArt').hidden"))
 
         chk('ページエラーが一度も出ていない', not errs, errs[:3])
         b.close()

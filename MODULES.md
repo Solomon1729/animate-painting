@@ -85,6 +85,7 @@
 | `tools/tl_test.js` | `node tools/tl_test.js`。タイムラプスの核`TL`（137項目。8＝組み立て台の配置・9＝置く動き`lead`）：全サンプル14件を`fromScenario`→命令だけで再生して元と一致・時計・戻る・未知のキー／未知のドライバの保持・書き出し／読み込み／壊れた入力・字幕の編集・記録の併合 |
 | `tools/check_timelapse.py` | `python3 tools/check_timelapse.py <HTMLの絶対パス>`。タイムラプスのアプリ内検査（T1〜T9・103項目。T9＝組み立て台）：全サンプルの再生が元と一致・時計・実際のクリック・非破壊（Undo・自動保存・レイヤーの表示）・「作り方を見る」・書き出し／字幕の編集／読み込み・記録・窓の配置 |
 | `tools/check_phys_view.py` | `python3 tools/check_phys_view.py <HTMLの絶対パス>`。物理の時間・追従カメラの検査（V1〜V6・43項目）：測定区間の後の続き・結果の確定・タイマーの保存とUndo・追従の入切・絵に物理を付ける場合は動かない・ページエラー無し。台帳Z-208/Z-214 |
+| `tools/check_phys_pick.py` | `python3 tools/check_phys_pick.py <HTMLの絶対パス>`。選んだ物のつまみ・力場をつかむ検査（K1〜K7・26項目）：条件の出し分け・「すべて見る」・物体や電場／磁場を触って選ぶ・ドラッグで動く（式のつながりが残る）・実行中でもやり直さない・Undo・絵から作る場。台帳Z-215/Z-216 |
 | `tools/phys_time_test.js` | `node tools/phys_time_test.js`。時刻とON/OFFの分離・途中のパラメータ変更の検査（43項目）：無期限セッションが窓内で有限と同値・止める条件で止まらない・質量/摩擦/場を途中で変えた解析値・初期値の変更は作り直し・記録つきの巻き戻しが完全一致・参考外の印・記録の間引き。台帳Z-214/Z-211 |
 | `tools/check_physics.py` | `python3 tools/check_physics.py <HTMLの絶対パス>`。物理のアプリ内検査（S1〜S13・65項目）：サンプル全件・固定刻み・条件・絵とのつなぎ・保存・Undo・画面・JSON貼り付け・絵→物理・デモc〜h・窓口。ヘッドレスのみ（実機は未確認）。台帳Z-172 |
 | `tools/check_phys_std.py` | `python3 tools/check_phys_std.py <HTMLの絶対パス>`。絵に物理を付ける標準の形の検査（P1〜P8・48項目）：役割（動く・固定・地形・外す）・絵ごとのつまみ・床と壁と天井・非表示レイヤー・メニュー・保存/Undo・旧`phys`の置き換え・動きとの併用。ヘッドレスのみ（実機は未確認）。台帳Z-197 |

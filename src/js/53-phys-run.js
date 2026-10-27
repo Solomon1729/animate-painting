@@ -27,7 +27,7 @@ const scnKey=()=>JSON.stringify([SCN.src,SCN.params,SCN.graph]);   /* いまの�
 const scnSk=eff=>JSON.stringify([PHS.liveStrip(eff),SCN.graph]);   /* 変えてよい値を除いた目印：これが同じなら、違いは「あとから変えてよい値」だけ */
 const RUN={sess:null,R:null,playing:false,acc:0,err:'',warns:[],res:null,al:new Map(),key:'',rev:0,uiRev:-1,acKey:'',dirty:false,a0:[],p0:[],view:{x0:0,y0:0,w:6},fr:0,
   inp:new Map(),inpMax:-1,grab:null,mv:null,pq:[],pulled:new Set(),pend:new Map(),
-  lch:new Map(),l0:null,sk:'',tmax:0};   /* 条件の変更（台帳Z-211）：lch＝刻み番号→その時の「変えてよい値」／l0＝はじめの値／sk＝変えてよい値を除いた実験の目印／tmax＝いままでに進んだ時刻 */   /* 人の手：inp＝刻み番号→入力の記録／grab＝いまつかんでいる物／mv＝配置のドラッグ／pq＝つつくの待ち行列／pend＝絵の変更の反映待ち（actor id→時刻） */
+  lch:new Map(),l0:null,sk:'',tmax:0,pick:null,showAll:false,selSeen:null,fmv:null};   /* 条件の変更（台帳Z-211）：lch＝刻み番号→その時の「変えてよい値」／l0＝はじめの値／sk＝変えてよい値を除いた実験の目印／tmax＝いままでに進んだ時刻 */   /* 人の手：inp＝刻み番号→入力の記録／grab＝いまつかんでいる物／mv＝配置のドラッグ／pq＝つつくの待ち行列／pend＝絵の変更の反映待ち（actor id→時刻） */
 const PTR={on:true};   /* UIの一時状態：キャンバスを触って物理を動かす（つかむ・つつく）。保存・Undoには入れない */
 const scnLive=()=>!!(SCN.on&&RUN.sess&&RUN.R);
 const scnFmt=x=>typeof x==='number'&&isFinite(x)?String(+x.toPrecision(4)):String(x);
@@ -48,7 +48,7 @@ function scnEffSrc(){   /* 計算に使う実験：SCN.src そのもの（隠れ
 /* ---------- 作る・やり直す ---------- */
 function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻して進め直す時だけ）。それ以外は、条件が変わるので記録を捨てる */
   RUN.sess=null;RUN.R=null;RUN.res=null;RUN.err='';RUN.warns=[];RUN.al=new Map();RUN.acc=0;RUN.logI=0;RUN.quiet=false;
-  if(!keepInp){RUN.inp=new Map();RUN.inpMax=-1;RUN.lch=new Map();RUN.l0=null;RUN.tmax=0}RUN.grab=null;RUN.mv=null;RUN.pq=[];RUN.pulled=new Set();RUN.pend=new Map();
+  if(!keepInp){RUN.inp=new Map();RUN.inpMax=-1;RUN.lch=new Map();RUN.l0=null;RUN.tmax=0}RUN.grab=null;RUN.mv=null;RUN.fmv=null;RUN.pq=[];RUN.pulled=new Set();RUN.pend=new Map();
   RUN.key=scnKey();RUN.sk='';
   if(!SCN.src)return;
   try{
@@ -200,7 +200,7 @@ function scnCam(){
   let dx=0,dy=0;const id=v0.follow&&String(v0.follow);
   if(id&&SCN.opt.follow!==false&&S.W.t>0){const b=S.W.byId.get(id);if(b&&RUN.p0[b.idx]){const c=PHR.camShift(v0,W||1,H||1,[b.px,b.py],RUN.p0[b.idx]);dx=c.dx;dy=c.dy}}
   v.x0=v0.x0+dx;v.y0=v0.y0+dy}
-function scnFrame(){scnCam();const R=RUN.R;R.cw=W;R.ch=H;R.opt=scnROpt();R.T=PHR.mkT(R.view,W,H);return R}
+function scnFrame(){scnCam();const R=RUN.R;R.cw=W;R.ch=H;R.opt=scnROpt();R.hl=scnPick();R.T=PHR.mkT(R.view,W,H);return R}
 function scnUnder(){if(!scnLive()||drawOnly)return;ctx.save();PHR.under(ctx,scnFrame());ctx.restore()}
 function scnOver(){if(!scnLive()||drawOnly)return;ctx.save();PHR.over(ctx,scnFrame());scnHandDraw();ctx.restore()}
 /* つないだアクターの、いまの姿勢（描く位置とm.rへの加算）。つないでいなければnull。ドラッグ中・他に付いているアクターは対象外 */
@@ -252,16 +252,84 @@ function scnPtrDown(p,e){
   if(!scnLive()||!PTR.on)return false;
   const h=hit(p),lb=scnLinkedBody(h);
   if(scnRunning()){
-    if(lb){if(lb.type!=='dynamic'){if(h!==sel)setSel(h);return true}return scnGrabStart(lb,p)}   /* 地形・台は実行中は動かさない（選ぶだけ） */
-    const f=scnBodyAt(scnP2M(p));return f&&f.b.type==='dynamic'?scnGrabStart(f.b,p,f.inside):false}
+    if(lb){if(lb.type!=='dynamic'){if(h!==sel)setSel(h);return true}scnPickSet({kind:'body',id:lb.id});return scnGrabStart(lb,p)}   /* 地形・台は実行中は動かさない（選ぶだけ） */
+    const f=scnBodyAt(scnP2M(p));
+    if(f){scnPickSet({kind:'body',id:f.b.id});return f.b.type==='dynamic'?scnGrabStart(f.b,p,f.inside):false}
+    return scnFieldStart(p,h)}   /* 物体が無い所：力場（電場・磁場など）の上なら、それを選ぶ・動かす（台帳Z-216） */
   if(lb)return false;   /* 絵につないだ物体：いつもの絵のドラッグ。離した時に scnPlaceActor が初期位置にする */
   const f=scnBodyAt(scnP2M(p));
-  if(f&&f.b.type!=='kinematic'&&RUN.sess.W.t===0&&!f.b.shapes.some(sh=>sh.k==='pl'||sh.k==='ar')){RUN.mv={b:f.b,id:f.b.id,m0:scnP2M(p),o0:[f.b.px,f.b.py],moved:false};return true}
-  return false}
+  if(f){scnPickSet({kind:'body',id:f.b.id});
+    if(f.b.type!=='kinematic'&&RUN.sess.W.t===0&&!f.b.shapes.some(sh=>sh.k==='pl'||sh.k==='ar')){RUN.mv={b:f.b,id:f.b.id,m0:scnP2M(p),o0:[f.b.px,f.b.py],moved:false};return true}
+    return false}
+  return scnFieldStart(p,h)}
+/* ---------- 選んだ物だけのつまみ・力場をつかむ（台帳Z-215・Z-216）----------
+   RUN.pick＝いま選んでいる物理のもの {kind:'body',id}／{kind:'field',i}（保存しない）。物体・力場を押す／つかむと決まり、何も無い所を押すと外れる。
+   絵を選んでいる時は、その絵につないだ物体。つまみ（条件）は、選んだ物の式が使う条件だけを出す（scnShownKeys）。 */
+function scnPick(){
+  const s=SCN.src;if(!s)return null;const p=RUN.pick;
+  if(p){if(p.kind==='body'&&(s.bodies||[]).some(b=>b.id===p.id))return p;if(p.kind==='field'&&s.fields&&s.fields[p.i])return p}
+  const r=sel&&scnRoleOf(sel);return r?{kind:'body',id:r.id}:null}
+function scnPickKey(){const p=scnPick();return(p?p.kind+':'+(p.kind==='body'?p.id:p.i):'-')+(RUN.showAll?'A':'')}
+function scnPickSet(p){
+  if(JSON.stringify(RUN.pick||null)===JSON.stringify(p||null))return;
+  RUN.pick=p||null;if(p)RUN.selSeen=sel;scnUi()}
+const FIELD_NAME={uniform:'一様な場',force:'力の場',E:'電場',B:'磁場',central:'中心力の場',drag:'抵抗の場',coulomb:'クーロン力',gravity:'万有引力'};
+function scnPickName(p){const s=SCN.src;if(!p||!s)return'';
+  if(p.kind==='body'){const b=s.bodies.find(x=>x.id===p.id);return(b&&b.label)||p.id}
+  const f=s.fields[p.i];return(f&&f.label)||FIELD_NAME[f&&f.type]||'力場'}
+/* 力場の領域（rect・circle）の上か。境界の少し外（指の太さ）まで */
+function scnFieldAt(m){const S=RUN.sess;if(!S)return-1;const F=S.W.fields,tol=HAND.PICK_PX/scnK();
+  for(let i=F.length-1;i>=0;i--){const r=F[i].region;if(!r)continue;
+    if(r.rect&&m.x>=r.rect[0]-tol&&m.x<=r.rect[2]+tol&&m.y>=r.rect[1]-tol&&m.y<=r.rect[3]+tol)return i;
+    if(r.circle&&Math.hypot(m.x-r.circle[0],m.y-r.circle[1])<=r.circle[2]+tol)return i}
+  return-1}
+function scnFieldStart(p,h){
+  if(h)return false;   /* 物理につないでいない絵の上：いつもの絵の扱い */
+  const m=scnP2M(p),i=scnFieldAt(m);
+  if(i<0){scnPickSet(null);return false}
+  scnPickSet({kind:'field',i});const r=SCN.src.fields[i]&&SCN.src.fields[i].region;if(!r)return false;
+  RUN.fmv={i,m0:m,r0:scnClone(r),moved:false,t:0};return true}
+/* 式の位置をずらす：数はそのまま足す。式（条件を使う）は「(式)+ずれ」にして、条件とのつながりを残す */
+function scnShiftExpr(v,d){
+  if(Math.abs(d)<1e-9)return v;if(typeof v==='number')return+(v+d).toFixed(5);
+  const s=String(v).trim(),m=/^\((.*)\)([+-][0-9.]+(?:e[+-]?\d+)?)$/.exec(s);let base=s,off=0;if(m){base=m[1];off=+m[2]}
+  const t=+(off+d).toFixed(5);return Math.abs(t)<1e-9?base:'('+base+')'+(t>=0?'+':'')+t}
+function scnFieldShift(v,dx,dy){const f=SCN.src.fields[v.i],r0=v.r0;if(!f)return;
+  if(r0.rect)f.region={rect:[scnShiftExpr(r0.rect[0],dx),scnShiftExpr(r0.rect[1],dy),scnShiftExpr(r0.rect[2],dx),scnShiftExpr(r0.rect[3],dy)]};
+  else if(r0.circle)f.region={circle:[scnShiftExpr(r0.circle[0],dx),scnShiftExpr(r0.circle[1],dy),r0.circle[2]]}}
+/* つまみの持ち主：条件名 → それを式に使う物（body:id／field:i）。途中の変数（vars）の先もたどる。つなぎ（joints）は、つないだ物体のものとして数える */
+const SKIPK=new Set(['id','label','type','t','img','body','targets','kind','collide','name','tg']);
+function scnStrs(o,out){if(typeof o==='string')out.push(o);else if(Array.isArray(o))for(const x of o)scnStrs(x,out);else if(o&&typeof o==='object')for(const k of Object.keys(o))if(!SKIPK.has(k))scnStrs(o[k],out);return out}
+function scnToks(strs,vars,names){
+  const res=new Set(),seen=new Set(),walk=s=>{for(const m of s.matchAll(/[A-Za-z_][A-Za-z0-9_]*/g)){const w=m[0];if(seen.has(w))continue;seen.add(w);if(names.has(w))res.add(w);if(vars&&typeof vars[w]==='string')walk(vars[w])}};
+  strs.forEach(walk);return res}
+function scnOwners(s){
+  const names=new Set(Object.keys(s.params||{})),vars=s.vars||{},own=new Map();
+  const add=(key,strs)=>{for(const n of scnToks(strs,vars,names)){if(!own.has(n))own.set(n,new Set());own.get(n).add(key)}};
+  (s.bodies||[]).forEach(b=>add('body:'+b.id,scnStrs(b,[])));
+  (s.fields||[]).forEach((f,i)=>add('field:'+i,scnStrs(f,[])));
+  (s.joints||[]).forEach(j=>{const strs=scnStrs(j,[]),ends=JSON.stringify([j.a,j.b,j.via,j.path]);
+    for(const b of s.bodies||[])if(ends.includes('"body":"'+b.id+'"'))add('body:'+b.id,strs)});
+  return own}
+/* 出すつまみ：選んだ物があればその物のだけ／選んでいなくて6個以下なら全部／7個以上なら、どの物のでもない条件だけ（物を触ると出る）。「すべて見る」で全部 */
+function scnShownKeys(box,P){
+  const keys=Object.keys(P),s=SCN.src;if(!keys.length)return keys;
+  const pk=scnPick(),filt=!!pk||keys.length>6;if(!filt)return keys;
+  const own=scnOwners(s),pkey=pk?(pk.kind==='body'?'body:'+pk.id:'field:'+pk.i):null;
+  const mine=pk?keys.filter(k=>own.has(k)&&own.get(k).has(pkey)):keys.filter(k=>!own.has(k));
+  const row=scnEl('div'),note=scnEl('span'),b=scnEl('button');row.className='row';note.className='note';note.style.margin=0;note.style.flex='1';
+  note.textContent=RUN.showAll?'すべての条件を出しています（'+keys.length+'個）':pk?'「'+scnPickName(pk)+'」のつまみだけを出しています'+(mine.length?'':'（関係する条件はありません）'):'物体・力場を触る（つかむ・タップ）と、そのつまみが出ます';
+  b.textContent=RUN.showAll?'選んだものだけ':'すべて見る（'+keys.length+'個）';b.setAttribute('aria-label',RUN.showAll?'選んだ物のつまみだけにする':'すべての条件のつまみを出す');
+  b.onclick=()=>{RUN.showAll=!RUN.showAll;scnUi()};row.append(note,b);box.append(row);
+  return RUN.showAll?keys:mine}
 function scnGrabStart(b,p,inside){
   const m=scnP2M(p),a=inside===false?{rx:0,ry:0}:PHE.pullAt(b,m.x,m.y);
   RUN.grab={id:b.id,rx:a.rx,ry:a.ry,x:m.x,y:m.y,t0:performance.now(),p0:{x:p.x,y:p.y},moved:false};return true}
 function scnPtrMove(p){
+  const fv=RUN.fmv;
+  if(fv){const m=scnP2M(p),dx=m.x-fv.m0.x,dy=m.y-fv.m0.y;
+    if(!fv.moved){if(Math.hypot(dx,dy)*scnK()<HAND.TAP_PX)return true;fv.moved=true;pushUndo()}
+    scnFieldShift(fv,dx,dy);const now=performance.now();if(now-fv.t>40){fv.t=now;scnReflect(true)}return true}
   const g=RUN.grab;
   if(g){const m=scnP2M(p);g.x=m.x;g.y=m.y;if(Math.hypot(p.x-g.p0.x,p.y-g.p0.y)>HAND.TAP_PX)g.moved=true;return true}
   const v=RUN.mv;
@@ -269,6 +337,7 @@ function scnPtrMove(p){
   return false}
 /* 離した：つかんでいた物は、その速さのまま手を離れる（短いタップなら「つつく」）。配置のドラッグなら、実験の初期位置にする */
 function scnPtrEnd(){
+  const fv=RUN.fmv;if(fv){RUN.fmv=null;if(fv.moved){scnReflect(true);RUN.rev++;scnUi()}}   /* 力場を動かした：最後の位置を入れる（やり直さない。途中でも同じ） */
   const g=RUN.grab,v=RUN.mv;
   if(g){RUN.grab=null;
     if(!g.moved&&performance.now()-g.t0<HAND.TAP_MS&&RUN.sess){const b=RUN.sess.W.byId.get(g.id);
@@ -277,7 +346,7 @@ function scnPtrEnd(){
   if(v){RUN.mv=null;
     if(v.moved){const i=SCN.src&&SCN.src.bodies.findIndex(x=>x.id===v.id);
       if(i>=0){const o=PHE.origin(v.b);scnEdit(sc=>{sc.bodies[i].pos=[+o[0].toFixed(5),+o[1].toFixed(5)]})}}}}
-function scnPtrCancel(){RUN.grab=null;if(RUN.mv){const v=RUN.mv;RUN.mv=null;if(v.moved&&RUN.sess){v.b.px=v.o0[0];v.b.py=v.o0[1];PHE.updShapes(v.b)}}}
+function scnPtrCancel(){RUN.grab=null;RUN.fmv=null;if(RUN.mv){const v=RUN.mv;RUN.mv=null;if(v.moved&&RUN.sess){v.b.px=v.o0[0];v.b.py=v.o0[1];PHE.updShapes(v.b)}}}
 /* マウスを重ねた時：つかめる物の上ではカーソルを「つかむ」にする（色などの演出はしない） */
 function scnCursor(p){
   let c='';if(RUN.grab)c='grabbing';
@@ -311,7 +380,7 @@ function scnWatch(){
     if(art){const sg=scnArtSig(a);if(sg!==o.sig||a.img!==o.img){o.sig=sg;o.img=a.img;ch=true}if(ch)RUN.pend.set(aid,now)}
     if(ch)dirtyProj=true}
   if(restyle){scnBindLinks();scnSyncLinks()}
-  if(RUN.pend.size&&!ptrs.size&&!drawing&&!tgt&&!wg&&!wbg&&!RUN.grab&&!RUN.mv)
+  if(RUN.pend.size&&!ptrs.size&&!drawing&&!tgt&&!wg&&!wbg&&!RUN.grab&&!RUN.mv&&!RUN.fmv)
     for(const[aid,t]of[...RUN.pend])if(now-t>350){scnArtRefresh(aid);break}}   /* 1フレームに1つ（作り直すと全体が最初に戻るため、続きは次のフレームで） */
 function scnArtRefresh(aid){
   const a=byId(aid),o=RUN.al.get(aid);RUN.pend.delete(aid);if(!a||!o)return false;
@@ -365,7 +434,7 @@ function scnUiBuild(){
   $('scProb').textContent=scnProblem();$('scProb').style.display=s.problem?'':'none';
   /* 条件（params） */
   const box=$('scParams');box.innerHTML='';const P=s.params||{};
-  for(const k of Object.keys(P)){const p=P[k],spec=p&&typeof p==='object'?p:{v:p},cur=k in SCN.params?SCN.params[k]:spec.v,unit=spec.unit?' '+spec.unit:'',row=scnEl('div'),lab=scnEl('span');row.className='row';lab.className='lab';lab.style.minWidth='6.5em';lab.textContent=spec.label||k;row.append(lab);
+  for(const k of scnShownKeys(box,P)){const p=P[k],spec=p&&typeof p==='object'?p:{v:p},cur=k in SCN.params?SCN.params[k]:spec.v,unit=spec.unit?' '+spec.unit:'',row=scnEl('div'),lab=scnEl('span');row.className='row';lab.className='lab';lab.style.minWidth='6.5em';lab.textContent=spec.label||k;row.append(lab);
     if(typeof cur==='number'&&isFinite(spec.min)&&isFinite(spec.max)){
       const r=scnEl('input'),v=scnEl('b');r.type='range';r.min=spec.min;r.max=spec.max;r.step=spec.step||(spec.max-spec.min)/100;r.value=cur;r.setAttribute('aria-label',(spec.label||k)+unit);v.className='v';v.textContent=scnFmt(cur)+unit;
       r.oninput=()=>{const x=+r.value;scnSetParam(k,x);v.textContent=scnFmt(x)+unit};row.append(r,v)}
@@ -425,13 +494,19 @@ function scnUi(){
   else if(RUN.advId!==SCN.src.id){RUN.advId=SCN.src.id;if(SCN.src.id!=='art-scene')$('scAdv').open=true}   /* サンプル・自作の実験を開いた時は「くわしく」も開く */
   const sel_=$('scSel');if(typeof PHYS_SAMPLES!=='undefined'&&sel_.options.length<=1){PHYS_SAMPLES.forEach(s=>{const o=scnEl('option');o.value=s.id;o.textContent=(s.title||s.id)+(s.level==='olympiad'?'（物理オリンピック級）':'');sel_.append(o)})}
   sel_.value=has&&typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.some(s=>s.id===SCN.src.id)?SCN.src.id:'';
-  const ac=AC.map(a=>a.id+':'+a.name).join('|');
+  const ac=AC.map(a=>a.id+':'+a.name).join('|')+'|'+scnPickKey();
   if(has&&(RUN.uiRev!==RUN.rev||RUN.acKey!==ac)){RUN.uiRev=RUN.rev;RUN.acKey=ac;scnUiBuild()}
   const err=[];if(RUN.err)err.push('⚠ '+RUN.err);for(const w of RUN.warns)err.push('注意: '+w);
   $('scErr').textContent=err.join('\n');$('scErr').style.whiteSpace='pre-wrap';
   if(has){$('scHelp').hidden=true;scnUiTime(true)}else{$('scHelp').hidden=false;$('scAns').innerHTML=''}
   scnUiRole();scnMenuSync()
 }
+/* 操作窓の一番上の「オブジェクトを対象化」（台帳Z-218）。絵（オブジェクト）を選んでいて、物理タブでない時だけ出す。
+   押すと、物理が付いていなければ付け（動く物体）、物理タブへ移る。物理タブの中では、同じ設定が下の「オブジェクトを対象化」の枠に出る（絵を選んでいる時だけ） */
+function scnObjBtn(){
+  const b=$('tabObj');if(!b)return;const on=document.querySelector('#tabs [data-t].on'),t=on?on.dataset.t:'';
+  const show=!!sel&&t!=='ph';b.hidden=!show;if(!show)return;
+  b.textContent=scnRoleOf(sel)?'🌍 対象化済み（物理の設定へ）':'🌍 オブジェクトを対象化'}
 /* 選んでいる絵の、物理での役割 */
 function scnRoleOf(a){
   if(!a||!SCN.src)return null;
@@ -439,6 +514,8 @@ function scnRoleOf(a){
     const kind=/^art_t/.test(id)?'terrain':/^art_b/.test(id)?(b.type==='static'?'fixed':'body'):'linked';return{id,kind,b,art:/^art_/.test(id),label:b.label||id}}
   return null}
 function scnUiRole(){
+  if(RUN.selSeen!==sel){RUN.selSeen=sel;RUN.pick=null}   /* 絵の選び直し：物理側で触っていた物の選択は外す（台帳Z-215） */
+  scnObjBtn();if($('scArt'))$('scArt').hidden=!sel;   /* 絵を選んでいない時は「オブジェクトを対象化」の枠を出さない（台帳Z-218） */
   if(!$('scArtSt'))return;const r=scnRoleOf(sel);
   $('scArtB').classList.toggle('on',!!r&&r.kind==='body');$('scArtF').classList.toggle('on',!!r&&r.kind==='fixed');$('scArtT').classList.toggle('on',!!r&&r.kind==='terrain');
   for(const id of['scArtB','scArtF','scArtT'])$(id).disabled=!sel;
@@ -469,6 +546,7 @@ function scnCheckNow(){
 $('scSel').onchange=e=>{const v=e.target.value;if(!v)return;const r=scnLoadSample(v);if(!r.ok)note(r.errors.join(' / '))};
 $('scNew').onclick=()=>{const r=scnSetSource(PHS.template());if(!r.ok)note(r.errors.join(' / '));else for(let d=$('scJson').closest('details');d;d=d.parentElement&&d.parentElement.closest('details'))d.open=true};
 $('scOff').onclick=()=>scnClose();
+$('tabObj').onclick=()=>{if(!sel)return;if(!scnRoleOf(sel)&&!artBody(sel,{}))return;setTab('ph')};
 $('scGrab').onclick=$('mGrab').onclick=()=>{PTR.on=!PTR.on;scnMenuSync();note(PTR.on?'実行中に、物をドラッグでつかめます（短いタップでつつく）':'触っても物理は動きません（絵の配置だけ）',3500)};
 $('mPlay').onclick=()=>scnPlay();$('mRst').onclick=()=>{scnReset();RUN.uiAns=1};
 $('scArtX').onclick=()=>{const r=scnRoleOf(sel);if(!r){note('この絵は物理に参加していません');return}if(r.art)scnRemoveBody(r.id);else{pushUndo();scnUnlinkBody(r.id);scnUi()}};
