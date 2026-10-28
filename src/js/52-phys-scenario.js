@@ -1,6 +1,6 @@
 
-/* ===== 物理シナリオ PHS（台帳Z-168。roadmap C-0）=====
-   シナリオJSON（データだけ。コードは書かない）→ 検証（日本語のエラー）→ エンジンPHEの世界 → 実行 → 測定（probes）→ 答え合わせ（ask）→ 掃引（sweep）。
+/* ===== 物理の実験 PHS（台帳Z-168。roadmap C-0）=====
+   実験JSON（データだけ。コードは書かない）→ 検証（日本語のエラー）→ エンジンPHEの世界 → 実行 → 測定（probes）→ 答え合わせ（ask）→ 掃引（sweep）。
    純粋なJS（DOM・ACに触れない）。Nodeでも動く（tools/phys_check.js）。単位はSI、x右・y上、角度は度（反時計回りが正）、角速度はrad/s。
    拡張は表に1項目足す：測れる量 BP（物体の量）・JP（拘束の量）・WP（世界の量）・FN（式で使える関数）・RED（時系列の集計）。 */
 const PHS=(function(){
@@ -153,7 +153,7 @@ const RULE_OPS={kick:{body:1,v:1},setVel:{body:1,v:1},stop:{},note:{text:1}};
 const SHAPE_NEED={circle:['r'],box:['w','h'],poly:['pts'],plane:[],arc:['r']};
 function validate(scn){
   const V={errors:[],warns:[],err(m){this.errors.push(m)},warn(m){this.warns.push(m)}};
-  if(!scn||typeof scn!=='object'||Array.isArray(scn)){V.err('シナリオはオブジェクト（{…}）で書いてください');return V}
+  if(!scn||typeof scn!=='object'||Array.isArray(scn)){V.err('実験はオブジェクト（{…}）で書いてください');return V}
   checkKeys(scn,'top','',V);
   if(!scn.id||typeof scn.id!=='string'||!/^[A-Za-z0-9_\-]+$/.test(scn.id))V.err('id: 半角英数字・ハイフン・アンダースコアの文字列が必要です（例: "incline-friction"）');
   if(!scn.title)V.warn('title: 題名がありません');
@@ -238,7 +238,7 @@ function mkEnv(scn,over){
   for(const k of Object.keys(scn.vars||{})){const v=scn.vars[k];env[k]=compile(v,resolveBase)();order.push(k)}
   return{env,resolve:resolveBase}}
 function buildSpec(scn,over){   /* 仕様（spec）までを作る。世界（PHE.create）は作らない：実行中に条件を変える時（session.reparam）は、これだけで比べて入れ替える */
-  const V=validate(scn);if(V.errors.length)throw new Error('シナリオに誤りがあります:\n  '+V.errors.join('\n  '));
+  const V=validate(scn);if(V.errors.length)throw new Error('実験に誤りがあります:\n  '+V.errors.join('\n  '));
   const{env,resolve}=mkEnv(scn,over);
   const num=(x,what,d)=>{if(x===undefined||x===null)return d;if(isNum(x))return x;if(typeof x==='string'){const v=compile(x,resolve)();if(!isNum(v))throw new Error(what+': 式「'+x+'」の値が数になりません');return v}throw new Error(what+': 数か式で書いてください')};
   const vec=(a,what,d)=>{if(a===undefined)return d;if(Array.isArray(a)&&a.length===2)return[num(a[0],what+'[0]'),num(a[1],what+'[1]')];throw new Error(what+': [x,y]の形で書いてください')};
@@ -286,7 +286,7 @@ function build(scn,over){const B=buildSpec(scn,over);B.W=PHE.create(B.spec);retu
 
 /* ---------- 実行中に変えてよい値（台帳Z-211）----------
    力・係数・質量・場・ばね定数・重力は、時間を保ったまま入れ替えられる。はじめの位置・速さ・形・つなぐ所は「はじめの値」なので、変えたら最初から作り直す。
-   liveStrip＝シナリオから「変えてよい値」を除いたもの（これが同じなら、違いは変えてよい値だけ）。specStrip＝仕様（spec）について同じ。 */
+   liveStrip＝実験から「変えてよい値」を除いたもの（これが同じなら、違いは変えてよい値だけ）。specStrip＝仕様（spec）について同じ。 */
 const LIVE_BK=['m','e','q','gs','dragLin','dragQuad','dampLin','dampAng','mu','mus','muk','I'];
 function liveStrip(scn){
   const o=JSON.parse(JSON.stringify(scn));delete o.params;if(o.world){delete o.world.g;delete o.world.gdir}
@@ -320,17 +320,17 @@ function installExtras(){
   EXTRA.dist=(args)=>{const A=args[0].str,B=args[1].str;return()=>{const W=EXTRA._W;const a=W.byId.get(A),b=W.byId.get(B);if(!a||!b)return NaN;const p=PHE.origin(a),q=PHE.origin(b);return Math.hypot(p[0]-q[0],p[1]-q[1])}}}
 installExtras();
 
-/* 実行の本体：1刻みずつ進められる「セッション」。アプリ（53-phys-run.js）は毎フレーム step() を呼び、run() は最後まで回して finish() する。
+/* 実行の本体：1刻みずつ進められる「実行」。アプリ（53-phys-run.js）は毎フレーム step() を呼び、run() は最後まで回して finish() する。
    opt: params（上書き）・t（終わりの時刻）・series（グラフ用に追加で取る式）・every（何刻みごとに記録するか。既定は run.sample）・built（作成済みの世界）・onSample */
 function session(scn,opt){
   opt=opt||{};
   const B=opt.built||build(scn,opt.params);const W=B.W,acc=mkAccess(B);EXTRA._W=W;
   const T=num0(opt.t!==undefined?opt.t:runT(B,scn),5),every=Math.max(1,Math.round(opt.every||(((scn.run&&scn.run.sample)||0)/(1/120)))||1);
-  /* 表示の長さ Tv（台帳Z-208）：測定の窓 T（run.t。答え合わせの時間）より長い時だけ、測定のあとも物理を続けて見せる。
+  /* 表示の長さ Tv（台帳Z-208）：測定区間 T（run.t。答え合わせの時間）より長い時だけ、測定のあとも物理を続けて見せる。
      測定・答え合わせ・出来事は T までで確定（snap）。続きは物理の時間のまま（引き延ばさない）。動きが止まれば、そこで自然に終わる（rested） */
   const Tv=Math.max(T,num0(opt.show!==undefined?opt.show:(scn.run&&scn.run.show),0));
-  /* endless（台帳Z-214。アプリが使う）：時間では止まらない。測定の窓（T）・止める条件は「答え合わせを確定する区切り」でしかなく、物理はそのあとも続く。
-     時刻（W.t）は数えるだけ。止まるのは、アプリが一時停止した時だけ（ON/OFFと時刻は別）。endlessでない使い方（run・掃引・検査）は、これまでどおり測定の窓（と表示の長さ）で終わる */
+  /* endless（台帳Z-214。アプリが使う）：時間では止まらない。測定区間（T）・止める条件は「答え合わせを確定する区切り」でしかなく、物理はそのあとも続く。
+     時刻（W.t）は数えるだけ。止まるのは、アプリが一時停止した時だけ（ON/OFFと時刻は別）。endlessでない使い方（run・掃引・検査）は、これまでどおり測定区間（と表示の長さ）で終わる */
   const endless=!!opt.endless;let taint=null,evk=1;
   const comp=(src,what)=>{try{return compile(src,acc.resolve)}catch(e){throw new Error(what+': '+e.message)}};
   const probes=Object.entries(scn.probes||{}).map(([k,p])=>({k,p,f:comp(p.expr,'probes.'+k+'.expr'),w:p.when?comp(p.when,'probes.'+k+'.when'):null}));
@@ -350,7 +350,7 @@ function session(scn,opt){
   {const sn=PHE.snapshot(W),v0=W.bodies.map(b=>[b.vx,b.vy]);PHE.advance(W,DT);
    W.bodies.forEach((b,k)=>{acc.ctx.acc[k][0]=(b.vx-v0[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-v0[k][1])/DT});PHE.restore(W,sn)}
   sample(0);let stopped=false,i=0,snap=null,rested=false,rest=0,rref=null;
-  /* 動きが止まったか（測定の窓のあと）：動く物体がどれも 0.5秒（REST_N刻み）の間、1cm・0.03rad以上動かなければ止まったと見なす。
+  /* 動きが止まったか（測定区間のあと）：動く物体がどれも 0.5秒（REST_N刻み）の間、1cm・0.03rad以上動かなければ止まったと見なす。
      速さではなく移動量で見るので、床の上の接触のこまかい震えでは止まりそこねない。動いている間（等速で遠ざかるなど）は続く */
   const REST_N=60,REST_D=.01,REST_A=.03;
   const calmStep=()=>{
@@ -377,12 +377,12 @@ function session(scn,opt){
     if(endless){
       if(!snap){
         if(i<=n&&(i%every===0||i===n)){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}
-        if(stopped||i>=n)snap=compute();   /* 測定の窓が終わった（または止める条件が成り立った）：答え合わせを確定。物理は続く */
+        if(stopped||i>=n)snap=compute();   /* 測定区間が終わった（または止める条件が成り立った）：答え合わせを確定。物理は続く */
       }else{rested=calmStep();if(i%(every*evk)===0){sample(i);if(ts.length>=8192)thin()}}   /* 窓のあとも、グラフ用の記録は続ける（長くなったら間引く）。rested＝いま静まっている（止めはしない） */
       return true}
     if(i<=n){if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}}
-    else if(!stopped&&calmStep())rested=true;   /* 測定の窓のあとは、記録も止める条件の判定もしない（測定の結果を変えない） */
-    if(i===n&&nv>n&&!snap)snap=compute();   /* 測定の窓の終わりで、答え合わせを確定する */
+    else if(!stopped&&calmStep())rested=true;   /* 測定区間のあとは、記録も止める条件の判定もしない（測定の結果を変えない） */
+    if(i===n&&nv>n&&!snap)snap=compute();   /* 測定区間の終わりで、答え合わせを確定する */
     return !(stopped||rested||i>=nv)};
   const compute=()=>{
   /* 集計 */
@@ -423,10 +423,10 @@ function session(scn,opt){
     PHE.setLive(W,st);for(const k of Object.keys(B.env))delete B.env[k];Object.assign(B.env,B2.env);B.spec=B2.spec;B.scn=scn2;B.over=B2.over;cache.clear();
     if(i>0&&!snap&&!taint)taint='param';
     return true};
-  const finish=()=>snap||compute();   /* 測定の窓が終わっていれば、その時点で確定した結果（続きを見せていても変わらない） */
+  const finish=()=>snap||compute();   /* 測定区間が終わっていれば、その時点で確定した結果（続きを見せていても変わらない） */
   /* いまの状態で式を評価する（ビジュアルプログラミングの「条件を見る」・画面の読み出し用）。式は使い回す */
   const ev=(src)=>{let f=cache.get(src);if(!f){f=compile(src,acc.resolve);cache.set(src,f)}return f()};
-  /* T＝表示の長さ（実行バー・「最初へ戻す」の判定に使う）、Tm＝測定の窓（run.t）。measured＝測定の窓が終わった（答え合わせを出してよい） */
+  /* T＝表示の長さ（実行バー・「最初へ戻す」の判定に使う）、Tm＝測定区間（run.t）。measured＝測定区間が終わった（答え合わせを出してよい） */
   const S={B,W,ts,series:ser,T:endless?Infinity:Tv,Tm:T,n:endless?Infinity:nv,nm:n,DT,acc:acc.ctx.acc,step,finish,ev,log,poke,reparam,endless,taint:r=>{if(!snap&&!taint)taint=r},setHook:f=>{hook=f},get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get rested(){return rested},get measured(){return stopped||i>=n},get done(){return endless?false:(stopped||rested||i>=nv)},get tainted(){return taint}};
   return S}
 function run(scn,opt){const S=session(scn,opt);while(S.step());return S.finish()}
@@ -449,7 +449,7 @@ function fit(rows,f,scn){
 function toCSV(cols,rows){const esc=v=>typeof v==='number'?String(+v.toPrecision(8)):String(v);return[cols.join(',')].concat(rows.map(r=>cols.map(c=>esc(r[c])).join(','))).join('\n')}
 function seriesCSV(res,names){const cols=['t'].concat(names||Object.keys(res.series));const rows=res.ts.map((t,i)=>{const r={t};for(const c of cols.slice(1))r[c]=res.series[c][i];return r});return toCSV(cols,rows)}
 
-/* 作者向けのプロトタイプ（最小の有効なシナリオ） */
+/* 作者向けの白紙の実験（最小の有効な実験） */
 function template(){return{id:'my-scenario',title:'題名',tags:['力学'],source:'オリジナル（型の名前）',level:'basic',problem:'（問題文は自分の言葉で書く）',
   params:{theta:{v:30,min:5,max:60,step:1,unit:'°',label:'斜面の角度'},mu:{v:.2,min:0,max:1,step:.05,label:'動摩擦係数'}},
   vars:{L:'2'},world:{g:9.8},view:{x0:0,y0:0,w:6},

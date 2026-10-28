@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* 装置トレーの「装置」表 PHDEV（src/js/581-phys-devices.js）と命令 addDevice の検査（台帳Z-210）。使い方: node tools/phys_dev_test.js
    ①全部の装置を床の上に置いて動かす（検証に通る・数が壊れない・位置が置いた所）②名前の衝突（2個目以降は ball2…）・つまみ・質量の条件
-   ③装置ごとの物理の確かめ（球は床で止まる／坂は角度どおりに滑る／ふりこ・ばね振り子の周期／電場・磁場で荷電粒子が曲がる）④誤りの出し方・元のシナリオを壊さない（apply は純粋） */
+   ③装置ごとの物理の確かめ（球は床で止まる／坂は角度どおりに滑る／ふりこ・ばね振り子の周期／電場・磁場で荷電粒子が曲がる）④誤りの出し方・元の実験を壊さない（apply は純粋） */
 const fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(root,'src/js',f),'utf8');
@@ -95,13 +95,13 @@ console.log('5) 誤り・純粋さ');
  const e=PHAPI.apply(base,{op:'addDevice',device:'zzz'});chk('知らない装置は誤り（候補を出す）',!e.ok&&/zzz/.test(e.errors[0])&&/ball/.test(e.errors[0]),e.errors[0]);
  const e2=PHAPI.apply(base,{op:'addDevice',device:'ball',pos:['a',1]});chk('位置が数でなければ誤り',!e2.ok&&/pos/.test(e2.errors[0]),e2.errors[0]);
  const e3=PHAPI.apply(base,{op:'addDevice'});chk('device が無ければ誤り',!e3.ok&&/device/.test(e3.errors[0]));
- const ok1=PHAPI.apply(base,{op:'addDevice',device:'box',pos:[2,1]});chk('apply は元のシナリオを書き換えない',ok1.ok&&JSON.stringify(base)===before&&ok1.src.bodies.length===base.bodies.length+1);
+ const ok1=PHAPI.apply(base,{op:'addDevice',device:'box',pos:[2,1]});chk('apply は元の実験を書き換えない',ok1.ok&&JSON.stringify(base)===before&&ok1.src.bodies.length===base.bodies.length+1);
  const c=PHAPI.catalog();chk('部品表に devices がある（全装置・アイコン・つまみ）',Array.isArray(c.devices)&&c.devices.length===PHDEV.DEVICES.length&&c.devices.every(d=>d.label&&d.icon&&d.desc),c.devices.map(d=>d.id).join(','));
  chk('部品表の ops に addDevice',c.ops.some(o=>o.id==='addDevice'&&o.fields.some(f=>f.k==='device'&&f.options.length===PHDEV.DEVICES.length)));
  chk('coverage が空',PHAPI.coverage().length===0,PHAPI.coverage().join(' / '));
  chk('装置の id が重ならない',new Set(PHDEV.DEVICES.map(d=>d.id)).size===PHDEV.DEVICES.length) }
-{ /* 同じ命令の列は、何度やっても同じシナリオ（巻き戻し・タイムラプスの再生の前提） */
+{ /* 同じ命令の列は、何度やっても同じ実験（巻き戻し・タイムラプスの再生の前提） */
   const ops=[{op:'addDevice',device:'floor'},{op:'addDevice',device:'pendulum',pos:[2,2.5]},{op:'addDevice',device:'ball',pos:[4,2]},{op:'addDevice',device:'ramp',pos:[4,.8]}];
-  chk('同じ命令の列→同じシナリオ',JSON.stringify(build(ops).src)===JSON.stringify(build(ops).src)) }
+  chk('同じ命令の列→同じ実験',JSON.stringify(build(ops).src)===JSON.stringify(build(ops).src)) }
 
 console.log('\n結果: OK='+ok+' NG='+ng);process.exit(ng?1:0);

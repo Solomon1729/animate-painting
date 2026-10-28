@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* 物理シナリオの検査と実行（台帳Z-168）。他のAIが作ったJSONを機械で確かめる道具。
+/* 物理の実験の検査と実行（台帳Z-168）。他のAIが作ったJSONを機械で確かめる道具。
    使い方:
      node tools/phys_check.js 見本.json            検証→実行→測定値と答え合わせの表
      node tools/phys_check.js 見本.json --sweep     掃引（sweepの定義どおり）と直線あてはめ
@@ -7,7 +7,7 @@
      node tools/phys_check.js 見本.json --param theta=40 --param mu=0.1   パラメータを変えて実行
      node tools/phys_check.js --all                 src/phys/samples/*.json をすべて検査（失敗があれば終了コード1）
      node tools/phys_check.js --list                 見本の一覧
-     node tools/phys_check.js --template             最小のプロトタイプ（有効なシナリオ）を表示
+     node tools/phys_check.js --template             白紙の実験（最小の有効な実験）を表示
      node tools/phys_check.js 見本.json --json       結果をJSONで出力 */
 const fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');

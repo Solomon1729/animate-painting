@@ -8,7 +8,7 @@ function frz(a,k,vk){const c=a[k];if(!c)return null;const f=a['_f'+k],v=a[vk]||0
 function snap(){
   const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:a.bite,adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
   const B={m:BG.m,c:BG.c,c2:BG.c2,b:BG.b,img:BG.img,v:BG.v||0};
-  const sc=scnSnapStr();   /* 物理シナリオ（SCN。空なら''）。実行中の状態RUNは入れない＝Undoは時間を巻き戻さない */
+  const sc=scnSnapStr();   /* 物理の実験（SCN。空なら''）。実行中の状態RUNは入れない＝Undoは時間を巻き戻さない */
   return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),D:{w:DOC.w,h:DOC.h},sc,sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS,DOC.w,DOC.h,sc])};
 }
 function bgUi(){$('bg1').value=BG.c;$('bg2').value=BG.c2;$('bgm').value=BG.m;$('bgb').value=BG.b}
@@ -24,7 +24,7 @@ function restore(sn){
   if(sn.L){LAYERS=sn.L.map(y=>({...y}));curLid=sn.cl}
   if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
   canvasUi();
-  scnRestore(sn.sc);   /* シナリオは、中身（シナリオ・条件）が同じなら実行を続ける。違えば作り直す */
+  scnRestore(sn.sc);   /* 実験は、中身（実験・条件）が同じなら実行を続ける。違えば作り直す */
   setSel(AC[sn.sel]||AC[0]||null);
 }
 const US=[],RS=[];

@@ -1,5 +1,5 @@
 /* ===== お絵かき×物理（台帳Z-177。roadmap C-0）=====
-   絵（アクター）の「見えているとおりの形」から、物理の地形・物体を作る。作った物体はシナリオ（SCN.src）に書き足され、その絵につながる（53-phys-run.js）。
+   絵（アクター）の「見えているとおりの形」から、物理の地形・物体を作る。作った物体は実験（SCN.src）に書き足され、その絵につながる（53-phys-run.js）。
    物理タブの「選んでいる絵を物理に使う」（#scArt）と、サンプル（demoC〜）が使う。物理の計算はPHE、ここは絵→形の変換だけ。
    ・地形（artTerrain）：絵を、画面に見えているとおり（位置・大きさ・回転・反転）に、画面と同じ比のラスターへ描き、各列の「一番上の不透明な線」を上面とする。
        折れ線を間引き（Douglas–Peucker）、隣り合う2頂点ごとに台形（縦の辺が平行＝凸）にして、静止物体（static）のshapesにする。
@@ -47,7 +47,7 @@ function artArea(P){let s=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P
 function artCentroid(P){let A=0,sx=0,sy=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length],c=p[0]*q[1]-q[0]*p[1];A+=c;sx+=(p[0]+q[0])*c;sy+=(p[1]+q[1])*c}return A?[sx/(3*A),sy/(3*A)]:[P[0][0],P[0][1]]}
 const artId=(kind,a)=>'art_'+kind+a.id;
 /* 絵の物体の反発`e`・摩擦`mu`の既定。お絵かきのシーン（art-scene）は、シーン共通の条件`e`・`mu`の名前を参照する（スライダーで全体を変えられる）。
-   それ以外のシナリオ（サンプル・プロトタイプ・装置の場）には、その名前の条件が無い（または別の意味）ので、**数**を入れる。名前で参照すると「未知の名前」で物体を作れない（台帳Z-219） */
+   それ以外の実験（サンプル・白紙の実験・装置の場）には、その名前の条件が無い（または別の意味）ので、**数**を入れる。名前で参照すると「未知の名前」で物体を作れない（台帳Z-219） */
 const artRef=(name,def)=>SCN.src&&SCN.src.id==='art-scene'&&SCN.src.params&&(name in SCN.src.params)?name:def;
 const artR=x=>+x.toFixed(4);
 function artRemove(id){if(!SCN.src)return;SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);delete(SCN.src.params||{})['m_'+id];delete SCN.link[id]}

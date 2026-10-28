@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /* タイムラプスの核 TL（src/js/59-timelapse.js）の検査（台帳Z-192）。使い方: node tools/tl_test.js
-   ①全サンプル：シナリオ → 手順書 → 命令だけで組み立て直した結果が、元のサンプルと一致する（構造・検証・実行結果）。途中の状態も検証に通る
+   ①全サンプル：実験 → 手順書 → 命令だけで組み立て直した結果が、元のサンプルと一致する（構造・検証・実行結果）。途中の状態も検証に通る
    ②手順の中身（字幕・操作の手順・ブロックの見え方）③再生（時間・速さ・方式・戻る・飛ぶ・終わり・飛ばす）④読み書き（未知のキーを保つ・版・誤り）⑤記録（まとめる）⑥文章への書き出し・編集
-   ⑦どんな有効なシナリオでも組み立て直せる（全部の項目を使った見本・プロトタイプ） */
+   ⑦どんな有効な実験でも組み立て直せる（全部の項目を使った見本・白紙の実験） */
 const fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(root,'src/js',f),'utf8');
@@ -25,7 +25,7 @@ function canon(s){
   return J(sort(c))}
 const samples=fs.readdirSync(path.join(root,'src/phys/samples')).filter(f=>f.endsWith('.json')).sort().map(f=>JSON.parse(fs.readFileSync(path.join(root,'src/phys/samples/'+f),'utf8')));
 
-console.log('1) 全サンプル：手順書の命令だけで、同じシナリオを組み立て直せる（'+samples.length+'件）');
+console.log('1) 全サンプル：手順書の命令だけで、同じ実験を組み立て直せる（'+samples.length+'件）');
 for(const S of samples){
   const sc=TL.fromScenario(S),R=TL.replay(sc);
   const same=canon(R)===canon(S);
@@ -113,7 +113,7 @@ console.log('6) 文章への書き出し・編集');
  chk('字幕を直せる（元は変わらない）',e1.steps[1].say==='書き換えた'&&sc.steps[1].say!=='書き換えた');
  chk('手順を消せる',e2.steps.length===sc.steps.length-1);chk('手順を動かせる',J(e3.steps[3])===J(sc.steps[1]));chk('区間だけ取り出せる',e4.steps.length===3&&J(e4.steps[0])===J(sc.steps[2]))}
 
-console.log('7) どんな有効なシナリオでも、命令だけで組み立て直せる');
+console.log('7) どんな有効な実験でも、命令だけで組み立て直せる');
 {const kitchen={id:'kitchen-sink',title:'全部入り',tags:['力学','電磁気'],source:'オリジナル（検査用）',level:'olympiad',problem:'質量{m}kgの台に…',notes:'メモ',hint:'ヒント',solution:'解答',
   params:{m:{v:1,min:.2,max:3,step:.1,unit:'kg',label:'質量',note:'p'},k:{v:20,min:5,max:60,step:1,unit:'N/m'},plain:3},vars:{w:'sqrt(k/m)'},world:{g:3.7,gdir:-90},view:{x0:-1,y0:-.5,w:5,grid:true},
   bodies:[{id:'floor',type:'static',mu:.4,e:.1,label:'床',shapes:[{t:'plane',normal:[0,1],d:0}]},
@@ -133,7 +133,7 @@ console.log('7) どんな有効なシナリオでも、命令だけで組み立�
  const sc=TL.fromScenario(kitchen),R=TL.replay(sc);
  chk('全部入りを、命令の列から同じに組み立て直せる',canon(R)===canon(kitchen),(()=>{const a=JSON.parse(canon(R)),b=JSON.parse(canon(kitchen));return Object.keys(Object.assign({},a,b)).filter(k=>J(a[k])!==J(b[k])).map(k=>k+'\n  得た:'+J(a[k])+'\n  元  :'+J(b[k])).join('\n')})());
  chk('全部入りの手順に、字幕・操作の手順がそろう',sc.steps.every(s=>s.say&&(s.how||[]).length));
- const pr=PHS.template(),sp=TL.fromScenario(pr);chk('プロトタイプ（最小のシナリオ）も組み立て直せる',canon(TL.replay(sp))===canon(pr));
+ const pr=PHS.template(),sp=TL.fromScenario(pr);chk('白紙の実験（最小の実験）も組み立て直せる',canon(TL.replay(sp))===canon(pr));
  /* 空の物体の動的な物体（m 無し）は、既定の m=1 を消す手順を足して同じにする */
  const nm={id:'nomass',title:'t',bodies:[{id:'floor',type:'static',shapes:[{t:'plane',normal:[0,1],d:0}]},{id:'b',type:'dynamic',pos:[0,1],shapes:[{t:'circle',r:.1,m:1}]}],run:{t:1}};
  chk('質量を持たない動く物体も同じに組み立て直せる',canon(TL.replay(TL.fromScenario(nm)))===canon(nm))}
@@ -176,7 +176,7 @@ console.log('9) 置く動きの間は舞台を変えない（lead）');
   chk('next で pre（置く動きの始まり）が出て、手順の番号だけが進む',a.ev.some(x=>x==='pre:'+(i0+1))&&a.P.i===i0+1&&a.P.info().flying,J(a.ev));
   const stepIdx=sc.steps.findIndex(s=>s.op&&s.op.op==='addBody');
   a.P.goto(stepIdx-1);const before=nBodies();a.P.next();
-  chk('待っている間は、舞台（シナリオ）に物体が増えない',a.P.i===stepIdx&&nBodies()===before,before+'/'+nBodies());
+  chk('待っている間は、舞台（実験）に物体が増えない',a.P.i===stepIdx&&nBodies()===before,before+'/'+nBodies());
   a.P.tick(100);chk('途中ではまだ増えない（lead 600 ms の約 1/6）',nBodies()===before);
   a.P.tick(900);chk('待ち終わると、物体が増える（置かれた瞬間）',nBodies()===before+1&&!a.P.info().flying,nBodies()+'');
   chk('適用のあとに step が出る',a.ev[a.ev.length-1]==='step:'+stepIdx)}
@@ -188,7 +188,7 @@ console.log('9) 置く動きの間は舞台を変えない（lead）');
  {const a=mk(900),b=mk(0);a.P.goto(5);a.P.next();a.P.goto(2);b.P.goto(2);chk('待ちの途中で戻ると、待ちは消えて戻った姿になる',J(a.H.src)===J(b.H.src)&&!a.P.info().flying)}
  /* 再生（自動）で最後まで通すと、lead があってもなくても同じ結果 */
  {const a=mk(700),b=mk(0);for(const x of[a,b]){x.P.goto(-1);x.P.play();for(let t=0;t<400&&x.P.playing;t++)x.P.tick(250);x.P.tick(2000)}
-  chk('自動再生で最後まで通すと、lead の有無によらず同じシナリオになる',J(a.H.src)===J(b.H.src)&&a.P.i===b.P.i&&!a.P.info().flying,'')}
+  chk('自動再生で最後まで通すと、lead の有無によらず同じ実験になる',J(a.H.src)===J(b.H.src)&&a.P.i===b.P.i&&!a.P.info().flying,'')}
  {const a=mk(2000);const long=Object.assign({},sc,{steps:sc.steps.map(s=>Object.assign({},s,{d:500}))});const P=TL.player(long,TL.pureHost(),{lead:2000});P.goto(1);P.next();chk('待ちは手順の長さの6割まで（500ms→300ms）',Math.abs(P.info().lead-300)<1,P.info().lead)}}
 
 console.log('装置トレーの命令（addDevice。台帳Z-210）が手順書に乗る');

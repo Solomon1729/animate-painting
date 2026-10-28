@@ -5,12 +5,12 @@
   アプリ内部の名前（SCN・RUN・scn*・PHS・PHR・resetAll・setTab・ser・loadProj・undo・pushUndo）と、物理タブの部品のid（scTimer・scDisp・scSpd）を使う。
 
 群：
-  V1 時刻では止まらない（台帳Z-214）：測定の窓（run.t）は答え合わせの区切りで、物理はそのあとも続く（止まった現象も終わらない）。▶/⏸は時刻と別
+  V1 時刻では止まらない（台帳Z-214）：測定区間（run.t）は答え合わせの区切りで、物理はそのあとも続く（止まった現象も終わらない）。▶/⏸は時刻と別
   V2 タイマー（任意の一時停止。既定なし）：選んでも作り直さない・その秒数で一時停止（終わりではない）・▶で越えて続く・保存／読込／Undoで残る
   V2b 条件を触ってもやり直さない（台帳Z-211）：摩擦・質量は時間を保って入れ替え／はじめの値（角度・形）だけ作り直し／巻き戻して進め直しても同じ／変えた回の答え合わせは参考外
-  V3 追従カメラ：時刻0は基準の視点／追う物が画面の外へ出ない／巻き戻すと同じ視点／オフなら動かない／追う物の指定が無いシナリオ（作品）は動かない
+  V3 追従カメラ：時刻0は基準の視点／追う物が画面の外へ出ない／巻き戻すと同じ視点／オフなら動かない／追う物の指定が無い実験（作品）は動かない
   V4 絵の配置は、カメラが動いても変わらない（走らせて最初へ戻しても、つないだ絵の位置・大きさが同じ）
-  V5 追従の切り替えボタンは、追う物の指定があるシナリオにだけ出る
+  V5 追従の切り替えボタンは、追う物の指定がある実験にだけ出る
   V6 ページエラーが一度も出ていない
 """
 import sys
@@ -41,7 +41,7 @@ def main():
             pg.wait_for_timeout(80)
 
         def run_all():
-            """最後（done）まで進める。測定の窓が終わった瞬間の結果も返す"""
+            """最後（done）まで進める。測定区間が終わった瞬間の結果も返す"""
             return ev("""()=>{const S=RUN.sess;let atWin=null,steps=0;
               while(!S.done&&steps<20000){S.step();steps++;if(S.measured&&!atWin)atWin={t:S.W.t,res:JSON.stringify(S.finish().probes)}}
               return {t:S.W.t,T:S.T,Tm:S.Tm,rested:S.rested,done:S.done,measured:S.measured,atWin,fin:JSON.stringify(S.finish().probes)}}""")
@@ -49,12 +49,12 @@ def main():
         # ---------- V1 時刻では止まらない（台帳Z-214） ----------
         load('orig-collision-1d')
         r = ev("()=>({T:RUN.sess.T,Tm:RUN.sess.Tm,end:RUN.sess.endless})")
-        chk('V1 セッションは時間で終わらない（endless）。測定の窓は2秒の区切りでしかない', r['end'] is True and r['T'] in (None, float('inf')) and abs(r['Tm'] - 2.0) < 1e-9, r)   # Infinity は JSON で null になる
+        chk('V1 実行は時間で終わらない（endless）。測定区間は2秒の区切りでしかない', r['end'] is True and r['T'] in (None, float('inf')) and abs(r['Tm'] - 2.0) < 1e-9, r)   # Infinity は JSON で null になる
         o = ev("""()=>{const S=RUN.sess;let atWin=null,steps=0;
           while(steps<120*30){S.step();steps++;if(S.measured&&!atWin)atWin={t:S.W.t,res:JSON.stringify(S.finish().probes)}}
           return {t:S.W.t,done:S.done,rested:S.rested,atWin,fin:JSON.stringify(S.finish().probes)}}""")
         chk('V1 30秒走っても終わらない・時刻は数え続ける', abs(o['t'] - 30.0) < 0.01 and o['done'] is False, o['t'])
-        chk('V1 測定の窓が終わった瞬間の結果と、あとの結果が同じ（続きで変わらない）', o['atWin'] and o['atWin']['res'] == o['fin'])
+        chk('V1 測定区間が終わった瞬間の結果と、あとの結果が同じ（続きで変わらない）', o['atWin'] and o['atWin']['res'] == o['fin'])
         chk('V1 窓の終わりは2秒', o['atWin'] and abs(o['atWin']['t'] - 2.0) < 0.01, o['atWin'] and o['atWin']['t'])
         chk('V1 答え合わせは全部合う', ev("()=>{const r=RUN.sess.finish();return r.ask.every(a=>a.ok)&&r.checks.every(c=>c.ok)}"))
         ref = ev("()=>JSON.stringify(PHS.run(SCN.src,{params:SCN.params}).probes)")
@@ -63,7 +63,7 @@ def main():
         load('orig-arc-then-rough-floor')
         o = ev("""()=>{const S=RUN.sess;for(let i=0;i<120*12;i++)S.step();return {t:S.W.t,done:S.done,rested:S.rested}}""")
         chk('V1 自然に止まった現象も、物理は終わらない（止まっているだけ。時刻は数える）', o['rested'] is True and o['done'] is False and abs(o['t'] - 12) < 0.01, o)
-        chk('V1 止まったあとも、測定の窓の結果は確定済み', ev("()=>RUN.sess.finish().ask.every(a=>a.ok)"))
+        chk('V1 止まったあとも、測定区間の結果は確定済み', ev("()=>RUN.sess.finish().ask.every(a=>a.ok)"))
 
         # アプリの時計（scnTick）で進めても、窓が終わった時に答え合わせが出て、再生は続く
         load('orig-collision-1d')
@@ -97,7 +97,7 @@ def main():
         load('orig-incline-friction')
         r = ev("""()=>{const S=RUN.sess;for(let i=0;i<60;i++){S.step();scnAfter()}const t=S.W.t,b=S.W.byId.get('blk'),x=b.px,v=b.vx;
           scnSetParam('mu',0.05);return {same:RUN.sess===S,dirty:RUN.dirty,t0:t,t1:S.W.t,x0:x,x1:b.px,v0:v,v1:b.vx,lch:RUN.lch.size}}""")
-        chk('V2b 摩擦μを触っても、作り直さない（同じセッション・時刻・位置・速さのまま）', r['same'] and not r['dirty'] and r['t0'] == r['t1'] and r['x0'] == r['x1'] and r['v0'] == r['v1'], r)
+        chk('V2b 摩擦μを触っても、作り直さない（同じ実行・時刻・位置・速さのまま）', r['same'] and not r['dirty'] and r['t0'] == r['t1'] and r['x0'] == r['x1'] and r['v0'] == r['v1'], r)
         chk('V2b 変えた記録が残る（巻き戻しで再現するため）', r['lch'] >= 1)
         r = ev("""()=>{const S=RUN.sess;for(let i=0;i<60;i++){S.step();scnAfter()}return {t:S.W.t,a:S.W.byId.get('blk').vx}}""")
         chk('V2b 変えたあとも物理は続く', r['t'] > 0.99)
@@ -150,9 +150,9 @@ def main():
 
         load('orig-pendulum-period')
         r = ev("()=>{const S=RUN.sess;let moved=0;for(let i=0;i<600&&!S.done;i++){S.step();scnFrame();if(RUN.view.x0!==RUN.v0.x0||RUN.view.y0!==RUN.v0.y0)moved++}return {moved,f:RUN.v0.follow}}")
-        chk('V3 追う物の指定が無いシナリオ（ふりこ）は視点が動かない', r['moved'] == 0 and not r['f'], r)
+        chk('V3 追う物の指定が無い実験（ふりこ）は視点が動かない', r['moved'] == 0 and not r['f'], r)
 
-        # 絵に物理を付けた作品（シナリオにfollowなし）：画面の「動く」ボタンで付ける
+        # 絵に物理を付けた作品（実験にfollowなし）：画面の「動く」ボタンで付ける
         ev("""()=>{resetAll();const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');g.fillStyle='#e55';g.fillRect(0,0,64,64);
           window.A=add(null,c,{name:'玉',fx:.5,fy:.3,size:.5});setSel(A);setTab('ph')}""")
         pg.wait_for_timeout(100)
@@ -177,8 +177,8 @@ def main():
         has = ev("()=>[...$('scDisp').children].some(b=>b.textContent==='追従')")
         load('orig-pendulum-period')
         none = ev("()=>[...$('scDisp').children].some(b=>b.textContent==='追従')")
-        chk('V5 追う物の指定があるシナリオには「追従」ボタンが出る', has is True)
-        chk('V5 追う物の指定が無いシナリオには出ない', none is False)
+        chk('V5 追う物の指定がある実験には「追従」ボタンが出る', has is True)
+        chk('V5 追う物の指定が無い実験には出ない', none is False)
         load('orig-incline-friction')
         ev("()=>[...$('scDisp').children].find(b=>b.textContent==='追従').click()")
         chk('V5 ボタンで追従がオフになる', ev("()=>SCN.opt.follow") is False)

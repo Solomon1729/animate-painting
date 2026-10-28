@@ -248,6 +248,11 @@ function under(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W;ctx.save();
   if(S.opt.joints&&S.opt.jointsBelow)for(const j of W.joints){const d=JDRAW[j.type];if(d)d(ctx,S,j)}   /* 糸・ばねを絵の後ろに描く（jointsBelow。お絵かき×物理では、絵が糸の上に見える） */
   if(S.opt.statics!==false)for(const b of W.bodies)if(b.type==='static'&&!(S.noShape&&S.noShape.has(b.idx)))drawStatic(ctx,S,b);   /* noShape＝アクターの絵がかわりに見せている物体 */
   ctx.restore()}
+/* 選んでいる物（つかんだ・タップした物体／力場）の強調（台帳Z-215・Z-216）：橙の太い線。つまみはこの物のものだけが出る */
+function drawHl(ctx,S){const T=S.T,u=S.px,h=S.hl,W=S.W;ctx.save();ctx.strokeStyle='rgba(245,158,11,.95)';ctx.lineWidth=3*u;
+  if(h.kind==='field'){const f=W.fields[h.i];if(f&&f.region){regionPath(ctx,T,f);ctx.stroke()}}
+  else if(h.kind==='body'){const b=W.byId.get(h.id);if(b){ctx.setLineDash([6*u,4*u]);drawShapes(ctx,S,b,pose(b),{fill:null,stroke:'rgba(245,158,11,.95)',alpha:1,lw:3*u})}}
+  ctx.restore()}
 /* 上の層：アクターの絵より手前 */
 function over(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W,u=S.px;ctx.save();
   S.g=W.g;S._lab=[];
@@ -263,6 +268,7 @@ function over(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W,u=S.px;ctx.sav
   if(S.opt.labels)for(const b of W.bodies)if(b.type!=='static')bodyLabel(ctx,S,b);
   drawVectors(ctx,S);
   if(S.opt.energy)drawEnergy(ctx,S);
+  if(S.hl)drawHl(ctx,S);
   ctx.restore()}
 function drawEnergy(ctx,S){const u=S.px,E=PHE.energy(S.W),x=10*u,y=10*u,w=150*u,h=64*u;
   if(S.e0===undefined)S.e0=Math.max(Math.abs(E.e),Math.abs(E.ke),1e-9);const sc=(w-60*u)/(2*S.e0*1.2);

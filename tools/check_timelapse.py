@@ -7,11 +7,11 @@
   アプリ内部の名前（TL・TLA・tlStart・tlClose・SCN・RUN・PHS・PHAPI・PHYS_SAMPLES・snap・US・undo・scnSnapStr）に依存する。改名したらここも直す。
 
 群：
-  T1 全サンプル：手順書を最後まで再生すると、元のサンプルと同じシナリオ（測定値・答え合わせが一致）になる。途中のどの手順でも例外が出ない
+  T1 全サンプル：手順書を最後まで再生すると、元のサンプルと同じ実験（測定値・答え合わせが一致）になる。途中のどの手順でも例外が出ない
   T2 再生の時計：速さ・進め方・最後で止まる・「play」で物理が動き出す・「result」で答え合わせが出る
   T3 枠の操作（実際のクリック）：メニューから開く・サンプルを選ぶ・▶/⏸・◀▶|⏮⏭・位置のバー・ブロックのタップ・速さ・進め方・小さくする・閉じる
   T4 見る前の作品に戻る：閉じると同じ姿に戻る・Undoの履歴が増えない・「この状態で続ける」はUndoで戻せる・再生中は自動保存しない・枠の操作でUndoが積まれない
-  T5 物理タブの「作り方を見る」（いま開いているシナリオ）
+  T5 物理タブの「作り方を見る」（いま開いている実験）
   T6 書き出し・直す：文章・JSON・字幕を直す・手順を消す・JSONを読み込む／誤りを日本語で出す・知らない種類・見つからない部品でも最後まで進む
   T7 記録：画面のタブ・選ぶ・バー・物理の命令・キャンバスのなぞりが手順になる／止めて再生すると、記録した時の状態になる
   T8 画面：幅420pxで横にはみ出さない・既定では枠が出ていない
@@ -76,7 +76,7 @@ def main():
               const N=sc.steps.length,errs=[];
               for(let i=0;i<N;i++){TLA.P.goto(i);const e=TLA.P.info().err;if(e)errs.push(i+':'+e)}
               if(errs.length){tlClose(false);return 'STEP:'+errs.slice(0,2).join('|')}
-              /* 最後（result）まで来た。シナリオは元と同じか */
+              /* 最後（result）まで来た。実験は元と同じか */
               const got=SCN.src;if(!got){tlClose(false);return 'NOSCN'}
               const same=__canon(got)===__canon(S);
               const a=PHS.run(got),b=PHS.run(S);
@@ -85,7 +85,7 @@ def main():
               return same&&eq?'ok':'DIFF same='+same+' eq='+eq}""", sid)
             if r != 'ok':
                 bad.append((sid, r))
-        chk('T1 全サンプル：最後まで再生すると、元のサンプルと同じシナリオ（測定値・答え合わせが一致）になる', not bad, bad)
+        chk('T1 全サンプル：最後まで再生すると、元のサンプルと同じ実験（測定値・答え合わせが一致）になる', not bad, bad)
         chk('T1 閉じたあとは再生中の印が消えている', ev("TL.busy===false&&TLA.P===null&&tlEl('tlp').hidden===true"))
 
         # ---------- T2 再生の時計 ----------
@@ -174,12 +174,12 @@ def main():
         chk('T4 枠のボタンを押しても、Undoの履歴が増えない', ev("US.length") == us0, (us0, ev("US.length")))
         during = ev("({id:SCN.src&&SCN.src.id,busy:TL.busy,hidden:LAYERS.every(y=>y.visible===false)})")
         chk('T4 再生中は、手前の絵（標準のオブジェクト）が舞台に重ならない（レイヤーを隠す）', during['hidden'], during)
-        chk('T4 再生中は、別のシナリオが舞台に出ている', during['id'] == 'orig-collision-1d' and during['busy'], during)
+        chk('T4 再生中は、別の実験が舞台に出ている', during['id'] == 'orig-collision-1d' and during['busy'], during)
         ev("dirtyProj=true;localStorage.removeItem('am_auto');autosave()")
         chk('T4 再生中は自動保存しない', ev("localStorage.getItem('am_auto')") is None)
         pg.click('#tlX')
         after = ev("({sig:snap().sig,sc:scnSnapStr(),us:US.length,id:SCN.src&&SCN.src.id,v0:SCN.params.v0})")
-        chk('T4 閉じると、見る前のシナリオ（と条件）に戻る', after['id'] == 'orig-projectile' and after['v0'] == 7.5, (after['id'], after['v0']))
+        chk('T4 閉じると、見る前の実験（と条件）に戻る', after['id'] == 'orig-projectile' and after['v0'] == 7.5, (after['id'], after['v0']))
         chk('T4 閉じると、作品の姿が完全に同じ（snapの署名）', after['sig'] == before['sig'])
         chk('T4 見ている間に、Undoの履歴が増えていない', after['us'] == before['us'], (before['us'], after['us']))
         # この状態で続ける
@@ -200,11 +200,11 @@ def main():
         ev("scnSetParam('theta0',25)")
         ev("RUN.dirty=true;scnTick(0)")
         ev("$('scAdv').open=true")   # 「くわしく」の中（台帳Z-197）
-        chk('T5 シナリオが開いていると「作り方」のボタンが見える', pg.is_visible('#scHow'))
+        chk('T5 実験が開いていると「作り方」のボタンが見える', pg.is_visible('#scHow'))
         sigb = ev("snap().sig")
         pg.click('#scHow')
         pg.wait_for_timeout(150)
-        chk('T5 押すと、いまのシナリオの作り方が再生される', ev("TLA.P&&TLA.sc.src&&TLA.sc.src.id")=='orig-pendulum-period' and pg.is_visible('#tlPl'))
+        chk('T5 押すと、いまの実験の作り方が再生される', ev("TLA.P&&TLA.sc.src&&TLA.sc.src.id")=='orig-pendulum-period' and pg.is_visible('#tlPl'))
         pg.click('#tlLast')
         # 条件を変えていた（theta0=25）ので、手順書にもその値が入っている
         chk('T5 いまの条件の値（25°）が、手順に入っている', ev("TLA.sc.steps.some(s=>s.op&&s.op.op==='setParam'&&s.op.name==='theta0'&&s.op.v===25)"))
@@ -287,10 +287,10 @@ def main():
         chk('T7 止めると、記録した手順が再生の画面に出る（まだ再生しない）', pg.is_visible('#tlPl') and ev("TLA.P&&!TLA.P.playing&&TLA.sc.steps.length")==n_rec, ev("TLA.sc.steps.length"))
         chk('T7 全手順に、字幕と操作の手順がある', ev("TLA.sc.steps.every(s=>s.say&&(s.how||[]).length)"))
         pg.click('#tlLast')
-        chk('T7 最後まで再生すると、記録した時の状態（シナリオ・条件・長さ）になる', ev("scnSnapStr()") == state_at_stop and ev("SCN.src.run.t") == 2.5)
+        chk('T7 最後まで再生すると、記録した時の状態（実験・条件・長さ）になる', ev("scnSnapStr()") == state_at_stop and ev("SCN.src.run.t") == 2.5)
         chk('T7 手順の失敗が無い', ev("Object.keys(TLA.P.errs).length") == 0, ev("TLA.P.errs"))
         pg.click('#tlFirst')
-        chk('T7 最初へ戻すと、記録を始める前の作品に戻る（シナリオ無し）', ev("SCN.src")is None)
+        chk('T7 最初へ戻すと、記録を始める前の作品に戻る（実験無し）', ev("SCN.src")is None)
         pg.click('#tlX')
         chk('T7 閉じると、見る前（記録を止めた時）の作品に戻る', ev("scnSnapStr()") == state_at_stop)
         ev("scnClose();setTab('pl')")

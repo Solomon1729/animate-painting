@@ -48,9 +48,9 @@
   <div class="grp tlp" id="tlp" hidden>
     <div class="row tlh"><b class="gh" id="tlTitle">🎞 タイムラプス</b><button id="tlMin" aria-label="枠を小さくする／大きくする" aria-pressed="false">▾</button><button id="tlX" aria-label="タイムラプスを閉じる（見る前の作品に戻ります）">✕ 閉じる</button></div>
     <div id="tlPick">
-      <div class="note">「どうやって作るか」を、操作の手順つきの早送りで見ます。見終わって閉じると、見る前の作品に戻ります。物理は、ブロックを順に置いてシナリオを作る形（将来のビジュアルプログラミング）で見せます。</div>
+      <div class="note">「どうやって作るか」を、操作の手順つきの早送りで見ます。見終わって閉じると、見る前の作品に戻ります。物理は、ブロックを順に置いて実験を作る形（将来のビジュアルプログラミング）で見せます。</div>
       <div class="row"><select id="tlSrc" aria-label="作り方を見る物理サンプル"><option value="">作り方を見る：物理サンプル…</option></select></div>
-      <div class="row"><button id="tlCur" aria-label="いま開いている物理シナリオの作り方を見る">いまの物理シナリオ</button><button id="tlRec" aria-label="自分の操作を記録する（画面のボタン・バー・物理の命令）">● 操作を記録</button><button id="tlLd" aria-label="手順書（JSON）を読み込む">JSONを読む</button></div>
+      <div class="row"><button id="tlCur" aria-label="いま開いている物理の実験の作り方を見る">いまの物理の実験</button><button id="tlRec" aria-label="自分の操作を記録する（画面のボタン・バー・物理の命令）">● 操作を記録</button><button id="tlLd" aria-label="手順書（JSON）を読み込む">JSONを読む</button></div>
       <div id="tlLdBox" hidden><textarea id="tlJson" rows="6" spellcheck="false" aria-label="手順書のJSON" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace"></textarea><div class="row"><button id="tlLdGo">読み込んで見る</button></div></div>
       <div class="note" id="tlPickErr" style="color:#b91c1c;opacity:1"></div>
     </div>
@@ -81,7 +81,7 @@
   <div class="row" id="ch1"></div>
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
-  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
@@ -272,8 +272,8 @@
 
   <div class="tab" data-tab="ph">
     <div class="grp" id="scGrp"><div class="gh">物理</div>
-    <div class="note" id="scHelp">絵を選んで「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
-    <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の物理</div>
+    <div class="note" id="scHelp">絵（オブジェクト）を選ぶと「オブジェクトを対象化」が出ます。「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
+    <div class="grp alt" id="scArt" hidden><div class="gh">オブジェクトを対象化</div>
       <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理で動く物体にする（絵の輪郭が当たり判定）">🌍 動く</button><button id="scArtF" aria-label="選んでいる絵を、固定の土台にする（物理には参加するが動かない。台・壁・障害物）">固定</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵から物理を外す（絵は残ります）">外す</button></div>
       <div class="row"><span class="lab">形</span><select id="scArtS" aria-label="物体の形"><option value="auto">自動</option><option value="circle">丸</option><option value="box">四角</option><option value="hull">輪郭</option><option value="static">固定の障害物</option></select></div>
       <div id="scArtP" hidden>
@@ -287,10 +287,11 @@
       <div class="note" id="scArtSt"></div>
     </div>
     <div id="scBody" hidden>
-      <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select><select id="scTimer" aria-label="タイマー：物理を始めて何秒たったら自動で一時停止するか（物理は終わりません。▶で続きます）"><option value="">⏱ タイマーなし</option><option value="3">⏱ 3秒で一時停止</option><option value="5">⏱ 5秒</option><option value="7.5">⏱ 7.5秒</option><option value="10">⏱ 10秒</option><option value="15">⏱ 15秒</option><option value="30">⏱ 30秒</option><option value="60">⏱ 60秒</option></select></div>
+      <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
       <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span><button id="scOff" aria-label="物理をすべて外す（自動で作った絵も消えます）" hidden>✕ 物理を全部外す</button></div>
       <div class="row" id="scWorld" hidden><span class="lab">まわり</span><button id="wlFloor" class="on" aria-pressed="true" aria-label="床（下の面）">床</button><button id="wlWall" class="on" aria-pressed="true" aria-label="左右の壁">左右の壁</button><button id="wlTop" aria-pressed="false" aria-label="天井（上の面）">天井</button></div>
       <div class="row"><span class="lab">時刻</span><input id="scT" type="range" min="0" max="1" step="0.0083333" value="0" aria-label="時刻（動かすと、その時刻の姿になります。右端＝いままでに進んだ時刻。物理は時刻で止まりません）"><b class="v" id="scTv" style="min-width:7em">0.00 s</b></div>
+      <div class="row" id="scTimerRow"><span class="lab">タイマー</span><select id="scTimer" aria-label="タイマー：物理を始めて何秒たったら自動で一時停止するか（物理は終わりません。▶で続きます）"><option value="">なし</option><option value="3">3秒</option><option value="5">5秒</option><option value="7.5">7.5秒</option><option value="10">10秒</option><option value="15">15秒</option><option value="30">30秒</option><option value="60">60秒</option></select><span class="note" style="margin:0">時間が来たら一時停止（物理は終わらず、▶で続き）</span></div>
       <div class="row" id="scLive"></div>
       <div id="scParams"></div>
       <canvas id="scGraph" style="width:100%;height:150px;display:none" aria-label="時系列のグラフ"></canvas>
@@ -301,19 +302,19 @@
       </details>
       <details id="scMoreLink"><summary>絵とつなぐ</summary>
         <div id="scLink"></div>
-        <div class="row"><button id="scPull" aria-label="つないだ絵の今の位置・向きを、シナリオの初期位置にする">絵の位置を初期位置に</button><button id="scCommit" aria-label="いまの物理の姿を絵の位置として確定し、物理を閉じる">いまの姿で確定</button></div>
+        <div class="row"><button id="scPull" aria-label="つないだ絵の今の位置・向きを、実験の初期位置にする">絵の位置を初期位置に</button><button id="scCommit" aria-label="いまの物理の姿を絵の位置として確定し、物理を閉じる">いまの姿で確定</button></div>
       </details>
-      <details id="scMoreEdit"><summary>グラフの式・シナリオ（JSON）</summary>
+      <details id="scMoreEdit"><summary>グラフの式・実験（JSON）</summary>
         <div class="row"><span class="lab">グラフ</span><input id="scGx" type="text" placeholder="例: blk.speed, blk.y" aria-label="グラフに出す式（カンマ区切り。物体のid.量、時刻t など）" style="flex:1;min-width:8em"></div>
-        <textarea id="scJson" rows="14" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace" spellcheck="false" aria-label="シナリオのJSON"></textarea>
+        <textarea id="scJson" rows="14" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace" spellcheck="false" aria-label="実験のJSON"></textarea>
         <div class="row"><button id="scApply">読み込む</button><button id="scCheck" aria-label="最後まで計算して、答え合わせと保存則の検査をする">検査する</button><button id="scCopy">コピー</button></div>
       </details>
     </div>
     <details id="scAdv"><summary>くわしく：サンプル・問題づくり・作り方</summary>
-      <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="プロトタイプ（最小のシナリオ）から新しいシナリオを作る">＋プロトタイプ</button></div>
+      <div class="row"><select id="scSel" aria-label="サンプルの実験を選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="何も置いていない最小の実験（白紙）から新しい実験を作る（作問・JSON向け）">＋白紙の実験</button></div>
       <div class="note" id="scTitle" style="font-weight:var(--fw,900);opacity:1"></div>
       <div class="note" id="scProb" style="opacity:.85"></div>
-      <div class="row" id="scHowRow" hidden><button id="scHow" aria-label="このシナリオの作り方を、ブロックを順に置く形のタイムラプスで見る（見終わると見る前に戻ります）">🎞 作り方をタイムラプスで見る</button></div>
+      <div class="row" id="scHowRow" hidden><button id="scHow" aria-label="この実験の作り方を、ブロックを順に置く形のタイムラプスで見る（見終わると見る前に戻ります）">🎞 作り方をタイムラプスで見る</button></div>
       <div class="note">サンプル（東大物理・物理オリンピック風など）を開くと、条件・測定・答え合わせ・グラフ・JSONで、問題づくりや実験ができます。</div>
     </details>
     <div class="note" id="scErr" style="color:#b91c1c;opacity:1"></div>

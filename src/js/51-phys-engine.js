@@ -600,7 +600,7 @@ function restore(W,s){W.t=s.t;W.tick=s.tick;W.hp=s.hp;s.b.forEach((v,i)=>{const 
 /* ---------- 実行中に変えてよい値（台帳Z-211）----------
    質量・反発・摩擦・電荷・抵抗・重力・ばね定数・場の値・対の係数は、世界を作り直さず、いまの状態（位置・速度・時刻）のまま入れ替えられる。形・初期の位置と速さは変えない。
    liveState＝いまの値を取り出す／setLive＝入れる（巻き戻して進め直す時に、記録した値を各刻みの直前に入れる）／
-   liveSpec＝シナリオから作った仕様（spec）の「変えてよい値」を、いまの世界に入れる形にして返す（重心が動く質量の変更など、入れられない時はnull＝作り直し）。 */
+   liveSpec＝実験から作った仕様（spec）の「変えてよい値」を、いまの世界に入れる形にして返す（重心が動く質量の変更など、入れられない時はnull＝作り直し）。 */
 const LIVE_B=['e','mus','muk','q','dragLin','dragQuad','dampLin','dampAng','gs','m','I','mg','im0','iI0'];
 const LIVE_SKIP={type:1,tg:1,targets:1};
 function liveState(W){

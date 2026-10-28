@@ -17,7 +17,7 @@ const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup
   addJoint:'link',removeJoint:'link',addPair:'link',addField:'field',removeField:'field',addProbe:'measure',addEvent:'measure',addGraph:'measure',setSweep:'measure',addAsk:'check',addCheck:'check',
   addRule:'rule',removeRule:'rule',play:'run',pause:'run',reset:'run',seek:'run',step:'run',speed:'run',read:'run',result:'run',sweep:'run',open:'run',close:'run'};
 /* ブロックの見出し（短い名前。組み立て台のブロックに書く。台帳Z-196） */
-const SHORT={newScenario:'シナリオ',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addDevice:'装置',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
+const SHORT={newScenario:'実験',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addDevice:'装置',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
   addJoint:'つなぎ',removeJoint:'つなぎを外す',addPair:'接触の設定',addField:'力場',removeField:'力場を消す',addProbe:'測定',addEvent:'出来事',addGraph:'グラフ',setSweep:'条件をふる',addAsk:'答え合わせ',addCheck:'検査',
   addRule:'ルール',removeRule:'ルールを消す',play:'▶ 実行',pause:'一時停止',reset:'最初へ',seek:'時刻へ',step:'1コマ',speed:'速さ',read:'読む',result:'答え合わせ',sweep:'条件をふる',open:'サンプルを開く',close:'閉じる'};
 const SPEEDS=[.25,.5,1,2,4,8,16,32];
@@ -72,7 +72,7 @@ function fields(op){const D=PHAPI.OPS[op.op],out=[];
 const LV={basic:'基礎',standard:'標準',advanced:'発展',olympiad:'物理オリンピック級'};
 const has=(o,k)=>o[k]!==undefined;
 const SAY={
-  newScenario:o=>'空のシナリオ「'+(o.title||'無題')+'」を作る'+(o.floor===false?'（床は置かない）':'（床つき）')+(o.width?'。画面の横幅は '+fv(o.width,'m'):''),
+  newScenario:o=>'空の実験「'+(o.title||'無題')+'」を作る'+(o.floor===false?'（床は置かない）':'（床つき）')+(o.width?'。画面の横幅は '+fv(o.width,'m'):''),
   setMeta:o=>'題名・タグ・問題文を書き込む'+(o.level?'（難しさ：'+(LV[o.level]||o.level)+'）':''),
   setWorld:o=>'世界の決まりを書く：'+[has(o,'g')?'重力加速度 '+fv(o.g,'m/s²'):'',has(o,'gdir')?'重力の向き '+fv(o.gdir,'°'):''].filter(Boolean).join('、'),
   setView:o=>'画面の範囲を決める：横幅 '+(has(o,'w')?fv(o.w,'m'):'そのまま')+(has(o,'x0')||has(o,'y0')?'、左下 '+fv([o.x0||0,o.y0||0]):''),
@@ -119,8 +119,8 @@ function stepOf(op,extra){
   const s={k:'phys',op:clone(op),cat,say:sayOf(op,fs),how:howOf(op,cat,fs),blk:{c:cat,t:D?D.label:op.op,s:SHORT[op.op]||(D?D.label:op.op),f:fs.map(f=>({l:f.l,v:f.v}))},d:clamp(1100+260*Math.min(fs.length,8),1300,3800)};
   return extra?Object.assign(s,extra):s}
 
-/* ---------- シナリオ → 命令の列 → 手順書 ---------- */
-/* 検証に通る順（条件→物体→つなぎ→測定→答え合わせ）。サンプルのJSONから、PHAPIの命令だけで同じシナリオを組み立て直せる（検査＝tools/tl_test.js） */
+/* ---------- 実験 → 命令の列 → 手順書 ---------- */
+/* 検証に通る順（条件→物体→つなぎ→測定→答え合わせ）。サンプルのJSONから、PHAPIの命令だけで同じ実験を組み立て直せる（検査＝tools/tl_test.js） */
 function opsOf(S){
   const O=[],P=op=>O.push(op),view=S.view||{},world=S.world||{};
   P({op:'newScenario',id:S.id,title:S.title||'無題',floor:false,width:view.w||6});

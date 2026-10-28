@@ -1,8 +1,8 @@
 /* ===== 物理モードの「窓口」（台帳Z-178。ビジュアルプログラミングから使う想定）=====
    ねらい：将来のビジュアルプログラミング（ブロックをつないで動かす）が、物理モードの中身を「データ」だけで使えるようにする。
    ①部品表 catalog()：形・拘束・力場・物体の項目・量・関数・集計・ルールの動作を、型つき（名前・日本語名・型・単位・範囲・例）で返す。ブロックの並びや入力欄は、これから自動で作れる。
-   ②命令 OPS／apply()／exec()：置く・つなぐ・条件を決める・測る・動かす…を「1命令＝1つのオブジェクト」で渡す。apply は純粋（DOM なし・シナリオJSONを返すだけ）、exec はアプリ（SCN・RUN）に反映する。
-   ③ルール（シナリオの rules。52-phys-scenario.js）：「条件 → 動作」。物理の時間の中で動くので、巻き戻しても同じ結果になる（動作＝速度を足す・決める／止める／メッセージ）。
+   ②命令 OPS／apply()／exec()：置く・つなぐ・条件を決める・測る・動かす…を「1命令＝1つのオブジェクト」で渡す。apply は純粋（DOM なし・実験JSONを返すだけ）、exec はアプリ（SCN・RUN）に反映する。
+   ③ルール（実験の rules。52-phys-scenario.js）：「条件 → 動作」。物理の時間の中で動くので、巻き戻しても同じ結果になる（動作＝速度を足す・決める／止める／メッセージ）。
    部品表は、エンジンの表（PHE.SHP・JNT・FLD、PHS.FN・RED・BP・JP・WP・RULE_OPS）に追加した時に、ここも直さないと検査（tools/phys_api_test.js）が落ちる。
    純JS（DOMに触れない）。アプリへの反映（exec・runtime系）は SCN・RUN があるときだけ。 */
 const PHAPI=(function(){
@@ -104,9 +104,9 @@ const need=(c,m)=>{if(!c)throw new Error(m)};
 const body=(s,id)=>{const b=(s.bodies||[]).find(x=>x.id===id);need(b,'物体「'+id+'」がありません');return b};
 const pick=(o,keys)=>{const r={};for(const k of keys)if(o[k]!==undefined)r[k]=o[k];return r};
 const BODY_SET=BODY_FIELDS.map(f=>f.k).filter(k=>k!=='id');
-/* 各命令：label・kind（scenario＝シナリオJSONを直す／runtime＝実行を操作する）・args（入力欄）・do(s,a)（シナリオを直接直す。idなどを返す） */
+/* 各命令：label・kind（scenario＝実験JSONを直す／runtime＝実行を操作する）・args（入力欄）・do(s,a)（実験を直接直す。idなどを返す） */
 const OPS={
-  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('id','id','','シナリオの名前',{hint:'省略するとmy-scene'}),T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
+  newScenario:{label:'空の実験を作る',kind:'scenario',args:[T('id','id','','実験の名前',{hint:'省略するとmy-scene'}),T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'実験を開く',
     make(a){const s={id:a.id||'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
       if(a.floor!==false)s.bodies.push({id:'floor',type:'static',mu:.5,e:0,label:'床',shapes:[{t:'plane',normal:[0,1],d:0}]});return s}},
   addBody:{label:'物体を置く',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id)}),T('shape','shape','','形（{t:"circle",r:0.1}など。部品表のshapes）',{req:1}),T('pos','vec2','m','位置'),T('set','object','','その他の項目（部品表のbodyFields）')],returns:'物体id',
@@ -132,7 +132,7 @@ const OPS={
   addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max','scale','tol','note']));return s.checks.length-1}},
   addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push(Object.assign({id,when:a.when,mode:a.mode,do:a.do},pick(a,['label','note'])));if(a.mode===undefined)delete s.rules[s.rules.length-1].mode;return id}},
   removeRule:{label:'ルールを消す',kind:'scenario',args:[T('id','text','','ルールの名前',{req:1})],do(s,a){const n=(s.rules||[]).length;s.rules=(s.rules||[]).filter(r=>r.id!==a.id);need(s.rules.length<n,'ルール「'+a.id+'」がありません');return a.id}},
-  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数（測定・答え合わせの窓）'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔'),T('note','text','','メモ'),T('show','num','s','表示する秒数（測定の窓より長い時だけ、そのあとも物理を続けて見せる）')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample','note','show']));return 'run'}},
+  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数（測定・答え合わせの窓）'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔'),T('note','text','','メモ'),T('show','num','s','表示する秒数（測定区間より長い時だけ、そのあとも物理を続けて見せる）')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample','note','show']));return 'run'}},
   setView:{label:'画面（位置・横幅m）',kind:'scenario',args:[T('x0','num','m','左端x'),T('y0','num','m','下端y'),T('w','num','m','横幅'),T('grid','bool','','格子'),T('follow','text','','追う物体')],do(s,a){s.view=Object.assign(s.view||{},pick(a,['x0','y0','w','grid','ruler','follow']));return 'view'}},
   setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir','maxStep','cfg','canvas','note']));return 'world'}},
   /* ---- 題名・摩擦の組・グラフ・掃引（サンプルを命令の列だけで組み立て直せるように。台帳Z-192） ---- */
@@ -152,23 +152,23 @@ const OPS={
   result:{label:'答え合わせ・測定の結果',kind:'runtime',args:[],returns:'{probes,ask,checks,events}'},
   sweep:{label:'条件を振って測る',kind:'runtime',args:[T('param','text','','条件の名前',{req:1}),T('values','num','','値の配列（または from・to・n）'),T('from','num','',''),T('to','num','',''),T('n','num','','')],returns:'{param,rows,fit}'},
   open:{label:'サンプルを開く',kind:'runtime',args:[T('id','text','','サンプルのid',{req:1})]},
-  close:{label:'シナリオを閉じる',kind:'runtime',args:[]}
+  close:{label:'実験を閉じる',kind:'runtime',args:[]}
 };
-/* 純粋：シナリオJSON（src）に命令を適用した結果を返す（srcは書き換えない）。ok・errors・warns・src・value（idなど） */
+/* 純粋：実験JSON（src）に命令を適用した結果を返す（srcは書き換えない）。ok・errors・warns・src・value（idなど） */
 function apply(src,op){
   const d=OPS[op&&op.op];if(!d)return{ok:false,errors:['未知の命令「'+(op&&op.op)+'」'+PHS.suggest(String(op&&op.op),Object.keys(OPS))],warns:[],src};
   if(d.kind!=='scenario')return{ok:false,errors:['命令「'+op.op+'」は実行の操作です。アプリの中で exec を使ってください'],warns:[],src};
   let s,value;
-  try{if(d.make){s=d.make(op);value=s.id}else{need(src,'まずシナリオを作ってください（newScenario）');s=JSON.parse(JSON.stringify(src));value=d.do(s,op)}}
+  try{if(d.make){s=d.make(op);value=s.id}else{need(src,'まず実験を作ってください（newScenario）');s=JSON.parse(JSON.stringify(src));value=d.do(s,op)}}
   catch(e){return{ok:false,errors:[String(e&&e.message||e)],warns:[],src}}
   const V=PHS.validate(s);
-  /* 物体が空のシナリオ（newScenario直後で floor:false）は、物体を足すまで検証に通らないので、errors に出しつつ src は返す */
+  /* 物体が空の実験（newScenario直後で floor:false）は、物体を足すまで検証に通らないので、errors に出しつつ src は返す */
   return{ok:!V.errors.length,errors:V.errors,warns:V.warns,src:s,value}}
 /* 命令の列を順に適用する（途中で誤りが出ても続ける＝最後まで足してから検証する。bodies空の検証エラーだけは無視） */
 function applyAll(src,ops){
   let s=src,value=[],errors=[],warns=[];
   for(const op of ops){const d=OPS[op.op];if(!d||d.kind!=='scenario'){errors.push('命令「'+op.op+'」は使えません');continue}
-    let t;try{if(d.make){t=d.make(op);value.push(t.id)}else{need(s,'まずシナリオを作ってください（newScenario）');t=JSON.parse(JSON.stringify(s));value.push(d.do(t,op))}}catch(e){errors.push(String(e&&e.message||e));continue}
+    let t;try{if(d.make){t=d.make(op);value.push(t.id)}else{need(s,'まず実験を作ってください（newScenario）');t=JSON.parse(JSON.stringify(s));value.push(d.do(t,op))}}catch(e){errors.push(String(e&&e.message||e));continue}
     s=t}
   if(s){const V=PHS.validate(s);errors=errors.concat(V.errors);warns=V.warns}
   return{ok:!errors.length,errors,warns,src:s,value}}
@@ -187,8 +187,8 @@ function exec0(op){
       if(d.make){if(!r.src)return r;const o=scnSetSource(r.src);return{ok:!!(o&&o.ok),errors:o&&o.errors||[],warns:r.warns,value:r.value}}
       if(!r.ok)return r;
       const ok=scnEdit(s=>{d.do(s,op)});if(ok&&SCN.auto&&op.op==='addBody')scnAutoActors();   /* img（絵文字）つきの物体には絵を自動で付ける */
-      return{ok:!!ok,errors:ok?[]:['シナリオを直せませんでした'],warns:r.warns,value:r.value}}
-    if(!SCN.src&&op.op!=='open')return{ok:false,errors:['シナリオが開いていません（newScenario か open）']};
+      return{ok:!!ok,errors:ok?[]:['実験を直せませんでした'],warns:r.warns,value:r.value}}
+    if(!SCN.src&&op.op!=='open')return{ok:false,errors:['実験が開いていません（newScenario か open）']};
     switch(op.op){
       case 'open':{const o=scnLoadSample(op.id);return{ok:!!o.ok,errors:o.errors||[]}}
       case 'close':scnClose();return{ok:true};
@@ -203,18 +203,18 @@ function exec0(op){
       case 'sweep':{const r=PHS.sweep(SCN.src,pick(op,['param','values','from','to','n']));return{ok:true,value:r}}}
   }catch(e){return{ok:false,errors:[String(e&&e.message||e)]}}
   return{ok:false,errors:['実装されていない命令です']}}
-/* 複数の scenario 命令を、1回のUndoでまとめて反映する（装置トレーから、シナリオが無い所へ最初の装置を置く時など）。
-   先頭が newScenario ならシナリオを開く（作り直し）。それ以外は今のシナリオに足す。成功したら、命令ごとに tap（タイムラプスの記録）へ知らせる */
+/* 複数の scenario 命令を、1回のUndoでまとめて反映する（装置トレーから、実験が無い所へ最初の装置を置く時など）。
+   先頭が newScenario なら実験を開く（作り直し）。それ以外は今の実験に足す。成功したら、命令ごとに tap（タイムラプスの記録）へ知らせる */
 function execBatch(ops){
   if(typeof SCN==='undefined'||typeof RUN==='undefined')return{ok:false,errors:['アプリの外では使えません（applyAll を使ってください）']};
   if(!Array.isArray(ops)||!ops.length)return{ok:false,errors:['命令がありません']};
-  for(const op of ops){const d=OPS[op&&op.op];if(!d||d.kind!=='scenario')return{ok:false,errors:['命令「'+(op&&op.op)+'」はまとめて使えません（シナリオを直す命令だけ）']}}
+  for(const op of ops){const d=OPS[op&&op.op];if(!d||d.kind!=='scenario')return{ok:false,errors:['命令「'+(op&&op.op)+'」はまとめて使えません（実験を直す命令だけ）']}}
   const fresh=ops[0].op==='newScenario';
-  if(!fresh&&!SCN.src)return{ok:false,errors:['シナリオが開いていません（先頭を newScenario にしてください）']};
+  if(!fresh&&!SCN.src)return{ok:false,errors:['実験が開いていません（先頭を newScenario にしてください）']};
   const r=applyAll(fresh?null:SCN.src,ops);if(!r.ok)return r;
   let ok;
-  if(fresh){const o=scnSetSource(r.src);ok=!!(o&&o.ok);if(!ok)return{ok:false,errors:o&&o.errors||['シナリオを開けませんでした'],warns:r.warns}}
-  else{ok=scnEdit(s=>{for(const op of ops)OPS[op.op].do(s,op)});if(!ok)return{ok:false,errors:['シナリオを直せませんでした'],warns:r.warns}}
+  if(fresh){const o=scnSetSource(r.src);ok=!!(o&&o.ok);if(!ok)return{ok:false,errors:o&&o.errors||['実験を開けませんでした'],warns:r.warns}}
+  else{ok=scnEdit(s=>{for(const op of ops)OPS[op.op].do(s,op)});if(!ok)return{ok:false,errors:['実験を直せませんでした'],warns:r.warns}}
   if(!(typeof TL!=='undefined'&&TL.busy))ops.forEach((op,i)=>{for(const cb of TAPS.slice())try{cb(op,{ok:true,value:r.value[i]})}catch(_){}});
   return{ok:true,errors:[],warns:r.warns,value:r.value}}
 /* 実行中の出来事を受け取る：ルールの note・stop と、events の成立。cb({t,kind,rule,text}) を毎フレームの後で呼ぶ（巻き戻しの再実行中は呼ばない）。返す関数で解除 */

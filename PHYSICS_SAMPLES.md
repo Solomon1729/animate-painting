@@ -1,12 +1,12 @@
 # PHYSICS_SAMPLES.md — 物理サンプル（作問）の書き方
 
-物理モードは「**シナリオ（JSON）**」を読んで動く作問ツール（台帳Z-167〜Z-178、`roadmap.md` C-0）。この手引きは、**他のAI（雑兵）が、東大物理・物理オリンピック風の型を1件ずつ足せる**ようにするためのもの。
+物理モードは「**実験（JSON）**」を読んで動く作問ツール（台帳Z-167〜Z-178、`roadmap.md` C-0）。この手引きは、**他のAI（雑兵）が、東大物理・物理オリンピック風の型を1件ずつ足せる**ようにするためのもの。
 **問題文・文面は自分の言葉で書く**（実際の過去問の文面・図は写さない。`source`に「オリジナル（○○型）」と書く）。ここでは**正しいモデルを作ること**に集中する。
 表（形・拘束・力場・量・関数・集計）は、`PHAPI.catalog()`（`src/js/58-phys-api.js`）から作ってある。`node tools/phys_api_test.js`が、この手引きにエンジンの全項目が載っているかを検査する。
 
 ## 1. 1件を足す手順（5つ）
 
-1. `node tools/phys_check.js --template > src/phys/samples/orig-○○.json` でプロトタイプ（最小の有効なシナリオ）を出す（`id`はファイル名と同じ。`orig-`で始める）。
+1. `node tools/phys_check.js --template > src/phys/samples/orig-○○.json` で白紙の実験（最小の有効な実験）を出す（`id`はファイル名と同じ。`orig-`で始める）。
 2. JSONを書く（下の§2〜§8）。**`ask`（理論値の式）を必ず1つ以上つける**＝モデルが正しいことを機械が確かめられる。
 3. `node tools/phys_check.js src/phys/samples/orig-○○.json` で、検証（日本語のエラー）→実行→**測定値と理論値の表**を見る。`✗`が出たら直す。`--sweep`で掃引、`--csv`で時系列、`--param theta=40`で条件を変えて実行。
 4. `node tools/phys_check.js --all`（全件。失敗があると終了コード1）。`node tools/phys_engine_test.js`（エンジンの解析解との照合）も通すこと。
@@ -16,7 +16,7 @@
 SI（m・kg・s・N・J）。**x右・y上**。原点＝作品の左下（`view.x0/y0`で動かせる）。**角度はJSONでは度、反時計まわりが正**。角速度は rad/s。式の三角関数は `sin`（ラジアン）と `sind`（度）の両方がある。
 物体の`pos`は**その物体の原点**（重心ではない。`b.cx/cy`が重心）。形の`ox/oy`で原点からずらす（箱の`oy:0.1`で、床に置く時に底面が原点になる）。
 
-## 3. シナリオの形（トップレベル）
+## 3. 実験の形（トップレベル）
 `id` `title` `tags` `source` `level` `problem` `notes` — 見出し（`problem`の`{名前}`は条件の値に置き換わる）。
 `params` — 動かせる条件（スライダー）：`{名前:{v,min,max,step,unit,label}}`。式から名前で使える。
 `vars` — 途中計算：`{名前:"式"}`（`params`・先の`vars`・関数が使える）。
@@ -180,7 +180,7 @@ SI（m・kg・s・N・J）。**x右・y上**。原点＝作品の左下（`view.
 - `events`：`{名前:{when,label}}`。条件が**最初に成り立った時刻**（`probes`の`after`から名前で使う）。
 - `ask`：`[{q,probe|expr,theory,tol,abs,unit}]`。測定値と**理論値の式**を比べる（`tol`＝相対誤差、既定0.02。0に近い量は`abs`も）。**ここが作問の中心**：自分で解析解を手で出して、式で書く。`theory`には`params`・`vars`・測定の名前が使える。
 - `checks`：`[{name,probe,conserved,min,max}]`。保存則など（`conserved:0.01`＝最大と最小の差が1%以内）。エネルギー・運動量が保存するはずの場面では必ずつける。
-- `run`：`{t,stop,sample,show}`（秒数・止める条件の式・記録の間隔・**表示の長さ**）。`t`＝**測定の窓**（`ask`・`probes`・`checks`はここで確定。結果は窓の終わりの瞬間で固定）、`show`＝**古い項目（2026-10-27〜無視される）**。物理は窓の後も止まらず動き続ける（時刻とON/OFFは別。台帳Z-214）。止めたい時は画面の「自動で一時停止」（タイマー。保存される）を選ぶ。**現象を引き延ばさない**（現象と真理第一主義）：勝手に終わる現象（衝突・着地など）は、終わった状態のまま静止して見える。`sweep`：`{param,values|from,to,n,probes,fit:{x,y}}`（現象考察：条件を振って測定値の変化と直線あてはめ）。`graphs`：`[{title,x,y:[式],xlabel,ylabel}]`。
+- `run`：`{t,stop,sample,show}`（秒数・止める条件の式・記録の間隔・**表示の長さ**）。`t`＝**測定区間**（`ask`・`probes`・`checks`はここで確定。結果は窓の終わりの瞬間で固定）、`show`＝**古い項目（2026-10-27〜無視される）**。物理は窓の後も止まらず動き続ける（時刻とON/OFFは別。台帳Z-214）。止めたい時は画面の「自動で一時停止」（タイマー。保存される）を選ぶ。**現象を引き延ばさない**（現象と真理第一主義）：勝手に終わる現象（衝突・着地など）は、終わった状態のまま静止して見える。`sweep`：`{param,values|from,to,n,probes,fit:{x,y}}`（現象考察：条件を振って測定値の変化と直線あてはめ）。`graphs`：`[{title,x,y:[式],xlabel,ylabel}]`。
 
 ## 7. ルール（条件→動作）
 `rules:[{id,when:"式",mode:"rise"|"once",do:[動作…]}]`。`rise`（既定）＝条件が成り立った瞬間ごと、`once`＝最初の1回だけ。**物理の時間の中で動く**ので、巻き戻して再生しても同じ結果になる。
@@ -213,11 +213,11 @@ SI（m・kg・s・N・J）。**x右・y上**。原点＝作品の左下（`view.
 11. 摩擦・床の長さを小さな既定で、**大きな値はスライダーで**振らせる（現実の実験でも摩擦の小さい面を選ぶ）。台車は長さを`max(3.0, 移動量+物体幅+0.4)`のように式で決めると、低い摩擦でも落ちない。
 
 ## 10. 窓口（ビジュアルプログラミング・他のプログラムから使う）
-`PHAPI`（`src/js/58-phys-api.js`。DOMなし）。`PHAPI.catalog()`＝上の表を**型つき**で返す（ブロックの種類・入力欄を自動で作るため）。`PHAPI.apply(src,{op,...})`＝シナリオJSONに命令を1つ適用した結果（`{ok,errors,warns,src,value}`）を返す。元の`src`は書き換えない。`PHAPI.exec(op)`＝アプリの中で、開いているシナリオに適用して反映（Undoに乗る）。実行の操作（`play`・`seek`・`read`・`result`・`sweep`…）もここ。`PHAPI.listen(cb)`＝ルールの`note`・`stop`を受け取る。
+`PHAPI`（`src/js/58-phys-api.js`。DOMなし）。`PHAPI.catalog()`＝上の表を**型つき**で返す（ブロックの種類・入力欄を自動で作るため）。`PHAPI.apply(src,{op,...})`＝実験JSONに命令を1つ適用した結果（`{ok,errors,warns,src,value}`）を返す。元の`src`は書き換えない。`PHAPI.exec(op)`＝アプリの中で、開いている実験に適用して反映（Undoに乗る）。実行の操作（`play`・`seek`・`read`・`result`・`sweep`…）もここ。`PHAPI.listen(cb)`＝ルールの`note`・`stop`を受け取る。
 
 | op | 意味 | 種類 |
 |---|---|---|
-| `newScenario` | 空のシナリオを作る | 命令 |
+| `newScenario` | 空の実験を作る | 命令 |
 | `addBody` | 物体を置く | 命令 |
 | `addDevice` | 装置を置く（装置トレー） | 命令 |
 | `addShape` | 物体に形を足す | 命令 |
@@ -252,20 +252,20 @@ SI（m・kg・s・N・J）。**x右・y上**。原点＝作品の左下（`view.
 | `result` | 答え合わせ・測定の結果 | 実行 |
 | `sweep` | 条件を振って測る | 実行 |
 | `open` | サンプルを開く | 実行 |
-| `close` | シナリオを閉じる | 実行 |
+| `close` | 実験を閉じる | 実行 |
 
-**装置（台帳Z-210。`src/js/581-phys-devices.js`の`PHDEV`、部品表`catalog().devices`）**：球・箱・板・坂・床・ふりこ・ばね振り子・荷電粒子・電場・磁場を、シナリオJSONの断片（物体・つなぎ・力場・つまみ）として**1項目＝1オブジェクト**で持つ。`{op:'addDevice',device:'ball',pos:[x,y],params:{…}}`で今のシナリオに足す（名前は`ball`→`ball2`…。質量は条件`m_<id>`、つまみは条件`<名前>_<装置の名前>`＝画面のスライダーになる）。操作窓の上の**装置トレー**（物理タブ）は、この表から自動で並ぶ。**装置を増やす時は`DEVICES`に1項目足す**（断片の書き方は`581-phys-devices.js`の冒頭。`tools/phys_dev_test.js`が全部の装置を実際に動かして確かめる）。シナリオが無い所へ最初の装置を置く時は`PHAPI.execBatch([newScenario, addDevice床, addDevice…])`（1回のUndo）。
+**装置（台帳Z-210。`src/js/581-phys-devices.js`の`PHDEV`、部品表`catalog().devices`）**：球・箱・板・坂・床・ふりこ・ばね振り子・荷電粒子・電場・磁場を、実験JSONの断片（物体・つなぎ・力場・つまみ）として**1項目＝1オブジェクト**で持つ。`{op:'addDevice',device:'ball',pos:[x,y],params:{…}}`で今の実験に足す（名前は`ball`→`ball2`…。質量は条件`m_<id>`、つまみは条件`<名前>_<装置の名前>`＝画面のスライダーになる）。操作窓の上の**装置トレー**（物理タブ）は、この表から自動で並ぶ。**装置を増やす時は`DEVICES`に1項目足す**（断片の書き方は`581-phys-devices.js`の冒頭。`tools/phys_dev_test.js`が全部の装置を実際に動かして確かめる）。実験が無い所へ最初の装置を置く時は`PHAPI.execBatch([newScenario, addDevice床, addDevice…])`（1回のUndo）。
 
 ## 11. 検査道具
 | 道具 | 内容 |
 |---|---|
 | `node tools/phys_engine_test.js` | エンジンを解析解と比べる（自由落下・斜面・振り子・衝突・円弧・ばね・磁場・連鎖衝突…） |
-| `node tools/phys_check.js 〜` | シナリオの検証・実行・答え合わせ・掃引・CSV。`--all`で全件 |
+| `node tools/phys_check.js 〜` | 実験の検証・実行・答え合わせ・掃引・CSV。`--all`で全件 |
 | `node tools/phys_dev_test.js` | 装置（`PHDEV`）の検査：全部の装置を置いて実際に動かす・名前の衝突・つまみ・位置・解析解との比較・誤り |
 | `python3 tools/check_phys_tray.py <HTMLの絶対パス>` | 装置トレーのアプリ内検査（タップ・ドラッグ・取り消し・保存・Undo）。49項目 |
 | `node tools/phys_api_test.js` | 窓口と部品表（この手引きの表の元）の検査。エンジンの表に足したら、ここも足さないと落ちる |
 | `python3 tools/check_physics.py <HTMLの絶対パス>` | アプリ内（固定刻み・保存・Undo・絵とのつなぎ・絵→物理・デモ・窓口）。ヘッドレスのみ。実機は未確認 |
-| `python3 tools/check_phys_view.py <HTMLの絶対パス>` | 時刻とタイマー・測定の窓の後の続き・追従カメラ（`view.follow`）。43項目 |
+| `python3 tools/check_phys_view.py <HTMLの絶対パス>` | 時刻とタイマー・測定区間の後の続き・追従カメラ（`view.follow`）。43項目 |
 
 ## 12. 今回やらないもの
 3D（J）・波動／熱／光学／回路・流体・紐の質量（鎖）・回転する円弧レール・摩擦のある滑車・柔らかい体・広域判定とスリープ（Z-174）、ゆっくりした連鎖衝突の伝播（Z-183）、接触の始まり／終わりの時刻合わせ（Z-182）、力の矢印の作用点（Z-181）。

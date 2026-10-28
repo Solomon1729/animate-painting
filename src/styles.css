@@ -48,6 +48,7 @@ button.on{border-color:var(--acc);background:var(--acc);color:#fff}
 .tools button{flex:1 1 28%;font-weight:var(--fw,900);font-size:14px}
 #wbt button{flex:1 1 22%;padding:6px 4px;font-size:13px;white-space:nowrap}
 #tabs button{position:relative}
+#tabs #tabObj{flex:1 0 100%;border-style:dashed}   /* 台帳Z-218：絵を選んでいる時だけ、操作窓の一番上の行に出る */
 #tabs button.flag::after{content:'';position:absolute;top:1px;right:4px;width:7px;height:7px;border-radius:50%;background:#ff2d87;box-shadow:0 0 0 2px var(--pane)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .em button{font-size:20px;padding:3px 8px}

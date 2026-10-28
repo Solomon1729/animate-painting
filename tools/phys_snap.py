@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""物理シナリオの絵を出す（台帳Z-169）。他のAIが作ったJSONを「目で確かめる」ための道具。
+"""物理の実験の絵を出す（台帳Z-169）。他のAIが作ったJSONを「目で確かめる」ための道具。
 使い方:
   python3 tools/phys_snap.py 見本.json                        t=0 と 終了時刻 の2枚を横に並べたPNG（既定: /tmp/phys_snap.png）
   python3 tools/phys_snap.py 見本.json --t 0.5,1.0,1.5        指定した時刻の絵を並べる

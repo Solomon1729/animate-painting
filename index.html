@@ -56,6 +56,7 @@ button.on{border-color:var(--acc);background:var(--acc);color:#fff}
 .tools button{flex:1 1 28%;font-weight:var(--fw,900);font-size:14px}
 #wbt button{flex:1 1 22%;padding:6px 4px;font-size:13px;white-space:nowrap}
 #tabs button{position:relative}
+#tabs #tabObj{flex:1 0 100%;border-style:dashed}   /* 台帳Z-218：絵を選んでいる時だけ、操作窓の一番上の行に出る */
 #tabs button.flag::after{content:'';position:absolute;top:1px;right:4px;width:7px;height:7px;border-radius:50%;background:#ff2d87;box-shadow:0 0 0 2px var(--pane)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .em button{font-size:20px;padding:3px 8px}
@@ -279,9 +280,9 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
   <div class="grp tlp" id="tlp" hidden>
     <div class="row tlh"><b class="gh" id="tlTitle">🎞 タイムラプス</b><button id="tlMin" aria-label="枠を小さくする／大きくする" aria-pressed="false">▾</button><button id="tlX" aria-label="タイムラプスを閉じる（見る前の作品に戻ります）">✕ 閉じる</button></div>
     <div id="tlPick">
-      <div class="note">「どうやって作るか」を、操作の手順つきの早送りで見ます。見終わって閉じると、見る前の作品に戻ります。物理は、ブロックを順に置いてシナリオを作る形（将来のビジュアルプログラミング）で見せます。</div>
+      <div class="note">「どうやって作るか」を、操作の手順つきの早送りで見ます。見終わって閉じると、見る前の作品に戻ります。物理は、ブロックを順に置いて実験を作る形（将来のビジュアルプログラミング）で見せます。</div>
       <div class="row"><select id="tlSrc" aria-label="作り方を見る物理サンプル"><option value="">作り方を見る：物理サンプル…</option></select></div>
-      <div class="row"><button id="tlCur" aria-label="いま開いている物理シナリオの作り方を見る">いまの物理シナリオ</button><button id="tlRec" aria-label="自分の操作を記録する（画面のボタン・バー・物理の命令）">● 操作を記録</button><button id="tlLd" aria-label="手順書（JSON）を読み込む">JSONを読む</button></div>
+      <div class="row"><button id="tlCur" aria-label="いま開いている物理の実験の作り方を見る">いまの物理の実験</button><button id="tlRec" aria-label="自分の操作を記録する（画面のボタン・バー・物理の命令）">● 操作を記録</button><button id="tlLd" aria-label="手順書（JSON）を読み込む">JSONを読む</button></div>
       <div id="tlLdBox" hidden><textarea id="tlJson" rows="6" spellcheck="false" aria-label="手順書のJSON" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace"></textarea><div class="row"><button id="tlLdGo">読み込んで見る</button></div></div>
       <div class="note" id="tlPickErr" style="color:#b91c1c;opacity:1"></div>
     </div>
@@ -312,7 +313,7 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
   <div class="row" id="ch1"></div>
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
-  <div class="row" id="tabs"><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
@@ -503,8 +504,8 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
 
   <div class="tab" data-tab="ph">
     <div class="grp" id="scGrp"><div class="gh">物理</div>
-    <div class="note" id="scHelp">絵を選んで「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
-    <div class="grp alt" id="scArt"><div class="gh">選んでいる絵の物理</div>
+    <div class="note" id="scHelp">絵（オブジェクト）を選ぶと「オブジェクトを対象化」が出ます。「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
+    <div class="grp alt" id="scArt" hidden><div class="gh">オブジェクトを対象化</div>
       <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理で動く物体にする（絵の輪郭が当たり判定）">🌍 動く</button><button id="scArtF" aria-label="選んでいる絵を、固定の土台にする（物理には参加するが動かない。台・壁・障害物）">固定</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵から物理を外す（絵は残ります）">外す</button></div>
       <div class="row"><span class="lab">形</span><select id="scArtS" aria-label="物体の形"><option value="auto">自動</option><option value="circle">丸</option><option value="box">四角</option><option value="hull">輪郭</option><option value="static">固定の障害物</option></select></div>
       <div id="scArtP" hidden>
@@ -518,10 +519,11 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
       <div class="note" id="scArtSt"></div>
     </div>
     <div id="scBody" hidden>
-      <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select><select id="scTimer" aria-label="タイマー：物理を始めて何秒たったら自動で一時停止するか（物理は終わりません。▶で続きます）"><option value="">⏱ タイマーなし</option><option value="3">⏱ 3秒で一時停止</option><option value="5">⏱ 5秒</option><option value="7.5">⏱ 7.5秒</option><option value="10">⏱ 10秒</option><option value="15">⏱ 15秒</option><option value="30">⏱ 30秒</option><option value="60">⏱ 60秒</option></select></div>
+      <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
       <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span><button id="scOff" aria-label="物理をすべて外す（自動で作った絵も消えます）" hidden>✕ 物理を全部外す</button></div>
       <div class="row" id="scWorld" hidden><span class="lab">まわり</span><button id="wlFloor" class="on" aria-pressed="true" aria-label="床（下の面）">床</button><button id="wlWall" class="on" aria-pressed="true" aria-label="左右の壁">左右の壁</button><button id="wlTop" aria-pressed="false" aria-label="天井（上の面）">天井</button></div>
       <div class="row"><span class="lab">時刻</span><input id="scT" type="range" min="0" max="1" step="0.0083333" value="0" aria-label="時刻（動かすと、その時刻の姿になります。右端＝いままでに進んだ時刻。物理は時刻で止まりません）"><b class="v" id="scTv" style="min-width:7em">0.00 s</b></div>
+      <div class="row" id="scTimerRow"><span class="lab">タイマー</span><select id="scTimer" aria-label="タイマー：物理を始めて何秒たったら自動で一時停止するか（物理は終わりません。▶で続きます）"><option value="">なし</option><option value="3">3秒</option><option value="5">5秒</option><option value="7.5">7.5秒</option><option value="10">10秒</option><option value="15">15秒</option><option value="30">30秒</option><option value="60">60秒</option></select><span class="note" style="margin:0">時間が来たら一時停止（物理は終わらず、▶で続き）</span></div>
       <div class="row" id="scLive"></div>
       <div id="scParams"></div>
       <canvas id="scGraph" style="width:100%;height:150px;display:none" aria-label="時系列のグラフ"></canvas>
@@ -532,19 +534,19 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
       </details>
       <details id="scMoreLink"><summary>絵とつなぐ</summary>
         <div id="scLink"></div>
-        <div class="row"><button id="scPull" aria-label="つないだ絵の今の位置・向きを、シナリオの初期位置にする">絵の位置を初期位置に</button><button id="scCommit" aria-label="いまの物理の姿を絵の位置として確定し、物理を閉じる">いまの姿で確定</button></div>
+        <div class="row"><button id="scPull" aria-label="つないだ絵の今の位置・向きを、実験の初期位置にする">絵の位置を初期位置に</button><button id="scCommit" aria-label="いまの物理の姿を絵の位置として確定し、物理を閉じる">いまの姿で確定</button></div>
       </details>
-      <details id="scMoreEdit"><summary>グラフの式・シナリオ（JSON）</summary>
+      <details id="scMoreEdit"><summary>グラフの式・実験（JSON）</summary>
         <div class="row"><span class="lab">グラフ</span><input id="scGx" type="text" placeholder="例: blk.speed, blk.y" aria-label="グラフに出す式（カンマ区切り。物体のid.量、時刻t など）" style="flex:1;min-width:8em"></div>
-        <textarea id="scJson" rows="14" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace" spellcheck="false" aria-label="シナリオのJSON"></textarea>
+        <textarea id="scJson" rows="14" style="width:100%;font:12px/1.4 ui-monospace,Menlo,monospace" spellcheck="false" aria-label="実験のJSON"></textarea>
         <div class="row"><button id="scApply">読み込む</button><button id="scCheck" aria-label="最後まで計算して、答え合わせと保存則の検査をする">検査する</button><button id="scCopy">コピー</button></div>
       </details>
     </div>
     <details id="scAdv"><summary>くわしく：サンプル・問題づくり・作り方</summary>
-      <div class="row"><select id="scSel" aria-label="サンプルのシナリオを選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="プロトタイプ（最小のシナリオ）から新しいシナリオを作る">＋プロトタイプ</button></div>
+      <div class="row"><select id="scSel" aria-label="サンプルの実験を選ぶ"><option value="">サンプルを選ぶ…</option></select><button id="scNew" aria-label="何も置いていない最小の実験（白紙）から新しい実験を作る（作問・JSON向け）">＋白紙の実験</button></div>
       <div class="note" id="scTitle" style="font-weight:var(--fw,900);opacity:1"></div>
       <div class="note" id="scProb" style="opacity:.85"></div>
-      <div class="row" id="scHowRow" hidden><button id="scHow" aria-label="このシナリオの作り方を、ブロックを順に置く形のタイムラプスで見る（見終わると見る前に戻ります）">🎞 作り方をタイムラプスで見る</button></div>
+      <div class="row" id="scHowRow" hidden><button id="scHow" aria-label="この実験の作り方を、ブロックを順に置く形のタイムラプスで見る（見終わると見る前に戻ります）">🎞 作り方をタイムラプスで見る</button></div>
       <div class="note">サンプル（東大物理・物理オリンピック風など）を開くと、条件・測定・答え合わせ・グラフ・JSONで、問題づくりや実験ができます。</div>
     </details>
     <div class="note" id="scErr" style="color:#b91c1c;opacity:1"></div>
@@ -1085,7 +1087,7 @@ function paintFrame(){
   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);
   if(!drawOnly)drawBG();const _wt0=performance.now();wAct=false;warpMs=0;for(const l of AC){if(l.layerId==null||!LAYERS.some(y=>y.id===l.layerId))l.layerId=curLid;if(drawOnly&&!drawOnly.has(l))continue;const e=l.wd||l.dirty||(hasWarp(l)&&!l.wo)||!!l._mr,t0=performance.now();warpFrame(l);if(!e)warpMs+=performance.now()-t0}
   ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
-  const P=(l,f)=>{const m=mot(l),q=scnPose(l,m);q?draw(l,q.x,q.y,m,f):draw(l,l.fx*W,l.fy*H,m,f)};   /* 物理シナリオにつないだ絵は、物体の姿勢で描く（配置は書き換えない。53-phys-run.js） */
+  const P=(l,f)=>{const m=mot(l),q=scnPose(l,m);q?draw(l,q.x,q.y,m,f):draw(l,l.fx*W,l.fy*H,m,f)};   /* 物理の実験につないだ絵は、物体の姿勢で描く（配置は書き換えない。53-phys-run.js） */
   const objD=c=>o=>{ctx.save();ctx.translate(o.ox*S0*c.size*c.face,o.oy*S0*c.size);draw(o,0,0,mot(o));ctx.restore()};
   const roots=AC.filter(r=>!(r.att&&byId(r.to))).sort((a,b)=>layIdx(a)-layIdx(b));
   scnUnder();
@@ -1714,7 +1716,7 @@ function restore(W,s){W.t=s.t;W.tick=s.tick;W.hp=s.hp;s.b.forEach((v,i)=>{const 
 /* ---------- 実行中に変えてよい値（台帳Z-211）----------
    質量・反発・摩擦・電荷・抵抗・重力・ばね定数・場の値・対の係数は、世界を作り直さず、いまの状態（位置・速度・時刻）のまま入れ替えられる。形・初期の位置と速さは変えない。
    liveState＝いまの値を取り出す／setLive＝入れる（巻き戻して進め直す時に、記録した値を各刻みの直前に入れる）／
-   liveSpec＝シナリオから作った仕様（spec）の「変えてよい値」を、いまの世界に入れる形にして返す（重心が動く質量の変更など、入れられない時はnull＝作り直し）。 */
+   liveSpec＝実験から作った仕様（spec）の「変えてよい値」を、いまの世界に入れる形にして返す（重心が動く質量の変更など、入れられない時はnull＝作り直し）。 */
 const LIVE_B=['e','mus','muk','q','dragLin','dragQuad','dampLin','dampAng','gs','m','I','mg','im0','iI0'];
 const LIVE_SKIP={type:1,tg:1,targets:1};
 function liveState(W){
@@ -1741,8 +1743,8 @@ function liveSpec(W,spec){
 return{DEF,SHP,FLD,JNT,COL,PULL,create,advance,step,energy,momentum,snapshot,restore,origin,setAngle,updShapes,isConvex,polyProps,ccw,anchorW,pathGeom,peBody,pullAt,poke,liveState,setLive,liveSpec}
 })();
 
-/* ===== 物理シナリオ PHS（台帳Z-168。roadmap C-0）=====
-   シナリオJSON（データだけ。コードは書かない）→ 検証（日本語のエラー）→ エンジンPHEの世界 → 実行 → 測定（probes）→ 答え合わせ（ask）→ 掃引（sweep）。
+/* ===== 物理の実験 PHS（台帳Z-168。roadmap C-0）=====
+   実験JSON（データだけ。コードは書かない）→ 検証（日本語のエラー）→ エンジンPHEの世界 → 実行 → 測定（probes）→ 答え合わせ（ask）→ 掃引（sweep）。
    純粋なJS（DOM・ACに触れない）。Nodeでも動く（tools/phys_check.js）。単位はSI、x右・y上、角度は度（反時計回りが正）、角速度はrad/s。
    拡張は表に1項目足す：測れる量 BP（物体の量）・JP（拘束の量）・WP（世界の量）・FN（式で使える関数）・RED（時系列の集計）。 */
 const PHS=(function(){
@@ -1895,7 +1897,7 @@ const RULE_OPS={kick:{body:1,v:1},setVel:{body:1,v:1},stop:{},note:{text:1}};
 const SHAPE_NEED={circle:['r'],box:['w','h'],poly:['pts'],plane:[],arc:['r']};
 function validate(scn){
   const V={errors:[],warns:[],err(m){this.errors.push(m)},warn(m){this.warns.push(m)}};
-  if(!scn||typeof scn!=='object'||Array.isArray(scn)){V.err('シナリオはオブジェクト（{…}）で書いてください');return V}
+  if(!scn||typeof scn!=='object'||Array.isArray(scn)){V.err('実験はオブジェクト（{…}）で書いてください');return V}
   checkKeys(scn,'top','',V);
   if(!scn.id||typeof scn.id!=='string'||!/^[A-Za-z0-9_\-]+$/.test(scn.id))V.err('id: 半角英数字・ハイフン・アンダースコアの文字列が必要です（例: "incline-friction"）');
   if(!scn.title)V.warn('title: 題名がありません');
@@ -1980,7 +1982,7 @@ function mkEnv(scn,over){
   for(const k of Object.keys(scn.vars||{})){const v=scn.vars[k];env[k]=compile(v,resolveBase)();order.push(k)}
   return{env,resolve:resolveBase}}
 function buildSpec(scn,over){   /* 仕様（spec）までを作る。世界（PHE.create）は作らない：実行中に条件を変える時（session.reparam）は、これだけで比べて入れ替える */
-  const V=validate(scn);if(V.errors.length)throw new Error('シナリオに誤りがあります:\n  '+V.errors.join('\n  '));
+  const V=validate(scn);if(V.errors.length)throw new Error('実験に誤りがあります:\n  '+V.errors.join('\n  '));
   const{env,resolve}=mkEnv(scn,over);
   const num=(x,what,d)=>{if(x===undefined||x===null)return d;if(isNum(x))return x;if(typeof x==='string'){const v=compile(x,resolve)();if(!isNum(v))throw new Error(what+': 式「'+x+'」の値が数になりません');return v}throw new Error(what+': 数か式で書いてください')};
   const vec=(a,what,d)=>{if(a===undefined)return d;if(Array.isArray(a)&&a.length===2)return[num(a[0],what+'[0]'),num(a[1],what+'[1]')];throw new Error(what+': [x,y]の形で書いてください')};
@@ -2028,7 +2030,7 @@ function build(scn,over){const B=buildSpec(scn,over);B.W=PHE.create(B.spec);retu
 
 /* ---------- 実行中に変えてよい値（台帳Z-211）----------
    力・係数・質量・場・ばね定数・重力は、時間を保ったまま入れ替えられる。はじめの位置・速さ・形・つなぐ所は「はじめの値」なので、変えたら最初から作り直す。
-   liveStrip＝シナリオから「変えてよい値」を除いたもの（これが同じなら、違いは変えてよい値だけ）。specStrip＝仕様（spec）について同じ。 */
+   liveStrip＝実験から「変えてよい値」を除いたもの（これが同じなら、違いは変えてよい値だけ）。specStrip＝仕様（spec）について同じ。 */
 const LIVE_BK=['m','e','q','gs','dragLin','dragQuad','dampLin','dampAng','mu','mus','muk','I'];
 function liveStrip(scn){
   const o=JSON.parse(JSON.stringify(scn));delete o.params;if(o.world){delete o.world.g;delete o.world.gdir}
@@ -2062,17 +2064,17 @@ function installExtras(){
   EXTRA.dist=(args)=>{const A=args[0].str,B=args[1].str;return()=>{const W=EXTRA._W;const a=W.byId.get(A),b=W.byId.get(B);if(!a||!b)return NaN;const p=PHE.origin(a),q=PHE.origin(b);return Math.hypot(p[0]-q[0],p[1]-q[1])}}}
 installExtras();
 
-/* 実行の本体：1刻みずつ進められる「セッション」。アプリ（53-phys-run.js）は毎フレーム step() を呼び、run() は最後まで回して finish() する。
+/* 実行の本体：1刻みずつ進められる「実行」。アプリ（53-phys-run.js）は毎フレーム step() を呼び、run() は最後まで回して finish() する。
    opt: params（上書き）・t（終わりの時刻）・series（グラフ用に追加で取る式）・every（何刻みごとに記録するか。既定は run.sample）・built（作成済みの世界）・onSample */
 function session(scn,opt){
   opt=opt||{};
   const B=opt.built||build(scn,opt.params);const W=B.W,acc=mkAccess(B);EXTRA._W=W;
   const T=num0(opt.t!==undefined?opt.t:runT(B,scn),5),every=Math.max(1,Math.round(opt.every||(((scn.run&&scn.run.sample)||0)/(1/120)))||1);
-  /* 表示の長さ Tv（台帳Z-208）：測定の窓 T（run.t。答え合わせの時間）より長い時だけ、測定のあとも物理を続けて見せる。
+  /* 表示の長さ Tv（台帳Z-208）：測定区間 T（run.t。答え合わせの時間）より長い時だけ、測定のあとも物理を続けて見せる。
      測定・答え合わせ・出来事は T までで確定（snap）。続きは物理の時間のまま（引き延ばさない）。動きが止まれば、そこで自然に終わる（rested） */
   const Tv=Math.max(T,num0(opt.show!==undefined?opt.show:(scn.run&&scn.run.show),0));
-  /* endless（台帳Z-214。アプリが使う）：時間では止まらない。測定の窓（T）・止める条件は「答え合わせを確定する区切り」でしかなく、物理はそのあとも続く。
-     時刻（W.t）は数えるだけ。止まるのは、アプリが一時停止した時だけ（ON/OFFと時刻は別）。endlessでない使い方（run・掃引・検査）は、これまでどおり測定の窓（と表示の長さ）で終わる */
+  /* endless（台帳Z-214。アプリが使う）：時間では止まらない。測定区間（T）・止める条件は「答え合わせを確定する区切り」でしかなく、物理はそのあとも続く。
+     時刻（W.t）は数えるだけ。止まるのは、アプリが一時停止した時だけ（ON/OFFと時刻は別）。endlessでない使い方（run・掃引・検査）は、これまでどおり測定区間（と表示の長さ）で終わる */
   const endless=!!opt.endless;let taint=null,evk=1;
   const comp=(src,what)=>{try{return compile(src,acc.resolve)}catch(e){throw new Error(what+': '+e.message)}};
   const probes=Object.entries(scn.probes||{}).map(([k,p])=>({k,p,f:comp(p.expr,'probes.'+k+'.expr'),w:p.when?comp(p.when,'probes.'+k+'.when'):null}));
@@ -2092,7 +2094,7 @@ function session(scn,opt){
   {const sn=PHE.snapshot(W),v0=W.bodies.map(b=>[b.vx,b.vy]);PHE.advance(W,DT);
    W.bodies.forEach((b,k)=>{acc.ctx.acc[k][0]=(b.vx-v0[k][0])/DT;acc.ctx.acc[k][1]=(b.vy-v0[k][1])/DT});PHE.restore(W,sn)}
   sample(0);let stopped=false,i=0,snap=null,rested=false,rest=0,rref=null;
-  /* 動きが止まったか（測定の窓のあと）：動く物体がどれも 0.5秒（REST_N刻み）の間、1cm・0.03rad以上動かなければ止まったと見なす。
+  /* 動きが止まったか（測定区間のあと）：動く物体がどれも 0.5秒（REST_N刻み）の間、1cm・0.03rad以上動かなければ止まったと見なす。
      速さではなく移動量で見るので、床の上の接触のこまかい震えでは止まりそこねない。動いている間（等速で遠ざかるなど）は続く */
   const REST_N=60,REST_D=.01,REST_A=.03;
   const calmStep=()=>{
@@ -2119,12 +2121,12 @@ function session(scn,opt){
     if(endless){
       if(!snap){
         if(i<=n&&(i%every===0||i===n)){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}
-        if(stopped||i>=n)snap=compute();   /* 測定の窓が終わった（または止める条件が成り立った）：答え合わせを確定。物理は続く */
+        if(stopped||i>=n)snap=compute();   /* 測定区間が終わった（または止める条件が成り立った）：答え合わせを確定。物理は続く */
       }else{rested=calmStep();if(i%(every*evk)===0){sample(i);if(ts.length>=8192)thin()}}   /* 窓のあとも、グラフ用の記録は続ける（長くなったら間引く）。rested＝いま静まっている（止めはしない） */
       return true}
     if(i<=n){if(i%every===0||i===n){sample(i);if(opt.onSample)opt.onSample(W,i);if(stop&&stop())stopped=true}}
-    else if(!stopped&&calmStep())rested=true;   /* 測定の窓のあとは、記録も止める条件の判定もしない（測定の結果を変えない） */
-    if(i===n&&nv>n&&!snap)snap=compute();   /* 測定の窓の終わりで、答え合わせを確定する */
+    else if(!stopped&&calmStep())rested=true;   /* 測定区間のあとは、記録も止める条件の判定もしない（測定の結果を変えない） */
+    if(i===n&&nv>n&&!snap)snap=compute();   /* 測定区間の終わりで、答え合わせを確定する */
     return !(stopped||rested||i>=nv)};
   const compute=()=>{
   /* 集計 */
@@ -2165,10 +2167,10 @@ function session(scn,opt){
     PHE.setLive(W,st);for(const k of Object.keys(B.env))delete B.env[k];Object.assign(B.env,B2.env);B.spec=B2.spec;B.scn=scn2;B.over=B2.over;cache.clear();
     if(i>0&&!snap&&!taint)taint='param';
     return true};
-  const finish=()=>snap||compute();   /* 測定の窓が終わっていれば、その時点で確定した結果（続きを見せていても変わらない） */
+  const finish=()=>snap||compute();   /* 測定区間が終わっていれば、その時点で確定した結果（続きを見せていても変わらない） */
   /* いまの状態で式を評価する（ビジュアルプログラミングの「条件を見る」・画面の読み出し用）。式は使い回す */
   const ev=(src)=>{let f=cache.get(src);if(!f){f=compile(src,acc.resolve);cache.set(src,f)}return f()};
-  /* T＝表示の長さ（実行バー・「最初へ戻す」の判定に使う）、Tm＝測定の窓（run.t）。measured＝測定の窓が終わった（答え合わせを出してよい） */
+  /* T＝表示の長さ（実行バー・「最初へ戻す」の判定に使う）、Tm＝測定区間（run.t）。measured＝測定区間が終わった（答え合わせを出してよい） */
   const S={B,W,ts,series:ser,T:endless?Infinity:Tv,Tm:T,n:endless?Infinity:nv,nm:n,DT,acc:acc.ctx.acc,step,finish,ev,log,poke,reparam,endless,taint:r=>{if(!snap&&!taint)taint=r},setHook:f=>{hook=f},get events(){const o={};for(const e of events)o[e.k]=e.t;return o},get i(){return i},get stopped(){return stopped},get rested(){return rested},get measured(){return stopped||i>=n},get done(){return endless?false:(stopped||rested||i>=nv)},get tainted(){return taint}};
   return S}
 function run(scn,opt){const S=session(scn,opt);while(S.step());return S.finish()}
@@ -2191,7 +2193,7 @@ function fit(rows,f,scn){
 function toCSV(cols,rows){const esc=v=>typeof v==='number'?String(+v.toPrecision(8)):String(v);return[cols.join(',')].concat(rows.map(r=>cols.map(c=>esc(r[c])).join(','))).join('\n')}
 function seriesCSV(res,names){const cols=['t'].concat(names||Object.keys(res.series));const rows=res.ts.map((t,i)=>{const r={t};for(const c of cols.slice(1))r[c]=res.series[c][i];return r});return toCSV(cols,rows)}
 
-/* 作者向けのプロトタイプ（最小の有効なシナリオ） */
+/* 作者向けの白紙の実験（最小の有効な実験） */
 function template(){return{id:'my-scenario',title:'題名',tags:['力学'],source:'オリジナル（型の名前）',level:'basic',problem:'（問題文は自分の言葉で書く）',
   params:{theta:{v:30,min:5,max:60,step:1,unit:'°',label:'斜面の角度'},mu:{v:.2,min:0,max:1,step:.05,label:'動摩擦係数'}},
   vars:{L:'2'},world:{g:9.8},view:{x0:0,y0:0,w:6},
@@ -2204,26 +2206,26 @@ function template(){return{id:'my-scenario',title:'題名',tags:['力学'],sourc
 
 return{FN,BP,JP,WP,RED,KEYS,RULE_OPS,compile,validate,build,buildSpec,liveStrip,specStrip,session,run,sweep,fit,toCSV,seriesCSV,template,suggest,tokenize}
 })();
-/* ===== 物理シナリオの実行層 SCN／RUN（台帳Z-172。roadmap C-0 の「アプリの層」）=====
-   エンジンPHE・シナリオPHS・描画PHRを、アプリ（アクター・保存・Undo・物理タブ）につなぐ。物理の計算そのものはここに書かない。
+/* ===== 物理の実験の実行層 SCN／RUN（台帳Z-172。roadmap C-0 の「アプリの層」）=====
+   エンジンPHE・実験PHS・描画PHRを、アプリ（アクター・保存・Undo・物理タブ）につなぐ。物理の計算そのものはここに書かない。
    【状態の分類（五基盤）】
-   ・SCN＝作品のデータ。シナリオ本体（JSON）・条件（params）の上書き・表示の設定・絵との対応（link）・グラフの式。保存（ser）とUndo（snap）に入る。
+   ・SCN＝作品のデータ。実験本体（JSON）・条件（params）の上書き・表示の設定・絵との対応（link）・グラフの式。保存（ser）とUndo（snap）に入る。
    ・RUN＝実行中の状態（世界・時刻・描画の状態・結果）。保存もUndoにも入れない。SCNが変わるか「最初へ」で作り直す（決定的なので同じ結果になる）。
    ・時間：固定刻み TIME.DT=1/120 s。フレームの経過時間は累積して刻みの整数倍だけ進める。描画の速さに結果が依存しない。
    【絵（アクター）との関係】
    ・アクターの fx,fy,size,rot は「配置」（Undo・保存の対象）。実行中の姿勢は描画のときだけ上書きする（scnPose）ので、配置は壊れない。
    ・つなぐ（link）：物体のid→アクターのid。つないだ時と、条件を変えた時（scnSyncLinks）に、アクターの位置・大きさ・向きを物体の初期姿勢に合わせる。
    ・つないだ物体は、物理の形（色つきの図形）のかわりに絵が見える。当たり判定の線は「当たり線」で重ねて確かめられる。
-   ・シナリオの物体に img（絵文字）があれば、読み込み時にアクターを自動で作ってつなぐ（scnAuto。シナリオを閉じる・替える時に消す）。
-   ・旧：50-physics.js（アクターごとの簡易物理）は、シナリオが開いている間は止める。
+   ・実験の物体に img（絵文字）があれば、読み込み時にアクターを自動で作ってつなぐ（scnAuto。実験を閉じる・替える時に消す）。
+   ・旧：50-physics.js（アクターごとの簡易物理）は、実験が開いている間は止める。
    【人の手・編集との連動（台帳Z-185。「物理が他の機能から分離しすぎ」への対応）】
    ・実行中にキャンバスを触る：絵（または物体）を押すと、バネでつかむ（RUN.grab → エンジンのpull）。離すと、その速さで投げられる。短いタップは「つつく」（力積）。
      入力は刻み番号をキーに RUN.inp へ記録し、各刻みの直前に hook（scnHook）が入れる。巻き戻して進め直しても同じ結果になる（過去に戻して新しく触ると、その先の記録は捨てる）。
-   ・止まっている時に絵をドラッグ：離した時に、絵の位置が物体の初期位置になる（scnPlaceActor）。シナリオだけの物体（絵につないでいない）も、最初の時刻なら動かせる（scnMove*）。
+   ・止まっている時に絵をドラッグ：離した時に、絵の位置が物体の初期位置になる（scnPlaceActor）。実験だけの物体（絵につないでいない）も、最初の時刻なら動かせる（scnMove*）。
    ・絵の大きさ・向きを変える／描き足す・消す・差し替える：scnWatch が見つけて、つないだ物体に反映する（絵から作った物体は形を作り直す＝scnArtRefresh。絵の編集と同じUndoに乗る）。
    ・絵を消す：絵から作った物体も一緒に消える（scnUnlinkActor）。時間：全体の速さgsが物理にも掛かる。
-   【時刻とON/OFFは別（台帳Z-214）】物理のセッションは**時間では止まらない**（PHS.session の endless）。時刻（S.W.t）は数えて表示するだけ。
-     測定の窓（run.t）・止める条件は「答え合わせを確定する区切り」で、物理はそのあとも続く。止まるのは、ユーザーが一時停止した時（RUN.playing）と、タイマー（SCN.timer。任意。既定なし）に達して一時停止した時だけ。
+   【時刻とON/OFFは別（台帳Z-214）】物理の実行は**時間では止まらない**（PHS.session の endless）。時刻（S.W.t）は数えて表示するだけ。
+     測定区間（run.t）・止める条件は「答え合わせを確定する区切り」で、物理はそのあとも続く。止まるのは、ユーザーが一時停止した時（RUN.playing）と、タイマー（SCN.timer。任意。既定なし）に達して一時停止した時だけ。
    【条件を触ってもやり直さない（台帳Z-211）】力・係数・質量・場・ばね定数・重力などの変更は scnReflect が、時間・位置・速さを保ったまま世界へ入れる（エンジンの liveSpec/setLive）。
      入れた値は刻み番号つきで RUN.lch に記録し、各刻みの直前（scnHook）に入れる＝巻き戻して進め直しても同じ結果。はじめの位置・速さ・形・つなぐ所を変えた時だけ、最初から作り直す（RUN.dirty）。 */
 const TIME={DT:1/120,MAXSTEP:16,BUDGET:10};
@@ -2233,7 +2235,7 @@ const scnKey=()=>JSON.stringify([SCN.src,SCN.params,SCN.graph]);   /* いまの�
 const scnSk=eff=>JSON.stringify([PHS.liveStrip(eff),SCN.graph]);   /* 変えてよい値を除いた目印：これが同じなら、違いは「あとから変えてよい値」だけ */
 const RUN={sess:null,R:null,playing:false,acc:0,err:'',warns:[],res:null,al:new Map(),key:'',rev:0,uiRev:-1,acKey:'',dirty:false,a0:[],p0:[],view:{x0:0,y0:0,w:6},fr:0,
   inp:new Map(),inpMax:-1,grab:null,mv:null,pq:[],pulled:new Set(),pend:new Map(),
-  lch:new Map(),l0:null,sk:'',tmax:0};   /* 条件の変更（台帳Z-211）：lch＝刻み番号→その時の「変えてよい値」／l0＝はじめの値／sk＝変えてよい値を除いたシナリオの目印／tmax＝いままでに進んだ時刻 */   /* 人の手：inp＝刻み番号→入力の記録／grab＝いまつかんでいる物／mv＝配置のドラッグ／pq＝つつくの待ち行列／pend＝絵の変更の反映待ち（actor id→時刻） */
+  lch:new Map(),l0:null,sk:'',tmax:0,pick:null,showAll:false,selSeen:null,fmv:null};   /* 条件の変更（台帳Z-211）：lch＝刻み番号→その時の「変えてよい値」／l0＝はじめの値／sk＝変えてよい値を除いた実験の目印／tmax＝いままでに進んだ時刻 */   /* 人の手：inp＝刻み番号→入力の記録／grab＝いまつかんでいる物／mv＝配置のドラッグ／pq＝つつくの待ち行列／pend＝絵の変更の反映待ち（actor id→時刻） */
 const PTR={on:true};   /* UIの一時状態：キャンバスを触って物理を動かす（つかむ・つつく）。保存・Undoには入れない */
 const scnLive=()=>!!(SCN.on&&RUN.sess&&RUN.R);
 const scnFmt=x=>typeof x==='number'&&isFinite(x)?String(+x.toPrecision(4)):String(x);
@@ -2247,14 +2249,14 @@ function scnHiddenIds(){
   if(!physHideEx||!SCN.src)return[];const o=[];
   for(const id of Object.keys(SCN.link)){const a=byId(SCN.link[id].a);if(a&&!isVisible(a))o.push(id)}
   return o}
-function scnEffSrc(){   /* 計算に使うシナリオ：SCN.src そのもの（隠れた絵が無ければ）か、隠れた物体を collide:false にした複製。物体の並びは変えない */
+function scnEffSrc(){   /* 計算に使う実験：SCN.src そのもの（隠れた絵が無ければ）か、隠れた物体を collide:false にした複製。物体の並びは変えない */
   const h=scnHiddenIds();RUN.hid=h.join(',');if(!h.length)return SCN.src;
   const c=scnClone(SCN.src);for(const b of c.bodies)if(h.includes(b.id))b.collide=false;return c}
 
 /* ---------- 作る・やり直す ---------- */
 function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻して進め直す時だけ）。それ以外は、条件が変わるので記録を捨てる */
   RUN.sess=null;RUN.R=null;RUN.res=null;RUN.err='';RUN.warns=[];RUN.al=new Map();RUN.acc=0;RUN.logI=0;RUN.quiet=false;
-  if(!keepInp){RUN.inp=new Map();RUN.inpMax=-1;RUN.lch=new Map();RUN.l0=null;RUN.tmax=0}RUN.grab=null;RUN.mv=null;RUN.pq=[];RUN.pulled=new Set();RUN.pend=new Map();
+  if(!keepInp){RUN.inp=new Map();RUN.inpMax=-1;RUN.lch=new Map();RUN.l0=null;RUN.tmax=0}RUN.grab=null;RUN.mv=null;RUN.fmv=null;RUN.pq=[];RUN.pulled=new Set();RUN.pend=new Map();
   RUN.key=scnKey();RUN.sk='';
   if(!SCN.src)return;
   try{
@@ -2276,7 +2278,7 @@ function scnBuild(keepInp){   /* keepInp＝入力の記録を残す（巻き戻�
   }catch(e){RUN.err=String(e&&e.message||e);RUN.sess=null;RUN.R=null}
 }
 function scnReset(){RUN.playing=false;scnBuild();scnSyncLinks();scnUi()}
-/* シナリオを開く（サンプル・貼り付け・プロトタイプ）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
+/* 実験を開く（サンプル・貼り付け・白紙の実験）。戻り値{ok,errors,warns}。同じid（編集の読み直し）なら、条件・つなぎ・自動で作った絵を保つ */
 function scnSetSource(src,o){
   o=o||{};const V=PHS.validate(src);
   if(V.errors.length)return{ok:false,errors:V.errors,warns:V.warns};
@@ -2331,12 +2333,12 @@ function scnLinkBody(bodyId,a,o){
   SCN.link[bodyId]={a:a.id,bx:(bb.x0+bb.x1)/2,by:(bb.y0+bb.y1)/2,fx:((v.x0+v.x1)/2-v.iw/2)/im,fy:((v.y0+v.y1)/2-v.ih/2)/im,w0:blong*im/vlong,k:o.k||1,rot0:a.rot||0};
   scnBindLinks();scnSyncLinks();RUN.rev++;dirtyProj=true;return true}
 function scnUnlinkBody(bodyId){const L=SCN.link[bodyId];if(!L)return;const a=byId(L.a);delete SCN.link[bodyId];if(a&&a.scnAuto){unlinkRefs(a);AC=AC.filter(x=>x!==a);if(sel===a)setSel(AC[0]||null)}scnBindLinks();RUN.rev++;dirtyProj=true}
-/* シナリオを書き換える（fnがSCN.srcを直接直す）。検証に通らなければ元に戻す。つなぎ（link）は保つ。デモ・絵から作る機能が使う */
+/* 実験を書き換える（fnがSCN.srcを直接直す）。検証に通らなければ元に戻す。つなぎ（link）は保つ。デモ・絵から作る機能が使う */
 function scnEdit(fn){
   if(!SCN.src)return false;pushUndo();const bak=scnClone(SCN.src);fn(SCN.src);const V=PHS.validate(SCN.src);
-  if(V.errors.length){SCN.src=bak;note('シナリオを直せませんでした：'+V.errors.slice(0,2).join(' / '));return false}
+  if(V.errors.length){SCN.src=bak;note('実験を直せませんでした：'+V.errors.slice(0,2).join(' / '));return false}
   RUN.playing=false;scnBuild();RUN.dirty=false;scnSyncLinks();RUN.rev++;dirtyProj=true;scnUi();return true}
-/* 物体をシナリオから外す（それを使う糸・力場・対も外す）。絵から作った物体の削除に使う */
+/* 物体を実験から外す（それを使う糸・力場・対も外す）。絵から作った物体の削除に使う */
 function scnRemoveBody(id){
   if(!SCN.src)return;pushUndo();const s=SCN.src,uses=x=>x===id||(x&&typeof x==='object'&&x.body===id);
   s.bodies=s.bodies.filter(b=>b.id!==id);if(s.params)delete s.params['m_'+id];delete SCN.link[id];
@@ -2381,13 +2383,13 @@ function scnTick(dt){
     while(RUN.acc>=TIME.DT&&!S.done){S.step();RUN.acc-=TIME.DT;n++;scnAfter();
       if(SCN.timer!=null&&tp<SCN.timer-1e-9&&S.W.t>=SCN.timer-1e-9){RUN.playing=false;RUN.acc=0;note('タイマー（'+scnFmt(SCN.timer)+'秒）で一時停止しました。▶ で続けます（物理が終わったわけではありません）',4500);break}   /* タイマーは使う人が選んだ一時停止。時刻が物理を止めるのではない（台帳Z-214） */
       if(n>=TIME.MAXSTEP||performance.now()-t0>TIME.BUDGET){RUN.acc=Math.min(RUN.acc,TIME.DT*2);break}}
-    if(S.measured&&!RUN.res){try{RUN.res=S.finish()}catch(e){RUN.err=String(e&&e.message||e)}RUN.uiAns=1}   /* 測定の窓（run.t）が終わった：答え合わせは確定。続きの再生はこのあとも続く */
+    if(S.measured&&!RUN.res){try{RUN.res=S.finish()}catch(e){RUN.err=String(e&&e.message||e)}RUN.uiAns=1}   /* 測定区間（run.t）が終わった：答え合わせは確定。続きの再生はこのあとも続く */
     if(S.done)scnEnd();
   }
   if(RUN.menuPlaying!==RUN.playing)scnMenuSync();
   if(++RUN.fr%3===0||RUN.uiAns)scnUiTime()}
 function scnPlay(){
-  if(!RUN.sess)return;if(RUN.sess.done){scnBuild();scnSyncLinks()}   /* 時刻では最初に戻さない（台帳Z-214）。終わるのは、シナリオが自分で終わりにした時だけ（endlessでは起きない） */
+  if(!RUN.sess)return;if(RUN.sess.done){scnBuild();scnSyncLinks()}   /* 時刻では最初に戻さない（台帳Z-214）。終わるのは、実験が自分で終わりにした時だけ（endlessでは起きない） */
   if(paused)$('pl').click();RUN.playing=!RUN.playing;RUN.acc=0;scnUi()}
 function scnStepN(n){if(!RUN.sess)return;RUN.playing=false;const S=RUN.sess;for(let i=0;i<n&&!S.done;i++){S.step();scnAfter()}if(S.done)scnEnd();else if(S.measured&&!RUN.res){RUN.res=S.finish();RUN.uiAns=1}scnUi()}
 function scnSeek(t){   /* その時刻へ。進むだけなら今の状態から、戻るなら作り直して進める */
@@ -2399,14 +2401,14 @@ function scnSeek(t){   /* その時刻へ。進むだけなら今の状態から
   if(S.done)scnEnd();else{RUN.res=S.measured?S.finish():null;RUN.uiAns=1}scnUiTime()}
 
 /* ---------- 描く（paintFrameから）---------- */
-/* 追従カメラ（台帳Z-208）：シナリオの view.follow に書いた物体を追う（opt.follow が偽なら動かさない）。視点だけを動かし縮尺は変えない。
+/* 追従カメラ（台帳Z-208）：実験の view.follow に書いた物体を追う（opt.follow が偽なら動かさない）。視点だけを動かし縮尺は変えない。
    位置は「いまの姿」と「はじめの姿」だけで決まる（PHR.camShift）ので、巻き戻しても同じ。時刻0は必ず基準の視点＝絵に物理を付けた作品（followなし）は今までどおり動かない */
 function scnCam(){
   const S=RUN.sess,v=RUN.view,v0=RUN.v0;if(!S||!v||!v0)return;
   let dx=0,dy=0;const id=v0.follow&&String(v0.follow);
   if(id&&SCN.opt.follow!==false&&S.W.t>0){const b=S.W.byId.get(id);if(b&&RUN.p0[b.idx]){const c=PHR.camShift(v0,W||1,H||1,[b.px,b.py],RUN.p0[b.idx]);dx=c.dx;dy=c.dy}}
   v.x0=v0.x0+dx;v.y0=v0.y0+dy}
-function scnFrame(){scnCam();const R=RUN.R;R.cw=W;R.ch=H;R.opt=scnROpt();R.T=PHR.mkT(R.view,W,H);return R}
+function scnFrame(){scnCam();const R=RUN.R;R.cw=W;R.ch=H;R.opt=scnROpt();R.hl=scnPick();R.T=PHR.mkT(R.view,W,H);return R}
 function scnUnder(){if(!scnLive()||drawOnly)return;ctx.save();PHR.under(ctx,scnFrame());ctx.restore()}
 function scnOver(){if(!scnLive()||drawOnly)return;ctx.save();PHR.over(ctx,scnFrame());scnHandDraw();ctx.restore()}
 /* つないだアクターの、いまの姿勢（描く位置とm.rへの加算）。つないでいなければnull。ドラッグ中・他に付いているアクターは対象外 */
@@ -2458,23 +2460,92 @@ function scnPtrDown(p,e){
   if(!scnLive()||!PTR.on)return false;
   const h=hit(p),lb=scnLinkedBody(h);
   if(scnRunning()){
-    if(lb){if(lb.type!=='dynamic'){if(h!==sel)setSel(h);return true}return scnGrabStart(lb,p)}   /* 地形・台は実行中は動かさない（選ぶだけ） */
-    const f=scnBodyAt(scnP2M(p));return f&&f.b.type==='dynamic'?scnGrabStart(f.b,p,f.inside):false}
+    if(lb){if(lb.type!=='dynamic'){if(h!==sel)setSel(h);return true}scnPickSet({kind:'body',id:lb.id});return scnGrabStart(lb,p)}   /* 地形・台は実行中は動かさない（選ぶだけ） */
+    const f=scnBodyAt(scnP2M(p));
+    if(f){scnPickSet({kind:'body',id:f.b.id});return f.b.type==='dynamic'?scnGrabStart(f.b,p,f.inside):false}
+    return scnFieldStart(p,h)}   /* 物体が無い所：力場（電場・磁場など）の上なら、それを選ぶ・動かす（台帳Z-216） */
   if(lb)return false;   /* 絵につないだ物体：いつもの絵のドラッグ。離した時に scnPlaceActor が初期位置にする */
   const f=scnBodyAt(scnP2M(p));
-  if(f&&f.b.type!=='kinematic'&&RUN.sess.W.t===0&&!f.b.shapes.some(sh=>sh.k==='pl'||sh.k==='ar')){RUN.mv={b:f.b,id:f.b.id,m0:scnP2M(p),o0:[f.b.px,f.b.py],moved:false};return true}
-  return false}
+  if(f){scnPickSet({kind:'body',id:f.b.id});
+    if(f.b.type!=='kinematic'&&RUN.sess.W.t===0&&!f.b.shapes.some(sh=>sh.k==='pl'||sh.k==='ar')){RUN.mv={b:f.b,id:f.b.id,m0:scnP2M(p),o0:[f.b.px,f.b.py],moved:false};return true}
+    return false}
+  return scnFieldStart(p,h)}
+/* ---------- 選んだ物だけのつまみ・力場をつかむ（台帳Z-215・Z-216）----------
+   RUN.pick＝いま選んでいる物理のもの {kind:'body',id}／{kind:'field',i}（保存しない）。物体・力場を押す／つかむと決まり、何も無い所を押すと外れる。
+   絵を選んでいる時は、その絵につないだ物体。つまみ（条件）は、選んだ物の式が使う条件だけを出す（scnShownKeys）。 */
+function scnPick(){
+  const s=SCN.src;if(!s)return null;const p=RUN.pick;
+  if(p){if(p.kind==='body'&&(s.bodies||[]).some(b=>b.id===p.id))return p;if(p.kind==='field'&&s.fields&&s.fields[p.i])return p}
+  const r=sel&&scnRoleOf(sel);return r?{kind:'body',id:r.id}:null}
+function scnPickKey(){const p=scnPick();return(p?p.kind+':'+(p.kind==='body'?p.id:p.i):'-')+(RUN.showAll?'A':'')}
+function scnPickSet(p){
+  if(JSON.stringify(RUN.pick||null)===JSON.stringify(p||null))return;
+  RUN.pick=p||null;if(p)RUN.selSeen=sel;scnUi()}
+const FIELD_NAME={uniform:'一様な場',force:'力の場',E:'電場',B:'磁場',central:'中心力の場',drag:'抵抗の場',coulomb:'クーロン力',gravity:'万有引力'};
+function scnPickName(p){const s=SCN.src;if(!p||!s)return'';
+  if(p.kind==='body'){const b=s.bodies.find(x=>x.id===p.id);return(b&&b.label)||p.id}
+  const f=s.fields[p.i];return(f&&f.label)||FIELD_NAME[f&&f.type]||'力場'}
+/* 力場の領域（rect・circle）の上か。境界の少し外（指の太さ）まで */
+function scnFieldAt(m){const S=RUN.sess;if(!S)return-1;const F=S.W.fields,tol=HAND.PICK_PX/scnK();
+  for(let i=F.length-1;i>=0;i--){const r=F[i].region;if(!r)continue;
+    if(r.rect&&m.x>=r.rect[0]-tol&&m.x<=r.rect[2]+tol&&m.y>=r.rect[1]-tol&&m.y<=r.rect[3]+tol)return i;
+    if(r.circle&&Math.hypot(m.x-r.circle[0],m.y-r.circle[1])<=r.circle[2]+tol)return i}
+  return-1}
+function scnFieldStart(p,h){
+  if(h)return false;   /* 物理につないでいない絵の上：いつもの絵の扱い */
+  const m=scnP2M(p),i=scnFieldAt(m);
+  if(i<0){scnPickSet(null);return false}
+  scnPickSet({kind:'field',i});const r=SCN.src.fields[i]&&SCN.src.fields[i].region;if(!r)return false;
+  RUN.fmv={i,m0:m,r0:scnClone(r),moved:false,t:0};return true}
+/* 式の位置をずらす：数はそのまま足す。式（条件を使う）は「(式)+ずれ」にして、条件とのつながりを残す */
+function scnShiftExpr(v,d){
+  if(Math.abs(d)<1e-9)return v;if(typeof v==='number')return+(v+d).toFixed(5);
+  const s=String(v).trim(),m=/^\((.*)\)([+-][0-9.]+(?:e[+-]?\d+)?)$/.exec(s);let base=s,off=0;if(m){base=m[1];off=+m[2]}
+  const t=+(off+d).toFixed(5);return Math.abs(t)<1e-9?base:'('+base+')'+(t>=0?'+':'')+t}
+function scnFieldShift(v,dx,dy){const f=SCN.src.fields[v.i],r0=v.r0;if(!f)return;
+  if(r0.rect)f.region={rect:[scnShiftExpr(r0.rect[0],dx),scnShiftExpr(r0.rect[1],dy),scnShiftExpr(r0.rect[2],dx),scnShiftExpr(r0.rect[3],dy)]};
+  else if(r0.circle)f.region={circle:[scnShiftExpr(r0.circle[0],dx),scnShiftExpr(r0.circle[1],dy),r0.circle[2]]}}
+/* つまみの持ち主：条件名 → それを式に使う物（body:id／field:i）。途中の変数（vars）の先もたどる。つなぎ（joints）は、つないだ物体のものとして数える */
+const SKIPK=new Set(['id','label','type','t','img','body','targets','kind','collide','name','tg']);
+function scnStrs(o,out){if(typeof o==='string')out.push(o);else if(Array.isArray(o))for(const x of o)scnStrs(x,out);else if(o&&typeof o==='object')for(const k of Object.keys(o))if(!SKIPK.has(k))scnStrs(o[k],out);return out}
+function scnToks(strs,vars,names){
+  const res=new Set(),seen=new Set(),walk=s=>{for(const m of s.matchAll(/[A-Za-z_][A-Za-z0-9_]*/g)){const w=m[0];if(seen.has(w))continue;seen.add(w);if(names.has(w))res.add(w);if(vars&&typeof vars[w]==='string')walk(vars[w])}};
+  strs.forEach(walk);return res}
+function scnOwners(s){
+  const names=new Set(Object.keys(s.params||{})),vars=s.vars||{},own=new Map();
+  const add=(key,strs)=>{for(const n of scnToks(strs,vars,names)){if(!own.has(n))own.set(n,new Set());own.get(n).add(key)}};
+  (s.bodies||[]).forEach(b=>add('body:'+b.id,scnStrs(b,[])));
+  (s.fields||[]).forEach((f,i)=>add('field:'+i,scnStrs(f,[])));
+  (s.joints||[]).forEach(j=>{const strs=scnStrs(j,[]),ends=JSON.stringify([j.a,j.b,j.via,j.path]);
+    for(const b of s.bodies||[])if(ends.includes('"body":"'+b.id+'"'))add('body:'+b.id,strs)});
+  return own}
+/* 出すつまみ：選んだ物があればその物のだけ／選んでいなくて6個以下なら全部／7個以上なら、どの物のでもない条件だけ（物を触ると出る）。「すべて見る」で全部 */
+function scnShownKeys(box,P){
+  const keys=Object.keys(P),s=SCN.src;if(!keys.length)return keys;
+  const pk=scnPick(),filt=!!pk||keys.length>6;if(!filt)return keys;
+  const own=scnOwners(s),pkey=pk?(pk.kind==='body'?'body:'+pk.id:'field:'+pk.i):null;
+  const mine=pk?keys.filter(k=>own.has(k)&&own.get(k).has(pkey)):keys.filter(k=>!own.has(k));
+  const row=scnEl('div'),note=scnEl('span'),b=scnEl('button');row.className='row';note.className='note';note.style.margin=0;note.style.flex='1';
+  note.textContent=RUN.showAll?'すべての条件を出しています（'+keys.length+'個）':pk?'「'+scnPickName(pk)+'」のつまみだけを出しています'+(mine.length?'':'（関係する条件はありません）'):'物体・力場を触る（つかむ・タップ）と、そのつまみが出ます';
+  b.textContent=RUN.showAll?'選んだものだけ':'すべて見る（'+keys.length+'個）';b.setAttribute('aria-label',RUN.showAll?'選んだ物のつまみだけにする':'すべての条件のつまみを出す');
+  b.onclick=()=>{RUN.showAll=!RUN.showAll;scnUi()};row.append(note,b);box.append(row);
+  return RUN.showAll?keys:mine}
 function scnGrabStart(b,p,inside){
   const m=scnP2M(p),a=inside===false?{rx:0,ry:0}:PHE.pullAt(b,m.x,m.y);
   RUN.grab={id:b.id,rx:a.rx,ry:a.ry,x:m.x,y:m.y,t0:performance.now(),p0:{x:p.x,y:p.y},moved:false};return true}
 function scnPtrMove(p){
+  const fv=RUN.fmv;
+  if(fv){const m=scnP2M(p),dx=m.x-fv.m0.x,dy=m.y-fv.m0.y;
+    if(!fv.moved){if(Math.hypot(dx,dy)*scnK()<HAND.TAP_PX)return true;fv.moved=true;pushUndo()}
+    scnFieldShift(fv,dx,dy);const now=performance.now();if(now-fv.t>40){fv.t=now;scnReflect(true)}return true}
   const g=RUN.grab;
   if(g){const m=scnP2M(p);g.x=m.x;g.y=m.y;if(Math.hypot(p.x-g.p0.x,p.y-g.p0.y)>HAND.TAP_PX)g.moved=true;return true}
   const v=RUN.mv;
   if(v){const m=scnP2M(p),b=v.b;b.px=v.o0[0]+m.x-v.m0.x;b.py=v.o0[1]+m.y-v.m0.y;PHE.updShapes(b);v.moved=true;return true}
   return false}
-/* 離した：つかんでいた物は、その速さのまま手を離れる（短いタップなら「つつく」）。配置のドラッグなら、シナリオの初期位置にする */
+/* 離した：つかんでいた物は、その速さのまま手を離れる（短いタップなら「つつく」）。配置のドラッグなら、実験の初期位置にする */
 function scnPtrEnd(){
+  const fv=RUN.fmv;if(fv){RUN.fmv=null;if(fv.moved){scnReflect(true);RUN.rev++;scnUi()}}   /* 力場を動かした：最後の位置を入れる（やり直さない。途中でも同じ） */
   const g=RUN.grab,v=RUN.mv;
   if(g){RUN.grab=null;
     if(!g.moved&&performance.now()-g.t0<HAND.TAP_MS&&RUN.sess){const b=RUN.sess.W.byId.get(g.id);
@@ -2483,7 +2554,7 @@ function scnPtrEnd(){
   if(v){RUN.mv=null;
     if(v.moved){const i=SCN.src&&SCN.src.bodies.findIndex(x=>x.id===v.id);
       if(i>=0){const o=PHE.origin(v.b);scnEdit(sc=>{sc.bodies[i].pos=[+o[0].toFixed(5),+o[1].toFixed(5)]})}}}}
-function scnPtrCancel(){RUN.grab=null;if(RUN.mv){const v=RUN.mv;RUN.mv=null;if(v.moved&&RUN.sess){v.b.px=v.o0[0];v.b.py=v.o0[1];PHE.updShapes(v.b)}}}
+function scnPtrCancel(){RUN.grab=null;RUN.fmv=null;if(RUN.mv){const v=RUN.mv;RUN.mv=null;if(v.moved&&RUN.sess){v.b.px=v.o0[0];v.b.py=v.o0[1];PHE.updShapes(v.b)}}}
 /* マウスを重ねた時：つかめる物の上ではカーソルを「つかむ」にする（色などの演出はしない） */
 function scnCursor(p){
   let c='';if(RUN.grab)c='grabbing';
@@ -2517,7 +2588,7 @@ function scnWatch(){
     if(art){const sg=scnArtSig(a);if(sg!==o.sig||a.img!==o.img){o.sig=sg;o.img=a.img;ch=true}if(ch)RUN.pend.set(aid,now)}
     if(ch)dirtyProj=true}
   if(restyle){scnBindLinks();scnSyncLinks()}
-  if(RUN.pend.size&&!ptrs.size&&!drawing&&!tgt&&!wg&&!wbg&&!RUN.grab&&!RUN.mv)
+  if(RUN.pend.size&&!ptrs.size&&!drawing&&!tgt&&!wg&&!wbg&&!RUN.grab&&!RUN.mv&&!RUN.fmv)
     for(const[aid,t]of[...RUN.pend])if(now-t>350){scnArtRefresh(aid);break}}   /* 1フレームに1つ（作り直すと全体が最初に戻るため、続きは次のフレームで） */
 function scnArtRefresh(aid){
   const a=byId(aid),o=RUN.al.get(aid);RUN.pend.delete(aid);if(!a||!o)return false;
@@ -2541,7 +2612,7 @@ function scnRestore(str){let o=null;try{o=str?JSON.parse(str):null}catch(_){}scn
 function scnLoad(o){scnApply(o,false)}
 
 /* ---------- 位置の受け渡し ---------- */
-/* 絵の位置・向き → シナリオの初期位置（数に置き換わる。式で書いてあった位置は失われる） */
+/* 絵の位置・向き → 実験の初期位置（数に置き換わる。式で書いてあった位置は失われる） */
 function scnPull(only){   /* only＝配置し直した絵のid集合（絵をドラッグして離した時）。省略＝つないだ絵ぜんぶ（ボタン） */
   if(!RUN.sess||!RUN.al.size){if(!only)note('絵につないだ物体がありません');return}
   if(!only)pushUndo();const k=W/RUN.view.w,V=RUN.v0||RUN.view;let n=0;
@@ -2559,7 +2630,7 @@ function scnCommit(){
   pushUndo();const k=W/RUN.view.w;
   for(const[aid,o]of RUN.al){const a=byId(aid);if(!a||o.st)continue;const b=RUN.sess.W.bodies[o.i],c=b.cs,s=b.sn,cx=b.px+o.ox*c-o.oy*s,cy=b.py+o.ox*s+o.oy*c;
     a.fx=(cx-RUN.view.x0)*k/W;a.fy=(H-(cy-RUN.view.y0)*k)/H;a.rot=o.r0-b.a*180/Math.PI}
-  scnClose({keepActors:true});note('いまの姿を、絵の位置として確定しました（物理シナリオは閉じました。「戻す」で戻せます）',7000)}
+  scnClose({keepActors:true});note('いまの姿を、絵の位置として確定しました（物理の実験は閉じました。「戻す」で戻せます）',7000)}
 
 /* ---------- 物理タブ ---------- */
 const scnEl=document.createElement.bind(document);
@@ -2571,7 +2642,7 @@ function scnUiBuild(){
   $('scProb').textContent=scnProblem();$('scProb').style.display=s.problem?'':'none';
   /* 条件（params） */
   const box=$('scParams');box.innerHTML='';const P=s.params||{};
-  for(const k of Object.keys(P)){const p=P[k],spec=p&&typeof p==='object'?p:{v:p},cur=k in SCN.params?SCN.params[k]:spec.v,unit=spec.unit?' '+spec.unit:'',row=scnEl('div'),lab=scnEl('span');row.className='row';lab.className='lab';lab.style.minWidth='6.5em';lab.textContent=spec.label||k;row.append(lab);
+  for(const k of scnShownKeys(box,P)){const p=P[k],spec=p&&typeof p==='object'?p:{v:p},cur=k in SCN.params?SCN.params[k]:spec.v,unit=spec.unit?' '+spec.unit:'',row=scnEl('div'),lab=scnEl('span');row.className='row';lab.className='lab';lab.style.minWidth='6.5em';lab.textContent=spec.label||k;row.append(lab);
     if(typeof cur==='number'&&isFinite(spec.min)&&isFinite(spec.max)){
       const r=scnEl('input'),v=scnEl('b');r.type='range';r.min=spec.min;r.max=spec.max;r.step=spec.step||(spec.max-spec.min)/100;r.value=cur;r.setAttribute('aria-label',(spec.label||k)+unit);v.className='v';v.textContent=scnFmt(cur)+unit;
       r.oninput=()=>{const x=+r.value;scnSetParam(k,x);v.textContent=scnFmt(x)+unit};row.append(r,v)}
@@ -2582,8 +2653,8 @@ function scnUiBuild(){
   const vb=$('scVec');vb.innerHTML='';
   for(const v of PHR.VEC){const b=scnEl('button');b.textContent=({v:'速度',a:'加速度',Fg:'重力',N:'垂直抗力',fr:'摩擦力',Tn:'張力',Fs:'ばね',Ff:'場の力',net:'合力'})[v[0]]||v[1];b.setAttribute('aria-label',v[1]+'の矢印を見せる');b.classList.toggle('on',!!SCN.opt.vec[v[0]]);b.onclick=()=>{SCN.opt.vec[v[0]]=!SCN.opt.vec[v[0]];b.classList.toggle('on',!!SCN.opt.vec[v[0]]);dirtyProj=true};vb.append(b)}
   const db=$('scDisp');db.innerHTML='';
-  for(const[k,t,tip]of[['follow','追従','視点が、動く物（シナリオのview.followの物体）を追う。画面の外へ出ていく現象を見続けられる'],['trail','軌跡','物体が通った跡'],['strobe','ストロボ','一定の時間おきの姿を残す'],['grid','格子','m単位の格子と目盛り'],['statics','固定物','床・斜面・レールの記号'],['fields','力場','電場・磁場などの範囲'],['joints','糸・ばね','糸・棒・ばねの線'],['labels','名前','物体の名前'],['hit','当たり線','絵に重ねて、物理の形（当たり判定）を赤い線で見せる'],['energy','エネルギー','運動・位置・全体のエネルギー'],['contacts','接点','接触している点']]){
-    if(k==='follow'&&!(s.view&&s.view.follow))continue;   /* 追う物の指定があるシナリオだけに出す */
+  for(const[k,t,tip]of[['follow','追従','視点が、動く物（実験のview.followの物体）を追う。画面の外へ出ていく現象を見続けられる'],['trail','軌跡','物体が通った跡'],['strobe','ストロボ','一定の時間おきの姿を残す'],['grid','格子','m単位の格子と目盛り'],['statics','固定物','床・斜面・レールの記号'],['fields','力場','電場・磁場などの範囲'],['joints','糸・ばね','糸・棒・ばねの線'],['labels','名前','物体の名前'],['hit','当たり線','絵に重ねて、物理の形（当たり判定）を赤い線で見せる'],['energy','エネルギー','運動・位置・全体のエネルギー'],['contacts','接点','接触している点']]){
+    if(k==='follow'&&!(s.view&&s.view.follow))continue;   /* 追う物の指定がある実験だけに出す */
     const b=scnEl('button');b.textContent=t;b.setAttribute('aria-label',tip);b.classList.toggle('on',!!SCN.opt[k]);b.onclick=()=>{SCN.opt[k]=!SCN.opt[k];b.classList.toggle('on',!!SCN.opt[k]);dirtyProj=true;if(k==='trail'||k==='strobe')if(RUN.R)PHR.resetTrails(RUN.R)};db.append(b)}
   $('scGx').value=SCN.graph;$('scSpd').value=String(SCN.speed);$('scTimer').value=SCN.timer==null?'':String(SCN.timer);
   /* 絵とのつなぎ */
@@ -2601,7 +2672,7 @@ function scnUiBuild(){
 function scnAnsHtml(res){
   const box=$('scAns');box.innerHTML='';if(!res)return;
   const tn=res.taint?'（'+(res.taint==='hand'?'手で触った':'途中で条件を変えた')+'ので参考外：理論値は一定の条件の話です）':'';
-  if(RUN.sess&&res.ask&&(res.ask.length||res.checks.length)){const h=scnEl('div');h.className='note ansHead';h.style.opacity=1;h.textContent='答え合わせ：測定の窓（0〜'+scnFmt(RUN.sess.Tm)+' s）の結果'+tn;box.append(h)}
+  if(RUN.sess&&res.ask&&(res.ask.length||res.checks.length)){const h=scnEl('div');h.className='note ansHead';h.style.opacity=1;h.textContent='答え合わせ：測定区間（0〜'+scnFmt(RUN.sess.Tm)+' s）の結果'+tn;box.append(h)}
   const mk=(ok,txt)=>{const d=scnEl('div');d.className='note';d.style.opacity=1;d.textContent=(res.taint?'△ ':(ok?'✔ ':'✖ '))+txt;d.style.color=res.taint?'#92400e':(ok?'#15803d':'#b91c1c');box.append(d)};
   for(const a of res.ask)mk(a.ok,a.q+'：測定 '+scnFmt(a.value)+' ／ 理論 '+scnFmt(a.theory)+(a.unit?' '+a.unit:'')+'（誤差 '+(a.rel*100).toFixed(2)+'%）');
   for(const c of res.checks)mk(c.ok,c.name+(c.msg?'：'+c.msg:''));
@@ -2628,16 +2699,22 @@ function scnUi(){
   const g=$('scGrp');if(!g)return;
   const has=!!SCN.src;$('scBody').hidden=!has;$('scOff').hidden=!has;$('scHowRow').hidden=!has;
   if(!has){$('scTitle').textContent='';$('scProb').style.display='none';RUN.advId=null}
-  else if(RUN.advId!==SCN.src.id){RUN.advId=SCN.src.id;if(SCN.src.id!=='art-scene')$('scAdv').open=true}   /* サンプル・自作のシナリオを開いた時は「くわしく」も開く */
+  else if(RUN.advId!==SCN.src.id){RUN.advId=SCN.src.id;if(SCN.src.id!=='art-scene')$('scAdv').open=true}   /* サンプル・自作の実験を開いた時は「くわしく」も開く */
   const sel_=$('scSel');if(typeof PHYS_SAMPLES!=='undefined'&&sel_.options.length<=1){PHYS_SAMPLES.forEach(s=>{const o=scnEl('option');o.value=s.id;o.textContent=(s.title||s.id)+(s.level==='olympiad'?'（物理オリンピック級）':'');sel_.append(o)})}
   sel_.value=has&&typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.some(s=>s.id===SCN.src.id)?SCN.src.id:'';
-  const ac=AC.map(a=>a.id+':'+a.name).join('|');
+  const ac=AC.map(a=>a.id+':'+a.name).join('|')+'|'+scnPickKey();
   if(has&&(RUN.uiRev!==RUN.rev||RUN.acKey!==ac)){RUN.uiRev=RUN.rev;RUN.acKey=ac;scnUiBuild()}
   const err=[];if(RUN.err)err.push('⚠ '+RUN.err);for(const w of RUN.warns)err.push('注意: '+w);
   $('scErr').textContent=err.join('\n');$('scErr').style.whiteSpace='pre-wrap';
   if(has){$('scHelp').hidden=true;scnUiTime(true)}else{$('scHelp').hidden=false;$('scAns').innerHTML=''}
   scnUiRole();scnMenuSync()
 }
+/* 操作窓の一番上の「オブジェクトを対象化」（台帳Z-218）。絵（オブジェクト）を選んでいて、物理タブでない時だけ出す。
+   押すと、物理が付いていなければ付け（動く物体）、物理タブへ移る。物理タブの中では、同じ設定が下の「オブジェクトを対象化」の枠に出る（絵を選んでいる時だけ） */
+function scnObjBtn(){
+  const b=$('tabObj');if(!b)return;const on=document.querySelector('#tabs [data-t].on'),t=on?on.dataset.t:'';
+  const show=!!sel&&t!=='ph';b.hidden=!show;if(!show)return;
+  b.textContent=scnRoleOf(sel)?'🌍 対象化済み（物理の設定へ）':'🌍 オブジェクトを対象化'}
 /* 選んでいる絵の、物理での役割 */
 function scnRoleOf(a){
   if(!a||!SCN.src)return null;
@@ -2645,6 +2722,8 @@ function scnRoleOf(a){
     const kind=/^art_t/.test(id)?'terrain':/^art_b/.test(id)?(b.type==='static'?'fixed':'body'):'linked';return{id,kind,b,art:/^art_/.test(id),label:b.label||id}}
   return null}
 function scnUiRole(){
+  if(RUN.selSeen!==sel){RUN.selSeen=sel;RUN.pick=null}   /* 絵の選び直し：物理側で触っていた物の選択は外す（台帳Z-215） */
+  scnObjBtn();if($('scArt'))$('scArt').hidden=!sel;   /* 絵を選んでいない時は「オブジェクトを対象化」の枠を出さない（台帳Z-218） */
   if(!$('scArtSt'))return;const r=scnRoleOf(sel);
   $('scArtB').classList.toggle('on',!!r&&r.kind==='body');$('scArtF').classList.toggle('on',!!r&&r.kind==='fixed');$('scArtT').classList.toggle('on',!!r&&r.kind==='terrain');
   for(const id of['scArtB','scArtF','scArtT'])$(id).disabled=!sel;
@@ -2654,12 +2733,12 @@ function scnUiRole(){
     r.kind==='terrain'?'この絵は地形です（上から乗る物が対象）。止まっている間にドラッグすると置き直せます。描き足すと、当たり判定も追従します。':
     r.kind==='fixed'?'この絵は固定の土台です（動きません。台・壁・障害物）。':
     r.kind==='body'?'この絵は物理で動きます。下のつまみで、この絵だけの質量・反発・摩擦・初速を変えられます。実行中はドラッグでつかめます。':
-    '「'+r.label+'」につないであります（シナリオの物体）。';
+    '「'+r.label+'」につないであります（実験の物体）。';
   artPropsUi(r);artWorldUi()}
 /* キャンバスのメニュー（🎬）の物理の項目：開いていない時は隠す。実行の表示をタブと合わせる */
 function scnMenuSync(){
   const on=!!SCN.on&&!!SCN.src;for(const id of['mPlay','mRst','mGrab'])if($(id))$(id).hidden=!on;
-  if($('mPh'))$('mPh').hidden=!(on||sel);   /* 見出し：シナリオが開いている時、または絵を選んでいる時（絵に物理を付けられる） */
+  if($('mPh'))$('mPh').hidden=!(on||sel);   /* 見出し：実験が開いている時、または絵を選んでいる時（絵に物理を付けられる） */
   if($('mPhArt')){$('mPhArt').hidden=!sel;$('mPhArt').textContent=scnRoleOf(sel)?'🌍 この絵の物理を外す':'🌍 この絵に物理を付ける'}
   if(!on)return;const S=RUN.sess;RUN.menuPlaying=RUN.playing;
   $('mPlay').textContent=RUN.playing?'⏸ 物理を一時停止':(S&&S.done?'↺ 物理をもう一度':'▶ 物理を実行');
@@ -2668,13 +2747,14 @@ function scnMenuSync(){
 function scnApplyJson(){
   let o;try{o=JSON.parse($('scJson').value)}catch(e){$('scErr').textContent='⚠ JSONの書き方が正しくありません：'+e.message+'\n（カンマの付け忘れ・多すぎ、引用符「"」やかっこの閉じ忘れを確認してください）';return}
   const r=scnSetSource(o);
-  if(!r.ok){$('scErr').textContent='⚠ シナリオに誤りがあります：\n'+r.errors.join('\n');return}
+  if(!r.ok){$('scErr').textContent='⚠ 実験に誤りがあります：\n'+r.errors.join('\n');return}
   $('scErr').textContent=r.warns.length?'注意: '+r.warns.join('\n注意: '):'読み込みました';RUN.rev++;scnUi();$('scErr').textContent=(RUN.err?'⚠ '+RUN.err+'\n':'')+(r.warns.length?'注意: '+r.warns.join('\n注意: '):'読み込みました')}
 function scnCheckNow(){
   if(!SCN.src)return;try{const r=PHS.run(SCN.src,{params:SCN.params});scnAnsHtml(r);if(!r.ask.length&&!r.checks.length)$('scErr').textContent='答え合わせ（ask）・検査（checks）が書かれていません'}catch(e){$('scErr').textContent='⚠ '+e.message}}
 $('scSel').onchange=e=>{const v=e.target.value;if(!v)return;const r=scnLoadSample(v);if(!r.ok)note(r.errors.join(' / '))};
 $('scNew').onclick=()=>{const r=scnSetSource(PHS.template());if(!r.ok)note(r.errors.join(' / '));else for(let d=$('scJson').closest('details');d;d=d.parentElement&&d.parentElement.closest('details'))d.open=true};
 $('scOff').onclick=()=>scnClose();
+$('tabObj').onclick=()=>{if(!sel)return;if(!scnRoleOf(sel)&&!artBody(sel,{}))return;setTab('ph')};
 $('scGrab').onclick=$('mGrab').onclick=()=>{PTR.on=!PTR.on;scnMenuSync();note(PTR.on?'実行中に、物をドラッグでつかめます（短いタップでつつく）':'触っても物理は動きません（絵の配置だけ）',3500)};
 $('mPlay').onclick=()=>scnPlay();$('mRst').onclick=()=>{scnReset();RUN.uiAns=1};
 $('scArtX').onclick=()=>{const r=scnRoleOf(sel);if(!r){note('この絵は物理に参加していません');return}if(r.art)scnRemoveBody(r.id);else{pushUndo();scnUnlinkBody(r.id);scnUi()}};
@@ -2685,7 +2765,7 @@ $('scT').oninput=e=>scnSeek(+e.target.value);
 $('scGx').onchange=e=>{SCN.graph=e.target.value;RUN.dirty=true;dirtyProj=true};
 $('scPull').onclick=scnPull;$('scCommit').onclick=scnCommit;
 $('scApply').onclick=scnApplyJson;$('scCheck').onclick=scnCheckNow;
-$('scCopy').onclick=()=>{const t=scnJson();try{navigator.clipboard.writeText(t).then(()=>note('シナリオ（JSON）をコピーしました',3000),()=>{$('scJson').select();note('コピーできませんでした。枠の中を選んでコピーしてください')})}catch(_){$('scJson').select()}};
+$('scCopy').onclick=()=>{const t=scnJson();try{navigator.clipboard.writeText(t).then(()=>note('実験（JSON）をコピーしました',3000),()=>{$('scJson').select();note('コピーできませんでした。枠の中を選んでコピーしてください')})}catch(_){$('scJson').select()}};
 
 /* ===== 物理の描画 PHR（台帳Z-169。roadmap C-0）=====
    物理を「物理として正しく見せる」ための描画。エンジンの世界（PHE）をCanvas2Dに描く。DOMに触れない（ctxとサイズを受け取るだけ）。
@@ -2936,6 +3016,11 @@ function under(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W;ctx.save();
   if(S.opt.joints&&S.opt.jointsBelow)for(const j of W.joints){const d=JDRAW[j.type];if(d)d(ctx,S,j)}   /* 糸・ばねを絵の後ろに描く（jointsBelow。お絵かき×物理では、絵が糸の上に見える） */
   if(S.opt.statics!==false)for(const b of W.bodies)if(b.type==='static'&&!(S.noShape&&S.noShape.has(b.idx)))drawStatic(ctx,S,b);   /* noShape＝アクターの絵がかわりに見せている物体 */
   ctx.restore()}
+/* 選んでいる物（つかんだ・タップした物体／力場）の強調（台帳Z-215・Z-216）：橙の太い線。つまみはこの物のものだけが出る */
+function drawHl(ctx,S){const T=S.T,u=S.px,h=S.hl,W=S.W;ctx.save();ctx.strokeStyle='rgba(245,158,11,.95)';ctx.lineWidth=3*u;
+  if(h.kind==='field'){const f=W.fields[h.i];if(f&&f.region){regionPath(ctx,T,f);ctx.stroke()}}
+  else if(h.kind==='body'){const b=W.byId.get(h.id);if(b){ctx.setLineDash([6*u,4*u]);drawShapes(ctx,S,b,pose(b),{fill:null,stroke:'rgba(245,158,11,.95)',alpha:1,lw:3*u})}}
+  ctx.restore()}
 /* 上の層：アクターの絵より手前 */
 function over(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W,u=S.px;ctx.save();
   S.g=W.g;S._lab=[];
@@ -2951,6 +3036,7 @@ function over(ctx,S){const T=S.T=S.T||mkT(S.view,S.cw,S.ch),W=S.W,u=S.px;ctx.sav
   if(S.opt.labels)for(const b of W.bodies)if(b.type!=='static')bodyLabel(ctx,S,b);
   drawVectors(ctx,S);
   if(S.opt.energy)drawEnergy(ctx,S);
+  if(S.hl)drawHl(ctx,S);
   ctx.restore()}
 function drawEnergy(ctx,S){const u=S.px,E=PHE.energy(S.W),x=10*u,y=10*u,w=150*u,h=64*u;
   if(S.e0===undefined)S.e0=Math.max(Math.abs(E.e),Math.abs(E.ke),1e-9);const sc=(w-60*u)/(2*S.e0*1.2);
@@ -2981,7 +3067,7 @@ function graph(ctx,box,series,opt){opt=opt||{};const u=opt.px||1,{x,y,w,h}=box,p
 
 return{COL,VEC,FDRAW,JDRAW,DEFOPT,mkT,camShift,mkState,under,over,graph,pushTrail,pushStrobe,resetTrails,drawShapes,drawStatic,fmt,arrow,halo}
 })();
-/* ===== 物理シナリオのサンプル（生成物。台帳Z-173）=====
+/* ===== 物理の実験のサンプル（生成物。台帳Z-173）=====
    src/phys/samples/*.json から `node tools/build.js` が作る。直接は編集しない。形式は PHYSICS_SAMPLES.md と src/js/52-phys-scenario.js の KEYS。 */
 const PHYS_SAMPLES=[
 {"id":"orig-arc-then-rough-floor","title":"なめらかな円弧をすべり下り、粗い水平面で止まる","tags":["力学","エネルギー","摩擦"],"source":"オリジナル（円弧＋粗い床の型）","level":"standard","problem":"半径{R}mのなめらかな円弧（四分円）の、最下点から中心角{phi}°の位置に小球を置き、静かに放す。円弧の最下点につながる水平面は粗く、動摩擦係数は{mu}である。","params":{"R":{"v":1,"min":0.3,"max":1.5,"step":0.1,"unit":"m","label":"球の中心が描く円弧の半径"},"phi":{"v":70,"min":20,"max":85,"step":5,"unit":"°","label":"はじめの位置の中心角"},"mu":{"v":0.08,"min":0.02,"max":0.8,"step":0.01,"label":"水平面の動摩擦係数"},"m":{"v":0.3,"min":0.1,"max":1,"step":0.1,"unit":"kg","label":"質量"}},"vars":{"r":"0.04","hh":"R*(1-cosd(phi))","vb":"sqrt(2*g*hh)","dstop":"hh/mu","tarc":"0"},"view":{"x0":-1.9,"y0":-0.2,"w":5,"follow":"ball"},"bodies":[{"id":"floor","type":"static","mu":"mu","shapes":[{"t":"plane","normal":[0,1],"d":0}]},{"id":"track","type":"static","mu":0,"shapes":[{"t":"arc","c":[0,"R+r"],"r":"R+r","from":180,"to":270,"side":"in"}]},{"id":"ball","type":"dynamic","m":"m","fixedRot":true,"pos":["-R*sind(phi)","R+r-R*cosd(phi)"],"label":"小球","shapes":[{"t":"circle","r":"r"}]}],"pairs":[{"a":"ball","b":"track","mu":0},{"a":"ball","b":"floor","mu":"mu"}],"probes":{"vmaxp":{"expr":"ball.speed","reduce":"max","unit":"m/s","label":"最下点での速さ"},"Nb":{"expr":"normal('ball','track')","when":"ball.x>-(0.08*R+0.01)&&ball.x<0","reduce":"max","unit":"N","label":"最下点直前の垂直抗力"},"xstop":{"expr":"ball.x","reduce":"last","unit":"m","label":"止まった位置（最下点から）"}},"run":{"t":"sqrt(2*hh/g)*3+vb/(mu*g)+0.5"},"ask":[{"q":"最下点での速さ √(2gR(1−cosφ))","probe":"vmaxp","theory":"vb","unit":"m/s","tol":0.003},{"q":"最下点直前の垂直抗力 mg+mv²/R（円弧上）","probe":"Nb","theory":"m*g*(3-2*cosd(phi))","unit":"N","tol":0.02},{"q":"止まる位置 d = R(1−cosφ)/μ","probe":"xstop","theory":"dstop","unit":"m","tol":0.01}]},
@@ -3000,7 +3086,7 @@ const PHYS_SAMPLES=[
 {"id":"orig-spring-oscillator","title":"なめらかな床の上のばね振動","tags":["力学","単振動","ばね"],"source":"オリジナル（水平ばね振り子の型）","level":"basic","problem":"なめらかな水平面上で、質量{m}kgの物体が、ばね定数{k}N/mのばね（自然の長さ{l0}m）で壁につながれている。ばねを{A}mだけ伸ばして静かに放す。","params":{"m":{"v":0.5,"min":0.1,"max":2,"step":0.1,"unit":"kg","label":"質量"},"k":{"v":20,"min":5,"max":60,"step":1,"unit":"N/m","label":"ばね定数"},"A":{"v":0.3,"min":0.05,"max":0.6,"step":0.05,"unit":"m","label":"はじめの伸び"}},"vars":{"l0":"1.0","hb":"0.15","T":"2*pi*sqrt(m/k)","w":"sqrt(k/m)"},"view":{"x0":-0.3,"y0":-0.25,"w":3},"bodies":[{"id":"floor","type":"static","mu":0,"shapes":[{"t":"plane","normal":[0,1],"d":0}]},{"id":"wall","type":"static","pos":[0,0],"shapes":[{"t":"box","w":0.06,"h":0.6,"ox":-0.03,"oy":0.3}],"mu":0},{"id":"blk","type":"dynamic","m":"m","mu":0,"fixedRot":true,"pos":["l0+A+hb","hb"],"label":"物体","shapes":[{"t":"box","w":0.3,"h":0.3}]}],"joints":[{"id":"sp","type":"spring","a":{"at":[0,"hb"]},"b":{"body":"blk","at":[-0.15,0]},"k":"k","len":"l0"}],"probes":{"T":{"expr":"blk.x","reduce":"period","unit":"s","label":"周期"},"xamp":{"expr":"blk.x","reduce":"amp","unit":"m","label":"振幅"},"vmax":{"expr":"blk.speed","reduce":"max","unit":"m/s","label":"最大の速さ"},"Fmax":{"expr":"abs(sp.F)","reduce":"max","unit":"N","label":"ばねの力の最大値"},"E":{"expr":"E","reduce":"last","unit":"J","label":"力学的エネルギー"}},"run":{"t":4},"ask":[{"q":"周期 2π√(m/k)","probe":"T","theory":"T","unit":"s","tol":0.003},{"q":"振幅 A","probe":"xamp","theory":"A","unit":"m","tol":0.002},{"q":"最大の速さ A√(k/m)","probe":"vmax","theory":"A*w","unit":"m/s","tol":0.003},{"q":"ばねの力の最大値 kA","probe":"Fmax","theory":"k*A","unit":"N","tol":0.003}],"checks":[{"name":"力学的エネルギー保存","probe":"E","conserved":0.003}]}
 ];
 /* ===== お絵かき×物理（台帳Z-177。roadmap C-0）=====
-   絵（アクター）の「見えているとおりの形」から、物理の地形・物体を作る。作った物体はシナリオ（SCN.src）に書き足され、その絵につながる（53-phys-run.js）。
+   絵（アクター）の「見えているとおりの形」から、物理の地形・物体を作る。作った物体は実験（SCN.src）に書き足され、その絵につながる（53-phys-run.js）。
    物理タブの「選んでいる絵を物理に使う」（#scArt）と、サンプル（demoC〜）が使う。物理の計算はPHE、ここは絵→形の変換だけ。
    ・地形（artTerrain）：絵を、画面に見えているとおり（位置・大きさ・回転・反転）に、画面と同じ比のラスターへ描き、各列の「一番上の不透明な線」を上面とする。
        折れ線を間引き（Douglas–Peucker）、隣り合う2頂点ごとに台形（縦の辺が平行＝凸）にして、静止物体（static）のshapesにする。
@@ -3048,7 +3134,7 @@ function artArea(P){let s=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P
 function artCentroid(P){let A=0,sx=0,sy=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length],c=p[0]*q[1]-q[0]*p[1];A+=c;sx+=(p[0]+q[0])*c;sy+=(p[1]+q[1])*c}return A?[sx/(3*A),sy/(3*A)]:[P[0][0],P[0][1]]}
 const artId=(kind,a)=>'art_'+kind+a.id;
 /* 絵の物体の反発`e`・摩擦`mu`の既定。お絵かきのシーン（art-scene）は、シーン共通の条件`e`・`mu`の名前を参照する（スライダーで全体を変えられる）。
-   それ以外のシナリオ（サンプル・プロトタイプ・装置の場）には、その名前の条件が無い（または別の意味）ので、**数**を入れる。名前で参照すると「未知の名前」で物体を作れない（台帳Z-219） */
+   それ以外の実験（サンプル・白紙の実験・装置の場）には、その名前の条件が無い（または別の意味）ので、**数**を入れる。名前で参照すると「未知の名前」で物体を作れない（台帳Z-219） */
 const artRef=(name,def)=>SCN.src&&SCN.src.id==='art-scene'&&SCN.src.params&&(name in SCN.src.params)?name:def;
 const artR=x=>+x.toFixed(4);
 function artRemove(id){if(!SCN.src)return;SCN.src.bodies=SCN.src.bodies.filter(b=>b.id!==id);delete(SCN.src.params||{})['m_'+id];delete SCN.link[id]}
@@ -3198,9 +3284,9 @@ function artMigrateOld(){
   return n}
 /* ===== お絵かき×物理のサンプル（台帳Z-177）=====
    「🎬 サンプルを見る」の c〜h。絵はコードで描いた（描画キャンバス・絵文字）もので、地形・物体は 56-phys-art.js の「絵→物理」で作る。
-   物理の計算・答え合わせ（ask）はシナリオ（PHS）に任せるので、どれも「見た目はお絵かき、中身は物理として正しい」。
+   物理の計算・答え合わせ（ask）は実験（PHS）に任せるので、どれも「見た目はお絵かき、中身は物理として正しい」。
    縮尺：キャンバスの横幅＝8m（ART.W）。床の高さは 0.5m（下に地面の絵）。x右・y上（m）。
-   どれもシナリオ（保存される）なので、物理タブの条件スライダー・答え合わせ・グラフ・矢印がそのまま使える。 */
+   どれも実験（保存される）なので、物理タブの条件スライダー・答え合わせ・グラフ・矢印がそのまま使える。 */
 const dmK=()=>W/ART.W,dmFx=x=>x/ART.W,dmFy=y=>1-y*W/(ART.W*H);
 function dmLong(a,Lm){a.size=Lm*dmK()/S0}
 function dmPut(a,x,y,Lm){a.fx=dmFx(x);a.fy=dmFy(y);if(Lm)dmLong(a,Lm);return a}
@@ -3340,14 +3426,14 @@ function demoH(){
 
 const ARTDEMOS={c:demoC,d:demoD,e:demoE,f:demoF,g:demoG,h:demoH};
 /* ===== 装置の表 PHDEV（台帳Z-210。装置トレーの中身）=====
-   ねらい：「球・坂・板…」を、シナリオJSONの断片（物体・つなぎ・力場・つまみ）として1項目＝1オブジェクトで持つ。
-   命令 PHAPI.OPS.addDevice が expand() を呼んでシナリオに足す（だから Undo・巻き戻し・タイムラプス・ビジュアルプログラミングにそのまま乗る）。
+   ねらい：「球・坂・板…」を、実験JSONの断片（物体・つなぎ・力場・つまみ）として1項目＝1オブジェクトで持つ。
+   命令 PHAPI.OPS.addDevice が expand() を呼んで実験に足す（だから Undo・巻き戻し・タイムラプス・ビジュアルプログラミングにそのまま乗る）。
    純JS（DOMに触れない）。装置を増やす時は、DEVICES に1項目足すだけ（トレーの並び・部品表・検査は自動で追従する。tools/phys_dev_test.js が全部の装置を実際に動かして確かめる）。
    書き方（断片）：
    ・座標は装置の局所座標[m]。anchor＝「置いた点（ドラッグして離した点）に重ねる局所座標」（既定[0,0]）。
-   ・bodies／joints／fields／pairs は、シナリオの書き方（PHYSICS_SAMPLES.md）と同じ。物体の id は局所名。2個目以降は ball2・ball3…（装置の全部の物体・つなぎが同じ番号になる）。
+   ・bodies／joints／fields／pairs は、実験の書き方（PHYSICS_SAMPLES.md）と同じ。物体の id は局所名。2個目以降は ball2・ball3…（装置の全部の物体・つなぎが同じ番号になる）。
    ・size＝装置の大きさ（置いた点を中心にした半分の幅・高さ[m]。タップで置く時に、他の物と重ならない場所を選ぶのに使う）。rest＝床に載る装置（坂など）を置く高さ（置いた点のy[m]）。
-   ・つまみ params：{名前:{v,min,max,step,unit,label}}。断片の中の文字列で $名前 と書くと、そのつまみ（シナリオの条件 名前_装置の名前）に置き換わる。
+   ・つまみ params：{名前:{v,min,max,step,unit,label}}。断片の中の文字列で $名前 と書くと、そのつまみ（実験の条件 名前_装置の名前）に置き換わる。
    ・動く物体の質量 m が数なら、条件 m_<id>（スライダー）にする（絵に物理を付ける時と同じ）。
    ・既定の摩擦・反発は小さめ（現実の実験でも摩擦の小さい面を選ぶことがある。大きくする時はスライダーやJSONで）。接する2物体の摩擦・反発は「小さい方」（PHYSICS_SAMPLES.md §9）。 */
 const PHDEV=(function(){
@@ -3384,7 +3470,7 @@ const DEVICES=[
 ];
 const find=id=>DEVICES.find(d=>d.id===id);
 const r5=x=>+(+x).toFixed(5),nice=x=>+(+x).toPrecision(2);
-/* シナリオ s に、装置 devId を pos（装置の置いた点。[x,y] m）に足す（sを直接直す）。戻り値{key,ids}＝装置の名前（最初の物体のid。物体が無ければ装置のid）・足した物体のid。
+/* 実験 s に、装置 devId を pos（装置の置いた点。[x,y] m）に足す（sを直接直す）。戻り値{key,ids}＝装置の名前（最初の物体のid。物体が無ければ装置のid）・足した物体のid。
    opt.params＝つまみの値 {名前:値}（省略するとその装置の既定） */
 function expand(s,devId,pos,opt){
   opt=opt||{};const dv=find(devId);
@@ -3425,8 +3511,8 @@ return{DEVICES,find,expand,catalog}
 /* ===== 物理モードの「窓口」（台帳Z-178。ビジュアルプログラミングから使う想定）=====
    ねらい：将来のビジュアルプログラミング（ブロックをつないで動かす）が、物理モードの中身を「データ」だけで使えるようにする。
    ①部品表 catalog()：形・拘束・力場・物体の項目・量・関数・集計・ルールの動作を、型つき（名前・日本語名・型・単位・範囲・例）で返す。ブロックの並びや入力欄は、これから自動で作れる。
-   ②命令 OPS／apply()／exec()：置く・つなぐ・条件を決める・測る・動かす…を「1命令＝1つのオブジェクト」で渡す。apply は純粋（DOM なし・シナリオJSONを返すだけ）、exec はアプリ（SCN・RUN）に反映する。
-   ③ルール（シナリオの rules。52-phys-scenario.js）：「条件 → 動作」。物理の時間の中で動くので、巻き戻しても同じ結果になる（動作＝速度を足す・決める／止める／メッセージ）。
+   ②命令 OPS／apply()／exec()：置く・つなぐ・条件を決める・測る・動かす…を「1命令＝1つのオブジェクト」で渡す。apply は純粋（DOM なし・実験JSONを返すだけ）、exec はアプリ（SCN・RUN）に反映する。
+   ③ルール（実験の rules。52-phys-scenario.js）：「条件 → 動作」。物理の時間の中で動くので、巻き戻しても同じ結果になる（動作＝速度を足す・決める／止める／メッセージ）。
    部品表は、エンジンの表（PHE.SHP・JNT・FLD、PHS.FN・RED・BP・JP・WP・RULE_OPS）に追加した時に、ここも直さないと検査（tools/phys_api_test.js）が落ちる。
    純JS（DOMに触れない）。アプリへの反映（exec・runtime系）は SCN・RUN があるときだけ。 */
 const PHAPI=(function(){
@@ -3528,9 +3614,9 @@ const need=(c,m)=>{if(!c)throw new Error(m)};
 const body=(s,id)=>{const b=(s.bodies||[]).find(x=>x.id===id);need(b,'物体「'+id+'」がありません');return b};
 const pick=(o,keys)=>{const r={};for(const k of keys)if(o[k]!==undefined)r[k]=o[k];return r};
 const BODY_SET=BODY_FIELDS.map(f=>f.k).filter(k=>k!=='id');
-/* 各命令：label・kind（scenario＝シナリオJSONを直す／runtime＝実行を操作する）・args（入力欄）・do(s,a)（シナリオを直接直す。idなどを返す） */
+/* 各命令：label・kind（scenario＝実験JSONを直す／runtime＝実行を操作する）・args（入力欄）・do(s,a)（実験を直接直す。idなどを返す） */
 const OPS={
-  newScenario:{label:'空のシナリオを作る',kind:'scenario',args:[T('id','id','','シナリオの名前',{hint:'省略するとmy-scene'}),T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'シナリオを開く',
+  newScenario:{label:'空の実験を作る',kind:'scenario',args:[T('id','id','','実験の名前',{hint:'省略するとmy-scene'}),T('title','text','','題名'),T('floor','bool','','床を置く（既定はあり）'),T('width','num','m','画面の横幅（既定6）')],returns:'実験を開く',
     make(a){const s={id:a.id||'my-scene',title:a.title||'無題',tags:['力学'],source:'オリジナル',level:'basic',params:{},vars:{},world:{g:9.8},view:{x0:0,y0:0,w:a.width||6},bodies:[],probes:{},ask:[],checks:[],run:{t:5}};
       if(a.floor!==false)s.bodies.push({id:'floor',type:'static',mu:.5,e:0,label:'床',shapes:[{t:'plane',normal:[0,1],d:0}]});return s}},
   addBody:{label:'物体を置く',kind:'scenario',args:[T('id','id','','名前（省略すると自動）'),T('type','enum','','種類',{options:BODY_TYPES.map(x=>x.id)}),T('shape','shape','','形（{t:"circle",r:0.1}など。部品表のshapes）',{req:1}),T('pos','vec2','m','位置'),T('set','object','','その他の項目（部品表のbodyFields）')],returns:'物体id',
@@ -3556,7 +3642,7 @@ const OPS={
   addCheck:{label:'不変量の検査を足す',kind:'scenario',args:SCN_PARTS[4].fields,returns:'番号',do(s,a){(s.checks=s.checks||[]).push(pick(a,['name','probe','expr','conserved','min','max','scale','tol','note']));return s.checks.length-1}},
   addRule:{label:'ルール（条件→動作）を足す',kind:'scenario',args:RULE_FIELDS,returns:'ルールの名前',do(s,a){need(a.when&&Array.isArray(a.do),'when と do（動作の配列）が必要です');s.rules=s.rules||[];const id=a.id||uniq(s.rules,'rule');s.rules.push(Object.assign({id,when:a.when,mode:a.mode,do:a.do},pick(a,['label','note'])));if(a.mode===undefined)delete s.rules[s.rules.length-1].mode;return id}},
   removeRule:{label:'ルールを消す',kind:'scenario',args:[T('id','text','','ルールの名前',{req:1})],do(s,a){const n=(s.rules||[]).length;s.rules=(s.rules||[]).filter(r=>r.id!==a.id);need(s.rules.length<n,'ルール「'+a.id+'」がありません');return a.id}},
-  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数（測定・答え合わせの窓）'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔'),T('note','text','','メモ'),T('show','num','s','表示する秒数（測定の窓より長い時だけ、そのあとも物理を続けて見せる）')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample','note','show']));return 'run'}},
+  setRun:{label:'実行の設定（長さ・止める条件）',kind:'scenario',args:[T('t','num','s','実行する秒数（測定・答え合わせの窓）'),T('stop','num','','止める条件の式'),T('sample','num','s','記録の間隔'),T('note','text','','メモ'),T('show','num','s','表示する秒数（測定区間より長い時だけ、そのあとも物理を続けて見せる）')],do(s,a){s.run=Object.assign(s.run||{},pick(a,['t','stop','sample','note','show']));return 'run'}},
   setView:{label:'画面（位置・横幅m）',kind:'scenario',args:[T('x0','num','m','左端x'),T('y0','num','m','下端y'),T('w','num','m','横幅'),T('grid','bool','','格子'),T('follow','text','','追う物体')],do(s,a){s.view=Object.assign(s.view||{},pick(a,['x0','y0','w','grid','ruler','follow']));return 'view'}},
   setWorld:{label:'世界（重力の大きさ・向き）',kind:'scenario',args:[T('g','num','m/s²','重力加速度'),T('gdir','angle','°','重力の向き（-90＝下）')],do(s,a){s.world=Object.assign(s.world||{},pick(a,['g','gdir','maxStep','cfg','canvas','note']));return 'world'}},
   /* ---- 題名・摩擦の組・グラフ・掃引（サンプルを命令の列だけで組み立て直せるように。台帳Z-192） ---- */
@@ -3576,23 +3662,23 @@ const OPS={
   result:{label:'答え合わせ・測定の結果',kind:'runtime',args:[],returns:'{probes,ask,checks,events}'},
   sweep:{label:'条件を振って測る',kind:'runtime',args:[T('param','text','','条件の名前',{req:1}),T('values','num','','値の配列（または from・to・n）'),T('from','num','',''),T('to','num','',''),T('n','num','','')],returns:'{param,rows,fit}'},
   open:{label:'サンプルを開く',kind:'runtime',args:[T('id','text','','サンプルのid',{req:1})]},
-  close:{label:'シナリオを閉じる',kind:'runtime',args:[]}
+  close:{label:'実験を閉じる',kind:'runtime',args:[]}
 };
-/* 純粋：シナリオJSON（src）に命令を適用した結果を返す（srcは書き換えない）。ok・errors・warns・src・value（idなど） */
+/* 純粋：実験JSON（src）に命令を適用した結果を返す（srcは書き換えない）。ok・errors・warns・src・value（idなど） */
 function apply(src,op){
   const d=OPS[op&&op.op];if(!d)return{ok:false,errors:['未知の命令「'+(op&&op.op)+'」'+PHS.suggest(String(op&&op.op),Object.keys(OPS))],warns:[],src};
   if(d.kind!=='scenario')return{ok:false,errors:['命令「'+op.op+'」は実行の操作です。アプリの中で exec を使ってください'],warns:[],src};
   let s,value;
-  try{if(d.make){s=d.make(op);value=s.id}else{need(src,'まずシナリオを作ってください（newScenario）');s=JSON.parse(JSON.stringify(src));value=d.do(s,op)}}
+  try{if(d.make){s=d.make(op);value=s.id}else{need(src,'まず実験を作ってください（newScenario）');s=JSON.parse(JSON.stringify(src));value=d.do(s,op)}}
   catch(e){return{ok:false,errors:[String(e&&e.message||e)],warns:[],src}}
   const V=PHS.validate(s);
-  /* 物体が空のシナリオ（newScenario直後で floor:false）は、物体を足すまで検証に通らないので、errors に出しつつ src は返す */
+  /* 物体が空の実験（newScenario直後で floor:false）は、物体を足すまで検証に通らないので、errors に出しつつ src は返す */
   return{ok:!V.errors.length,errors:V.errors,warns:V.warns,src:s,value}}
 /* 命令の列を順に適用する（途中で誤りが出ても続ける＝最後まで足してから検証する。bodies空の検証エラーだけは無視） */
 function applyAll(src,ops){
   let s=src,value=[],errors=[],warns=[];
   for(const op of ops){const d=OPS[op.op];if(!d||d.kind!=='scenario'){errors.push('命令「'+op.op+'」は使えません');continue}
-    let t;try{if(d.make){t=d.make(op);value.push(t.id)}else{need(s,'まずシナリオを作ってください（newScenario）');t=JSON.parse(JSON.stringify(s));value.push(d.do(t,op))}}catch(e){errors.push(String(e&&e.message||e));continue}
+    let t;try{if(d.make){t=d.make(op);value.push(t.id)}else{need(s,'まず実験を作ってください（newScenario）');t=JSON.parse(JSON.stringify(s));value.push(d.do(t,op))}}catch(e){errors.push(String(e&&e.message||e));continue}
     s=t}
   if(s){const V=PHS.validate(s);errors=errors.concat(V.errors);warns=V.warns}
   return{ok:!errors.length,errors,warns,src:s,value}}
@@ -3611,8 +3697,8 @@ function exec0(op){
       if(d.make){if(!r.src)return r;const o=scnSetSource(r.src);return{ok:!!(o&&o.ok),errors:o&&o.errors||[],warns:r.warns,value:r.value}}
       if(!r.ok)return r;
       const ok=scnEdit(s=>{d.do(s,op)});if(ok&&SCN.auto&&op.op==='addBody')scnAutoActors();   /* img（絵文字）つきの物体には絵を自動で付ける */
-      return{ok:!!ok,errors:ok?[]:['シナリオを直せませんでした'],warns:r.warns,value:r.value}}
-    if(!SCN.src&&op.op!=='open')return{ok:false,errors:['シナリオが開いていません（newScenario か open）']};
+      return{ok:!!ok,errors:ok?[]:['実験を直せませんでした'],warns:r.warns,value:r.value}}
+    if(!SCN.src&&op.op!=='open')return{ok:false,errors:['実験が開いていません（newScenario か open）']};
     switch(op.op){
       case 'open':{const o=scnLoadSample(op.id);return{ok:!!o.ok,errors:o.errors||[]}}
       case 'close':scnClose();return{ok:true};
@@ -3627,18 +3713,18 @@ function exec0(op){
       case 'sweep':{const r=PHS.sweep(SCN.src,pick(op,['param','values','from','to','n']));return{ok:true,value:r}}}
   }catch(e){return{ok:false,errors:[String(e&&e.message||e)]}}
   return{ok:false,errors:['実装されていない命令です']}}
-/* 複数の scenario 命令を、1回のUndoでまとめて反映する（装置トレーから、シナリオが無い所へ最初の装置を置く時など）。
-   先頭が newScenario ならシナリオを開く（作り直し）。それ以外は今のシナリオに足す。成功したら、命令ごとに tap（タイムラプスの記録）へ知らせる */
+/* 複数の scenario 命令を、1回のUndoでまとめて反映する（装置トレーから、実験が無い所へ最初の装置を置く時など）。
+   先頭が newScenario なら実験を開く（作り直し）。それ以外は今の実験に足す。成功したら、命令ごとに tap（タイムラプスの記録）へ知らせる */
 function execBatch(ops){
   if(typeof SCN==='undefined'||typeof RUN==='undefined')return{ok:false,errors:['アプリの外では使えません（applyAll を使ってください）']};
   if(!Array.isArray(ops)||!ops.length)return{ok:false,errors:['命令がありません']};
-  for(const op of ops){const d=OPS[op&&op.op];if(!d||d.kind!=='scenario')return{ok:false,errors:['命令「'+(op&&op.op)+'」はまとめて使えません（シナリオを直す命令だけ）']}}
+  for(const op of ops){const d=OPS[op&&op.op];if(!d||d.kind!=='scenario')return{ok:false,errors:['命令「'+(op&&op.op)+'」はまとめて使えません（実験を直す命令だけ）']}}
   const fresh=ops[0].op==='newScenario';
-  if(!fresh&&!SCN.src)return{ok:false,errors:['シナリオが開いていません（先頭を newScenario にしてください）']};
+  if(!fresh&&!SCN.src)return{ok:false,errors:['実験が開いていません（先頭を newScenario にしてください）']};
   const r=applyAll(fresh?null:SCN.src,ops);if(!r.ok)return r;
   let ok;
-  if(fresh){const o=scnSetSource(r.src);ok=!!(o&&o.ok);if(!ok)return{ok:false,errors:o&&o.errors||['シナリオを開けませんでした'],warns:r.warns}}
-  else{ok=scnEdit(s=>{for(const op of ops)OPS[op.op].do(s,op)});if(!ok)return{ok:false,errors:['シナリオを直せませんでした'],warns:r.warns}}
+  if(fresh){const o=scnSetSource(r.src);ok=!!(o&&o.ok);if(!ok)return{ok:false,errors:o&&o.errors||['実験を開けませんでした'],warns:r.warns}}
+  else{ok=scnEdit(s=>{for(const op of ops)OPS[op.op].do(s,op)});if(!ok)return{ok:false,errors:['実験を直せませんでした'],warns:r.warns}}
   if(!(typeof TL!=='undefined'&&TL.busy))ops.forEach((op,i)=>{for(const cb of TAPS.slice())try{cb(op,{ok:true,value:r.value[i]})}catch(_){}});
   return{ok:true,errors:[],warns:r.warns,value:r.value}}
 /* 実行中の出来事を受け取る：ルールの note・stop と、events の成立。cb({t,kind,rule,text}) を毎フレームの後で呼ぶ（巻き戻しの再実行中は呼ばない）。返す関数で解除 */
@@ -3666,7 +3752,7 @@ const OPCAT={newScenario:'setup',setMeta:'setup',setWorld:'setup',setView:'setup
   addJoint:'link',removeJoint:'link',addPair:'link',addField:'field',removeField:'field',addProbe:'measure',addEvent:'measure',addGraph:'measure',setSweep:'measure',addAsk:'check',addCheck:'check',
   addRule:'rule',removeRule:'rule',play:'run',pause:'run',reset:'run',seek:'run',step:'run',speed:'run',read:'run',result:'run',sweep:'run',open:'run',close:'run'};
 /* ブロックの見出し（短い名前。組み立て台のブロックに書く。台帳Z-196） */
-const SHORT={newScenario:'シナリオ',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addDevice:'装置',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
+const SHORT={newScenario:'実験',setMeta:'題名・問題文',setWorld:'世界',setView:'画面',setRun:'実行の設定',setParam:'条件',setVar:'途中計算',addBody:'物体',addDevice:'装置',addShape:'形を足す',setBody:'物体を直す',removeBody:'物体を消す',
   addJoint:'つなぎ',removeJoint:'つなぎを外す',addPair:'接触の設定',addField:'力場',removeField:'力場を消す',addProbe:'測定',addEvent:'出来事',addGraph:'グラフ',setSweep:'条件をふる',addAsk:'答え合わせ',addCheck:'検査',
   addRule:'ルール',removeRule:'ルールを消す',play:'▶ 実行',pause:'一時停止',reset:'最初へ',seek:'時刻へ',step:'1コマ',speed:'速さ',read:'読む',result:'答え合わせ',sweep:'条件をふる',open:'サンプルを開く',close:'閉じる'};
 const SPEEDS=[.25,.5,1,2,4,8,16,32];
@@ -3721,7 +3807,7 @@ function fields(op){const D=PHAPI.OPS[op.op],out=[];
 const LV={basic:'基礎',standard:'標準',advanced:'発展',olympiad:'物理オリンピック級'};
 const has=(o,k)=>o[k]!==undefined;
 const SAY={
-  newScenario:o=>'空のシナリオ「'+(o.title||'無題')+'」を作る'+(o.floor===false?'（床は置かない）':'（床つき）')+(o.width?'。画面の横幅は '+fv(o.width,'m'):''),
+  newScenario:o=>'空の実験「'+(o.title||'無題')+'」を作る'+(o.floor===false?'（床は置かない）':'（床つき）')+(o.width?'。画面の横幅は '+fv(o.width,'m'):''),
   setMeta:o=>'題名・タグ・問題文を書き込む'+(o.level?'（難しさ：'+(LV[o.level]||o.level)+'）':''),
   setWorld:o=>'世界の決まりを書く：'+[has(o,'g')?'重力加速度 '+fv(o.g,'m/s²'):'',has(o,'gdir')?'重力の向き '+fv(o.gdir,'°'):''].filter(Boolean).join('、'),
   setView:o=>'画面の範囲を決める：横幅 '+(has(o,'w')?fv(o.w,'m'):'そのまま')+(has(o,'x0')||has(o,'y0')?'、左下 '+fv([o.x0||0,o.y0||0]):''),
@@ -3768,8 +3854,8 @@ function stepOf(op,extra){
   const s={k:'phys',op:clone(op),cat,say:sayOf(op,fs),how:howOf(op,cat,fs),blk:{c:cat,t:D?D.label:op.op,s:SHORT[op.op]||(D?D.label:op.op),f:fs.map(f=>({l:f.l,v:f.v}))},d:clamp(1100+260*Math.min(fs.length,8),1300,3800)};
   return extra?Object.assign(s,extra):s}
 
-/* ---------- シナリオ → 命令の列 → 手順書 ---------- */
-/* 検証に通る順（条件→物体→つなぎ→測定→答え合わせ）。サンプルのJSONから、PHAPIの命令だけで同じシナリオを組み立て直せる（検査＝tools/tl_test.js） */
+/* ---------- 実験 → 命令の列 → 手順書 ---------- */
+/* 検証に通る順（条件→物体→つなぎ→測定→答え合わせ）。サンプルのJSONから、PHAPIの命令だけで同じ実験を組み立て直せる（検査＝tools/tl_test.js） */
 function opsOf(S){
   const O=[],P=op=>O.push(op),view=S.view||{},world=S.world||{};
   P({op:'newScenario',id:S.id,title:S.title||'無題',floor:false,width:view.w||6});
@@ -4078,7 +4164,7 @@ function heal(why){
 function healStale(e){
   if(!e.isPrimary)return;
   let st=false;for(const[id,t]of[...ptyp])if(t===e.pointerType){ptrs.delete(id);ptyp.delete(id);st=true}
-  if(!ptrs.size&&(st||tgt||drawing||wg||wbg||pan||pz0||RUN.grab||RUN.mv))heal(st?'ptrs':'flags');
+  if(!ptrs.size&&(st||tgt||drawing||wg||wbg||pan||pz0||RUN.grab||RUN.mv||RUN.fmv))heal(st?'ptrs':'flags');
 }
 function pdown(e){
   healStale(e);
@@ -4086,12 +4172,12 @@ function pdown(e){
   if(ptrs.size===1)firstDownTs=performance.now();
   if(ptrs.size>=2){
     const quick=performance.now()-firstDownTs<300;
-    if((tgt||drawing||wg||wbg||RUN.grab||RUN.mv)&&!quick)return;
+    if((tgt||drawing||wg||wbg||RUN.grab||RUN.mv||RUN.fmv)&&!quick)return;
     if(vLock)return;if(tgt&&tgtBak&&tgtBak.a===tgt&&quick){const b=tgtBak;tgt.fx=b.fx;tgt.fy=b.fy;tgt.ox=b.ox;tgt.oy=b.oy}up();const pts=[...ptrs.values()].slice(-2),[a,b]=pts;pz0={d:Math.hypot(a.x-b.x,a.y-b.y)||1,m:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},Z:{...Z}};return
   }
   if(pickFor){pickAt(q);return}
   if(handMode){if(!vLock){pid=e.pointerId;pan={x:q.x-Z.x,y:q.y-Z.y}}return}
-  if(!sel){pid=e.pointerId;if(tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、シナリオの物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
+  if(!sel){pid=e.pointerId;if(tool==='move'&&scnPtrDown(wp(q),e))return;if(Z.s>1.01&&!vLock)pan={x:q.x-Z.x,y:q.y-Z.y};return}   /* 絵が0個でも、実験の物体は触れる */  /* オブジェクト0個：触れる物が無い。空き地ドラッグ＝画面移動（台帳Z-97） */
   pushUndo();pid=e.pointerId;const p=wp(q);
   if(paint){if(blocked(sel))return;drawing=true;lp=null;stroke(q);return}
   if(adjMode){pl=hit(p)||sel;if(blocked(pl))return;if(pl!==sel)setSel(pl);drawing=true;lp=null;adjBrushAt(q,pl);return}
@@ -4121,7 +4207,7 @@ cv.addEventListener('pointermove',e=>{
     const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},s=cl(pz0.Z.s*d/pz0.d,.5,6),w0={x:(pz0.m.x-pz0.Z.x)/pz0.Z.s,y:(pz0.m.y-pz0.Z.y)/pz0.Z.s};
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
-  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p)}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
+  if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv||RUN.fmv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p)}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
 });
 let firstDownTs=0;
 const end=e=>{ptrs.delete(e.pointerId);ptyp.delete(e.pointerId);if(ptrs.size<2)pz0=null;
@@ -4209,7 +4295,7 @@ function frame(l){
   if(syp<v.y0+pad)Z.y+=v.y0+pad-syp;else if(syp>v.y1-pad)Z.y-=syp-(v.y1-pad);
 }
 function setSel(l){
-  if(!l){sel=null;chips();noObjUi(true);return}  /* オブジェクト0個（台帳Z-97）：選択なし。操作窓は背景・出力だけにする */
+  if(!l){sel=null;chips();noObjUi(true);if(typeof scnObjBtn==='function'){scnObjBtn();if($('scArt'))$('scArt').hidden=true}return}  /* オブジェクト0個（台帳Z-97）：選択なし。操作窓は背景・出力だけにする */
   noObjUi(false);
   if(l&&l.layerId!=null&&LAYERS.some(y=>y.id===l.layerId))curLid=l.layerId;
   sel=l;chips();frame(l);
@@ -5455,7 +5541,7 @@ function frz(a,k,vk){const c=a[k];if(!c)return null;const f=a['_f'+k],v=a[vk]||0
 function snap(){
   const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:a.bite,adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
   const B={m:BG.m,c:BG.c,c2:BG.c2,b:BG.b,img:BG.img,v:BG.v||0};
-  const sc=scnSnapStr();   /* 物理シナリオ（SCN。空なら''）。実行中の状態RUNは入れない＝Undoは時間を巻き戻さない */
+  const sc=scnSnapStr();   /* 物理の実験（SCN。空なら''）。実行中の状態RUNは入れない＝Undoは時間を巻き戻さない */
   return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),D:{w:DOC.w,h:DOC.h},sc,sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS,DOC.w,DOC.h,sc])};
 }
 function bgUi(){$('bg1').value=BG.c;$('bg2').value=BG.c2;$('bgm').value=BG.m;$('bgb').value=BG.b}
@@ -5471,7 +5557,7 @@ function restore(sn){
   if(sn.L){LAYERS=sn.L.map(y=>({...y}));curLid=sn.cl}
   if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
   canvasUi();
-  scnRestore(sn.sc);   /* シナリオは、中身（シナリオ・条件）が同じなら実行を続ける。違えば作り直す */
+  scnRestore(sn.sc);   /* 実験は、中身（実験・条件）が同じなら実行を続ける。違えば作り直す */
   setSel(AC[sn.sel]||AC[0]||null);
 }
 const US=[],RS=[];
@@ -5514,7 +5600,7 @@ function projMigrate(d){let v=projVersion(d);const v0=v;
   return{d,v0,v}}
 function ser(){
   const x=PROJ.x;
-  const sc=scnSer();   /* 物理シナリオ。無ければキー自体を出さない（従来の作品ファイルと同じ形） */
+  const sc=scnSer();   /* 物理の実験。無ければキー自体を出さない（従来の作品ファイルと同じ形） */
   return JSON.stringify({...x.top,v:Math.max(PROJ.V,PROJ.v),uid,sel:AC.indexOf(sel),DOC:{...x.DOC,w:DOC.w,h:DOC.h},LAY:{...x.LAY,L:LAYERS,cur:curLid,hx:physHideEx},BG:{...BG,img:u2(BG.img)},...(sc?{SCN:sc}:{}),
     AC:AC.map(a=>{const o=JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v));
       o.dm=encMesh(a.dm);o.img=u2(a.img);o.iscv=!!a.cv;o.mask=a.mask&&a.hasMask?u2(a.mask):null;o.bm=a.bm&&a.hasBm?u2(a.bm):null;o.bite=a.bite&&a.eat?u2(a.bite):null;o.adjm=a.adjm&&a.hasAdjM?u2(a.adjm):null;o.lfm=a.lfm&&a.hasLFM?u2(a.lfm):null;return o})});
@@ -5540,7 +5626,7 @@ async function loadProj(txt){
   Object.assign(BG,d.BG||{},{img:bgI,v:(BG.v||0)+1});bgUi();
   /* キャンバスの大きさ（台帳Z-98）。旧データには無い＝自動 */
   DOC.w=d.DOC&&d.DOC.w>0&&d.DOC.h>0?Math.round(d.DOC.w):0;DOC.h=DOC.w?Math.round(d.DOC.h):0;fit(true);canvasUi();
-  scnLoad(d.SCN);   /* 物理シナリオ（無い作品では空にする） */
+  scnLoad(d.SCN);   /* 物理の実験（無い作品では空にする） */
   try{artMigrateOld()}catch(e){}   /* 旧・簡易の物理（絵ごとの phys）を、新しい物理の物体に置き換える（台帳Z-197） */
   setSel(AC[d.sel]||AC[0]||null);
   if(PROJ.v)note('新しい版（v'+PROJ.v+'）で保存された作品です。このアプリが知らない項目は、そのまま残して保存します。読めない部分があるかもしれないので、上書きは避け、自動保存は別の入れ物に入ります',9000);
@@ -7365,7 +7451,7 @@ function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bp
   if(pcolPk)pcolPk.style.display=t==='pen'?'':'none';
   if(t!=='move'&&!seen[t]){seen[t]=1;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},4500)}}
 const TT={adj:()=>'move',fx:()=>'move',pt:()=>lastPart,pl:()=>'move',mo:()=>'move',bg:()=>'move',ph:()=>'move',wp:()=>'warp',dr:()=>lastPen,mk:()=>lastMask};
-function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();if(t==='ph')scnUi();if(typeof dvSync==='function')dvSync(t);setTool(TT[t]())}
+function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();if(t==='ph')scnUi();else if(typeof scnObjBtn==='function')scnObjBtn();if(typeof dvSync==='function')dvSync(t);setTool(TT[t]())}
 document.querySelectorAll('#tp [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 $('tc').onclick=()=>{const c=document.body.classList.toggle('tpc');$('tc').textContent=c?'▴':'▾'};
 $('gd').onclick=()=>{guide=!guide;$('gd').classList.toggle('on',guide)};
@@ -7529,7 +7615,7 @@ function tlFinger(s){   /* キャンバスをなぞる手順：指の印が、�
   TLA.fgT=setInterval(()=>{const t=(performance.now()-t0)*(TLA.P?TLA.P.speed:1);if(t>=T){clearInterval(TLA.fgT);setTimeout(()=>{fg.hidden=true},250);return}put(t*(p[p.length-1][2]/T))},30)}
 
 /* ---------- 再生の相手（ホスト） ---------- */
-/* 「シナリオをブロックで組み立てる」手順書（fromScenario が作る。src.kind==='scenario'）は、空の舞台から始める（見る前のシナリオは、閉じると戻る） */
+/* 「実験をブロックで組み立てる」手順書（fromScenario が作る。src.kind==='scenario'）は、空の舞台から始める（見る前の実験は、閉じると戻る） */
 function tlEmpty(){
   if(!(TLA.sc&&TLA.sc.src&&TLA.sc.src.kind==='scenario'))return;
   if(SCN.src)scnClose({noUndo:true});
@@ -7542,15 +7628,15 @@ const tlHost={
   phys(op,quiet){
     const D=PHAPI.OPS[op.op];if(!D)return{ok:false,errors:['未知の命令「'+op.op+'」']};
     if(D.kind==='scenario'){
-      /* 土台：いま開いているシナリオ（画面の操作で開いたものを含む）。無い時（物体がまだ無い途中の姿）だけ、手順の中で持っている途中のシナリオ */
+      /* 土台：いま開いている実験（画面の操作で開いたものを含む）。無い時（物体がまだ無い途中の姿）だけ、手順の中で持っている途中の実験 */
       const r=PHAPI.apply(D.make?null:(SCN.src?scnClone(SCN.src):TLA.src),op);if(!r.src)return{ok:false,errors:r.errors};
       TLA.src=r.src;RUN.playing=false;
       if(!r.errors.length){const o=scnSetSource(r.src,{noUndo:true});if(!o.ok)return{ok:false,errors:o.errors};if(op.op==='addBody'&&SCN.auto)scnAutoActors()}
       else if(SCN.src)scnClose({noUndo:true});   /* 検証に通らない途中の姿（物体がまだ無い）は、空の舞台 */
       if(!quiet)tlStage();return{ok:true}}
     switch(op.op){
-      case 'play':if(!SCN.src)return{ok:false,errors:['まだシナリオができていません']};if(!quiet){RUN.playing=false;scnPlay();tlStage()}return{ok:true};
-      case 'result':if(!SCN.src)return{ok:false,errors:['まだシナリオができていません']};if(!quiet){tlStage();scnCheckNow()}return{ok:true};
+      case 'play':if(!SCN.src)return{ok:false,errors:['まだ実験ができていません']};if(!quiet){RUN.playing=false;scnPlay();tlStage()}return{ok:true};
+      case 'result':if(!SCN.src)return{ok:false,errors:['まだ実験ができていません']};if(!quiet){tlStage();scnCheckNow()}return{ok:true};
       case 'open':{const s=typeof PHYS_SAMPLES!=='undefined'&&PHYS_SAMPLES.find(x=>x.id===op.id);if(!s)return{ok:false,errors:['サンプル「'+op.id+'」がありません']};TLA.src=scnClone(s);const o=scnSetSource(s,{noUndo:true});return{ok:!!o.ok,errors:o.errors||[]}}
       case 'close':TLA.src=null;if(SCN.src)scnClose({noUndo:true});return{ok:true};
       default:return PHAPI.exec(op)}},   /* pause・reset・seek・step・speed・read・sweep（TL.busy の間は記録に知らせない） */
@@ -7631,7 +7717,7 @@ function tlLoop(t){
   TL.SPEEDS.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent='×'+v;if(v===1)o.selected=true;sel.append(o)});
   const src=E('tlSrc');(typeof PHYS_SAMPLES!=='undefined'?PHYS_SAMPLES:[]).forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent='作り方：'+(s.title||s.id);src.append(o)});
   src.onchange=()=>{const s=PHYS_SAMPLES.find(x=>x.id===src.value);src.value='';if(s)tlStart(TL.fromScenario(s))};
-  const cur=()=>{if(!SCN.src){E('tlPickErr').textContent='物理シナリオが開いていません（物理タブで、サンプルを開くか「＋プロトタイプ」を押してください）';tlOpen();return}tlStart(TL.fromScenario(JSON.parse(scnJson())))};
+  const cur=()=>{if(!SCN.src){E('tlPickErr').textContent='物理の実験が開いていません（物理タブで、サンプルを開くか「＋白紙の実験」を押してください）';tlOpen();return}tlStart(TL.fromScenario(JSON.parse(scnJson())))};
   E('tlCur').onclick=cur;E('scHow').onclick=()=>{if(TLA.rec){note('記録中です。先に「■ 止める」を押してください');return}cur()};
   E('mTl').onclick=tlOpen;E('tlX').onclick=()=>tlClose(false);E('tlKeep').onclick=()=>tlClose(true);
   E('tlMin').onclick=()=>{const m=E('tlp').classList.toggle('min');E('tlMin').setAttribute('aria-pressed',m);E('tlMin').textContent=m?'▸':'▾'};
@@ -7826,7 +7912,7 @@ function tlbCard(st,anim,wait){
 })();
 /* ===== 装置トレー（台帳Z-210）=====
    物理タブの時だけ、操作窓の持ち手の下に付く「アイテム欄」。装置（PHDEV。581-phys-devices.js）を、ドラッグして画面（ビューワー）へ置く。タップなら画面の中ほどに置く。
-   置く操作は命令 PHAPI（addDevice）に落ちる＝Undo・巻き戻し・タイムラプス・ビジュアルプログラミングと同じ道を通る。シナリオが無い所へ最初に置く時は、床も一緒に置いて1回のUndoにする。
+   置く操作は命令 PHAPI（addDevice）に落ちる＝Undo・巻き戻し・タイムラプス・ビジュアルプログラミングと同じ道を通る。実験が無い所へ最初に置く時は、床も一緒に置いて1回のUndoにする。
    指（タッチ）：欄の上で横になぞると欄が動き（touch-action:pan-x）、上へ（画面のほうへ）ドラッグすると装置が運べる。マウス：どの向きでもドラッグで運べる。
    UIの一時状態：作品・Undo・保存には入れない。 */
 const DVT={n:0};
@@ -7835,11 +7921,11 @@ function dvBuild(){
   const el=$('dvtray');if(!el||typeof PHDEV==='undefined')return;
   el.innerHTML=PHDEV.DEVICES.map(d=>'<button type="button" class="dv" data-dv="'+d.id+'" aria-label="'+d.label+'：'+d.desc+'（画面へドラッグして置く。タップで中ほどに置く）">'+dvIcon(d,30)+'<span>'+d.label+'</span></button>').join('')}
 function dvSync(t){const el=$('dvtray');if(!el)return;const want=t!=='ph';if(el.hidden!==want)el.hidden=want}
-/* 置く場所（世界のm）。シナリオが開いていれば今の視点、無ければ新しく作るシナリオの視点（床がy=0・下に0.4mの余白） */
+/* 置く場所（世界のm）。実験が開いていれば今の視点、無ければ新しく作る実験の視点（床がy=0・下に0.4mの余白） */
 const DV_VIEW0={x0:0,y0:-.4,w:6};
 const dvView=()=>SCN.src&&RUN.view?RUN.view:DV_VIEW0;
 function dvWorld(p){const v=dvView(),k=W/v.w;return[+(v.x0+p.x/k).toFixed(4),+(v.y0+(H-p.y)/k).toFixed(4)]}
-/* いまのシナリオの、物体の「はじめの姿」の外接長方形（世界のm）。タップで置く場所を、重ならないように選ぶのに使う（床などの無限の面は除く） */
+/* いまの実験の、物体の「はじめの姿」の外接長方形（世界のm）。タップで置く場所を、重ならないように選ぶのに使う（床などの無限の面は除く） */
 function dvOcc(){
   const out=[];if(!SCN.src||!RUN.sess||!RUN.p0)return out;
   for(const b of RUN.sess.W.bodies){const bb=scnBodyBox(b);if(!bb||b.shapes.some(sh=>sh.k==='pl'))continue;

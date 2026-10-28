@@ -58,7 +58,7 @@ function frame(l){
   if(syp<v.y0+pad)Z.y+=v.y0+pad-syp;else if(syp>v.y1-pad)Z.y-=syp-(v.y1-pad);
 }
 function setSel(l){
-  if(!l){sel=null;chips();noObjUi(true);return}  /* オブジェクト0個（台帳Z-97）：選択なし。操作窓は背景・出力だけにする */
+  if(!l){sel=null;chips();noObjUi(true);if(typeof scnObjBtn==='function'){scnObjBtn();if($('scArt'))$('scArt').hidden=true}return}  /* オブジェクト0個（台帳Z-97）：選択なし。操作窓は背景・出力だけにする */
   noObjUi(false);
   if(l&&l.layerId!=null&&LAYERS.some(y=>y.id===l.layerId))curLid=l.layerId;
   sel=l;chips();frame(l);
