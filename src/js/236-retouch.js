@@ -35,6 +35,21 @@ function rtBrushPx(l){
   const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512,S=S0*l.size;
   return Math.max(1,rtDia(bw,bh)*Math.min(S/bw,S/bh)*Math.hypot(l.M.a,l.M.b)/dpr);
 }
+/* 方式ごとの調整（rtP）のうち「大きさ」を決めるものが、どこまで効くか（台帳Z-228。バーを動かしている間、太さの目安と同じく画面に輪で示す）。
+   なじませる幅（ヒーリング）・ぼかす広さ（ぼかす）・滑らかさ（滑らかにする）＝ブラシの半径に比例する幅。式は rtHeal／rtFilter と同じ（そちらを変えたらここも揃える）。
+   返すのは画像の画素での半径（効きが及ぶ目安＝ガウスσの2倍／フィルタの半径）。大きさでない調整（粒状感・くっきり量・ギザの長さ＝画素単位で一定）は0＝出さない。 */
+function rtReachPx(mode,p,R){
+  if(mode==='heal')return 2*Math.max(1.5,R*(.1+.8*p));
+  if(mode==='blur')return 2*Math.max(1,R*(.03+.25*p));
+  if(mode==='smooth')return Math.max(2,Math.round(R*(.1+.3*p)));
+  return 0;
+}
+/* 効きが及ぶ範囲の画面上の直径（CSS px）。0なら出さない */
+function rtReachScreen(l){
+  const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512,r=rtReachPx(RT.mode,RT.ps[RT.mode],rtDia(bw,bh)/2);
+  if(!(r>0))return 0;
+  return Math.max(1,2*r*S0*l.size/Math.max(bw,bh)*Math.hypot(l.M.a,l.M.b)/dpr);
+}
 /* 画像の画素 → 画面（CSS px）。歪みは考えない（目安の表示用） */
 function rtB2S(l,bx,by,bw,bh){const k=S0*l.size/Math.max(bw,bh),t=l.M.transformPoint(new DOMPoint((bx-bw/2)*k,(by-bh/2)*k));return{x:t.x/dpr,y:t.y/dpr}}
 

@@ -14,8 +14,11 @@ const SZH={id:null,t:0,down:false,HOLD:700,FADE:250,
     bbs:l=>maskBrushPx(l,+$('bbs').value),
     pbs:l=>maskBrushPx(l,+$('pbs').value),
     wbS:()=>+$('wbS').value,
-    rtS:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0
-  }};
+    rtS:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0,
+    rtP:l=>typeof rtReachScreen==='function'?rtReachScreen(l):0   /* 修整の「なじませる幅・ぼかす広さ・滑らかさ」＝効きが及ぶ範囲（点線の輪。方式が大きさでない時は0＝出さない。台帳Z-228） */
+  },
+  /* 効きが及ぶ範囲を示すバー（点線の輪）。そのとき、ブラシの太さの輪（実線・細め）も添えて、どれくらい外まで効くかを見比べられるようにする */
+  reach:{rtP:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0}};
 function szhTouch(id){if(!SZH.map[id])return;SZH.id=id;SZH.t=performance.now()}
 document.addEventListener('input',e=>{const t=e.target;if(t&&t.id)szhTouch(t.id)});
 document.addEventListener('pointerdown',e=>{const t=e.target;if(t&&t.id&&SZH.map[t.id]){SZH.down=true;szhTouch(t.id)}},true);
@@ -28,7 +31,8 @@ function szhState(now){
   const l=sel;if(!l.M)return null;
   let d=0;try{d=SZH.map[SZH.id](l)}catch(_){}
   if(!(d>0))return null;
-  return{d,a:age<=SZH.HOLD?1:1-(age-SZH.HOLD)/SZH.FADE,id:SZH.id};
+  let ref=0;if(SZH.reach[SZH.id]){try{ref=SZH.reach[SZH.id](l)}catch(_){}}
+  return{d,a:age<=SZH.HOLD?1:1-(age-SZH.HOLD)/SZH.FADE,id:SZH.id,ref};
 }
 /* paintFrameの最後で呼ぶ：ビューワー（キャンバスの枠）の中央に、画面の実寸の輪を描く */
 function sizeHintDraw(){
@@ -36,9 +40,13 @@ function sizeHintDraw(){
   const v=vis(),cx=v.cx,cy=v.cy,r=s.d/2;   /* 見えている範囲の中央（枠が紙より低い時も、輪が隠れない。台帳Z-115） */
   ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=s.a;
   /* 白い輪の下に黒い影を引く（明るい絵でも暗い絵でも見える）。輪の中は、ごく薄く暗くして、絵との境を分かりやすくする */
+  if(s.ref>0){   /* 効きの範囲（点線）の内側に、ブラシの太さ（実線）を添える */
+    ctx.beginPath();ctx.arc(cx,cy,s.ref/2,0,6.2832);ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.4)';ctx.stroke();ctx.lineWidth=1.3;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.stroke();
+    ctx.setLineDash([7,5]);
+  }
   ctx.beginPath();ctx.arc(cx,cy,r,0,6.2832);ctx.fillStyle='rgba(255,255,255,.10)';ctx.fill();
   ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();
-  ctx.lineWidth=1.6;ctx.strokeStyle='#ffffff';ctx.stroke();
+  ctx.lineWidth=1.6;ctx.strokeStyle='#ffffff';ctx.stroke();ctx.setLineDash([]);
   ctx.beginPath();ctx.arc(cx,cy,2,0,6.2832);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.stroke();
   ctx.restore();
 }

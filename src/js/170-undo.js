@@ -9,7 +9,8 @@ function snap(){
   const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:a.bite,adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
   const B={m:BG.m,c:BG.c,c2:BG.c2,b:BG.b,img:BG.img,v:BG.v||0};
   const sc=scnSnapStr();   /* 物理の実験（SCN。空なら''）。実行中の状態RUNは入れない＝Undoは時間を巻き戻さない */
-  return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),D:{w:DOC.w,h:DOC.h},sc,sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS,DOC.w,DOC.h,sc])};
+  /* V＝その時のビューワー（拡大・位置）。詳細設定でオンの時だけ、元に戻す／やり直すで使う（UVW）。sigには入れない（見え方だけの違いでは履歴を増やさない） */
+  return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),D:{w:DOC.w,h:DOC.h},V:{s:Z.s,x:Z.x,y:Z.y},sc,sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS,DOC.w,DOC.h,sc])};
 }
 function bgUi(){$('bg1').value=BG.c;$('bg2').value=BG.c2;$('bgm').value=BG.m;$('bgb').value=BG.b}
 function restore(sn){
@@ -25,10 +26,18 @@ function restore(sn){
   if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
   canvasUi();
   scnRestore(sn.sc);   /* 実験は、中身（実験・条件）が同じなら実行を続ける。違えば作り直す */
-  setSel(AC[sn.sel]||AC[0]||null);
+  /* 選択を戻すとき、setSel→frame()が「選んだ物が見える所まで」ビューワーを動かす。元に戻す／やり直すのたびにビューワーが動く原因だったので、
+     既定では止める（noFrame）。画面の位置を元に戻したい人は、詳細設定（⚙動作）で UVW.on を入れる。キャンバスの大きさが変わる時（上の分岐）だけは、従来どおり等倍に戻す（台帳Z-227） */
+  const nf=noFrame;noFrame=true;
+  try{setSel(AC[sn.sel]||AC[0]||null)}finally{noFrame=nf}
+  if(UVW.on&&sn.V&&!vLock){Z.s=sn.V.s;Z.x=sn.V.x;Z.y=sn.V.y}
 }
 const US=[],RS=[];
 let undoSeq=0;
+/* 元に戻す／やり直すでビューワー（拡大・位置）も戻すか。既定＝戻さない（今見ている所を動かさない）。詳細設定（⚙動作）の「#uvw」で切り替え、localStorage（am_undoview）にだけ覚える（作品・Undo・保存に入れない）。台帳Z-227 */
+const UVW={on:false};
+try{UVW.on=localStorage.getItem('am_undoview')==='1'}catch(_){}
+{const e=$('uvw');if(e){e.checked=UVW.on;e.onchange=()=>{UVW.on=e.checked;try{localStorage.setItem('am_undoview',UVW.on?'1':'0')}catch(_){}}}}
 function snapBytes(sn){const px=c=>c?c.width*c.height*4:0;return sn.acs.reduce((n,a)=>n+px(a.cv)+px(a.base)+px(a.pen)+(a.dm?a.dm.d.byteLength:0),0)}
 function historyBytes(){let n=0;for(const s of US)n+=snapBytes(s);for(const s of RS)n+=snapBytes(s);return n}
 function trimHistory(){
