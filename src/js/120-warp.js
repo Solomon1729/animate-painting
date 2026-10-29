@@ -3,7 +3,7 @@
 let wskip=1,warpRaw=false,warpBakeR=0;const WM=.3,WX=1+2*WM,WD0=()=>({r:.25,a:.6,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5}),WDS={};
 /* 歪みまわりの定数（1か所に集約）。tiers＝静止した歪みの作業解像度の段階、cap＝その上限、idleMs＝手が止まってから上げるまでの待ち、
    pinMax＝ピンの上限、dq＝メッシュの量子化(1/dq)、dn＝メッシュの格子数、spacing＝ブラシの打点間隔（半径に対する比） */
-const WBC={tiers:[1100,1536,2048,3072],cap:2048,idleMs:300,pinMax:24,dq:16384,dn:512,spacing:.14};
+const WBC={tiers:[1100,1536,2048,3072],cap:2048,bake:3200,idleMs:300,pinMax:24,dq:16384,dn:512,spacing:.14};   /* bake＝書き出し・焼き込みの時の上限（画面向けのcapより細かい） */
 /* 歪みの設定は種類（タッチ／膨らみ／凹み／膨らみ↔凹み／螺旋）ごとに別々に持つ（2026-10-06ユーザー指定）。切り替えても、それぞれの値が残る */
 const wdc=()=>WDS[wt]||(WDS[wt]=Object.assign(WD0(),{a:wt==='s'?180:wt==='bn'?-.6:.6}));
 const LVCAP=[1100,480,260];
@@ -12,13 +12,15 @@ const hasWarp=l=>!!l&&((l.pins&&l.pins.length>0)||!!l.dm);
 function wrWant(l,anim){
   if(warpBakeR)return warpBakeR;
   const im=l.img,iw=im.naturalWidth||im.width||480,ih=im.naturalHeight||im.height||480,mx=Math.max(iw,ih);
-  if(anim)return Math.max(320,Math.min(LVCAP[lvl],Math.round(mx*1.15)));
+  /* 静止画の書き出し中（hk）は、負荷の段階（lvl）や画面向けの上限に縛られず、焼き込み（wbake）と同じ上限（3200）まで細かくする（台帳Z-229：書き出しで歪みのある絵だけ画面の細かさのままになっていた） */
+  if(anim)return Math.max(320,Math.min(hk?WBC.bake:LVCAP[lvl],Math.round(mx*1.15)));
   const need=S0*(l.size||1)*dpr*Z.s*WX*1.15,imgR=mx*WX;
-  return Math.max(320,Math.min(WBC.cap,Math.ceil(Math.min(need,imgR)/64)*64));
+  return Math.max(320,Math.min(hk?WBC.bake:WBC.cap,Math.ceil(Math.min(need,imgR)/64)*64));
 }
 function actorWR(l){if(warpBakeR)return warpBakeR;return l._wr||wrWant(l,!!l._wAnim)}
 function wrPick(l,anim){
-  const want=wrWant(l,anim);if(warpBakeR||anim)return want;
+  /* 書き出し中は、手が止まるのを待たず（待つと画面向けの粗いままの結果が出る）、必要な細かさをすぐ使う */
+  const want=wrWant(l,anim);if(warpBakeR||anim||hk)return want;
   const now=performance.now(),key=Math.round(S0*(l.size||1)*dpr*Z.s/16);
   if(l._wk!==key){l._wk=key;wTouch=now}
   const cur=l._wr||0;if(!cur)return Math.min(want,WBC.tiers[0]);

@@ -584,6 +584,8 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
     </details>
     <details class="grp" id="perfd"><summary>⚙ 動作</summary>
     <div class="row"><span class="lab">処理の軽さ</span><select id="qs" aria-label="処理の軽さ"><option value="auto">自動</option><option value="0">高品質</option><option value="1">標準</option><option value="2">軽い</option></select><span id="qtx" class="note" style="margin:0"></span></div>
+    <div class="row"><label class="opt"><input type="checkbox" id="uvw" aria-label="元に戻す・やり直すで、ビューワーの拡大・位置も、その操作を始めた時の状態に戻す">元に戻す・やり直すで、ビューワーの位置も戻す</label></div>
+    <div class="note">オフ（既定）：元に戻す・やり直すをしても、今見ているビューワーの拡大・位置は動きません。オンにすると、その操作をした時に見ていた拡大・位置へ戻ります（ビューワー固定🔒中は動きません）。</div>
     </details>
   </div>
   </div>
@@ -4949,7 +4951,7 @@ $('paL').oninput=e=>{PA.L=+e.target.value};$('paC').oninput=e=>{PA.C=+e.target.v
 let wskip=1,warpRaw=false,warpBakeR=0;const WM=.3,WX=1+2*WM,WD0=()=>({r:.25,a:.6,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5}),WDS={};
 /* 歪みまわりの定数（1か所に集約）。tiers＝静止した歪みの作業解像度の段階、cap＝その上限、idleMs＝手が止まってから上げるまでの待ち、
    pinMax＝ピンの上限、dq＝メッシュの量子化(1/dq)、dn＝メッシュの格子数、spacing＝ブラシの打点間隔（半径に対する比） */
-const WBC={tiers:[1100,1536,2048,3072],cap:2048,idleMs:300,pinMax:24,dq:16384,dn:512,spacing:.14};
+const WBC={tiers:[1100,1536,2048,3072],cap:2048,bake:3200,idleMs:300,pinMax:24,dq:16384,dn:512,spacing:.14};   /* bake＝書き出し・焼き込みの時の上限（画面向けのcapより細かい） */
 /* 歪みの設定は種類（タッチ／膨らみ／凹み／膨らみ↔凹み／螺旋）ごとに別々に持つ（2026-10-06ユーザー指定）。切り替えても、それぞれの値が残る */
 const wdc=()=>WDS[wt]||(WDS[wt]=Object.assign(WD0(),{a:wt==='s'?180:wt==='bn'?-.6:.6}));
 const LVCAP=[1100,480,260];
@@ -4958,13 +4960,15 @@ const hasWarp=l=>!!l&&((l.pins&&l.pins.length>0)||!!l.dm);
 function wrWant(l,anim){
   if(warpBakeR)return warpBakeR;
   const im=l.img,iw=im.naturalWidth||im.width||480,ih=im.naturalHeight||im.height||480,mx=Math.max(iw,ih);
-  if(anim)return Math.max(320,Math.min(LVCAP[lvl],Math.round(mx*1.15)));
+  /* 静止画の書き出し中（hk）は、負荷の段階（lvl）や画面向けの上限に縛られず、焼き込み（wbake）と同じ上限（3200）まで細かくする（台帳Z-229：書き出しで歪みのある絵だけ画面の細かさのままになっていた） */
+  if(anim)return Math.max(320,Math.min(hk?WBC.bake:LVCAP[lvl],Math.round(mx*1.15)));
   const need=S0*(l.size||1)*dpr*Z.s*WX*1.15,imgR=mx*WX;
-  return Math.max(320,Math.min(WBC.cap,Math.ceil(Math.min(need,imgR)/64)*64));
+  return Math.max(320,Math.min(hk?WBC.bake:WBC.cap,Math.ceil(Math.min(need,imgR)/64)*64));
 }
 function actorWR(l){if(warpBakeR)return warpBakeR;return l._wr||wrWant(l,!!l._wAnim)}
 function wrPick(l,anim){
-  const want=wrWant(l,anim);if(warpBakeR||anim)return want;
+  /* 書き出し中は、手が止まるのを待たず（待つと画面向けの粗いままの結果が出る）、必要な細かさをすぐ使う */
+  const want=wrWant(l,anim);if(warpBakeR||anim||hk)return want;
   const now=performance.now(),key=Math.round(S0*(l.size||1)*dpr*Z.s/16);
   if(l._wk!==key){l._wk=key;wTouch=now}
   const cur=l._wr||0;if(!cur)return Math.min(want,WBC.tiers[0]);
@@ -5542,7 +5546,8 @@ function snap(){
   const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:a.bite,adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
   const B={m:BG.m,c:BG.c,c2:BG.c2,b:BG.b,img:BG.img,v:BG.v||0};
   const sc=scnSnapStr();   /* 物理の実験（SCN。空なら''）。実行中の状態RUNは入れない＝Undoは時間を巻き戻さない */
-  return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),D:{w:DOC.w,h:DOC.h},sc,sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS,DOC.w,DOC.h,sc])};
+  /* V＝その時のビューワー（拡大・位置）。詳細設定でオンの時だけ、元に戻す／やり直すで使う（UVW）。sigには入れない（見え方だけの違いでは履歴を増やさない） */
+  return{acs,B,L:LAYERS.map(y=>({...y})),cl:curLid,sel:AC.indexOf(sel),D:{w:DOC.w,h:DOC.h},V:{s:Z.s,x:Z.x,y:Z.y},sc,sig:JSON.stringify([acs.map(x=>x.p),B.m,B.c,B.c2,B.b,B.v,!!B.img,LAYERS,DOC.w,DOC.h,sc])};
 }
 function bgUi(){$('bg1').value=BG.c;$('bg2').value=BG.c2;$('bgm').value=BG.m;$('bgb').value=BG.b}
 function restore(sn){
@@ -5558,10 +5563,18 @@ function restore(sn){
   if(sn.D&&(sn.D.w!==DOC.w||sn.D.h!==DOC.h)){DOC.w=sn.D.w;DOC.h=sn.D.h;fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}}  /* キャンバスの大きさも元に戻す（台帳Z-98） */
   canvasUi();
   scnRestore(sn.sc);   /* 実験は、中身（実験・条件）が同じなら実行を続ける。違えば作り直す */
-  setSel(AC[sn.sel]||AC[0]||null);
+  /* 選択を戻すとき、setSel→frame()が「選んだ物が見える所まで」ビューワーを動かす。元に戻す／やり直すのたびにビューワーが動く原因だったので、
+     既定では止める（noFrame）。画面の位置を元に戻したい人は、詳細設定（⚙動作）で UVW.on を入れる。キャンバスの大きさが変わる時（上の分岐）だけは、従来どおり等倍に戻す（台帳Z-227） */
+  const nf=noFrame;noFrame=true;
+  try{setSel(AC[sn.sel]||AC[0]||null)}finally{noFrame=nf}
+  if(UVW.on&&sn.V&&!vLock){Z.s=sn.V.s;Z.x=sn.V.x;Z.y=sn.V.y}
 }
 const US=[],RS=[];
 let undoSeq=0;
+/* 元に戻す／やり直すでビューワー（拡大・位置）も戻すか。既定＝戻さない（今見ている所を動かさない）。詳細設定（⚙動作）の「#uvw」で切り替え、localStorage（am_undoview）にだけ覚える（作品・Undo・保存に入れない）。台帳Z-227 */
+const UVW={on:false};
+try{UVW.on=localStorage.getItem('am_undoview')==='1'}catch(_){}
+{const e=$('uvw');if(e){e.checked=UVW.on;e.onchange=()=>{UVW.on=e.checked;try{localStorage.setItem('am_undoview',UVW.on?'1':'0')}catch(_){}}}}
 function snapBytes(sn){const px=c=>c?c.width*c.height*4:0;return sn.acs.reduce((n,a)=>n+px(a.cv)+px(a.base)+px(a.pen)+(a.dm?a.dm.d.byteLength:0),0)}
 function historyBytes(){let n=0;for(const s of US)n+=snapBytes(s);for(const s of RS)n+=snapBytes(s);return n}
 function trimHistory(){
@@ -6764,6 +6777,21 @@ function rtBrushPx(l){
   const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512,S=S0*l.size;
   return Math.max(1,rtDia(bw,bh)*Math.min(S/bw,S/bh)*Math.hypot(l.M.a,l.M.b)/dpr);
 }
+/* 方式ごとの調整（rtP）のうち「大きさ」を決めるものが、どこまで効くか（台帳Z-228。バーを動かしている間、太さの目安と同じく画面に輪で示す）。
+   なじませる幅（ヒーリング）・ぼかす広さ（ぼかす）・滑らかさ（滑らかにする）＝ブラシの半径に比例する幅。式は rtHeal／rtFilter と同じ（そちらを変えたらここも揃える）。
+   返すのは画像の画素での半径（効きが及ぶ目安＝ガウスσの2倍／フィルタの半径）。大きさでない調整（粒状感・くっきり量・ギザの長さ＝画素単位で一定）は0＝出さない。 */
+function rtReachPx(mode,p,R){
+  if(mode==='heal')return 2*Math.max(1.5,R*(.1+.8*p));
+  if(mode==='blur')return 2*Math.max(1,R*(.03+.25*p));
+  if(mode==='smooth')return Math.max(2,Math.round(R*(.1+.3*p)));
+  return 0;
+}
+/* 効きが及ぶ範囲の画面上の直径（CSS px）。0なら出さない */
+function rtReachScreen(l){
+  const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512,r=rtReachPx(RT.mode,RT.ps[RT.mode],rtDia(bw,bh)/2);
+  if(!(r>0))return 0;
+  return Math.max(1,2*r*S0*l.size/Math.max(bw,bh)*Math.hypot(l.M.a,l.M.b)/dpr);
+}
 /* 画像の画素 → 画面（CSS px）。歪みは考えない（目安の表示用） */
 function rtB2S(l,bx,by,bw,bh){const k=S0*l.size/Math.max(bw,bh),t=l.M.transformPoint(new DOMPoint((bx-bw/2)*k,(by-bh/2)*k));return{x:t.x/dpr,y:t.y/dpr}}
 
@@ -7343,8 +7371,11 @@ const SZH={id:null,t:0,down:false,HOLD:700,FADE:250,
     bbs:l=>maskBrushPx(l,+$('bbs').value),
     pbs:l=>maskBrushPx(l,+$('pbs').value),
     wbS:()=>+$('wbS').value,
-    rtS:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0
-  }};
+    rtS:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0,
+    rtP:l=>typeof rtReachScreen==='function'?rtReachScreen(l):0   /* 修整の「なじませる幅・ぼかす広さ・滑らかさ」＝効きが及ぶ範囲（点線の輪。方式が大きさでない時は0＝出さない。台帳Z-228） */
+  },
+  /* 効きが及ぶ範囲を示すバー（点線の輪）。そのとき、ブラシの太さの輪（実線・細め）も添えて、どれくらい外まで効くかを見比べられるようにする */
+  reach:{rtP:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0}};
 function szhTouch(id){if(!SZH.map[id])return;SZH.id=id;SZH.t=performance.now()}
 document.addEventListener('input',e=>{const t=e.target;if(t&&t.id)szhTouch(t.id)});
 document.addEventListener('pointerdown',e=>{const t=e.target;if(t&&t.id&&SZH.map[t.id]){SZH.down=true;szhTouch(t.id)}},true);
@@ -7357,7 +7388,8 @@ function szhState(now){
   const l=sel;if(!l.M)return null;
   let d=0;try{d=SZH.map[SZH.id](l)}catch(_){}
   if(!(d>0))return null;
-  return{d,a:age<=SZH.HOLD?1:1-(age-SZH.HOLD)/SZH.FADE,id:SZH.id};
+  let ref=0;if(SZH.reach[SZH.id]){try{ref=SZH.reach[SZH.id](l)}catch(_){}}
+  return{d,a:age<=SZH.HOLD?1:1-(age-SZH.HOLD)/SZH.FADE,id:SZH.id,ref};
 }
 /* paintFrameの最後で呼ぶ：ビューワー（キャンバスの枠）の中央に、画面の実寸の輪を描く */
 function sizeHintDraw(){
@@ -7365,9 +7397,13 @@ function sizeHintDraw(){
   const v=vis(),cx=v.cx,cy=v.cy,r=s.d/2;   /* 見えている範囲の中央（枠が紙より低い時も、輪が隠れない。台帳Z-115） */
   ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=s.a;
   /* 白い輪の下に黒い影を引く（明るい絵でも暗い絵でも見える）。輪の中は、ごく薄く暗くして、絵との境を分かりやすくする */
+  if(s.ref>0){   /* 効きの範囲（点線）の内側に、ブラシの太さ（実線）を添える */
+    ctx.beginPath();ctx.arc(cx,cy,s.ref/2,0,6.2832);ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.4)';ctx.stroke();ctx.lineWidth=1.3;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.stroke();
+    ctx.setLineDash([7,5]);
+  }
   ctx.beginPath();ctx.arc(cx,cy,r,0,6.2832);ctx.fillStyle='rgba(255,255,255,.10)';ctx.fill();
   ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();
-  ctx.lineWidth=1.6;ctx.strokeStyle='#ffffff';ctx.stroke();
+  ctx.lineWidth=1.6;ctx.strokeStyle='#ffffff';ctx.stroke();ctx.setLineDash([]);
   ctx.beginPath();ctx.arc(cx,cy,2,0,6.2832);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.stroke();
   ctx.restore();
 }
