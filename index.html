@@ -230,6 +230,36 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 #dvtray .dv svg{display:block}
 #dvghost{position:fixed;z-index:300;pointer-events:none;transform:translate(-50%,-50%);width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--ink);background:var(--pane);border:var(--bw,2px) solid var(--acc);border-radius:calc(var(--rk,1)*10px);opacity:.92}
 body.dvdrag,body.dvdrag *{cursor:grabbing!important}
+
+/* ===== モード選択・コンソール・自由帳の入口（台帳Z-204・Z-207・Z-221・Z-222） ===== */
+#modeEdge{display:none;position:fixed;top:0;bottom:0;right:0;width:10px;z-index:70;touch-action:pan-y}   /* 右の縁の細い帯。縦のスクロールはブラウザに任せ、左への横引きだけ受ける。キャンバスは画面の右端まで届くので、帯の幅の分だけ、そこから始める操作は受け取れない＝細くし、指で触る端末（any-pointer:coarse）でだけ有効にする。マウスは👁メニューの「モードを切り替える」 */
+@media (any-pointer:coarse){#modeEdge{display:block}}
+#modeEdge::before{content:"";position:absolute;right:3px;top:50%;width:4px;height:46px;margin-top:-23px;border-radius:2px;background:var(--ink);opacity:.22}
+body.consOpen #modeEdge{display:none}
+.modes{position:fixed;inset:0;z-index:280;display:flex;justify-content:flex-end}
+.modes[hidden],.cons[hidden],.startcard[hidden]{display:none}
+.mdbk{position:absolute;inset:0;background:rgba(0,0,0,.38)}
+.mdpn{position:relative;width:min(88vw,330px);height:100%;overflow:auto;background:var(--pane);color:var(--ink);border-left:var(--bw,2px) solid var(--line);padding:12px 12px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:-6px 0 24px rgba(0,0,0,.25);animation:mdin .18s ease-out}
+@keyframes mdin{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
+.mdhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mdi{display:block;width:100%;text-align:left;margin:0 0 8px;padding:10px 12px}
+.mdi b{display:block;font-size:15px}.mdi span{display:block;font-size:12px;font-weight:500;opacity:.8;margin-top:2px}
+.mdi[aria-current="true"]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.mdi:disabled{opacity:.5}
+.cons{position:fixed;inset:0;z-index:250;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px)}
+.cshd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:var(--bw,1px) solid var(--line);background:var(--pane)}
+.cshd b{font-size:15px}.cshd .note{margin:0;flex:1 1 160px}
+.cstabs{display:flex;gap:6px;padding:8px 10px 0;flex-wrap:wrap}
+.cstabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.csbody{flex:1;min-height:0;overflow:auto;padding:10px;display:flex;flex-direction:column;overscroll-behavior:contain}
+.csbody>div{display:flex;flex-direction:column;flex:1;min-height:0;gap:8px}
+.csbody>div[hidden]{display:none}
+.mmbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mmbar select{flex:1 1 180px;min-width:0}
+#mmTitle{width:100%;box-sizing:border-box;font-size:16px;padding:7px 9px}
+#mmTa{flex:1;min-height:220px;width:100%;box-sizing:border-box;resize:none;font:16px/1.6 var(--font);padding:10px;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*8px);background:var(--pane);color:var(--ink)}
+.startcard{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*12px);padding:8px 10px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.startcard .row{justify-content:center;gap:5px}.startcard .row button{padding:6px 8px;font-size:13px}#stX{min-width:30px}
 </style>
 </head>
 <body>
@@ -239,6 +269,8 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
+  <div class="cmh">モード</div>
+  <button id="mdb" aria-label="モードを切り替える（編集・アニメーション／物理／コンソール）。画面の右の縁から中央へ引っ張っても出ます">🧭 モードを切り替える</button>
   <div class="cmh">枠の大きさ</div>
   <div class="cseg" id="frSeg"><button data-fr="n" aria-label="通常の枠（正方形）">通常</button><button data-fr="b" aria-label="大きい枠（画面いっぱいに近い・操作窓は下）">大</button><button data-fr="f" aria-label="全画面">全画面</button></div>
   <div class="cmh">画面</div>
@@ -378,6 +410,7 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
 
   <div class="tab" data-tab="dr">
     <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button><button data-tool="clone">🩹 修整</button></div>
+    <div class="row"><button id="toObj" aria-label="描いた絵を、絵のある部分だけで切り取って、1つのオブジェクトにする（元の位置のまま。動きや物理を付けられる。元の白紙は空になって残るので、続けて描ける）">✂️ 描いた絵をオブジェクトにする</button></div>
     <div class="row" id="es2" style="display:none"><span class="lab">消し具合</span><input id="es" type="range" min="0.01" max="1" step="0.05" value="1" aria-label="消しゴムの強さ（弱いほど半透明に残る）"></div>
     <div class="grp alt" id="rtBox" style="display:none"><div class="gh">🩹 修整（写す・直す・ぼかす）</div>
     <div class="row"><span class="lab">方式</span><select id="rtMode" aria-label="修整の方式">
@@ -599,6 +632,27 @@ body.dvdrag,body.dvdrag *{cursor:grabbing!important}
   <div id="lyl"></div>
   <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="lyphx" checked>非表示レイヤーを物理の計算から除外する</label>
   <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。統合＝見えている通り（位置・歪み・ぼかし・マスク・色調整込み）に1つの画像にします（動き・物理は絵に焼き込まれて静止画になります。取り消しは「元に戻す」）。くっついたオブジェクトは一緒に統合され、非表示のものは対象外です。行は長押し（マウスはドラッグ）で並べ替え。入れたい行と行のすき間に点線が出るので、そこで離します（オブジェクトは別レイヤーのすき間にも入れられます。外で離すと取り消し）。上ほど手前。</div>
+</div>
+<!-- モード選択（台帳Z-204）：右の縁から中央へ引っ張る／👁メニューの「モードを切り替える」 -->
+<div id="modeEdge" aria-hidden="true"></div>
+<div id="modes" class="modes" hidden role="dialog" aria-label="モードの選択">
+  <div class="mdbk" id="mdbk"></div>
+  <div class="mdpn">
+    <div class="mdhd"><b>モード</b><button id="mdx" aria-label="閉じる">✕</button></div>
+    <div id="mdl"></div>
+    <div class="note">モード＝画面（手元の窓）の組み合わせの切り替えです。機能がモードに属するわけではありません（ペンや色調整は、どの画面から使っても同じものです）。</div>
+  </div>
+</div>
+<!-- コンソールモード（台帳Z-207）：本体の作品・元に戻す・保存に触れない実験の場 -->
+<div id="cons" class="cons" hidden role="dialog" aria-label="コンソール（実験の場）">
+  <div class="cshd"><b>🧪 コンソール（実験の場）</b><span class="note">ここでの操作は、作品・元に戻す・保存に入りません。</span><button id="csmd" aria-label="モードを切り替える">🧭 モード</button><button id="csx" aria-label="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button></div>
+  <div class="cstabs" id="cstabs"></div>
+  <div class="csbody" id="csbody"></div>
+</div>
+<!-- 起動直後の入口（台帳Z-221）。起動時にキャンバスの上へ移す -->
+<div id="startcard" class="startcard" hidden>
+  <div class="row"><button id="stDraw" aria-label="白紙にそのまま描く（ペンが選ばれています）">✏️ 白紙に描く</button><button id="stImg" aria-label="絵（画像）を読み込む">🖼 絵を読み込む</button><button id="stSmp" aria-label="サンプルの絵（絵文字2個）を置いて始める">🎬 サンプルの絵</button><button id="stX" aria-label="この案内を閉じる">✕</button></div>
+  <label class="note" style="display:flex;gap:6px;align-items:center;margin:6px 0 0"><input type="checkbox" id="stPref">次回からサンプルの絵で始める</label>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -7977,6 +8031,417 @@ function dvBind(){
   el.addEventListener('pointerup',e=>end(e,false));el.addEventListener('pointercancel',e=>end(e,true));
   el.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.dv');if(!b||b.dataset.dvskip)return;dvPlace(b.dataset.dv,null)})}
 dvBuild();dvBind();
+/* ===== モード選択（台帳Z-204）=====
+   モード＝画面（手元の窓）の組み合わせの切り替え。機能がモードに属するわけではない（AGENTS.md §3.5。ペンも色調整も、どの画面から使っても同じ機能）。
+   出し方：①画面の右の縁（細い帯 #modeEdge）から中央へ引っ張る　②👁メニューの「モードを切り替える」（マウスや、縁を引きにくい端末向け）
+   ・①は、帯の上で押して左へ56px以上、かつ横の動きが縦の1.6倍以上の時だけ。縦のスクロールはブラウザに任せる（touch-action:pan-y）。
+     他の指が画面に触れている間は反応しない（ピンチ・2本指・✋と衝突しない）。操作窓の持ち手は押した所で捕まえている（setPointerCapture）ので、帯の上へ掃いても反応しない。
+   ・モードの一覧は MODES。窓の一新（モードごとの窓）は、各モードの open に足していく。実体があるのは「編集・アニメーション」と「コンソール」。
+   ・UIの一時状態：作品・Undo・保存には入れない。 */
+const MODES=[
+  {id:'edit',ico:'🎬',name:'編集・アニメーション',note:'いままでの画面です（描く・動き・歪み・色調整・物理など全部）。'},
+  {id:'phys',ico:'🌍',name:'物理',note:'編集画面の「物理」タブへ移ります。独立したモードにはしていません（台帳Z-205）。',open(){
+    document.body.classList.contains('tpc')&&$('tc').click();setTab('ph')}},
+  {id:'vp',ico:'🧩',name:'ビジュアルプログラミング',note:'準備中です（設計案を台帳Z-206に書いた段階。まだ使えません）。',off:true},
+  {id:'cons',ico:'🧪',name:'コンソール（実験の場）',note:'本体の作品に触れずに、新しい機能やメモを試す場所です。',open(){CONSOLE.open()}}
+];
+const MODE={cur:'edit',pull:56,ratio:1.6};
+
+function modeIsOpen(){return !$('modes').hidden}
+function modeUi(){
+  const cur=CONSOLE.isOpen()?'cons':'edit';MODE.cur=cur;
+  $('mdl').innerHTML='';
+  for(const m of MODES){
+    const b=document.createElement('button');b.className='mdi';b.dataset.mode=m.id;b.disabled=!!m.off;
+    const here=m.id===cur;   /* 物理は編集画面の中のタブなので、「いま」は付かない */
+    b.setAttribute('aria-current',here?'true':'false');
+    b.innerHTML='<b></b><span></span>';b.firstChild.textContent=m.ico+' '+m.name+(here?'（いま）':'');b.lastChild.textContent=m.note;
+    b.onclick=()=>modeSet(m.id);
+    $('mdl').appendChild(b);
+  }
+}
+function modeOpen(){
+  if(modeIsOpen())return;
+  menuClose();modeUi();$('modes').hidden=false;
+  const f=$('mdl').querySelector('button:not(:disabled)');if(f)try{f.focus({preventScroll:true})}catch(_){}
+}
+function modeClose(){$('modes').hidden=true}
+/* モードを切り替える。コンソールを開いている時に別のモードへ移る時は、先にコンソールを閉じる（本体の再生の状態は閉じる時に戻る） */
+function modeSet(id){
+  const m=MODES.find(x=>x.id===id);if(!m||m.off)return;
+  modeClose();
+  if(id!=='cons'&&CONSOLE.isOpen())CONSOLE.close();
+  if(m.open)m.open();
+  MODE.cur=CONSOLE.isOpen()?'cons':'edit';
+}
+$('mdx').onclick=modeClose;$('mdbk').onclick=modeClose;$('mdb').onclick=modeOpen;
+/* Escapeは、閉じるものがある時だけここで受ける（他の既存のEscape処理より先＝キャプチャ） */
+addEventListener('keydown',e=>{if(e.key==='Escape'&&modeIsOpen()){modeClose();e.stopImmediatePropagation();e.preventDefault()}},true);
+
+/* 右の縁から引っ張る。他のタッチ・ペンが触れている間は始めない（マウスは複数同時に無いので数えない） */
+const _mdPtr=new Set();
+addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'&&e.target!==$('modeEdge'))_mdPtr.add(e.pointerId)},true);
+['pointerup','pointercancel'].forEach(t=>addEventListener(t,e=>_mdPtr.delete(e.pointerId),true));
+addEventListener('blur',()=>_mdPtr.clear());document.addEventListener('visibilitychange',()=>_mdPtr.clear());
+(()=>{
+  const eg=$('modeEdge');let g=null;
+  eg.addEventListener('pointerdown',e=>{
+    if(!e.isPrimary||_mdPtr.size>0||(e.pointerType==='mouse'&&e.button!==0))return;
+    g={id:e.pointerId,x:e.clientX,y:e.clientY};try{eg.setPointerCapture(e.pointerId)}catch(_){}
+  });
+  eg.addEventListener('pointermove',e=>{
+    if(!g||e.pointerId!==g.id)return;
+    const dx=g.x-e.clientX,dy=Math.abs(e.clientY-g.y);
+    if(dx>=MODE.pull&&dx>=MODE.ratio*dy){g=null;modeOpen()}
+  });
+  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>eg.addEventListener(t,e=>{if(g&&e.pointerId===g.id)g=null}));
+})();
+/* ===== コンソールモード（台帳Z-207）=====
+   本体と切り離した実験の場。同じアプリの中の隠しモード（別ファイルではない）。
+   ・本体の作品の保存形式（snap／ser／loadProj）・Undo（US）・AC・LAYERS・DOCには、一切触れない（読むだけの窓口を使う）。ここでの操作は、作品・元に戻す・保存に入らない。
+   ・開いている間は、本体の再生を止める（閉じる時、ここで止めたものだけ戻す）。
+   ・置けるもの＝試作（lab）。`CONSOLE.reg({id,ico,name,mount(el),enter?(),leave?()})` で登録する。mountは最初に開く時に1回、enter/leaveは見せる／隠す時に呼ばれる。
+   ・移植の手順（台帳Z-207）：①ここで実機確認 → ②ユーザーがゴーサイン → ③Claudeが本体へ移し、台帳に「移植済」と書く。
+   ・UIの一時状態：作品・Undo・保存には入れない。 */
+const CONSOLE={labs:[],cur:null,was:null,els:{},
+  reg(l){if(!this.labs.some(x=>x.id===l.id))this.labs.push(l)},
+  isOpen(){return !$('cons').hidden},
+  open(){
+    if(this.isOpen())return;
+    this.was={paused};if(!paused)$('pl').click();   /* 本体の再生を止める */
+    menuClose();hideTip();
+    $('cons').hidden=false;document.body.classList.add('consOpen');MODE.cur='cons';
+    this.tabs();this.show(this.cur&&this.labs.some(x=>x.id===this.cur)?this.cur:(this.labs[0]||{}).id);
+  },
+  close(){
+    if(!this.isOpen())return;
+    const l=this.labs.find(x=>x.id===this.cur);if(l&&l.leave)try{l.leave()}catch(_){}
+    $('cons').hidden=true;document.body.classList.remove('consOpen');MODE.cur='edit';
+    if(this.was&&!this.was.paused&&paused)$('pl').click();this.was=null;
+  },
+  tabs(){
+    const t=$('cstabs');t.innerHTML='';
+    for(const l of this.labs){const b=document.createElement('button');b.textContent=l.ico+' '+l.name;b.dataset.lab=l.id;b.onclick=()=>this.show(l.id);t.appendChild(b)}
+  },
+  show(id){
+    const l=this.labs.find(x=>x.id===id);if(!l)return;
+    const prev=this.labs.find(x=>x.id===this.cur);if(prev&&prev!==l&&prev.leave)try{prev.leave()}catch(_){}
+    this.cur=id;
+    document.querySelectorAll('#cstabs button').forEach(b=>b.classList.toggle('on',b.dataset.lab===id));
+    for(const k in this.els)this.els[k].hidden=k!==id;
+    if(!this.els[id]){const el=document.createElement('div');el.dataset.lab=id;$('csbody').appendChild(el);this.els[id]=el;try{l.mount(el)}catch(e){el.textContent='この試作を開けませんでした：'+(e&&e.message||e)}}
+    this.els[id].hidden=false;
+    if(l.enter)try{l.enter()}catch(_){}
+  }
+};
+$('csx').onclick=()=>CONSOLE.close();
+$('csmd').onclick=modeOpen;
+addEventListener('keydown',e=>{if(e.key==='Escape'&&CONSOLE.isOpen()&&!modeIsOpen()){CONSOLE.close();e.stopImmediatePropagation();e.preventDefault()}},true);
+
+/* 最初の試作＝この場所の使い方と移植の手順（文書。中身は固定） */
+CONSOLE.reg({id:'about',ico:'ℹ️',name:'使い方',mount(el){
+  el.innerHTML='<div class="note" style="line-height:1.7"><b>コンソールは、本体と切り離した実験の場です。</b><br>'
+    +'・ここでの操作は、作品・「元に戻す」・保存に入りません。本体の作品を壊すことはありません。<br>'
+    +'・開いている間は、本体の再生を止めています（閉じると戻ります）。<br>'
+    +'・失敗しそうなもの、実機で試さないと分からないもの、いまの仕組みを大きく書き換えるのが不安なものは、まずここに置いて試します。<br><br>'
+    +'<b>本体へ移す手順</b><br>①ここで実機で確認する　②良ければ、ゴーサインを出す　③Claudeが本体へ移し、台帳に「移植済」と書く<br><br>'
+    +'<b>いまある試作</b><br>・📝 メモ帳（メモを書く・txtの読み込みと出力・PDFの出力。端末に保存されます）</div>';
+}});
+/* ===== メモ帳（コンソールモードの中。台帳Z-222）=====
+   保存：端末のlocalStorage（am_memo）。作品ファイル・Undo・snap／serには入れない。版番号v付き。
+         このビルドが知らないキーは捨てずに持ち（MEMO.x／各メモのx）、そのまま書き戻す（作品ファイルPROJと同じ規則。新しい版が書いたものも壊さない）。
+         読めない中身は消さずに別のキー（am_memo_bad）へ残す。保存できない環境（容量・プライベートモード）では、画面に知らせる。
+   分け方：メモは「文字の塊」MEMO.notes[i]＝{id,title,text,c,t,x} と、「描く関数」memoRender（どのCanvas 2Dにも描ける）に分ける。
+         将来は、キャンバスの文字オブジェクトに同じ memoRender で描ける（融合の柔軟性）。
+   PDF：外部通信・外部部品なし。画面に出す文字をそのまま紙（A4・200dpi・グレー）に描き（memoLayout→memoRender）、1ページずつFlateで包む（pdfPages）。
+        文字の選択・検索は出来ない（画像のPDF）。後で文字のPDF（フォント埋め込み）へ差し替えられるよう、描く部分と包む部分は分けてある。
+   txt：読み込み＝UTF-8（BOMあり／なし）・UTF-16・Shift_JISを自動で見分ける。出力＝UTF-8（BOMなし・改行LF）。 */
+const MEMO={V:1,LS:'am_memo',LSB:'am_memo_bad',notes:[],cur:null,x:{},rv:1,ok:true,bad:false,loaded:false,dirty:false,
+  KT:['v','cur','notes'],KN:['id','title','text','c','t'],MAXCH:2000000,MAXFILE:5e6};
+const MEMOPDF={pw:1654,ph:2339,pt:[595.28,841.89],mx:165,my:190,fs:28,lh:46,tfs:40,tlh:62,ink:'#111',maxPages:300,
+  font:'"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",sans-serif'};
+let _memoTm=0;
+const memoId=()=>'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function memoMake(text,title){const t=Date.now();return{id:memoId(),title:title||'',text:text||'',c:t,t,x:{}}}
+const memoCur=()=>MEMO.notes.find(n=>n.id===MEMO.cur)||MEMO.notes[0];
+function memoName(n){
+  const t=(n.title||'').trim();if(t)return t;
+  const l=(n.text||'').split('\n').find(s=>s.trim());return l?l.trim().slice(0,24):'（空のメモ）';
+}
+const memoTotal=()=>MEMO.notes.reduce((s,n)=>s+n.text.length,0);
+
+/* ---- 読み込み・保存 ---- */
+function memoRead(){
+  let raw=null;
+  try{raw=localStorage.getItem(MEMO.LS)}catch(_){MEMO.ok=false}
+  MEMO.notes=[];MEMO.x={};MEMO.cur=null;MEMO.rv=MEMO.V;MEMO.bad=false;
+  if(raw){
+    try{
+      const o=JSON.parse(raw);
+      if(!o||typeof o!=='object'||!Array.isArray(o.notes))throw 0;
+      MEMO.rv=Number.isFinite(+o.v)&&+o.v>=1?Math.floor(+o.v):1;
+      for(const k in o)if(!MEMO.KT.includes(k))MEMO.x[k]=o[k];
+      const seen=new Set();
+      for(const n of o.notes){
+        if(!n||typeof n!=='object')continue;
+        let id=typeof n.id==='string'&&n.id?n.id:memoId();while(seen.has(id))id=memoId();seen.add(id);
+        const m={id,title:typeof n.title==='string'?n.title:'',text:typeof n.text==='string'?n.text:'',c:+n.c||Date.now(),t:+n.t||Date.now(),x:{}};
+        for(const k in n)if(!MEMO.KN.includes(k))m.x[k]=n[k];
+        MEMO.notes.push(m);
+      }
+      MEMO.cur=typeof o.cur==='string'&&MEMO.notes.some(n=>n.id===o.cur)?o.cur:null;
+    }catch(_){
+      MEMO.bad=true;try{localStorage.setItem(MEMO.LSB,raw)}catch(_){}   /* 読めない中身は、消さずに別のキーへ残す */
+      MEMO.notes=[];MEMO.x={};MEMO.rv=MEMO.V;
+    }
+  }
+  if(!MEMO.notes.length)MEMO.notes.push(memoMake());   /* 空のメモ1つ（書き始めるまで保存はしない） */
+  if(!MEMO.cur)MEMO.cur=MEMO.notes[0].id;
+  MEMO.loaded=true;MEMO.dirty=false;
+}
+function memoWrite(){
+  const o=Object.assign({},MEMO.x,{v:MEMO.rv,cur:MEMO.cur,notes:MEMO.notes.map(n=>Object.assign({},n.x,{id:n.id,title:n.title,text:n.text,c:n.c,t:n.t}))});
+  try{localStorage.setItem(MEMO.LS,JSON.stringify(o));MEMO.ok=true;MEMO.dirty=false}catch(_){MEMO.ok=false}
+  memoStatus();
+}
+function memoSave(now){clearTimeout(_memoTm);MEMO.dirty=true;if(now)memoWrite();else _memoTm=setTimeout(memoWrite,400)}
+addEventListener('pagehide',()=>{if(MEMO.dirty)memoWrite()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&MEMO.dirty)memoWrite()});
+
+/* ---- txtの読み書き ---- */
+function memoDecode(u8){
+  let s=0,enc='utf-8';
+  if(u8.length>=3&&u8[0]===0xEF&&u8[1]===0xBB&&u8[2]===0xBF){s=3}
+  else if(u8.length>=2&&u8[0]===0xFF&&u8[1]===0xFE){enc='utf-16le';s=2}
+  else if(u8.length>=2&&u8[0]===0xFE&&u8[1]===0xFF){enc='utf-16be';s=2}
+  const body=s?u8.subarray(s):u8;let t;
+  try{t=new TextDecoder(enc,{fatal:true}).decode(body)}
+  catch(_){try{t=new TextDecoder('shift_jis').decode(body)}catch(_){t=new TextDecoder('utf-8').decode(body)}}   /* UTF-8でなければShift_JIS（日本語のtxtに多い） */
+  return t.replace(/\r\n?/g,'\n');
+}
+const memoFileName=(n,ext)=>(memoName(n).replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').trim().slice(0,40)||'memo')+'.'+ext;
+function memoDownload(blob,name){
+  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),30000);
+}
+async function memoImport(files){
+  let ok=0;
+  for(const f of files){
+    if(f.size>MEMO.MAXFILE){note('「'+f.name+'」は大きすぎます（5MBまで）');continue}
+    let t;try{t=memoDecode(new Uint8Array(await f.arrayBuffer()))}catch(_){note('「'+f.name+'」を読めませんでした');continue}
+    if(memoTotal()+t.length>MEMO.MAXCH){note('メモが多すぎて、「'+f.name+'」は入りません（合計200万字まで）。いらないメモを削除してください');continue}
+    const m=memoMake(t,f.name.replace(/\.[^.]*$/,''));MEMO.notes.push(m);MEMO.cur=m.id;ok++;
+  }
+  if(ok){memoSave(true);memoUi();note(ok+'件のtxtを読み込みました',3000)}
+}
+
+/* ---- 描く（どのCanvas 2Dにも描ける）。lines＝[{t,x,y,f,a}]。y＝文字の上端 ---- */
+function memoRender(g,lines,o){
+  o=Object.assign({},MEMOPDF,o||{});
+  if(o.bg){g.fillStyle=o.bg;g.fillRect(0,0,o.pw,o.ph)}
+  g.textBaseline='top';g.fillStyle=o.ink;
+  for(const l of lines){g.font=l.f;g.textAlign=l.a||'left';g.fillText(l.t,l.x,l.y)}
+}
+/* 並べる（描かない）。戻り値＝ページの配列[{lines:[…]}]。長い行は折り返す（英単語は途中で切らない・長すぎる語は文字で切る・句読点などは行末にぶら下げる） */
+const MEMO_HANG=new Set('、。，．,.'.split(''));
+const MEMO_NOSTART=new Set('、。，．,.)）］｝」』〕】〉》!?！？ゝゞーぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ々・：；:;'.split(''));
+function memoLayout(text,title,o){
+  o=Object.assign({},MEMOPDF,o||{});
+  const c=document.createElement('canvas').getContext('2d'),maxW=o.pw-2*o.mx,bottom=o.ph-o.my;
+  const font=(px,b)=>(b?'bold ':'')+px+'px '+o.font;
+  function wrap(line,fs,b){
+    c.font=font(fs,b);
+    const toks=line.match(/[\x21-\x7e]+|[ \t]+|[\s\S]/gu)||[],out=[];let cur='',w=0;
+    for(const t of toks){
+      const tw=c.measureText(t).width;
+      if(w+tw<=maxW){cur+=t;w+=tw;continue}
+      const one=[...t].length===1;
+      if(one&&MEMO_HANG.has(t)&&w<=maxW&&w+tw<=maxW+fs){cur+=t;w+=tw;continue}            /* 句読点は、行末にぶら下げる（余白へ1字はみ出す） */
+      if(one&&MEMO_NOSTART.has(t)&&cur!==''){                                              /* 閉じ括弧・小さい仮名などは行頭に来ない＝直前の1字と一緒に次の行へ送る */
+        const a=[...cur],last=a.pop();
+        if(a.length){cur=a.join('');out.push(cur);cur=last+t;w=c.measureText(cur).width;continue}
+      }
+      if(/^[ \t]+$/.test(t))continue;                                                      /* 行末にあふれた空白は捨てる */
+      if(cur!==''&&tw<=maxW){out.push(cur);cur=t;w=tw;continue}
+      if(cur!==''){out.push(cur);cur='';w=0}
+      for(const ch of t){const cw=c.measureText(ch).width;if(w+cw>maxW&&cur!==''){out.push(cur);cur='';w=0}cur+=ch;w+=cw}
+    }
+    out.push(cur);return out;
+  }
+  const pages=[];let pg={lines:[]},y=o.my;
+  const nextPage=()=>{pages.push(pg);pg={lines:[]};y=o.my};
+  const put=(t,fs,b,lh)=>{if(y+lh>bottom&&(pg.lines.length||y>o.my))nextPage();if(t!=='')pg.lines.push({t,x:o.mx,y:y+Math.round((lh-fs)/2),f:font(fs,b)});y+=lh};
+  const tt=(title||'').trim();
+  if(tt){for(const s of wrap(tt,o.tfs,true))put(s,o.tfs,true,o.tlh);y+=o.lh*.5}
+  for(const raw of String(text||'').replace(/\t/g,'    ').split('\n'))for(const s of wrap(raw,o.fs,false))put(s,o.fs,false,o.lh);
+  pages.push(pg);
+  pages.forEach((p,i)=>p.lines.push({t:(i+1)+' / '+pages.length,x:o.pw/2,y:o.ph-o.my/2-o.fs/2,f:font(Math.round(o.fs*.8),false),a:'center'}));
+  return pages;
+}
+/* 包む（描かない）。imgs＝1ページごとの画像データ（Flate済みのグレー、またはJPEG）。o＝{w,h,pt:[幅pt,高さpt],cs,filter,title} */
+function pdfPages(imgs,o){
+  const enc=new TextEncoder(),parts=[],offs=[];let pos=0;
+  const put=x=>{const u=typeof x==='string'?enc.encode(x):x;parts.push(u);pos+=u.length};
+  const obj=(id,dict,stream)=>{offs[id]=pos;put(id+' 0 obj\n<<'+dict+(stream?' /Length '+stream.length:'')+'>>\n');if(stream){put('stream\n');put(stream);put('\nendstream\n')}put('endobj\n')};
+  const N=imgs.length,pw=o.pt[0],ph=o.pt[1],total=4+3*N;
+  let tt='';const ts=String(o.title||'');for(let i=0;i<ts.length;i++)tt+=ts.charCodeAt(i).toString(16).padStart(4,'0');
+  put('%PDF-1.4\n%âãÏÓ\n');
+  obj(1,'/Type /Catalog /Pages 2 0 R');
+  obj(2,'/Type /Pages /Kids ['+imgs.map((_,i)=>(4+3*i)+' 0 R').join(' ')+'] /Count '+N);
+  obj(3,'/Producer (Action Maker) /Title <FEFF'+tt+'>');
+  imgs.forEach((im,i)=>{
+    const pg=4+3*i,ct=pg+1,ig=pg+2;
+    obj(pg,'/Type /Page /Parent 2 0 R /MediaBox [0 0 '+pw+' '+ph+'] /Resources <</XObject <</Im0 '+ig+' 0 R>>>> /Contents '+ct+' 0 R');
+    obj(ct,'',enc.encode('q '+pw+' 0 0 '+ph+' 0 0 cm /Im0 Do Q'));
+    obj(ig,'/Type /XObject /Subtype /Image /Width '+o.w+' /Height '+o.h+' /ColorSpace /'+o.cs+' /BitsPerComponent 8 /Filter /'+o.filter,im);
+  });
+  const xr=pos;let x='xref\n0 '+total+'\n0000000000 65535 f \n';
+  for(let i=1;i<total;i++)x+=String(offs[i]).padStart(10,'0')+' 00000 n \n';
+  put(x+'trailer\n<</Size '+total+' /Root 1 0 R /Info 3 0 R>>\nstartxref\n'+xr+'\n%%EOF\n');
+  return new Blob(parts,{type:'application/pdf'});
+}
+/* メモ1件をPDFにする。progress(i,N)＝ページごとの進み具合 */
+async function memoPdf(n,progress){
+  const o=MEMOPDF,pages=memoLayout(n.text,n.title.trim(),o);   /* 題名は、自分で付けた時だけ見出しにする（空なら1行目が二重に出ない） */
+  if(pages.length>o.maxPages)throw new Error('long');
+  const cv=document.createElement('canvas');cv.width=o.pw;cv.height=o.ph;const g=cv.getContext('2d',{willReadFrequently:true});
+  const flate=!!window.CompressionStream,imgs=[];
+  for(let i=0;i<pages.length;i++){
+    memoRender(g,pages[i].lines,Object.assign({bg:'#fff'},o));
+    if(flate){
+      const d=g.getImageData(0,0,o.pw,o.ph).data,k=o.pw*o.ph,gray=new Uint8Array(k);
+      for(let p=0,q=0;p<k;p++,q+=4)gray[p]=d[q];   /* 白地に黒い文字なので、どの色の成分でも同じ */
+      imgs.push(await zlibDeflate(gray));
+    }else{
+      const b=await new Promise(r=>cv.toBlob(r,'image/jpeg',.92));imgs.push(new Uint8Array(await b.arrayBuffer()));
+    }
+    if(progress)progress(i+1,pages.length);
+    await new Promise(r=>setTimeout(r));   /* 画面が固まらないよう、1ページごとに譲る */
+  }
+  return pdfPages(imgs,{w:o.pw,h:o.ph,pt:o.pt,cs:flate?'DeviceGray':'DeviceRGB',filter:flate?'FlateDecode':'DCTDecode',title:memoName(n)});
+}
+
+/* ---- 画面 ---- */
+const memoQ=s=>CONSOLE.els.memo&&CONSOLE.els.memo.querySelector(s);
+const memoFmt=t=>{const d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const memoOptText=n=>memoName(n)+' ・'+n.text.length+'字 ・'+memoFmt(n.t);
+/* 状態の表示。msgを渡すと数秒だけ保持する（遅れて走る自動保存が、出力の進み具合や結果の表示を上書きしない）。保存できない時の警告は、いつでも優先 */
+function memoStatus(msg){
+  const s=memoQ('#mmSt');if(!s)return;const n=memoCur();
+  if(msg)MEMO.msg={t:msg,until:Date.now()+4000};
+  const m=MEMO.msg&&Date.now()<MEMO.msg.until&&MEMO.ok?MEMO.msg.t:'';
+  s.textContent=m||(MEMO.ok?(MEMO.bad?'⚠ 前のメモを読めなかったので、別の場所に残しました。':'')+n.text.length+'字（自動で端末に保存）':'⚠ この端末では保存できません。画面を閉じるとメモは消えます。txtで出しておいてください');
+  s.style.color=MEMO.ok?'':'#c0392b';
+}
+function memoUi(){
+  const sel=memoQ('#mmSel');if(!sel)return;
+  sel.innerHTML='';
+  for(const n of MEMO.notes){const o=document.createElement('option');o.value=n.id;o.textContent=memoOptText(n);sel.appendChild(o)}
+  sel.value=memoCur().id;
+  const n=memoCur();memoQ('#mmTitle').value=n.title;memoQ('#mmTa').value=n.text;memoStatus();
+}
+CONSOLE.reg({id:'memo',ico:'📝',name:'メモ帳',
+  mount(el){
+    el.innerHTML='<div class="mmbar"><select id="mmSel" aria-label="メモを選ぶ（一覧）"></select><button id="mmNew" aria-label="新しいメモを作る">＋新規</button><button id="mmDel" aria-label="いま開いているメモを削除する">🗑 削除</button></div>'
+      +'<input id="mmTitle" type="text" maxlength="80" placeholder="題名（空なら、メモの1行目）" aria-label="メモの題名">'
+      +'<textarea id="mmTa" spellcheck="false" autocomplete="off" placeholder="ここに書きます。書いた文字は自動で、この端末に保存されます。" aria-label="メモの本文"></textarea>'
+      +'<div class="mmbar"><button id="mmLoad" aria-label="txtファイルを読み込んで、新しいメモにする（UTF-8・Shift_JISを自動で見分けます）">📂 txtを読み込む</button><button id="mmTxt" aria-label="いまのメモをtxtファイルで出す（UTF-8）">⬇ txtで出す</button><button id="mmPdf" aria-label="いまのメモをPDFで出す（A4。画像のPDFなので、文字の選択・検索はできません）">📄 PDFで出す</button></div>'
+      +'<div class="note" id="mmSt" style="margin:0"></div><input id="mmFile" type="file" accept=".txt,text/plain" multiple hidden>';
+    const q=s=>el.querySelector(s);
+    q('#mmSel').onchange=e=>{MEMO.cur=e.target.value;memoSave(true);memoUi()};
+    q('#mmNew').onclick=()=>{const m=memoMake();MEMO.notes.push(m);MEMO.cur=m.id;memoSave(true);memoUi();q('#mmTa').focus()};
+    q('#mmDel').onclick=()=>{
+      const n=memoCur();if((n.text||n.title)&&!confirm('「'+memoName(n)+'」を削除します。元に戻せません。'))return;
+      const i=MEMO.notes.indexOf(n);MEMO.notes.splice(i,1);if(!MEMO.notes.length)MEMO.notes.push(memoMake());
+      MEMO.cur=MEMO.notes[Math.min(i,MEMO.notes.length-1)].id;memoSave(true);memoUi();   /* 削除したメモの次（無ければ前）を開く */
+    };
+    q('#mmTitle').oninput=e=>{const n=memoCur();n.title=e.target.value;n.t=Date.now();memoSave();const o=q('#mmSel').selectedOptions[0];if(o)o.textContent=memoOptText(n)};
+    q('#mmTa').oninput=e=>{
+      const n=memoCur(),old=n.text.length;
+      if(memoTotal()-old+e.target.value.length>MEMO.MAXCH){e.target.value=n.text;note('メモが多すぎます（合計200万字まで）');return}
+      n.text=e.target.value;n.t=Date.now();memoSave();const o=q('#mmSel').selectedOptions[0];if(o)o.textContent=memoOptText(n);memoStatus();
+    };
+    q('#mmLoad').onclick=()=>{q('#mmFile').value='';q('#mmFile').click()};
+    q('#mmFile').onchange=e=>{const fs=[...e.target.files];if(fs.length)memoImport(fs)};
+    q('#mmTxt').onclick=()=>{const n=memoCur();memoDownload(new Blob([n.text],{type:'text/plain;charset=utf-8'}),memoFileName(n,'txt'));memoStatus('txtを出しました（ダウンロードのフォルダ）')};
+    q('#mmPdf').onclick=async()=>{
+      const b=q('#mmPdf'),n=memoCur();b.disabled=true;
+      try{
+        const blob=await memoPdf(n,(i,N)=>memoStatus('PDFを作っています… '+i+' / '+N+' ページ'));
+        memoDownload(blob,memoFileName(n,'pdf'));memoStatus('PDFを出しました（ダウンロードのフォルダ）')
+      }catch(e){memoStatus(e&&e.message==='long'?'長すぎてPDFにできません（'+MEMOPDF.maxPages+'ページまで）。メモを分けてください':'PDFを作れませんでした')}
+      b.disabled=false;
+    };
+    armTips(el);
+  },
+  enter(){if(!MEMO.loaded)memoRead();memoUi()},
+  leave(){if(MEMO.dirty)memoWrite()}
+});
+CONSOLE.cur='memo';   /* 開いて最初に見せる試作 */
+/* ===== 自由帳（台帳Z-221）。起動時の状態を決めるので、manifestの最後に置く =====
+   起動時の既定＝「自由帳」：A4縦・150dpi（白紙の既定と同じ）の白紙1枚が紙いっぱいにあり、ペンが選ばれ、ペンの補正が弱くオンの状態。
+   ・作品ファイルを開いた時・「復元」を押した時は、その作品が優先（ここは起動時の1回だけ）。起動時は自動保存（am_auto）を上書きしない（dirtyProjを立てない）。
+   ・サンプルの絵（絵文字2個）で始めたい時：URLに ?start=sample、または入口カードの「次回からサンプルの絵で始める」（localStorage am_start）。
+     検査（tools/check_*.py・headless_regression.py）は ?start=sample で、従来の起動状態から始める。
+   ・「オブジェクトにする」：描いた絵（自由帳・白紙・描画）を、絵のある部分だけで切り取り、元の位置にそのまま1つのオブジェクトにする（既存のmakeClip・clipToObjを使う）。
+     元の白紙は空になって残る＝そのまま続けて描ける。保存形式は増やさない（できるのは、これまでと同じ部品＝sp:'p'のオブジェクト）。
+   ・入口カード：起動直後だけ、キャンバスの上に出す（キャンバスを触る・×・どれかの入口で消える）。入口＝白紙に描く／絵を読み込む／サンプルの絵。
+   ・UIの一時状態：作品・Undo・保存には入れない（できた白紙の絵と、紙の大きさDOCは、作品に入る）。 */
+const START={LS:'am_start',PA:25};
+function startMode(){
+  try{const q=new URLSearchParams(location.search).get('start');if(q==='sample'||q==='free')return q}catch(_){}
+  try{if(localStorage.getItem(START.LS)==='sample')return 'sample'}catch(_){}
+  return 'free';
+}
+function paSet(L,C){PA.L=L;PA.C=C;$('paL').value=L;$('paC').value=C}
+/* 起動直後の状態を作る。pushUndo・dirtyProjには触れない（Undoは空のまま・前回の自動保存を上書きしない） */
+function startFree(){
+  AC.length=0;uid=0;sel=null;
+  const d=blankDims();DOC.w=d.w;DOC.h=d.h;fit(true);canvasUi();
+  const a=addBlank();BLK.a=null;a.name='自由帳';
+  a.size=Math.min(6,Math.max(W,H)/S0);   /* 紙いっぱい（白紙は紙と同じ縦横比。絵の長辺＝S0×size。A4なら約5.4） */
+  setSel(a);setTab('dr');setTool('pen');paSet(START.PA,START.PA);
+  layUi();dirtyProj=false;
+}
+function startSample(){
+  AC.length=0;uid=0;sel=null;DOC.w=DOC.h=0;fit(true);canvasUi();
+  add();add();setSel(AC[0]);setTab('pl');paSet(0,0);layUi();dirtyProj=false;
+}
+
+/* ---- オブジェクトにする ---- */
+function toObject(){
+  const l=sel;
+  if(!l){note('先に、絵を選んでください');return null}
+  if(blocked(l))return null;
+  if(l.sp!=='d'){note('「描く」で描いた絵（自由帳・白紙・描画）を選んでください。画像の一部は「切り抜き」タブで切り出せます');return null}
+  const full=(w,h)=>{const m=document.createElement('canvas');m.width=w;m.height=h;const g=m.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,w,h);return m};
+  const k=makeClip(l,full,true);   /* 全面を通すマスク＝絵のある部分（不透明度>2）の外接の四角で切る */
+  if(!k){note('まだ何も描かれていません');return null}
+  pushUndo();
+  ensureBase(l);const bw=l._bw,bh=l._bh;
+  l.base.getContext('2d').clearRect(0,0,bw,bh);
+  if(l.pen)l.pen.getContext('2d').clearRect(0,0,l.pen.width,l.pen.height);
+  bumpBP(l,1,!!l.pen);recompose(l);
+  const a=clipToObj(k,{exact:true});AC.push(a);
+  setSel(l);layUi();   /* 描いていた白紙を選んだまま＝続けて描ける */
+  note('オブジェクトにしました：'+a.name+'（「配置」タブでタップすると選べて、動かせます）',5000);
+  return a;
+}
+$('toObj').onclick=toObject;
+
+/* ---- 入口カード ---- */
+function startCard(){
+  const c=$('startcard');$('wrap').appendChild(c);c.hidden=false;
+  try{$('stPref').checked=localStorage.getItem(START.LS)==='sample'}catch(_){}
+  const hide=()=>{c.hidden=true;$('cv').removeEventListener('pointerdown',hide,true)};
+  $('cv').addEventListener('pointerdown',hide,true);
+  $('stDraw').onclick=hide;$('stX').onclick=hide;
+  $('stImg').onclick=()=>{hide();pickImages()};
+  $('stSmp').onclick=()=>{hide();startSample()};
+  $('stPref').onchange=e=>{try{if(e.target.checked)localStorage.setItem(START.LS,'sample');else localStorage.removeItem(START.LS)}catch(_){note('この端末では、この設定を覚えられません')}};
+}
+
+if(startMode()==='free'){startFree();startCard()}
 </script>
 </body>
 </html>

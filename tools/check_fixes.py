@@ -18,7 +18,7 @@ def rep(name,ok,detail=''):
 
 def page(p,w=420,h=900):
     b=p.chromium.launch();pg=b.new_page(viewport={'width':w,'height':h})
-    errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F);pg.wait_for_timeout(500)
+    errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F+'?start=sample');pg.wait_for_timeout(500)
     return b,pg,errs
 
 def blob_of_out(pg):

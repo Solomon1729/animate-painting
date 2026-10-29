@@ -55,7 +55,7 @@ def main():
         errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)[:300]))
         pg.on('dialog', lambda d: d.dismiss())
-        pg.goto('file://' + F)
+        pg.goto('file://' + F + '?start=sample')
         pg.wait_for_timeout(500)
         ev = pg.evaluate
         ev(CANON_JS)

@@ -52,7 +52,7 @@ def run_sample(pw, path):
     pg.on('crash', lambda: crashed.append(1))
     res = {'name': name, 'steps': {}}
     try:
-        pg.goto('file://' + F); pg.wait_for_timeout(600); pg.evaluate(HELPERS)
+        pg.goto('file://' + F + '?start=sample'); pg.wait_for_timeout(600); pg.evaluate(HELPERS)
         n0 = pg.evaluate("AC.length")
         t0 = time.time()
         pg.set_input_files('#fadd', path)

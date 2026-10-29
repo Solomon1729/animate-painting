@@ -16,7 +16,7 @@ window.dmSum=()=>sel.dm?Array.from(sel.dm.d).reduce((a,v)=>a+Math.abs(v),0):0"""
 with sync_playwright() as p:
     b = p.chromium.launch(); ctx = b.new_context(viewport={'width': 1000, 'height': 800}); pg = ctx.new_page()
     errs = []; pg.on('pageerror', lambda e: errs.append(str(e)[:300]))
-    pg.goto('file://' + F); pg.wait_for_timeout(600); pg.evaluate(VIS)
+    pg.goto('file://' + F + '?start=sample'); pg.wait_for_timeout(600); pg.evaluate(VIS)
     pg.set_input_files('#fadd', IMG); pg.wait_for_timeout(1500)
     pg.evaluate("sel.size=3.4;sel.fx=.5;sel.fy=.5;paintFrame();$('hint').hidden=true")
     pg.evaluate("AC.splice(0,AC.length-1);setSel(AC[0]);paintFrame()")   # 既定のサンプル絵文字は保存→読込で輪郭が数画素ずれる（既存挙動）ので、試験では外す

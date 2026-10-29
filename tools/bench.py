@@ -81,7 +81,7 @@ async () => {
 with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page(viewport={'width': 420, 'height': 900})
     errs = []; pg.on('pageerror', lambda e: errs.append(str(e)[:200]))
-    pg.goto('file://' + F); pg.wait_for_timeout(600)
+    pg.goto('file://' + F + '?start=sample'); pg.wait_for_timeout(600)
     r = pg.evaluate(JS)
     r = {k: (round(v, 1) if isinstance(v, float) else v) for k, v in r.items()}
     print(sys.argv[2] if len(sys.argv) > 2 else F, json.dumps(r, ensure_ascii=False)); print('errs', errs)

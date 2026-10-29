@@ -94,7 +94,7 @@ def run(p):
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)[:200]))
     pg.on('dialog', lambda d: d.dismiss())
-    pg.goto('file://' + F); pg.wait_for_timeout(600)
+    pg.goto('file://' + F + '?start=sample'); pg.wait_for_timeout(600)
     pg.evaluate(SETUP); pg.wait_for_timeout(250)
     R = canvas_rect(pg)
 

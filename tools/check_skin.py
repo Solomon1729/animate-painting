@@ -50,7 +50,7 @@ def main():
             errs = []
             pg.on('pageerror', lambda e: errs.append(str(e)[:300]))
             pg.on('dialog', lambda d: d.dismiss())
-            pg.goto('file://' + F)
+            pg.goto('file://' + F + '?start=sample')
             pg.wait_for_timeout(400)
             return ctx, pg, errs
 
@@ -214,7 +214,7 @@ def main():
         chk('S6 サンプル絵文字の一覧が開く', ev("()=>$('em').style.display==='flex'&&$('em').children.length>3"))
         ev("()=>{$('mnv').click()}")
         mv = ev("()=>[...$('mV').querySelectorAll('.cmh')].map(e=>e.textContent)")
-        chk('S6 👁メニューが見出し（枠の大きさ／画面／キャンバス・見た目／補助表示）で区切られ、開いている', mv == ['枠の大きさ', '画面', 'キャンバス・見た目', '補助表示'] and ev("()=>!$('mV').hidden"), mv)
+        chk('S6 👁メニューが見出し（モード／枠の大きさ／画面／キャンバス・見た目／補助表示）で区切られ、開いている', mv == ['モード', '枠の大きさ', '画面', 'キャンバス・見た目', '補助表示'] and ev("()=>!$('mV').hidden"), mv)
         chk('S6 ページエラーなし', not errs, errs[:3])
         ctx.close()
 
