@@ -44,7 +44,7 @@ class Sess:
         self.errs = []
         self.pg.on('pageerror', lambda e: self.errs.append(str(e)[:160]))
         self.pg.on('dialog', lambda d: d.dismiss())
-        self.pg.goto('file://' + F)
+        self.pg.goto('file://' + F + '?start=sample')
         self.pg.wait_for_timeout(600)
         self.cdp = self.ctx.new_cdp_session(self.pg)
         self.cur = {}
@@ -253,7 +253,7 @@ def g_coords(p):
         pg.mouse.move(c['l'] + c['w'] * fx, c['t'] + c['h'] * fy); pg.wait_for_timeout(70)
         chk('マウス (%.2f,%.2f) → px' % (fx, fy), near(xy(lab('crdp')), (round(640 * fx), round(300 * fy))), xy(lab('crdp')))
     pg.wait_for_timeout(2300); chk('マウスは動かさなくても出たまま', lab('crdp') is not None)
-    pg.mouse.move(c['l'] + c['w'] - 2, c['t'] + c['h'] - 2); pg.wait_for_timeout(70)
+    pg.mouse.move(c['l'] + c['w'] - 12, c['t'] + c['h'] - 2); pg.wait_for_timeout(70)   # 右10pxは、モード選択の縁の帯（台帳Z-204）が受けるので、その内側
     r = pg.evaluate("(()=>{const e=document.getElementById('crdp').getBoundingClientRect(),c=cv.getBoundingClientRect();return [e.left>=c.left-1,e.right<=c.right+1,e.top>=c.top-1,e.bottom<=c.bottom+1]})()")
     chk('端でもラベルが枠内に収まる', all(r), r)
     pg.mouse.move(c['l'] + c['w'] / 2, c['t'] + c['h'] + 60); pg.wait_for_timeout(80); chk('マウスが枠の外へ出ると消える', lab('crdp') is None)

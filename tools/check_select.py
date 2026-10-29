@@ -83,7 +83,7 @@ class S:
         self.errs = []
         self.pg.on('pageerror', lambda e: self.errs.append(str(e)[:200]))
         self.pg.on('dialog', lambda d: d.dismiss())
-        self.pg.goto('file://' + F)
+        self.pg.goto('file://' + F + '?start=sample')
         self.pg.wait_for_timeout(500)
         self.pg.evaluate(HELP)
 

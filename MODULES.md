@@ -55,6 +55,10 @@
 | `src/js/241-timelapse-ui.js` | **タイムラプスのアプリ側**（台帳Z-192）：枠`#tlp`（操作窓`#tpb`の先頭）、🎬メニュー`#mTl`、物理タブの「作り方を見る」`#scHow`。再生ホスト`tlHost`（物理は`scnSetSource({noUndo})`・画面の操作は実物を押す）、ブロックの台は`242-timelapse-board.js`。**非破壊**：開始時に`snap()`を預かり、閉じると`restore(tlCloneSnap())`で元の作品に戻す（「この状態で続ける」は預かった姿をUndoに積む）。記録（ボタン・バー・選択・文字・`PHAPI.tap`）と、指の表示`#tlFg`。UIの一時状態`TLA`は作品・Undo・保存に入れない |
 | `src/js/242-timelapse-board.js` | **タイムラプスの「組み立て台」**（台帳Z-196）：手順をレゴブロックのように台の上へ組み上げて見せる。`tlbBuild`（`TL.layout`からブロック・パレット`#tlPal`を作る。点線＝まだ置かれていない設計図／色の面＝置いた／枠＝いま）、`tlbFly`（`player`の`pre`で、パレットのチップから指の印`#tlHand`がブロックの分身を運び、台にカチッと置く。Web Animations API。置かれた瞬間に`lead`が終わり、舞台が変わる）、`tlbCard`（入力欄`#tlFlds`が1つずつ埋まる）、`tlbSet`（飛ぶ・戻る時は動きなしで姿を合わせる）、`tlbSize`（1段の幅は台の幅÷12・「全体」で縮む）。色は分類の色`--c`を黒と混ぜた面＋白い文字（対比4.5以上）。UIの一時状態`TLB`は作品・Undo・保存に入れない |
 | `src/js/243-phys-tray.js` | **装置トレー**（台帳Z-210）：物理タブの時だけ操作窓の持ち手の下に付く欄`#dvtray`。`PHDEV`から自動で並べ、ドラッグ（マウス・タッチ）かタップで`PHAPI`の`addDevice`（実験が無ければ`execBatch`で床も）に落とす。タップは他の物と重ならない場所を探す（`dvFreeSpot`）。UIの一時状態 |
+| `src/js/244-modes.js` | **モード選択**（台帳Z-204）：`MODES`（編集・アニメーション／物理／ビジュアルプログラミング（準備中）／コンソール）・`MODE`・`modeOpen`/`modeClose`/`modeSet`。出し方＝右の縁の細い帯`#modeEdge`（幅10px・指で触る端末だけ。左へ56px以上かつ横が縦の1.6倍以上）／👁メニューの`#mdb`。他の指が触れている間は反応しない。モード＝窓の組み合わせの切り替え（機能の持ち分けではない）。 |
+| `src/js/245-console.js` | **コンソールモード**（台帳Z-207）：本体の作品・Undo・保存形式に触れない実験の場`#cons`。`CONSOLE.reg({id,ico,name,mount(el),enter?,leave?})`で試作を足す。開くと本体の再生を止め、閉じると戻す。最初の住人＝「使い方」（移植の手順）。 |
+| `src/js/246-memo.js` | **メモ帳**（台帳Z-222。コンソールの試作）：`MEMO`（端末のlocalStorage `am_memo`・版番号・未知のキーを保持）、txtの読み込み`memoDecode`（UTF-8／UTF-16／Shift_JIS）と出力、PDF＝`memoLayout`（並べる）・`memoRender`（描く。どのCanvasにも描ける）・`pdfPages`（包む）・`memoPdf`。`zlibDeflate`（`160-still-export.js`）を使う。 |
+| `src/js/247-freebook.js` | **自由帳**（台帳Z-221。起動状態を決めるので**manifestの最後**）：`startMode`（`?start=sample`／端末の設定`am_start`／既定は自由帳）・`startFree`・`startSample`・`toObject`（描いた絵をオブジェクトにする。既存の`makeClip`・`clipToObj`）・入口カード`#startcard`。 |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 
 ## 開発手順

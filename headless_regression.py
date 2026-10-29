@@ -17,7 +17,7 @@ def red(pg):
 def test_pen(F,ui=True):
     with sync_playwright() as p:
         b=p.chromium.launch();pg=b.new_page(viewport={'width':420,'height':900})
-        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F);pg.wait_for_timeout(500)
+        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F+'?start=sample');pg.wait_for_timeout(500)
         pg.evaluate("setTab('dr')");pg.wait_for_timeout(100)
         c=pg.evaluate("(()=>{paintFrame();const t=sel.M.transformPoint(new DOMPoint(0,0));const r=cv.getBoundingClientRect();return [r.left+t.x/dpr,r.top+t.y/dpr]})()")
         r0=red(pg)
@@ -38,7 +38,7 @@ def test_texture_mask(F):
     with sync_playwright() as p:
         b=p.chromium.launch();pg=b.new_page(viewport={'width':420,'height':900})
         errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]))
-        pg.goto('file://'+F);pg.wait_for_timeout(500)
+        pg.goto('file://'+F+'?start=sample');pg.wait_for_timeout(500)
         # object with detail: draw some noisy texture onto img so texture effect has something to act on
         pg.evaluate("""(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='#888';g.fillRect(0,0,256,256);
           for(let i=0;i<4000;i++){const v=100+Math.random()*100|0;g.fillStyle='rgb('+v+','+v+','+v+')';g.fillRect(Math.random()*256,Math.random()*256,4,4)}
@@ -78,7 +78,7 @@ def test_texture_mask(F):
 def test_scope_switch(F):
     with sync_playwright() as p:
         b=p.chromium.launch();pg=b.new_page(viewport={'width':420,'height':900})
-        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F);pg.wait_for_timeout(500)
+        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F+'?start=sample');pg.wait_for_timeout(500)
         pg.evaluate("""(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='#707070';g.fillRect(0,0,256,256);setImg(sel,c);paintFrame()})()""")
         pg.evaluate("setTab('adj')");pg.wait_for_timeout(100)
         c=pg.evaluate("(()=>{paintFrame();const t=sel.M.transformPoint(new DOMPoint(0,0)),r=cv.getBoundingClientRect(),S=S0*sel.size/dpr;return [r.left+t.x/dpr,r.top+t.y/dpr,S]})()")
@@ -126,7 +126,7 @@ def test_adjust_then_edit(F,w,h):
     """色調整・質感調整のあとにペン／消しゴムを使うと、すぐ画面に出るか（Z-65：以前は元に戻す→やり直すまで反映されなかった）"""
     with sync_playwright() as p:
         b=p.chromium.launch();pg=b.new_page(viewport={'width':1000,'height':800})
-        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F);pg.wait_for_timeout(500)
+        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F+'?start=sample');pg.wait_for_timeout(500)
         _setup(pg,w,h)
         pg.evaluate("(()=>{const a=ensureAdj(sel);a.brightness=25;a.contrast=20;const L=ensureLF(sel);L.clarity.amount=60;L.texture.amount=40;adjDirty(sel);paintFrame()})()");pg.wait_for_timeout(1500)
         c=pg.evaluate("cen()");pg.evaluate("setTab('dr');setTool('pen')")
@@ -140,7 +140,7 @@ def test_warp_brush(F):
     """歪みブラシ：メッシュができる→Undo/Redoで厳密に戻る→保存読込でメッシュ保持→歪み越しのペンがストローク中に見える（warpInc）"""
     with sync_playwright() as p:
         b=p.chromium.launch();pg=b.new_page(viewport={'width':1000,'height':800})
-        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F);pg.wait_for_timeout(500)
+        errs=[];pg.on('pageerror',lambda e:errs.append(str(e)[:160]));pg.goto('file://'+F+'?start=sample');pg.wait_for_timeout(500)
         _setup(pg,1200,800)
         c=pg.evaluate("cen()");pg.evaluate("setTab('wp');wmode='brush';wmUi();bt='push';wbUi()")
         v0=pg.evaluate("vis()");_stroke(pg,c,[(-80,0),(0,20),(80,0)]);v1=pg.evaluate("vis()");s1=pg.evaluate("dmSum()")

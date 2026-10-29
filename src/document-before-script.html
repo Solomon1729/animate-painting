@@ -7,6 +7,8 @@
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
+  <div class="cmh">モード</div>
+  <button id="mdb" aria-label="モードを切り替える（編集・アニメーション／物理／コンソール）。画面の右の縁から中央へ引っ張っても出ます">🧭 モードを切り替える</button>
   <div class="cmh">枠の大きさ</div>
   <div class="cseg" id="frSeg"><button data-fr="n" aria-label="通常の枠（正方形）">通常</button><button data-fr="b" aria-label="大きい枠（画面いっぱいに近い・操作窓は下）">大</button><button data-fr="f" aria-label="全画面">全画面</button></div>
   <div class="cmh">画面</div>
@@ -146,6 +148,7 @@
 
   <div class="tab" data-tab="dr">
     <div class="row tools"><button data-tool="pen" class="on">✏️ ペン</button><button data-tool="eraser">🧽 消しゴム（描いた分だけ）</button><button data-tool="ieraser">🧹 消しゴム（画像ごと）</button><button data-tool="clone">🩹 修整</button></div>
+    <div class="row"><button id="toObj" aria-label="描いた絵を、絵のある部分だけで切り取って、1つのオブジェクトにする（元の位置のまま。動きや物理を付けられる。元の白紙は空になって残るので、続けて描ける）">✂️ 描いた絵をオブジェクトにする</button></div>
     <div class="row" id="es2" style="display:none"><span class="lab">消し具合</span><input id="es" type="range" min="0.01" max="1" step="0.05" value="1" aria-label="消しゴムの強さ（弱いほど半透明に残る）"></div>
     <div class="grp alt" id="rtBox" style="display:none"><div class="gh">🩹 修整（写す・直す・ぼかす）</div>
     <div class="row"><span class="lab">方式</span><select id="rtMode" aria-label="修整の方式">
@@ -369,5 +372,26 @@
   <div id="lyl"></div>
   <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="lyphx" checked>非表示レイヤーを物理の計算から除外する</label>
   <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。統合＝見えている通り（位置・歪み・ぼかし・マスク・色調整込み）に1つの画像にします（動き・物理は絵に焼き込まれて静止画になります。取り消しは「元に戻す」）。くっついたオブジェクトは一緒に統合され、非表示のものは対象外です。行は長押し（マウスはドラッグ）で並べ替え。入れたい行と行のすき間に点線が出るので、そこで離します（オブジェクトは別レイヤーのすき間にも入れられます。外で離すと取り消し）。上ほど手前。</div>
+</div>
+<!-- モード選択（台帳Z-204）：右の縁から中央へ引っ張る／👁メニューの「モードを切り替える」 -->
+<div id="modeEdge" aria-hidden="true"></div>
+<div id="modes" class="modes" hidden role="dialog" aria-label="モードの選択">
+  <div class="mdbk" id="mdbk"></div>
+  <div class="mdpn">
+    <div class="mdhd"><b>モード</b><button id="mdx" aria-label="閉じる">✕</button></div>
+    <div id="mdl"></div>
+    <div class="note">モード＝画面（手元の窓）の組み合わせの切り替えです。機能がモードに属するわけではありません（ペンや色調整は、どの画面から使っても同じものです）。</div>
+  </div>
+</div>
+<!-- コンソールモード（台帳Z-207）：本体の作品・元に戻す・保存に触れない実験の場 -->
+<div id="cons" class="cons" hidden role="dialog" aria-label="コンソール（実験の場）">
+  <div class="cshd"><b>🧪 コンソール（実験の場）</b><span class="note">ここでの操作は、作品・元に戻す・保存に入りません。</span><button id="csmd" aria-label="モードを切り替える">🧭 モード</button><button id="csx" aria-label="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button></div>
+  <div class="cstabs" id="cstabs"></div>
+  <div class="csbody" id="csbody"></div>
+</div>
+<!-- 起動直後の入口（台帳Z-221）。起動時にキャンバスの上へ移す -->
+<div id="startcard" class="startcard" hidden>
+  <div class="row"><button id="stDraw" aria-label="白紙にそのまま描く（ペンが選ばれています）">✏️ 白紙に描く</button><button id="stImg" aria-label="絵（画像）を読み込む">🖼 絵を読み込む</button><button id="stSmp" aria-label="サンプルの絵（絵文字2個）を置いて始める">🎬 サンプルの絵</button><button id="stX" aria-label="この案内を閉じる">✕</button></div>
+  <label class="note" style="display:flex;gap:6px;align-items:center;margin:6px 0 0"><input type="checkbox" id="stPref">次回からサンプルの絵で始める</label>
 </div>
 <script>

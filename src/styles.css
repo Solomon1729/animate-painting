@@ -222,3 +222,33 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 #dvtray .dv svg{display:block}
 #dvghost{position:fixed;z-index:300;pointer-events:none;transform:translate(-50%,-50%);width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--ink);background:var(--pane);border:var(--bw,2px) solid var(--acc);border-radius:calc(var(--rk,1)*10px);opacity:.92}
 body.dvdrag,body.dvdrag *{cursor:grabbing!important}
+
+/* ===== モード選択・コンソール・自由帳の入口（台帳Z-204・Z-207・Z-221・Z-222） ===== */
+#modeEdge{display:none;position:fixed;top:0;bottom:0;right:0;width:10px;z-index:70;touch-action:pan-y}   /* 右の縁の細い帯。縦のスクロールはブラウザに任せ、左への横引きだけ受ける。キャンバスは画面の右端まで届くので、帯の幅の分だけ、そこから始める操作は受け取れない＝細くし、指で触る端末（any-pointer:coarse）でだけ有効にする。マウスは👁メニューの「モードを切り替える」 */
+@media (any-pointer:coarse){#modeEdge{display:block}}
+#modeEdge::before{content:"";position:absolute;right:3px;top:50%;width:4px;height:46px;margin-top:-23px;border-radius:2px;background:var(--ink);opacity:.22}
+body.consOpen #modeEdge{display:none}
+.modes{position:fixed;inset:0;z-index:280;display:flex;justify-content:flex-end}
+.modes[hidden],.cons[hidden],.startcard[hidden]{display:none}
+.mdbk{position:absolute;inset:0;background:rgba(0,0,0,.38)}
+.mdpn{position:relative;width:min(88vw,330px);height:100%;overflow:auto;background:var(--pane);color:var(--ink);border-left:var(--bw,2px) solid var(--line);padding:12px 12px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:-6px 0 24px rgba(0,0,0,.25);animation:mdin .18s ease-out}
+@keyframes mdin{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
+.mdhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mdi{display:block;width:100%;text-align:left;margin:0 0 8px;padding:10px 12px}
+.mdi b{display:block;font-size:15px}.mdi span{display:block;font-size:12px;font-weight:500;opacity:.8;margin-top:2px}
+.mdi[aria-current="true"]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.mdi:disabled{opacity:.5}
+.cons{position:fixed;inset:0;z-index:250;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px)}
+.cshd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:var(--bw,1px) solid var(--line);background:var(--pane)}
+.cshd b{font-size:15px}.cshd .note{margin:0;flex:1 1 160px}
+.cstabs{display:flex;gap:6px;padding:8px 10px 0;flex-wrap:wrap}
+.cstabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.csbody{flex:1;min-height:0;overflow:auto;padding:10px;display:flex;flex-direction:column;overscroll-behavior:contain}
+.csbody>div{display:flex;flex-direction:column;flex:1;min-height:0;gap:8px}
+.csbody>div[hidden]{display:none}
+.mmbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mmbar select{flex:1 1 180px;min-width:0}
+#mmTitle{width:100%;box-sizing:border-box;font-size:16px;padding:7px 9px}
+#mmTa{flex:1;min-height:220px;width:100%;box-sizing:border-box;resize:none;font:16px/1.6 var(--font);padding:10px;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*8px);background:var(--pane);color:var(--ink)}
+.startcard{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*12px);padding:8px 10px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.startcard .row{justify-content:center;gap:5px}.startcard .row button{padding:6px 8px;font-size:13px}#stX{min-width:30px}
