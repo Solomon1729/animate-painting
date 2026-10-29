@@ -81,6 +81,7 @@
 | `tools/check_foundation.py` | `python3 tools/check_foundation.py <HTMLの絶対パス>`。五基盤の検査（今はP0の6群50項目）：見本（`tools/fixtures/v1-sample.json`。旧ビルドが書いたv1）の読み書き／`v`なし・壊れたファイル／未知のキー（トップレベル・LAY・DOC・アクター）の保持／新しい版（v99）／移行の枠（`PROJ.MIG`）／書き出しの形。全項目`OK`が正常（台帳Z-166）。P1以降の基盤は、ここに群を足す。ヘッドレスのみ・実機未確認 |
 | `tools/check_assist.py` | `python3 tools/check_assist.py <HTMLの絶対パス>`。ペン補正（直線・円・曲線・消しゴム・Undo・取り残し・歪み・ロック）／拡大窓（既定オフ・対象の道具・隅へ逃げる・中身の一致・倍率の自動/固定・道具の表への追加）／ピンの微調整（刻み・長押し・Undo・動き量・ロック・拡大窓連携）の4群70項目（台帳Z-108〜Z-110・Z-124。始点固定・仮表示の一致・非正方形の位置を含む）。ヘッドレスのみ・実機未確認 |
 | `tools/check_ui.py` | `python3 tools/check_ui.py <HTMLの絶対パス>`。画面まわり8群133項目（持ち手の説明が消える／操作窓の大きさ・重ならない／✋・ピンチの自己修復／オブジェクト0個／キャンバスのpx・画像に合わせる・書き出しpx／座標の表示／並べ替えの点線／バーの縦距離スクラブ・吸着）。実際のタッチ（CDP）とマウス。全項目`OK`で`OK 133  NG 0`（台帳Z-95〜Z-99・Z-102・Z-106・Z-107・Z-88・Z-114） |
+| `tools/check_viewer_quality.py` | `python3 tools/check_viewer_quality.py <HTMLの絶対パス>`。元に戻す／やり直すでビューワーが動かない・設定（⚙動作の#uvw）オンで戻る・固定🔒中は動かない／修整の調整バー（なじませる幅・ぼかす広さ・滑らかさ）の目安の輪／歪みのある絵の書き出しの細部。U・H・E群30項目（台帳Z-227〜Z-229） |
 | `tools/phys_engine_test.js` | `node tools/phys_engine_test.js`。物理エンジン`PHE`を解析解と比べる（62項目：自由落下・斜面・振り子・衝突・円弧・ばね・磁場・連鎖衝突…）。台帳Z-167・Z-183 |
 | `tools/phys_dev_test.js` | `node tools/phys_dev_test.js`。装置`PHDEV`の検査（68項目）：全装置を床に置いて3秒動かす・名前の衝突（ball2…）・つまみ・置いた位置・坂の滑り／ふりこ／ばね振り子／電場／磁場を解析解と比べる・誤り・純粋さ。台帳Z-210 |
 | `tools/check_phys_tray.py` | `python3 tools/check_phys_tray.py <HTMLの絶対パス>`。装置トレーのアプリ内検査（D1〜D8・49項目）：欄の表示・タップ・重ならない置き方・マウス／タッチのドラッグ・取り消し・サンプル／絵に物理を付けた作品への追加・つまみ・保存・Undo・窓を浮かせる。台帳Z-210 |
