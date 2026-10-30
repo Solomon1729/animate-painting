@@ -58,6 +58,8 @@
 | `src/js/244-modes.js` | **モード選択**（台帳Z-204）：`MODES`（編集・アニメーション／物理／ビジュアルプログラミング（準備中）／コンソール）・`MODE`・`modeOpen`/`modeClose`/`modeSet`。出し方＝右の縁の細い帯`#modeEdge`（幅10px・指で触る端末だけ。左へ56px以上かつ横が縦の1.6倍以上）／👁メニューの`#mdb`。他の指が触れている間は反応しない。モード＝窓の組み合わせの切り替え（機能の持ち分けではない）。 |
 | `src/js/245-console.js` | **コンソールモード**（台帳Z-207）：本体の作品・Undo・保存形式に触れない実験の場`#cons`。`CONSOLE.reg({id,ico,name,mount(el),enter?,leave?})`で試作を足す。開くと本体の再生を止め、閉じると戻す。最初の住人＝「使い方」（移植の手順）。 |
 | `src/js/246-memo.js` | **メモ帳**（台帳Z-222。コンソールの試作）：`MEMO`（端末のlocalStorage `am_memo`・版番号・未知のキーを保持）、txtの読み込み`memoDecode`（UTF-8／UTF-16／Shift_JIS）と出力、PDF＝`memoLayout`（並べる）・`memoRender`（描く。どのCanvasにも描ける）・`pdfPages`（包む）・`memoPdf`。`zlibDeflate`（`160-still-export.js`）を使う。 |
+| `src/js/2465-vp-rules.js` | **規則の評価**（台帳Z-231。ビジュアルプログラミングの核。画面を使わない純粋な処理）：`VPR`。いつ`TRG`／もし`CND`／なら`ACT`の部品表（日本語の`doc`つき）、`dispatch(prog,ev,world)`（実行して、どの規則・どの動作が走ったかの記録を返す。1回の処理は最大`MAXEV`＝64件。未知のIDは保持して無視）、`validate`（誤り`errs`＝反映しない／注意`warn`）、`doc`（規則を日本語の文にする）、`targets`・`stepTargets`（その規則・行が触れる部品）、`catalog`、`sample`（見本のテキストエディタ）。`world`は`{has,get,set,store:{get,set}}`の窓口だけを通す。 |
+| `src/js/2466-vp-lab.js` | **ビジュアルプログラミングの試作画面**（台帳Z-231。コンソールの🧩）：`VPL`。左＝ビューワー（部品。▶動かす／🔍調べる／↺見本に戻す）、右＝規則の見え方（文／コード、✎編集→✔反映、実行の記録）。部品と規則の行が互いに光る（選択`vplSelPart`・`vplSelLine`、実行`vplFlash`）。保存先は`am_vplab`（規則）・`am_vplab_s_*`（見本が保存した文字）・`am_vplab_bad`（読めなかった規則）。本体の作品・Undo・保存・メモ帳`am_memo`には触れない。 |
 | `src/js/247-freebook.js` | **自由帳**（台帳Z-221。起動状態を決めるので**manifestの最後**）：`startMode`（`?start=sample`／端末の設定`am_start`／既定は自由帳）・`startFree`・`startSample`・`toObject`（描いた絵をオブジェクトにする。既存の`makeClip`・`clipToObj`）・入口カード`#startcard`。 |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 

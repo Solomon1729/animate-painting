@@ -55,6 +55,8 @@
     "js/244-modes.js",
     "js/245-console.js",
     "js/246-memo.js",
+    "js/2465-vp-rules.js",
+    "js/2466-vp-lab.js",
     "js/247-freebook.js",
     "document-suffix.html"
   ]
