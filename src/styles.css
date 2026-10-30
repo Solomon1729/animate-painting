@@ -250,7 +250,7 @@ body.consOpen #modeEdge{display:none}
 .mmbar select{flex:1 1 180px;min-width:0}
 #mmTitle{width:100%;box-sizing:border-box;font-size:16px;padding:7px 9px}
 #mmTa{flex:1;min-height:220px;width:100%;box-sizing:border-box;resize:none;font:16px/1.6 var(--font);padding:10px;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*8px);background:var(--pane);color:var(--ink)}
-/* ===== ビジュアルプログラミングの試作（コンソールの中。台帳Z-231） ===== */
+/* ===== ビジュアルプログラミングの試作（コンソールの中。台帳Z-231・Z-232） ===== */
 .csbody>div[data-lab="vp"]{flex:0 0 auto}
 .vpgrid{display:flex;flex-direction:column;gap:14px}
 .vpcol{display:flex;flex-direction:column;gap:8px;min-width:0}
@@ -258,41 +258,32 @@ body.consOpen #modeEdge{display:none}
 .vpbar b{margin-right:2px}
 .vpseg{display:inline-flex;gap:4px}
 .vpseg button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-.vpview{display:flex;flex-wrap:wrap;gap:20px 12px;align-content:flex-start;padding:22px 12px 12px;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px)}
-.vpp{position:relative;flex:0 0 auto;border-radius:calc(var(--rk,1)*8px)}
-.vpp[data-kind="label"],.vpp[data-kind="textarea"]{flex:1 1 100%}
-.vpp[hidden]{display:none}
-.vpp textarea{display:block;width:100%;min-height:150px;box-sizing:border-box;resize:vertical;font:16px/1.6 var(--font);padding:10px;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*8px);background:var(--bg);color:var(--ink)}
-.vplabel{font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:break-word;min-height:1.5em}
-.vpstrong{font-weight:var(--fw,900);font-size:17px}
-.vptag{display:none;position:absolute;left:4px;top:-16px;z-index:2;font-size:11px;line-height:1.3;padding:1px 6px;border-radius:calc(var(--rk,1)*5px);background:var(--ink);color:var(--pane);white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-.vpview.insp .vpp{outline:2px dashed color-mix(in srgb,var(--acc) 55%,transparent);outline-offset:3px;cursor:pointer}
-.vpview.insp .vpp>*:not(.vptag){pointer-events:none}
-.vpview.insp .vptag,.vpp.sel .vptag{display:block}
-.vpp.sel{outline:3px solid var(--acc);outline-offset:3px}
-.vpp.hl{outline:3px solid color-mix(in srgb,var(--acc) 80%,var(--ink));outline-offset:3px;background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.vpview{background:#fff;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);overflow:hidden}
+.vpview.insp{outline:2px dashed color-mix(in srgb,var(--acc) 55%,transparent);outline-offset:2px}
+.vpframe{display:block;width:100%;height:340px;border:0;background:#fff}
 .vpinfo{white-space:pre-wrap;margin:0;line-height:1.6}
-.vpscript{overflow:auto;min-height:160px;max-height:52vh;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);padding:6px}
-.vpl{padding:5px 8px;border:2px solid transparent;border-radius:calc(var(--rk,1)*6px);line-height:1.55;word-break:break-word;cursor:pointer}
-.vpl.vprh{margin-top:8px;font-weight:var(--fw,900)}
-.vpl.vprh:first-child{margin-top:0}
-.vpk{display:inline-block;min-width:3em;opacity:.75;font-size:12px}
+.vpscript{overflow:auto;min-height:160px;max-height:52vh;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);padding:4px 0}
+.vpscript>.vpl{display:flex;gap:8px;width:max-content;min-width:100%;box-sizing:border-box;padding:0 10px 0 0;border-left:3px solid transparent;font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;cursor:pointer}
+.vpn{flex:0 0 3.4em;text-align:right;opacity:.55;user-select:none;padding-left:4px}
+.vpt{white-space:pre}
+.vpt:empty::after{content:"\200b"}
 .vpl.hl{background:color-mix(in srgb,var(--acc) 18%,transparent)}
-.vpl.sel{border-color:var(--acc)}
-.vpcode .vpl{font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;padding:1px 6px}
+.vpl.sel{border-left-color:var(--acc);background:color-mix(in srgb,var(--acc) 30%,transparent)}
 .vpedit{display:block;width:100%;min-height:300px;box-sizing:border-box;resize:vertical;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:8px;border:0;background:var(--bg);color:var(--ink);white-space:pre}
 .vplog{flex:0 0 auto;max-height:150px;overflow:auto;margin:0;font-size:12.5px;line-height:1.5}
 .vplog div{padding:1px 0;border-top:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
-@keyframes vpfl{from{background:color-mix(in srgb,var(--acc) 40%,transparent)}to{background:transparent}}
-@keyframes vpng{from{background:rgba(192,57,43,.35)}to{background:transparent}}
-.vpfl{animation:vpfl .9s ease-out}
-.vpng{animation:vpng .9s ease-out}
-@media (prefers-reduced-motion:reduce){.vpfl{animation:none;background:color-mix(in srgb,var(--acc) 22%,transparent)}.vpng{animation:none;background:rgba(192,57,43,.22)}}
+@keyframes vpfl{from{background:color-mix(in srgb,var(--acc) 45%,transparent)}to{background:transparent}}
+@keyframes vpng{from{background:rgba(192,57,43,.4)}to{background:transparent}}
+.vpl.vpfl{animation:vpfl .9s ease-out}
+.vpl.vpng{animation:vpng .9s ease-out}
+@media (prefers-reduced-motion:reduce){.vpl.vpfl{animation:none;background:color-mix(in srgb,var(--acc) 22%,transparent)}.vpl.vpng{animation:none;background:rgba(192,57,43,.22)}}
 @media (min-width:860px){
   .csbody>div[data-lab="vp"]{flex:1;min-height:0}
   .vpgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);grid-template-rows:minmax(0,1fr);flex:1;min-height:0;overflow:hidden}
   .vpcol{min-height:0;overflow:auto}
+  .vpframe{height:420px}
   .vpscript{max-height:none;flex:1 1 0}
+}
 }
 .startcard{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*12px);padding:8px 10px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .startcard .row{justify-content:center;gap:5px}.startcard .row button{padding:6px 8px;font-size:13px}#stX{min-width:30px}

@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-"""ビジュアルプログラミングの試作（コンソールの「🧩 ビジュアルプログラミング」。台帳Z-231。2026-10-30）の検査。
+"""ビジュアルプログラミングの試作（コンソールの「🧩 ビジュアルプログラミング」。台帳Z-231・Z-232。2026-10-31）の検査。
 
 使い方：  python3 tools/check_vp.py <HTMLの絶対パス>
   ヘッドレスChromium（Playwright）で、実際のマウス・キーボード・タッチを使って確かめる。
   全項目 OK が正常（最後に `OK n  NG 0`）。**ヘッドレスのみ。実機（スマホの指）では未確認**。
-  規則の評価そのもの（画面なし）は `node tools/vp_rules_test.js`。
 
 群：
-  P1 開く・見本：部品7つ・始まった時の実行・文とコードの行数・コードがそのままJSONに戻る
+  P1 開く・見本：隔離した枠（sandbox）・ソースが本物のHTML・JavaScriptのまま行で並ぶ・見本が実際に動いている
   P2 動かす：書く→字数・自動保存／保存・消す・読み込む／条件／開き直しても前の文字が出る
-  P3 対応の表示：「調べる」で部品を選ぶと使う行が光る／行を押すと使う部品が光る／押しても部品は動かない／コードの定義行／選びの解除
-  P4 実行の光り方と記録：実行された行・変わった部品が光る／失敗は別の色／記録の文／光りは消える
-  P5 編集：コードを書き換えて反映／読めないものは反映しない／注意つきで反映／今の値を残す／未知のキーを残す／覚える／見本に戻す
-  P6 本体に触れない：作品（ser）・Undo・Redo・変更あり・メモ帳・自動保存・保存先・再生
-  P7 安全：HTMLとして解釈しない／未対応の部品／壊れた保存／保存できない端末
-  P8 画面：スマホ幅ではみ出さない・PC幅で2列・実行の記録が潰れない・札・タッチ
+  P3 対応の表示：「調べる」で部品を選ぶと、その部品が出てくる行が光る／行を押すと、その行が使う部品に枠が出る／押しても部品は動かない／解除
+  P4 実行の光り方と記録：動いた処理の範囲・書き換えた行・書き換わった部品が光る／誤りは別の色と行番号／記録の文／光りは消える
+  P5 編集：ソースを書き換えて反映／空・長すぎは反映しない／覚える／新しい部品も対応する／構文の誤り／見本に戻す
+  P6 本体に触れない：作品（ser）・Undo・Redo・変更あり・メモ帳・自動保存・保存先・再生／枠の中のコードが本体・外・保存先を壊せない
+  P7 安全：HTMLとして解釈しない／壊れた保存／保存できない端末／偽の知らせ・大量の知らせ
+  P8 画面：スマホ幅ではみ出さない・PC幅で2列・実行の記録が潰れない・タッチ
 """
 import sys, json
 from playwright.sync_api import sync_playwright
@@ -45,42 +44,61 @@ def load(pg, q='?start=sample'):
     pg.wait_for_timeout(450)
 
 
+def ready(pg):
+    pg.wait_for_function("()=>VPL.ready===true", timeout=6000)
+    pg.wait_for_timeout(250)
+
+
 def open_lab(pg):
     pg.evaluate("()=>modeSet('cons')")
     pg.click('#cstabs button[data-lab=vp]')
-    pg.wait_for_timeout(150)
+    ready(pg)
 
 
 def ev(pg, js):
     return pg.evaluate(js)
 
 
-EDITOR = "()=>document.querySelector('#vpView textarea').value"
-LABEL = lambda part: "()=>document.querySelector('.vpp[data-part=\"%s\"] .vplabel').textContent" % part
+def fr(pg):
+    return pg.frame_locator('#vpFrame')
+
+
+def frm(pg):
+    return pg.query_selector('#vpFrame').content_frame()
+
+
 LOG = "()=>[...document.querySelectorAll('#vpLog div')].map(d=>d.textContent)"
 LS = lambda k: "()=>localStorage.getItem('%s')" % k
-LINES_HL = "()=>[...document.querySelectorAll('#vpScript .vpl.hl')].map(l=>l.dataset.rule+'/'+l.dataset.sec+(l.dataset.i||''))"
-BOX = lambda cls: "()=>[...document.querySelectorAll('#vpView .vpp.%s')].map(b=>b.dataset.part).sort()" % cls
+TEXTS = "()=>[...document.querySelectorAll('#vpScript .vpl .vpt')].map(t=>t.textContent)"
+FLASH = "()=>[...document.querySelectorAll('#vpScript .vpl.vpfl')].map(l=>+l.dataset.n+1)"
+FLASHNG = "()=>[...document.querySelectorAll('#vpScript .vpl.vpng')].map(l=>+l.dataset.n+1)"
+HL = "()=>[...document.querySelectorAll('#vpScript .vpl.hl')].map(l=>+l.dataset.n+1)"
+SEL = "()=>[...document.querySelectorAll('#vpScript .vpl.sel')].map(l=>+l.dataset.n+1)"
+INFO = "()=>document.querySelector('#vpInfo').textContent"
+MSG = "()=>document.querySelector('#vpMsg').textContent"
+OVS = "()=>document.querySelectorAll('#__vp_ov .s').length"
 
 
-def type_text(pg, t):
-    pg.fill('#vpView textarea', t)
-    pg.wait_for_timeout(60)
+def lineno(pg, needle, nth=1):
+    """ソースの何行目か（1から）。needleを含む行のnth番目"""
+    n = 0
+    for i, t in enumerate(ev(pg, TEXTS)):
+        if needle in t:
+            n += 1
+            if n == nth:
+                return i + 1
+    return -1
 
 
-def click_part(pg, part, inner=''):
-    pg.click('#vpView .vpp[data-part="%s"] %s' % (part, inner))
-    pg.wait_for_timeout(60)
-
-
-def code_edit(pg, fn):
-    """コードの編集欄を開き、中身を fn(文字列)→文字列 で書き換えて「反映」を押す"""
-    pg.click('#vpVCode')
+def apply_src(pg, text):
     pg.click('#vpEdit')
-    t = pg.input_value('#vpEditTa')
-    pg.fill('#vpEditTa', fn(t))
+    pg.fill('#vpEditTa', text)
     pg.click('#vpApply')
-    pg.wait_for_timeout(80)
+    ready(pg)
+
+
+def edit_src(pg, fn):
+    apply_src(pg, fn(ev(pg, "()=>VPL.src")))
 
 
 with sync_playwright() as p:
@@ -90,17 +108,18 @@ with sync_playwright() as p:
     print('--- P1 開く・見本')
     ctx, pg, errs = new(b)
     load(pg)
+    chk('コンソールに「🧩 ビジュアルプログラミング」の札がある', ev(pg, "()=>CONSOLE.labs.some(l=>l.id==='vp'&&l.ico==='🧩')"))
     open_lab(pg)
-    chk('コンソールに「ビジュアルプログラミング」の札がある', ev(pg, "()=>CONSOLE.labs.some(l=>l.id==='vp')") and pg.locator('#cstabs button[data-lab=vp]').count() == 1)
-    chk('部品が7つ（文字の表示3・入力欄1・ボタン3）', ev(pg, "()=>[...document.querySelectorAll('#vpView .vpp')].map(b=>b.dataset.kind).sort().join()") == 'button,button,button,label,label,label,textarea')
-    log = ev(pg, LOG)
-    chk('開くと「始まった」が実行される（保存が無いので、条件が合わず何もしない）', len(log) == 1 and '始まった' in log[0] and '条件が合わず' in log[0], log)
-    n = ev(pg, "()=>VPL.prog.rules.reduce((s,r)=>s+2+(r.if||[]).length+(r.do||[]).length,0)")
-    chk('「文」の行数＝規則ごとの（見出し＋いつ＋もし＋なら）', ev(pg, "()=>document.querySelectorAll('#vpScript .vpl').length") == n, n)
-    chk('「文」に、日本語の文が出る', '「保存ボタン」を押した時' in pg.inner_text('#vpScript') and '端末に「text」が保存されていない' in pg.inner_text('#vpScript'))
-    pg.click('#vpVCode')
-    chk('「コード」の行をつなぐと、そのままJSONとして読め、今のスクリプトと同じ', ev(pg, "()=>JSON.stringify(JSON.parse(vplCodeText()))===JSON.stringify(VPL.prog)"))
-    chk('見本は、検査（validate）に通る', ev(pg, "()=>{const v=VPR.validate(VPL.prog);return v.errs.length===0&&v.warn.length===0}"))
+    chk('ビューワーは隔離した枠（sandbox は allow-scripts だけ。allow-same-origin を付けない）', ev(pg, "()=>document.querySelector('#vpFrame').getAttribute('sandbox')") == 'allow-scripts')
+    chk('枠の中は、本体とは別の出所（origin が null）', frm(pg).evaluate("()=>window.origin") == 'null')
+    chk('枠の中で見本が実際に動いている（入力欄・字数・3つのボタン・状態）', frm(pg).evaluate("()=>['title','editor','count','save','load','clear','status'].every(i=>document.getElementById(i))&&document.getElementById('count').textContent==='0字'"))
+    t = ev(pg, TEXTS)
+    chk('ソースの行が、そのまま並ぶ（親の持つソースと、行ごとに一致）', t == ev(pg, "()=>VPL.src.split('\\n')") and len(t) > 50, len(t))
+    chk('1行目は <!doctype html>、本物のHTMLとJavaScript（addEventListener・localStorage.setItem）が見える', t[0] == '<!doctype html>' and any("saveBtn.addEventListener('click'" in x for x in t) and any('localStorage.setItem(KEY, editor.value);' in x for x in t))
+    chk('独自の書き方（規則表のキーや日本語の見出し）は出ていない', not any(k in '\n'.join(t) for k in ['"on"', '"do"', 'part.copy', 'store.save', 'いつ ', 'もし ', 'なら ']))
+    chk('行番号が1から順に付いている', ev(pg, "()=>[...document.querySelectorAll('#vpScript .vpn')].every((e,i)=>e.textContent===String(i+1))"))
+    chk('枠へ入る文書は、ソースの<head>の直後に足しただけで、行数は変わらない（行番号がずれない）', ev(pg, "()=>VPL.frame.srcdoc.split('\\n').length===VPL.src.split('\\n').length&&VPL.frame.srcdoc.indexOf('Content-Security-Policy')>0"))
+    chk('開いた時の記録に、画面を読み込んだこと・保存の読み取りが出る', any('画面を読み込んだ' in x for x in ev(pg, LOG)), ev(pg, LOG))
     chk('エラーなし', errs == [], errs)
     ctx.close()
 
@@ -109,31 +128,46 @@ with sync_playwright() as p:
     ctx, pg, errs = new(b)
     load(pg)
     open_lab(pg)
-    pg.click('#vpView textarea')
-    pg.keyboard.type('xyz')
-    pg.wait_for_timeout(60)
-    chk('キーボードで書くと、字数が出る（3字）', ev(pg, LABEL('count')) == '3字', ev(pg, LABEL('count')))
-    type_text(pg, 'こんにちは😀')
-    chk('絵文字も1字で数える（6字）', ev(pg, LABEL('count')) == '6字', ev(pg, LABEL('count')))
-    chk('書くと、自動で端末に保存される', ev(pg, LS('am_vplab_s_text')) == 'こんにちは😀')
-    chk('書くと、状態の表示は空', ev(pg, LABEL('status')) == '')
-    click_part(pg, 'save', 'button')
-    chk('保存ボタン：「保存しました」', ev(pg, LABEL('status')) == '保存しました')
-    click_part(pg, 'clear', 'button')
-    chk('消すボタン：入力欄が空・0字・「すべて消しました」', ev(pg, EDITOR) == '' and ev(pg, LABEL('count')) == '0字' and ev(pg, LABEL('status')) == 'すべて消しました')
-    n0 = len(ev(pg, LOG))
-    click_part(pg, 'clear', 'button')
-    log = ev(pg, LOG)
-    chk('空の時に消すボタン：条件が合わず、何もしない（記録には残る）', ev(pg, LABEL('status')) == 'すべて消しました' and '条件が合わず' in log[0], log[0])
-    click_part(pg, 'load', 'button')
-    chk('読み込みボタン：保存した文字が戻る・字数・「読み込みました」', ev(pg, EDITOR) == 'こんにちは😀' and ev(pg, LABEL('count')) == '6字' and ev(pg, LABEL('status')) == '読み込みました')
+    f = fr(pg)
+    f.locator('#editor').fill('こんにちは😀')
+    pg.wait_for_timeout(120)
+    chk('書くと、字数が出る（絵文字は1字）', f.locator('#count').text_content() == '6字', f.locator('#count').text_content())
+    chk('書くと、自動で端末に保存される（am_vplab_s_text）', ev(pg, LS('am_vplab_s_text')) == 'こんにちは😀')
+    f.locator('#save').click()
+    pg.wait_for_timeout(120)
+    chk('保存ボタン：「保存しました」', f.locator('#status').text_content() == '保存しました')
+    f.locator('#editor').fill('次の文')
+    pg.wait_for_timeout(100)
+    chk('書くと、状態の文が消える', f.locator('#status').text_content() == '')
+    f.locator('#clear').click()
+    pg.wait_for_timeout(100)
+    chk('消すボタン：空になり、字数は0字、「すべて消しました」', f.locator('#editor').input_value() == '' and f.locator('#count').text_content() == '0字' and f.locator('#status').text_content() == 'すべて消しました')
+    f.locator('#save').click()
+    pg.wait_for_timeout(80)
+    f.locator('#clear').click()
+    pg.wait_for_timeout(80)
+    chk('空の時に消すボタンを押しても、何も起きない（状態の文はそのまま）', f.locator('#status').text_content() == '保存しました')
+    f.locator('#load').click()
+    pg.wait_for_timeout(100)
+    chk('読み込みボタン：保存してあった文が戻る（「保存しました」で保存したのは空の文なので空）', f.locator('#status').text_content() == '読み込みました')
+    f.locator('#editor').fill('戻る文字')
+    f.locator('#save').click()
+    f.locator('#clear').click()
+    f.locator('#load').click()
+    pg.wait_for_timeout(120)
+    chk('消してから読み込むと、保存した文字が戻り、字数も出る', f.locator('#editor').input_value() == '戻る文字' and f.locator('#count').text_content() == '4字')
     pg.reload()
     pg.wait_for_timeout(450)
     open_lab(pg)
-    chk('開き直すと、前に保存した文字が出る（始まった時の規則）', ev(pg, EDITOR) == 'こんにちは😀' and ev(pg, LABEL('count')) == '6字')
-    ev(pg, "()=>localStorage.removeItem('am_vplab_s_text')")
-    click_part(pg, 'load', 'button')
-    chk('まだ保存が無い時の読み込み：案内が出る（もう一方の規則）', ev(pg, LABEL('status')) == 'まだ保存されていません')
+    f = fr(pg)
+    chk('開き直す（再読み込み）と、前に書いた文字が出る', f.locator('#editor').input_value() == '戻る文字' and f.locator('#count').text_content() == '4字')
+    ev(pg, "()=>{localStorage.removeItem('am_vplab_s_text')}")
+    pg.click('#vpReset')
+    ready(pg)
+    f = fr(pg)
+    f.locator('#load').click()
+    pg.wait_for_timeout(100)
+    chk('保存が無い時に読み込むと、「まだ保存されていません」', f.locator('#status').text_content() == 'まだ保存されていません' and f.locator('#editor').input_value() == '')
     chk('エラーなし', errs == [], errs)
     ctx.close()
 
@@ -142,84 +176,92 @@ with sync_playwright() as p:
     ctx, pg, errs = new(b)
     load(pg)
     open_lab(pg)
-    type_text(pg, 'abc')
-    st0 = ev(pg, LABEL('status'))
-    n_log = len(ev(pg, LOG))
-    saved0 = ev(pg, LS('am_vplab_s_text'))
+    f = fr(pg)
     pg.click('#vpInsp')
-    chk('「調べる」にすると、部品の中身は押せない・入力できない（inert）', ev(pg, "()=>[...document.querySelectorAll('#vpView .vpp>*:not(.vptag)')].every(c=>c.inert)") and ev(pg, "()=>document.querySelector('#vpView').classList.contains('insp')"))
-    click_part(pg, 'save')
-    chk('部品を押すと、その部品が選ばれる', ev(pg, BOX('sel')) == ['save'])
-    hl = ev(pg, LINES_HL)
-    chk('それを使う行だけが光る（規則r3の見出しと「いつ」）', sorted(hl) == ['r3/head', 'r3/on'], hl)
-    chk('押しただけでは、部品は動かない（記録は増えず・保存も変わらず・状態も変わらない）', len(ev(pg, LOG)) == n_log and ev(pg, LS('am_vplab_s_text')) == saved0 and ev(pg, LABEL('status')) == st0)
-    info = pg.inner_text('#vpInfo')
-    chk('下に「選んだ部品」の説明（名前・id・種類・今の値・使う規則）', '保存ボタン（save）' in info and 'ボタン' in info and 'ボタンの文字＝「💾 保存」' in info and 'r3' in info, info)
-    click_part(pg, 'editor')
-    chk('別の部品を押すと、選びが移る', ev(pg, BOX('sel')) == ['editor'])
-    info = pg.inner_text('#vpInfo')
-    chk('本文を使う規則は r1、r2、r3、r4、r6（r5は使わない）', 'r1、r2、r3、r4、r6' in info, info)
-    chk('「今の値」に入力欄の文字が出る', '文字＝「abc」' in info, info)
-    click_part(pg, 'editor')
-    chk('同じ部品をもう一度押すと、選びがはずれる', ev(pg, BOX('sel')) == [] and ev(pg, LINES_HL) == [])
-    click_part(pg, 'count')
-    pg.click('#vpView', position={'x': 3, 'y': 3})
-    chk('何も無い所を押すと、選びがはずれる', ev(pg, BOX('sel')) == [])
-    # 行を押す
-    pg.click('#vpScript .vpl[data-rule=r6][data-sec=do][data-i="1"]')
-    chk('「なら」の行を押すと、その行が使う部品が光る（r6の2つ目＝本文と字数）', ev(pg, BOX('hl')) == ['count', 'editor'], ev(pg, BOX('hl')))
-    chk('押した行が選ばれ、下に説明が出る', ev(pg, "()=>document.querySelectorAll('#vpScript .vpl.sel').length") == 1 and '規則 r6（なら2つ目）' in pg.inner_text('#vpInfo'), pg.inner_text('#vpInfo'))
-    pg.click('#vpScript .vpl.vprh[data-rule=r4]')
-    chk('規則の見出しを押すと、その規則が使う部品がすべて光る（r4＝読み込みボタン・本文・字数・状態）', ev(pg, BOX('hl')) == ['count', 'editor', 'load', 'status'], ev(pg, BOX('hl')))
-    pg.click('#vpScript .vpl.vprh[data-rule=r4]')
-    chk('同じ行をもう一度押すと、はずれる', ev(pg, BOX('hl')) == [] and ev(pg, "()=>document.querySelectorAll('#vpScript .vpl.sel').length") == 0)
-    pg.focus('#vpScript .vpl[data-rule=r5][data-sec=on]')
-    pg.keyboard.press('Enter')
-    chk('キーボード（Enter）でも行を選べる（r5の「いつ」＝読み込みボタン）', ev(pg, BOX('hl')) == ['load'], ev(pg, BOX('hl')))
-    # コード表示
-    pg.click('#vpVCode')
-    chk('見せ方を替えても、選びは消える（行が別物になるので）', ev(pg, BOX('hl')) == [])
-    pg.click('#vpScript .vpl[data-part="count"]')
-    chk('コードの「部品の定義の行」を押すと、その部品が選ばれる', ev(pg, BOX('sel')) == ['count'])
-    hl = ev(pg, LINES_HL)
-    chk('コードでも、その部品を使う行が光る（定義の行と、r1・r2・r4・r6の字数を入れる行）', 'r1/do1' in hl and 'r2/do0' in hl and 'r4/do1' in hl and 'r6/do1' in hl and any(h.startswith('/part') for h in hl), hl)
-    pg.click('#vpVText')
-    chk('部品を選んだまま「文」に戻すと、選びは残り、行が光る', ev(pg, BOX('sel')) == ['count'] and len(ev(pg, LINES_HL)) >= 4)
+    pg.wait_for_timeout(100)
+    f.locator('#save').click()
+    pg.wait_for_timeout(150)
+    chk('「調べる」で保存ボタンを押しても、ボタンは動かない（状態の文は空のまま）', f.locator('#status').text_content() == '')
+    hl = ev(pg, HL)
+    want = [lineno(pg, '<button id="save">'), lineno(pg, "getElementById('save')"), lineno(pg, 'saveBtn.addEventListener')]
+    chk('選んだ部品（#save）が出てくる3行（HTMLの行・取得する行・処理を付ける行）が光る', sorted(hl) == sorted(want), (hl, want))
+    chk('HTMLに書かれた行（id="save"）が「選び」の色になる', ev(pg, SEL) == [want[0]], ev(pg, SEL))
+    info = ev(pg, INFO)
+    chk('説明に、部品の名前・種類・HTMLの行・出てくる行が出る', '#save' in info and 'button' in info and str(want[0]) + '行目' in info and '3行' in info, info)
+    chk('枠の中の保存ボタンに、選んだことを示す枠が出る', frm(pg).evaluate(OVS) == 1)
+    f.locator('#save').click()
+    pg.wait_for_timeout(100)
+    chk('もう一度押すと、選びが外れる', ev(pg, HL) == [] and frm(pg).evaluate(OVS) == 0)
+    f.locator('#editor').click()
+    pg.keyboard.type('abc')
+    pg.wait_for_timeout(100)
+    chk('「調べる」の間は、入力欄にも書けない', f.locator('#editor').input_value() == '' and f.locator('#count').text_content() == '0字')
+    chk('入力欄を押すと、#editor が選ばれる（出てくる行が光る）', len(ev(pg, HL)) >= 8 and '#editor' in ev(pg, INFO), ev(pg, HL))
+    pg.click('#vpFrame', position={'x': 200, 'y': 332})
+    pg.wait_for_timeout(120)
+    chk('id の無い所を押すと、「id が付いていない」と出て、選びは外れる', 'id が付いていない' in ev(pg, INFO) and ev(pg, HL) == [] and frm(pg).evaluate(OVS) == 0, ev(pg, INFO))
+    n = lineno(pg, "msg.textContent = '保存しました';")
+    pg.click('#vpScript .vpl[data-n="%d"]' % (n - 1))
+    pg.wait_for_timeout(120)
+    chk('ソースの行（msg.textContent = …）を押すと、その行が選ばれ、使う部品 #status に枠が出る', ev(pg, SEL) == [n] and frm(pg).evaluate(OVS) == 1 and '#status' in ev(pg, INFO), ev(pg, INFO))
+    chk('変数 msg が #status のことだと、ソースから読み取れている（行の ids）', ev(pg, "()=>document.querySelector('#vpScript .vpl[data-n=\"%d\"]').dataset.ids" % (n - 1)) == 'status')
+    n2 = lineno(pg, "const KEY = 'text';")
+    pg.click('#vpScript .vpl[data-n="%d"]' % (n2 - 1))
+    pg.wait_for_timeout(100)
+    chk('部品を使わない行を押すと、「部品の id を使っていません」と出て、枠は出ない', 'id を使っていません' in ev(pg, INFO) and frm(pg).evaluate(OVS) == 0, ev(pg, INFO))
+    pg.click('#vpScript .vpl[data-n="%d"]' % (n2 - 1))
+    chk('同じ行をもう一度押すと、選びが外れる', ev(pg, SEL) == [])
     pg.click('#vpRun')
-    chk('「動かす」に戻すと、部品がまた押せる（inertでない）', ev(pg, "()=>[...document.querySelectorAll('#vpView .vpp>*:not(.vptag)')].every(c=>!c.inert)"))
+    pg.wait_for_timeout(100)
+    f.locator('#save').click()
+    pg.wait_for_timeout(120)
+    chk('「▶ 動かす」に戻すと、ボタンが動く', f.locator('#status').text_content() == '保存しました')
     chk('エラーなし', errs == [], errs)
     ctx.close()
 
-    # ---------------- P4 光り方と記録 ----------------
-    print('--- P4 光り方と記録')
+    # ---------------- P4 実行の光り方と記録 ----------------
+    print('--- P4 実行の光り方と記録')
     ctx, pg, errs = new(b)
     load(pg)
     open_lab(pg)
-    type_text(pg, 'ab')
-    click_part(pg, 'save', 'button')
-    fl = ev(pg, "()=>[...document.querySelectorAll('#vpScript .vpl.vpfl')].map(l=>l.dataset.rule+'/'+l.dataset.sec+(l.dataset.i||''))")
-    chk('実行された規則の行が光る（r3の見出し・いつ・なら1・なら2）', all(x in fl for x in ['r3/head', 'r3/on', 'r3/do0', 'r3/do1']), fl)
-    chk('動かなかった規則（r1・r4など）は光らない', not any(x.startswith('r4/') or x.startswith('r6/') for x in fl), fl)
-    chk('変わった部品（状態）も光る', ev(pg, "()=>document.querySelector('.vpp[data-part=\"status\"]').classList.contains('vpfl')"))
-    log = ev(pg, LOG)
-    chk('記録：「保存ボタン」を押した → r3：動作2件を実行', '「保存ボタン」を押した' in log[0] and 'r3：動作2件を実行' in log[0], log[0])
-    chk('記録は新しい順（2行目＝「本文」が書き換えられた）', '「本文」が書き換えられた' in log[1], log[1])
+    f = fr(pg)
+    f.locator('#save').click()
+    pg.wait_for_timeout(150)
+    fl = ev(pg, FLASH)
+    h0 = lineno(pg, "saveBtn.addEventListener('click'")
+    chk('保存ボタンを押すと、動いた処理（addEventListenerに渡した関数の行）が光る', all(i in fl for i in range(h0, h0 + 4)), (fl, h0))
+    chk('書き換えを行った行（msg.textContent = …）と、保存を行った行（localStorage.setItem）が光る', lineno(pg, "msg.textContent = '保存しました';") in fl and lineno(pg, 'localStorage.setItem(KEY, editor.value);', 2) in fl, fl)
+    chk('書き換わった部品（#status）のHTMLの行も光る', lineno(pg, '<div id="status">') in fl)
+    chk('枠の中でも、押した部品が一瞬光る', frm(pg).evaluate("()=>document.querySelectorAll('#__vp_ov .f').length") >= 1)
+    log = ev(pg, LOG)[0]
+    chk('記録：何を押したか／動いた処理と行／書き換えた部品と行／端末への保存', '#saveを押した' in log and '動いた処理：click（' in log and '行目）' in log and '書き換えた部品：#statusのtextContent' in log and '端末への保存：「text」を書いた' in log, log)
     pg.wait_for_timeout(1300)
-    chk('光りは、約1秒で消える', ev(pg, "()=>document.querySelectorAll('.vpfl,.vpng').length") == 0)
-    for i in range(12):
-        click_part(pg, 'save', 'button')
-    chk('記録は10件まで', len(ev(pg, LOG)) == 10, len(ev(pg, LOG)))
-    ctx.close()
-    ctx, pg, errs = new(b, init="Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')}")
-    load(pg)
-    open_lab(pg)
-    type_text(pg, 'xx')
-    click_part(pg, 'save', 'button')
-    log = ev(pg, LOG)
-    chk('保存できない端末：保存ボタンは失敗を記録し、「保存しました」とは言わない', ev(pg, LABEL('status')) != '保存しました' and '保存できません' in log[0] and '動作1で止まった' in log[0], log[0])
-    chk('失敗した行は、別の光り方（vpng）になる', ev(pg, "()=>document.querySelectorAll('#vpScript .vpl.vpng').length") >= 1)
-    chk('保存できなくても、字数は数えられる（途中で止まる前の動作は有効）', ev(pg, LABEL('count')) == '2字')
-    chk('エラーなし（例外を出さない）', errs == [], errs)
+    chk('光りは、約1秒で消える', ev(pg, FLASH) == [])
+    f.locator('#editor').fill('あ')
+    pg.wait_for_timeout(150)
+    log = ev(pg, LOG)[0]
+    fl = ev(pg, FLASH)
+    chk('書くと：記録に「#editorに入力した」「#countのtextContent」が出て、count.textContent の行が光る', '#editorに入力した' in log and '#countのtextContent' in log and lineno(pg, 'count.textContent = ') in fl, log)
+    f.locator('#load').click()
+    pg.wait_for_timeout(120)
+    chk('読み込みボタン：端末の保存を「読んだ」と記録に出る', '「text」を読んだ' in ev(pg, LOG)[0], ev(pg, LOG)[0])
+    pg.wait_for_timeout(1300)
+    before = ev(pg, LOG)
+    pg.click('#vpInsp')
+    f.locator('#save').click()
+    pg.wait_for_timeout(300)
+    chk('「調べる」の間の押下は、実行として記録されない', ev(pg, LOG) == before and ev(pg, FLASH) == [], ev(pg, LOG)[:1])
+    pg.click('#vpRun')
+    # 誤り
+    edit_src(pg, lambda s: s.replace("msg.textContent = '保存しました';", 'msg.textContent = nope.x;'))
+    f = fr(pg)
+    f.locator('#save').click()
+    pg.wait_for_timeout(200)
+    bad = lineno(pg, 'msg.textContent = nope.x;')
+    chk('実行中の誤り：画面の上に、行番号つきで出る', '実行中の誤り' in ev(pg, MSG) and '（%d行目）' % bad in ev(pg, MSG), ev(pg, MSG))
+    chk('誤りのあった行が、別の色（失敗の色）で光る', ev(pg, FLASHNG) == [bad], ev(pg, FLASHNG))
+    chk('誤りも記録に出る', '誤り：' in ev(pg, LOG)[0], ev(pg, LOG)[0])
+    chk('本体の側のエラーなし（枠の中の誤りは、わざと起こしたもの）', [e for e in errs if 'nope' not in e] == [], errs)
     ctx.close()
 
     # ---------------- P5 編集 ----------------
@@ -227,58 +269,62 @@ with sync_playwright() as p:
     ctx, pg, errs = new(b)
     load(pg)
     open_lab(pg)
-    pg.click('#vpVCode')
-    chk('「コード」にすると「編集」が出る（「文」では出ない）', pg.is_visible('#vpEdit') and (pg.click('#vpVText') or True) and not pg.is_visible('#vpEdit'))
-    pg.click('#vpVCode')
     pg.click('#vpEdit')
-    chk('編集に入ると、全体のJSONの編集欄・「反映」「やめる」が出る・見せ方の切り替えは押せない',
-        pg.locator('#vpEditTa').count() == 1 and pg.input_value('#vpEditTa').startswith('{') and pg.is_visible('#vpApply') and pg.is_visible('#vpCancel') and ev(pg, "()=>document.querySelector('#vpVText').disabled"))
+    chk('「✎ 編集」で、ソース全部が書き換えられる入力欄になる（反映・やめるが出る）', ev(pg, "()=>document.querySelector('#vpEditTa').value===VPL.src") and not ev(pg, "()=>document.querySelector('#vpApply').hidden") and ev(pg, "()=>document.querySelector('#vpEdit').hidden"))
+    pg.fill('#vpEditTa', 'だめ')
     pg.click('#vpCancel')
-    chk('「やめる」で編集欄が消え、スクリプトは変わらない', pg.locator('#vpEditTa').count() == 0 and ev(pg, "()=>JSON.stringify(VPL.prog)===JSON.stringify(VPR.sample())"))
-    type_text(pg, 'keep me')
-    code_edit(pg, lambda t: t.replace('保存しました', 'OK!'))
-    chk('反映すると、「反映しました」と出る', '反映しました' in pg.inner_text('#vpMsg'), pg.inner_text('#vpMsg'))
-    click_part(pg, 'save', 'button')
-    chk('書き換えた動作が、すぐ効く（保存ボタン→「OK!」）', ev(pg, LABEL('status')) == 'OK!')
-    chk('反映しても、入力欄の今の文字は残る', ev(pg, EDITOR) == 'keep me')
-    chk('書き換えたスクリプトは、端末に覚える', 'OK!' in (ev(pg, LS('am_vplab')) or ''))
-    pg.reload()
-    pg.wait_for_timeout(450)
-    open_lab(pg)
-    click_part(pg, 'save', 'button')
-    chk('開き直しても、書き換えたスクリプトのまま', ev(pg, LABEL('status')) == 'OK!')
-    before = ev(pg, "()=>JSON.stringify(VPL.prog)")
-    code_edit(pg, lambda t: '{')
-    chk('JSONとして読めない：「反映できません」・編集欄は残る・スクリプトは変わらない', '反映できません' in pg.inner_text('#vpMsg') and pg.locator('#vpEditTa').count() == 1 and ev(pg, "()=>JSON.stringify(VPL.prog)") == before, pg.inner_text('#vpMsg'))
-    pg.click('#vpCancel')
-    code_edit(pg, lambda t: json.dumps({'v': 1, 'parts': json.loads(t)['parts']}))
-    chk('"rules"が無い：「反映できません」', '反映できません' in pg.inner_text('#vpMsg') and '"rules"' in pg.inner_text('#vpMsg') and ev(pg, "()=>JSON.stringify(VPL.prog)") == before, pg.inner_text('#vpMsg'))
-    pg.click('#vpCancel')
-    code_edit(pg, lambda t: t.replace('"id": "r2"', '"id": "r1"'))
-    chk('規則の名前が重なる：「反映できません」', '重なって' in pg.inner_text('#vpMsg') and ev(pg, "()=>JSON.stringify(VPL.prog)") == before, pg.inner_text('#vpMsg'))
-    pg.click('#vpCancel')
-    code_edit(pg, lambda t: t.replace('"target":"status","prop":"text","val":"OK!"', '"target":"zzz","prop":"text","val":"OK!"'))
-    chk('見つからない部品は、注意つきで反映する', '反映しました' in pg.inner_text('#vpMsg') and 'zzz' in pg.inner_text('#vpMsg') and '見つかりません' in pg.inner_text('#vpMsg'), pg.inner_text('#vpMsg'))
-    pg.click('#vpVText')
-    chk('「文」には「（見つかりません）」と出る', '（見つかりません）' in pg.inner_text('#vpScript'))
-    click_part(pg, 'save', 'button')
-    log = ev(pg, LOG)
-    chk('実行すると、その行で止まり、理由が記録に出る（動作2で止まった・「zzz」という部品が見つかりません）', '動作2で止まった' in log[0] and '「zzz」という部品が見つかりません' in log[0], log[0])
-    # 未知のキーを残す
-    code_edit(pg, lambda t: json.dumps(dict(json.loads(t), zz={'k': [1, 2]}, rules=[dict(r, note='メモ', **({'future': 7} if i == 0 else {})) for i, r in enumerate(json.loads(t)['rules'])]), ensure_ascii=False, indent=2))
-    d = ev(pg, "()=>({zz:VPL.prog.zz,note:VPL.prog.rules[0].note,future:VPL.prog.rules[0].future})")
-    chk('知らないキー（全体・規則の中）は、捨てずに残る', d == {'zz': {'k': [1, 2]}, 'note': 'メモ', 'future': 7}, d)
-    pg.click('#vpVCode')
-    chk('コードにも、そのまま出る', '"future": 7' in pg.inner_text('#vpScript') and '"zz"' in pg.inner_text('#vpScript'))
-    pg.reload()
-    pg.wait_for_timeout(450)
-    open_lab(pg)
-    chk('覚えた後も、知らないキーは残る', ev(pg, "()=>VPL.prog.zz&&VPL.prog.zz.k.length===2&&VPL.prog.rules[0].future===7"))
-    pg.click('#vpReset')
+    chk('「✕ やめる」で、元のソースの行に戻る', ev(pg, TEXTS)[0] == '<!doctype html>' and ev(pg, "()=>VPL.src.length")>500)
+    edit_src(pg, lambda s: s.replace("msg.textContent = '保存しました';", "msg.textContent = '保存OK!';"))
+    f = fr(pg)
+    f.locator('#save').click()
     pg.wait_for_timeout(120)
-    chk('「見本に戻す」：スクリプトが見本に戻り、覚えたものが消える', ev(pg, "()=>JSON.stringify(VPL.prog)===JSON.stringify(VPR.sample())") and ev(pg, LS('am_vplab')) is None and ev(pg, LS('am_vplab_s_text')) is None)
-    chk('「見本に戻す」：入力欄は空・「始まった」が実行される・記録は1件', ev(pg, EDITOR) == '' and len(ev(pg, LOG)) == 1 and '始まった' in ev(pg, LOG)[0], ev(pg, LOG))
-    chk('エラーなし', errs == [], errs)
+    chk('書き換えて「✔ 反映」すると、すぐ動作が変わる（「保存OK!」）', f.locator('#status').text_content() == '保存OK!')
+    chk('書き換えたソースの行が表示に出る', lineno(pg, "'保存OK!'") > 0)
+    chk('書き換えたソースを、この端末に覚える（am_vplab）', "'保存OK!'" in (ev(pg, LS('am_vplab')) or ''))
+    pg.reload()
+    pg.wait_for_timeout(450)
+    open_lab(pg)
+    f = fr(pg)
+    f.locator('#save').click()
+    pg.wait_for_timeout(120)
+    chk('再読み込みしても、書き換えた動作が残る', f.locator('#status').text_content() == '保存OK!')
+    s0 = ev(pg, "()=>VPL.src")
+    pg.click('#vpEdit')
+    pg.fill('#vpEditTa', '   ')
+    pg.click('#vpApply')
+    chk('空のソースは反映しない（理由が出る・動作はそのまま）', '空' in ev(pg, MSG) and ev(pg, "()=>VPL.src") == s0, ev(pg, MSG))
+    pg.fill('#vpEditTa', '<p>' + 'あ' * 200001)
+    pg.click('#vpApply')
+    chk('長すぎるソースは反映しない', '長すぎ' in ev(pg, MSG) and ev(pg, "()=>VPL.src") == s0, ev(pg, MSG))
+    pg.click('#vpCancel')
+    # 新しい部品
+    def add(s):
+        s = s.replace('<div id="status"></div>', '<div id="status"></div>\n<button id="extra">追加ボタン</button>')
+        s = s.replace("const first = ", "const extraBtn = document.getElementById('extra');\nextraBtn.addEventListener('click', () => {\n  msg.textContent = '追加ボタンを押した';\n});\nconst first = ")
+        return s
+    edit_src(pg, add)
+    f = fr(pg)
+    f.locator('#extra').click()
+    pg.wait_for_timeout(150)
+    chk('新しく足した部品とその処理が動き、記録にも出る', f.locator('#status').text_content() == '追加ボタンを押した' and '#extraを押した' in ev(pg, LOG)[0], ev(pg, LOG)[0])
+    pg.click('#vpInsp')
+    f.locator('#extra').click()
+    pg.wait_for_timeout(120)
+    chk('足した部品も、「調べる」で3行（HTML・取得・処理）が対応する', len(ev(pg, HL)) == 3 and '#extra' in ev(pg, INFO), ev(pg, HL))
+    pg.click('#vpRun')
+    # 構文の誤り
+    edit_src(pg, lambda s: s.replace("count.textContent = [...editor.value].length + '字';", "count.textContent = [...editor.value.length + '字';"))
+    pg.wait_for_timeout(200)
+    chk('構文の誤りがあるソースは、反映され、誤りの行が画面の上に出る', '実行中の誤り' in ev(pg, MSG) and '行目' in ev(pg, MSG), ev(pg, MSG))
+    # 見本に戻す
+    ev(pg, "()=>localStorage.setItem('am_vplab_s_other','x')")
+    pg.click('#vpReset')
+    ready(pg)
+    chk('「↺ 見本に戻す」：見本のソースに戻り、覚えたソースと保存した文字が消える', ev(pg, "()=>VPL.src===VP_SAMPLE") and ev(pg, LS('am_vplab')) is None and ev(pg, LS('am_vplab_s_text')) is None and ev(pg, LS('am_vplab_s_other')) is None)
+    fr(pg).locator('#editor').fill('x')
+    pg.wait_for_timeout(100)
+    chk('戻したあとの見本が動く', fr(pg).locator('#count').text_content() == '1字')
+    chk('本体の側のエラーなし（構文の誤りは、わざと起こしたもの）', [e for e in errs if "Unexpected token" not in e] == [], errs)
     ctx.close()
 
     # ---------------- P6 本体に触れない ----------------
@@ -286,26 +332,63 @@ with sync_playwright() as p:
     ctx, pg, errs = new(b, init="try{localStorage.setItem('am_auto','KEEP-AUTO');localStorage.setItem('am_memo','{\"v\":1,\"cur\":\"a\",\"notes\":[{\"id\":\"a\",\"title\":\"\",\"text\":\"KEEP-MEMO\",\"c\":1,\"t\":1}]}')}catch(e){}")
     load(pg)
     pg.evaluate("()=>{setSel(AC[0]);pushUndo()}")
-    base = pg.evaluate("()=>({ser:ser(),US:US.length,RS:RS.length,AC:AC.length,L:LAYERS.length,doc:[DOC.w,DOC.h],dirty:dirtyProj,paused,keys:Object.keys(localStorage).sort()})")
+    base = pg.evaluate("()=>({ser:ser(),US:US.length,RS:RS.length,AC:AC.length,L:LAYERS.length,doc:[DOC.w,DOC.h],dirty:dirtyProj,paused,keys:Object.keys(localStorage).sort(),url:location.href})")
     pg.evaluate("()=>{if(paused)$('pl').click()}")
     open_lab(pg)
     chk('開くと、本体の再生が止まる', ev(pg, "()=>paused") is True)
-    type_text(pg, '本体に触れない')
-    click_part(pg, 'save', 'button')
-    click_part(pg, 'clear', 'button')
-    code_edit(pg, lambda t: t.replace('保存しました', 'OK'))
+    f = fr(pg)
+    f.locator('#editor').fill('本体に触れない')
+    f.locator('#save').click()
+    f.locator('#clear').click()
+    edit_src(pg, lambda s: s.replace('保存しました', 'OK'))
     pg.click('#vpInsp')
-    click_part(pg, 'editor')
+    fr(pg).locator('#editor').click()
+    pg.click('#vpRun')
     pg.click('#vpReset')
-    pg.wait_for_timeout(100)
-    type_text(pg, '最後')
+    ready(pg)
+    fr(pg).locator('#editor').fill('最後')
+    pg.wait_for_timeout(150)
     pg.click('#csx')
-    after = pg.evaluate("()=>({ser:ser(),US:US.length,RS:RS.length,AC:AC.length,L:LAYERS.length,doc:[DOC.w,DOC.h],dirty:dirtyProj,paused,keys:Object.keys(localStorage).sort(),auto:localStorage.getItem('am_auto'),memo:localStorage.getItem('am_memo')})")
+    after = pg.evaluate("()=>({ser:ser(),US:US.length,RS:RS.length,AC:AC.length,L:LAYERS.length,doc:[DOC.w,DOC.h],dirty:dirtyProj,paused,keys:Object.keys(localStorage).sort(),auto:localStorage.getItem('am_auto'),memo:localStorage.getItem('am_memo'),url:location.href})")
     chk('作品（ser）・Undo・Redo・オブジェクト・レイヤー・紙は変わらない', after['ser'] == base['ser'] and after['US'] == base['US'] and after['RS'] == base['RS'] and after['AC'] == base['AC'] and after['L'] == base['L'] and after['doc'] == base['doc'], (base['US'], after['US']))
     chk('作品を「変更あり」にしない', after['dirty'] == base['dirty'])
     chk('閉じると、本体の再生が元に戻る', after['paused'] is False)
     new_keys = [k for k in after['keys'] if k not in base['keys']]
-    chk('新しく書いた保存先は am_vplab だけ（メモ帳 am_memo・自動保存 am_auto は触らない）', all(k.startswith('am_vplab') for k in new_keys) and after['auto'] == 'KEEP-AUTO' and 'KEEP-MEMO' in after['memo'] and 'am_memo_bad' not in after['keys'], new_keys)
+    chk('新しく書いた保存先は am_vplab* だけ（メモ帳 am_memo・自動保存 am_auto は触らない）', all(k.startswith('am_vplab') for k in new_keys) and after['auto'] == 'KEEP-AUTO' and 'KEEP-MEMO' in after['memo'] and 'am_memo_bad' not in after['keys'], new_keys)
+    chk('作品のアドレスも変わらない', after['url'] == base['url'])
+    chk('エラーなし', errs == [], errs)
+    ctx.close()
+
+    # 枠の中のコードが、外を壊せない
+    ctx, pg, errs = new(b, init="try{localStorage.setItem('am_auto','KEEP-AUTO');localStorage.setItem('am_memo','KEEP-MEMO-RAW')}catch(e){}")
+    load(pg)
+    open_lab(pg)
+    attack = """<!doctype html>
+<html><head><meta charset="utf-8"></head><body>
+<script>
+const r = {};
+try { r.doc = typeof parent.document.title; } catch (e) { r.doc = 'blocked'; }
+try { r.top = typeof top.document.title; } catch (e) { r.top = 'blocked'; }
+try { r.ls = typeof parent.localStorage; } catch (e) { r.ls = 'blocked'; }
+try { r.nav = String(top.location.href); } catch (e) { r.nav = 'blocked'; }
+try { top.location = 'https://example.com/'; r.go = 'tried'; } catch (e) { r.go = 'blocked'; }
+parent.postMessage({ vp: 1, k: 'ls', op: 'set', key: '../am_auto', val: 'HACK', line: 1 }, '*');
+parent.postMessage({ vp: 1, k: 'ls', op: 'clear', line: 1 }, '*');
+fetch('https://example.com/').then(() => { r.net = 'open'; }, () => { r.net = 'blocked'; }).finally(() => {
+  r.xhr = 'blocked';
+  localStorage.setItem('probe', JSON.stringify(r));
+});
+</script>
+</body></html>"""
+    apply_src(pg, attack)
+    pg.wait_for_timeout(900)
+    probe = ev(pg, LS('am_vplab_s_probe'))
+    r = json.loads(probe) if probe else {}
+    chk('枠のコードから、本体の画面（parent.document）・最上位（top.document）・本体の保存（parent.localStorage）に触れない', r.get('doc') == 'blocked' and r.get('top') == 'blocked' and r.get('ls') == 'blocked', r)
+    chk('枠のコードから、外への通信（fetch）はできない', r.get('net') == 'blocked', r)
+    chk('枠のコードが、本体のページ移動を起こせない（アドレスは変わらない）', ev(pg, "()=>location.href").startswith('file://') and 'example.com' not in ev(pg, "()=>location.href"))
+    chk('偽の知らせで、本体の保存（am_auto・am_memo）は書き換わらない・消えない', ev(pg, LS('am_auto')) == 'KEEP-AUTO' and (ev(pg, LS('am_memo')) == 'KEEP-MEMO-RAW' or ev(pg, LS('am_memo_bad')) == 'KEEP-MEMO-RAW'))
+    chk('偽の知らせで書けるのは、am_vplab_s_ の名前の下だけ', ev(pg, "()=>Object.keys(localStorage).filter(k=>k.indexOf('am_vplab')!==0&&k!=='am_auto'&&k!=='am_memo'&&k!=='am_memo_bad'&&k.indexOf('am_')===0)") == [])
     chk('エラーなし', errs == [], errs)
     ctx.close()
 
@@ -314,83 +397,97 @@ with sync_playwright() as p:
     ctx, pg, errs = new(b)
     load(pg)
     open_lab(pg)
-    evil = '<img src=x onerror="window.__x=1">'
-    prog = {'v': 1, 'parts': [
-        {'id': 'a', 'kind': 'label', 'name': evil, 'props': {'text': '<b>太字</b><script>window.__y=1</script>'}},
-        {'id': 'u', 'kind': 'future-widget', 'name': '未来の部品', 'props': {'k': 1}},
-        {'id': 'bt', 'kind': 'button', 'name': 'ボタン', 'props': {'label': '押す'}}],
-        'rules': [{'id': 'r<b>1', 'label': evil, 'on': {'ev': 'click', 'target': 'bt'}, 'do': [{'a': 'part.set', 'target': 'a', 'prop': 'text', 'val': '<i>x</i>'}]}]}
-    code_edit(pg, lambda t: json.dumps(prog, ensure_ascii=False))
-    click_part(pg, 'bt', 'button')
-    chk('名前・文字・規則の名前は、HTMLとして解釈しない（img・b・i・scriptの要素が出来ない・onerrorが動かない）',
-        ev(pg, "()=>document.querySelectorAll('#cons img,#cons i,#vpView b,#vpScript b:not(.vpk),#cons script').length") == 0 and ev(pg, "()=>window.__x===undefined&&window.__y===undefined"))
-    chk('文字として、そのまま表示される', '<i>x</i>' in ev(pg, LABEL('a')) and '<img' in pg.inner_text('#vpScript'))
-    pg.click('#vpInsp')
-    click_part(pg, 'a')
-    chk('選んだ部品の説明も、文字として出る', '<img' in pg.inner_text('#vpInfo') and ev(pg, "()=>document.querySelectorAll('#vpInfo img').length") == 0)
-    chk('未対応の部品の種類は、「未対応の部品」と出て、ほかの部品は動く', '未対応の部品' in pg.inner_text('.vpp[data-part=u]') and ev(pg, LABEL('a')) == '<i>x</i>')
-    pg.click('#vpRun')
-    chk('エラーなし', errs == [], errs)
+    inj = """<!doctype html>
+<html><head><meta charset="utf-8"></head><body>
+<p id="a">x</p>
+<img src="x" onerror="parent.__x=1">
+<script>
+localStorage.setItem('<img src=x onerror=window.__y=1>', 'v');
+</script>
+</body></html>"""
+    apply_src(pg, inj)
+    pg.wait_for_timeout(200)
+    chk('ソースの行は、HTMLとして解釈されない（本体の画面に img や script が増えない）', ev(pg, "()=>document.querySelectorAll('#vpScript img,#vpScript script,#vpLog img,#vpLog script').length") == 0)
+    chk('記録には、書かれた名前が文字のまま出る', any('<img src=x onerror=window.__y=1>' in x for x in ev(pg, LOG)), ev(pg, LOG)[:1])
+    chk('本体の側で、仕込んだ処理は動かない', ev(pg, "()=>window.__x===undefined&&window.__y===undefined"))
+    ev(pg, "()=>{for(const k of Object.keys(localStorage))if(k.indexOf('am_vplab_s_')===0)localStorage.removeItem(k)}")
+    # 偽の知らせ・大量の知らせ
+    flood = """<!doctype html>
+<html><head><meta charset="utf-8"></head><body>
+<script>
+for (let i = 1; i < 3000; i++) parent.postMessage({ vp: 1, k: 'reg', h: i, type: 'x', id: 'a', line: 1, text: 'zzzzzzzz' }, '*');
+for (const m of ['str', null, 5, {}, { vp: 1 }, { vp: 1, k: 5 }, { vp: 1, k: 'ls', op: 'set', key: {}, val: {}, line: 'x' }, { vp: 1, k: 'w', id: 5, what: {}, line: -4 }, { vp: 1, k: 'run', h: 'q' }, { vp: 1, k: 'mut', ids: 'zz' }, { vp: 1, k: 'pick', id: {} }, { vp: 1, k: 'err', msg: {}, line: 1e9 }]) parent.postMessage(m, '*');
+localStorage.setItem('big', 'x'.repeat(200001));
+for (let i = 0; i < 60; i++) localStorage.setItem('k' + i, 'v');
+</script>
+</body></html>"""
+    apply_src(pg, flood)
+    pg.wait_for_timeout(500)
+    chk('大量の「処理の登録」の知らせは、上限（500件）で止まる', ev(pg, "()=>Object.keys(VPL.H).length") <= 500)
+    chk('形の違う偽の知らせを受けても、本体はエラーにならず動き続ける（<img onerror> の誤りは、わざと起こしたもの）', [e for e in errs if '__x' not in e] == [] and ev(pg, "()=>VPL.ready===true"), errs)
+    chk('長すぎる保存値（20万字超）は預からない', ev(pg, LS('am_vplab_s_big')) is None)
+    chk('保存先の数は上限（50個）で止まり、画面の上に理由が出る', ev(pg, "()=>Object.keys(localStorage).filter(k=>k.indexOf('am_vplab_s_')===0).length") == 50 and '多すぎ' in ev(pg, MSG), ev(pg, MSG))
     ctx.close()
-    for name, init, expect in [
-        ('壊れた保存（JSONでない）', "try{localStorage.setItem('am_vplab','{こわれた')}catch(e){}", '{こわれた'),
-        ('読めない保存（"rules"が無い）', "try{localStorage.setItem('am_vplab','{\"v\":1,\"parts\":[]}')}catch(e){}", '{"v":1,"parts":[]}')]:
-        ctx, pg, errs = new(b, init=init)
+
+    for name, raw in [('規則表の形式（旧）のJSON', '{"v":1,"parts":[],"rules":[]}'), ('HTMLでない文字', 'こわれている'), ('長すぎる', '<p>' + 'あ' * 200001)]:
+        ctx, pg, errs = new(b, init="try{localStorage.setItem('am_vplab',%s)}catch(e){}" % json.dumps(raw))
         load(pg)
         open_lab(pg)
-        chk(name + '：見本で開く・元の中身は別のキー（am_vplab_bad）に残す', ev(pg, "()=>JSON.stringify(VPL.prog)===JSON.stringify(VPR.sample())") and ev(pg, LS('am_vplab_bad')) == expect, ev(pg, LS('am_vplab_bad')))
-        chk(name + '：エラーなし', errs == [], errs)
+        chk(name + '：見本で開く・元の中身は別のキー（am_vplab_bad）に残す', ev(pg, "()=>VPL.src===VP_SAMPLE") and ev(pg, LS('am_vplab_bad')) == raw)
+        chk(name + '：見本は動く・エラーなし', fr(pg).locator('#count').text_content() == '0字' and errs == [], errs)
         ctx.close()
+
     ctx, pg, errs = new(b, init="Storage.prototype.getItem=function(){throw new DOMException('denied','SecurityError')};Storage.prototype.setItem=function(){throw new DOMException('denied','SecurityError')}")
     load(pg)
     open_lab(pg)
-    type_text(pg, 'ab')
-    code_edit(pg, lambda t: t.replace('保存しました', 'OK!'))
-    chk('保存先が使えない端末：開ける・動く・書き換えは反映するが「覚えられない」と知らせる', ev(pg, LABEL('count')) == '2字' and '覚えられない' in pg.inner_text('#vpMsg'), pg.inner_text('#vpMsg'))
-    chk('保存先が使えない端末：エラーなし', errs == [], errs)
+    f = fr(pg)
+    f.locator('#editor').fill('保存できない')
+    pg.wait_for_timeout(200)
+    chk('保存できない端末：開く・動く・エラーなし', f.locator('#count').text_content() == '6字' and errs == [], errs)
+    chk('保存できない時は、覚えられないことが画面の上に出る', '覚えられない' in ev(pg, MSG), ev(pg, MSG))
     ctx.close()
 
     # ---------------- P8 画面 ----------------
     print('--- P8 画面')
-    ctx, pg, errs = new(b, w=412, h=860)
+    ctx, pg, errs = new(b)
     load(pg)
     open_lab(pg)
-    type_text(pg, 'あ' * 200)
-    pg.click('#vpVCode')
-    r = ev(pg, "()=>{const c=$('csbody');return {sw:c.scrollWidth,cw:c.clientWidth,v:document.querySelector('#vpView').getBoundingClientRect().right,s:document.querySelector('#vpScript').getBoundingClientRect().right,w:innerWidth}}")
-    chk('スマホ幅（412）：横にはみ出さない（コードの長い行も折り返す）', r['sw'] <= r['cw'] + 1 and r['v'] <= r['w'] and r['s'] <= r['w'], r)
+    fr(pg).locator('#save').click()
+    pg.wait_for_timeout(150)
+    r = ev(pg, "()=>{const c=$('csbody');return {sw:c.scrollWidth,cw:c.clientWidth,v:document.querySelector('#vpFrame').getBoundingClientRect().right,s:document.querySelector('#vpScript').getBoundingClientRect().right,w:innerWidth,dw:document.documentElement.scrollWidth}}")
+    chk('スマホ幅：横にはみ出さない（ページ・ビューワー・ソース）', r['dw'] <= r['w'] and r['v'] <= r['w'] and r['s'] <= r['w'] and r['sw'] <= r['cw'] + 1, r)
+    chk('スマホ幅：長い行は、ソースの欄の中で横にスクロールできる', ev(pg, "()=>{const s=document.querySelector('#vpScript');return s.scrollWidth>s.clientWidth}"))
+    chk('スマホ幅：ボタンの高さが、アプリの標準（メモ帳と同じ約30px）', ev(pg, "()=>['#vpRun','#vpInsp','#vpReset','#vpEdit'].every(s=>document.querySelector(s).getBoundingClientRect().height>=29)"))
+    chk('実行の記録が潰れない（高さ40px以上）', ev(pg, "()=>document.querySelector('#vpLog').getBoundingClientRect().height")>=40)
+    chk('エラーなし', errs == [], errs)
     ctx.close()
+
     ctx, pg, errs = new(b, w=1280, h=800)
     load(pg)
     open_lab(pg)
-    type_text(pg, 'abc')
-    click_part(pg, 'save', 'button')
-    click_part(pg, 'clear', 'button')
-    r = ev(pg, "()=>{const R=s=>document.querySelector(s).getBoundingClientRect();return {l:R('#vpView').left,r:R('#vpScript').left,logH:R('#vpLog').height,logB:R('#vpLog').bottom,H:innerHeight,n:document.querySelectorAll('#vpLog div').length}}")
-    chk('PC幅（1280）：ビューワーが左・スクリプトが右の2列', r['l'] < r['r'] - 100, r)
-    chk('PC幅：実行の記録が潰れず、画面の中に全部入る', r['logH'] >= 18 * r['n'] and r['logB'] <= r['H'] + 1, r)
-    pg.click('#vpInsp')
-    tags = ev(pg, "()=>[...document.querySelectorAll('#vpView .vptag')].map(t=>[t.textContent,getComputedStyle(t).display])")
-    chk('「調べる」の間は、各部品の札（id）が出る', len(tags) == 7 and all(d == 'block' for _, d in tags) and sorted(t for t, _ in tags) == sorted(['title', 'editor', 'count', 'save', 'load', 'clear', 'status']), tags)
-    pg.click('#vpRun')
-    chk('「動かす」では札は隠れる', ev(pg, "()=>[...document.querySelectorAll('#vpView .vptag')].every(t=>getComputedStyle(t).display==='none')"))
+    fr(pg).locator('#save').click()
+    pg.wait_for_timeout(150)
+    r = ev(pg, "()=>{const v=document.querySelector('#vpFrame').getBoundingClientRect(),s=document.querySelector('#vpScript').getBoundingClientRect(),l=document.querySelector('#vpLog').getBoundingClientRect();return {vr:v.right,sl:s.left,sh:s.height,lh:l.height,dw:document.documentElement.scrollWidth,w:innerWidth}}")
+    chk('PC幅：ビューワーとソースが左右2列で並ぶ', r['vr'] <= r['sl'] + 2 and r['dw'] <= r['w'], r)
+    chk('PC幅：実行の記録が潰れない・ソースの欄が見える高さ', r['lh'] >= 40 and r['sh'] >= 150, r)
     ctx.close()
+
     ctx, pg, errs = new(b, touch=True)
     load(pg)
     open_lab(pg)
+    f = fr(pg)
+    f.locator('#save').tap()
+    pg.wait_for_timeout(150)
+    chk('タッチ：ボタンを指で押して動く', f.locator('#status').text_content() == '保存しました')
     pg.tap('#vpInsp')
-    pg.tap('#vpView .vpp[data-part="load"]')
-    pg.wait_for_timeout(80)
-    chk('タッチ：「調べる」で部品をタップすると選べる', ev(pg, BOX('sel')) == ['load'])
-    chk('タッチ：選んだだけでは、部品は動かない（記録は始まった1件のまま）', len(ev(pg, LOG)) == 1)
-    pg.tap('#vpScript .vpl[data-rule=r2][data-sec=on]')
-    pg.wait_for_timeout(80)
-    chk('タッチ：行をタップすると、その行が使う部品が光る（r2の「いつ」＝本文）', ev(pg, BOX('hl')) == ['editor'], ev(pg, BOX('hl')))
-    pg.tap('#vpRun')
-    pg.tap('#vpView .vpp[data-part="save"] button')
-    pg.wait_for_timeout(80)
-    chk('タッチ：「動かす」でボタンをタップすると動く', '保存' in ev(pg, LOG)[0] or '保存ボタン' in ev(pg, LOG)[0], ev(pg, LOG)[0])
-    chk('タッチ：エラーなし', errs == [], errs)
+    f.locator('#load').tap()
+    pg.wait_for_timeout(150)
+    chk('タッチ：「調べる」で部品を指で押すと選ばれ、ボタンは動かない', '#load' in ev(pg, INFO) and f.locator('#status').text_content() == '保存しました', ev(pg, INFO))
+    n = lineno(pg, "const KEY = 'text';")
+    pg.tap('#vpScript .vpl[data-n="%d"]' % (n - 1))
+    pg.wait_for_timeout(100)
+    chk('タッチ：ソースの行を指で押すと選ばれる', ev(pg, SEL) == [n])
+    chk('エラーなし', errs == [], errs)
     ctx.close()
 
     b.close()

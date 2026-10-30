@@ -1,239 +1,377 @@
-/* ===== ビジュアルプログラミングの試作（コンソールの中。台帳Z-231。2026-10-30）=====
-   目的：ビューワー（部品を置いた画面）と、その中のスクリプト（規則）が、Chromeの開発者ツール（F12）のように、対応して見えること。
-   最初の到達点：メモ帳のようなテキストエディタを、この仕組み（部品＋規則）だけで組めること（見本＝VPR.sample()）。
-   ・左＝ビューワー（部品を実際に動かす／「調べる」で、押した部品を選ぶ）。右＝スクリプト（文／コード）。
-   ・対応の表示：部品を選ぶ→それを使う行が光る。行を押す→その行が使う部品が光る。動かすと、実行された行と変わった部品が一瞬光り、下に記録が出る。
-   ・スクリプトは「コード」で編集できる（JSON。反映すると、すぐ動作が変わる）。書き換えたスクリプトは、この端末にだけ覚える。
-   ・規則の評価は VPR（2465-vp-rules.js。画面に触れない）。ここは画面だけ。部品の種類は VPK の表に1項目足せば増える。
+/* ===== ビジュアルプログラミングの試作（コンソールの中。台帳Z-231・Z-232。2026-10-30）=====
+   目的：ビューワー（動いている画面）と、その中身のソースコードが、Chromeの開発者ツール（F12）のように、対応して見えること。
+   最初の到達点：メモ帳のようなテキストエディタが、ここで見えること（見本＝VP_SAMPLE。本物のHTML・CSS・JavaScript）。
+   ・「コード」は、実際に動いているHTML・CSS・JavaScriptそのもの（日本語に書き換えた独自の書き方は使わない。台帳Z-232）。
+   ・ビューワー＝隔離した枠（iframe。sandbox="allow-scripts"だけ。同じ出所ではない）。ここで動くコードは、本体（このアプリ）の中身・作品・保存に触れない。
+     外への通信もできない（CSP）。保存（localStorage）だけ、枠の中の差し替え窓口（vplShim）を通して、`am_vplab_s_*` に預かる。
+   ・対応の表示：①部品（idのある要素）を「調べる」で選ぶと、そのidが出てくるソースの行が光る　②行を押すと、その行が使う部品の枠が出る
+     ③動かすと、動いた処理（addEventListenerで付けた関数の範囲）・書き換えを行った行・書き換わった部品が一瞬光り、下に記録が出る。
+   ・どの行がどの部品を使うかは、ソースの文字を読んで決める（id="…"・'…'・#…・const x = document.getElementById('…') の x）。実行中の対応は、枠の中で実際に起きたことを知らせてもらう。
+   ・ソースは「編集」で書き換えられ、「反映」で動き直す。書き換えたソースは、この端末にだけ覚える（`am_vplab`）。
    ・コンソールの決まり：本体の作品・Undo・保存（snap／ser／US／AC／LAYERS／DOC）には触れない。保存先は `am_vplab*` だけ（メモ帳の `am_memo` にも触れない）。
-   ・ユーザーが書いた名前や文字は、必ず textContent で出す（HTMLとして解釈しない）。 */
-const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',prog:null,S:{},R:{},K:{},el:null,mode:'run',view:'text',editing:false,selPart:null,selLine:null,log:[],started:false};
+   ・ソース・名前・記録の文字は、必ず textContent で出す（HTMLとして解釈しない）。 */
+const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',MAXSRC:200000,MAXVAL:200000,MAXKEYS:50,
+  src:'',an:null,frame:null,ready:false,mode:'run',editing:false,selId:null,selLine:null,H:{},B:null,bt:0,log:[],el:null};
+
+/* 見本のソース（本物のHTML・CSS・JavaScript。そのまま動く） */
+const VP_SAMPLE=`<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 15px/1.5 sans-serif; margin: 0; padding: 12px; color: #111; background: #fff; }
+  h1 { font-size: 17px; margin: 0 0 8px; }
+  textarea { display: block; width: 100%; height: 140px; box-sizing: border-box; font: inherit; padding: 6px; }
+  #count { margin: 4px 0 8px; color: #555; }
+  button { font: inherit; padding: 6px 10px; margin: 0 6px 6px 0; }
+  #status { min-height: 1.5em; color: #067a3b; }
+</style>
+</head>
+<body>
+<h1 id="title">テキストエディタ（見本）</h1>
+<textarea id="editor" placeholder="ここに書きます。書いた文字は、自動でこの端末に保存されます。"></textarea>
+<div id="count">0字</div>
+<button id="save">💾 保存</button>
+<button id="load">📂 読み込む</button>
+<button id="clear">🗑 すべて消す</button>
+<div id="status"></div>
+<script>
+const KEY = 'text';
+const editor = document.getElementById('editor');
+const count = document.getElementById('count');
+const saveBtn = document.getElementById('save');
+const loadBtn = document.getElementById('load');
+const clearBtn = document.getElementById('clear');
+const msg = document.getElementById('status');
+
+function updateCount() {
+  count.textContent = [...editor.value].length + '字';
+}
+
+editor.addEventListener('input', () => {
+  updateCount();
+  localStorage.setItem(KEY, editor.value);
+  msg.textContent = '';
+});
+
+saveBtn.addEventListener('click', () => {
+  localStorage.setItem(KEY, editor.value);
+  msg.textContent = '保存しました';
+});
+
+loadBtn.addEventListener('click', () => {
+  const saved = localStorage.getItem(KEY);
+  if (saved === null) {
+    msg.textContent = 'まだ保存されていません';
+    return;
+  }
+  editor.value = saved;
+  updateCount();
+  msg.textContent = '読み込みました';
+});
+
+clearBtn.addEventListener('click', () => {
+  if (editor.value === '') return;
+  editor.value = '';
+  updateCount();
+  msg.textContent = 'すべて消しました';
+});
+
+const first = localStorage.getItem(KEY);
+if (first !== null) {
+  editor.value = first;
+  updateCount();
+}
+<\/script>
+</body>
+</html>`;
+
 const vplLs={get(k){try{return localStorage.getItem(k)}catch(_){return null}},set(k,v){try{localStorage.setItem(k,v);return true}catch(_){return false}},del(k){try{localStorage.removeItem(k)}catch(_){}}};
 const vplQ=s=>VPL.el&&VPL.el.querySelector(s);
 const vplMk=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e};
-const vplShort=v=>{const s=String(v==null?'':v).replace(/\n/g,'⏎');return s.length>24?s.slice(0,24)+'…':s};
-const vplName=id=>{const p=VPL.prog.parts.find(x=>x&&x.id===id);return p?(p.name||p.id):null};
+const vplEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const vplRange=(a,b)=>a===b?(a+1)+'行目':(a+1)+'〜'+(b+1)+'行目';
 
-/* 部品の種類の表。mount(箱,部品,状態,知らせる)→描き直す関数。1項目足せば、新しい部品が使える */
-const VPK={
-  label:{name:'文字の表示',mount(box,p,S){const d=vplMk('div','vplabel'+(S.strong?' vpstrong':''));box.appendChild(d);return()=>{d.textContent=S.text==null?'':String(S.text);box.hidden=!!S.hidden}}},
-  button:{name:'ボタン',mount(box,p,S,emit){const b=vplMk('button');b.type='button';b.onclick=()=>emit({type:'click',target:p.id});box.appendChild(b);return()=>{b.textContent=S.label==null?'':String(S.label);b.disabled=!!S.disabled;box.hidden=!!S.hidden}}},
-  textarea:{name:'文字の入力欄',mount(box,p,S,emit){const t=vplMk('textarea');t.spellcheck=false;t.autocomplete='off';t.setAttribute('aria-label',p.name||p.id);
-    t.oninput=()=>{S.text=t.value;emit({type:'change',target:p.id})};box.appendChild(t);
-    return()=>{const v=S.text==null?'':String(S.text);if(t.value!==v)t.value=v;t.placeholder=S.placeholder||'';t.disabled=!!S.disabled;box.hidden=!!S.hidden}}}
-};
-
-/* 部品の世界（VPRに渡す）。状態は VPL.S[id]、描き直しは VPL.R[id] */
-const vplWorld={
-  has:id=>Object.prototype.hasOwnProperty.call(VPL.S,id),
-  get:(id,k)=>VPL.S[id][k],
-  set:(id,k,v)=>{VPL.S[id][k]=v;const r=VPL.R[id];if(r)r()},
-  store:{get:k=>vplLs.get(VPL.LSS+k),set:(k,v)=>vplLs.set(VPL.LSS+k,v)}
-};
-
-/* ---- 読み込み・保存（スクリプトだけ。部品の状態は保存しない） ---- */
-function vplLoadProg(){
-  const raw=vplLs.get(VPL.LS);let o=null;
-  if(raw){
-    try{o=JSON.parse(raw);if(VPR.validate(o).errs.length)throw 0}
-    catch(_){vplLs.set(VPL.LSB,raw);o=null}   /* 読めない中身は、消さずに別のキーへ残す */
-  }
-  VPL.prog=o||VPR.sample();
-}
-const vplSaveProg=()=>vplLs.set(VPL.LS,JSON.stringify(VPL.prog));
-
-/* ---- ビューワー（部品を並べる） ---- */
-function vplBuild(keep){
-  const root=vplQ('#vpView');root.innerHTML='';
-  const oldS=VPL.S,oldK=VPL.K;VPL.S={};VPL.R={};VPL.K={};
-  for(const p of VPL.prog.parts){
-    if(!p||typeof p.id!=='string')continue;
-    const box=vplMk('div','vpp');box.dataset.part=p.id;box.dataset.kind=String(p.kind||'');
-    const st=Object.assign({},p.props||{});
-    if(keep&&oldS[p.id]&&oldK[p.id]===p.kind)Object.assign(st,oldS[p.id]);   /* 書き換えた後も、同じ部品なら今の値を残す */
-    VPL.S[p.id]=st;VPL.K[p.id]=p.kind;
-    const tag=vplMk('span','vptag',p.id);box.appendChild(tag);
-    if(VPK[p.kind]){const r=VPK[p.kind].mount(box,p,st,vplEmit);VPL.R[p.id]=r;r()}
-    else box.appendChild(vplMk('div','vplabel','（未対応の部品：'+String(p.kind)+'）'));
-    root.appendChild(box);
-  }
-  vplInert();
-}
-/* 「調べる」の間は、部品の中身を動かせない（押す・フォーカス・キー入力）。部品の箱だけが押せる */
-function vplInert(){
-  const on=VPL.mode==='insp';
-  for(const c of vplQ('#vpView').querySelectorAll('.vpp>*:not(.vptag)'))c.inert=on;
-}
-
-/* ---- 入力を受けて動かす・光らせる・記録する ---- */
-function vplEmit(ev){
-  let tr;
-  try{tr=VPR.dispatch(VPL.prog,ev,vplWorld)}
-  catch(e){vplMsg('動かせませんでした：'+(e&&e.message||e),1);return}
-  vplFlash(tr);vplLogAdd(ev,tr);vplInfo();
-}
-function vplFl(el,cls){if(!el)return;cls=cls||'vpfl';el.classList.remove('vpfl','vpng');void el.offsetWidth;el.classList.add(cls);clearTimeout(el._vt);el._vt=setTimeout(()=>el.classList.remove('vpfl','vpng'),1000)}
-function vplFlash(tr){
-  const lines=[...vplQ('#vpScript').querySelectorAll('.vpl')],boxes=[...vplQ('#vpView').querySelectorAll('.vpp')];
-  for(const r of tr){
-    const ncond=(VPL.prog.rules.find(x=>x&&x.id===r.rule)||{}).if;
-    const nc=Array.isArray(ncond)?ncond.length:0,lastIf=r.ifOk?nc-1:r.failIdx;
-    for(const l of lines){
-      if(l.dataset.rule!==r.rule)continue;
-      const s=l.dataset.sec,i=l.dataset.i===''||l.dataset.i==null?-1:+l.dataset.i;
-      if(s==='head'||s==='on')vplFl(l);
-      else if(s==='if'&&i>=0&&i<=lastIf)vplFl(l,r.ifOk||i<lastIf?'vpfl':'vpng');
-      else if(s==='do'&&i>=0){const a=r.acts[i];if(a)vplFl(l,a.ok?'vpfl':'vpng')}
-    }
-    for(const a of r.acts)for(const id of a.touched)for(const b of boxes)if(b.dataset.part===id)vplFl(b);
-  }
-}
-function vplEvText(e){
-  const n=id=>{const s=vplName(id);return '「'+(s==null?id:s)+'」'};
-  return e.type==='start'?'始まった':e.type==='click'?n(e.target)+'を押した':e.type==='change'?n(e.target)+'が書き換えられた':String(e.type);
-}
-function vplLogAdd(ev,tr){
-  let t=vplEvText(ev)+' → ';
-  if(!tr.length)t+='合う規則なし';
-  else t+=tr.map(r=>{
-    if(!r.ifOk)return r.rule+'：'+(r.why||'条件が合わず、何もしない');
-    const bad=r.acts.find(a=>!a.ok);
-    return r.rule+'：'+(bad?'動作'+(bad.i+1)+'で止まった（'+bad.why+'）':'動作'+r.acts.length+'件を実行');
-  }).join('　／　');
-  VPL.log.unshift(t);if(VPL.log.length>10)VPL.log.length=10;
-  const box=vplQ('#vpLog');box.innerHTML='';box.appendChild(vplMk('b','',(VPL.log.length?'実行の記録（新しい順）':'')));
-  for(const s of VPL.log)box.appendChild(vplMk('div','',s));
-}
-
-/* ---- スクリプトの行（文／コード）。各行＝{k?,t,rule?,sec?,i?,parts,part?,cls?} ---- */
-function vplTextLines(prog){
-  const L=[],N=vplName;
-  prog.rules.forEach(r=>{
-    const all=VPR.targets(r);
-    L.push({t:r.id+(r.label?' ・ '+r.label:'')+(r.off===true?'（止めてある）':''),rule:r.id,sec:'head',parts:all,cls:'vprh'});
-    L.push({k:'いつ',t:VPR.doc('on',r.on,N),rule:r.id,sec:'on',parts:VPR.stepTargets('on',r.on)});
-    (Array.isArray(r.if)?r.if:[]).forEach((c,i)=>L.push({k:'もし',t:VPR.doc('if',c,N),rule:r.id,sec:'if',i,parts:VPR.stepTargets('if',c)}));
-    (Array.isArray(r.do)?r.do:[]).forEach((a,i)=>L.push({k:'なら',t:(i+1)+'. '+VPR.doc('do',a,N),rule:r.id,sec:'do',i,parts:VPR.stepTargets('do',a)}));
+/* ---- 枠の中で動く差し替え窓口（vplShim）。この関数の文字そのものを、枠の先頭へ入れる ----
+   ・注意：改行を空白に直して1行にするので、`//` の注釈は使わず、文の終わりには必ず `;` を付ける（行番号をずらさないため）。
+   ・本物のlocalStorageは、隔離した枠では使えないので、親の預かり（INIT.ls）を元にした同じ形の物を差し込む。
+   ・書き換え（textContent・innerHTML・innerText・value）・addEventListener・localStorageが呼ばれた行を、スタックから読んで親へ知らせる。 */
+function vplShim(INIT){
+  var P=parent,EA=EventTarget.prototype.addEventListener,ER=EventTarget.prototype.removeEventListener,q=0;
+  var send=function(m){try{m.vp=1;P.postMessage(m,'*')}catch(e){}};
+  var where=function(d){try{var s=new Error().stack.split('\n');for(var i=d;i<s.length;i++){var m=/:(\d+):\d+\)?\s*$/.exec(s[i]);if(m)return +m[1]}}catch(e){}return 0};
+  var idOf=function(el){while(el&&el.nodeType===1){var i=el.id;if(i&&String(i).indexOf('__vp')!==0)return String(i);el=el.parentNode}return ''};
+  var mode='run',selIds=[],ov=null;
+  var ensure=function(){if(ov&&ov.parentNode)return ov;q=1;ov=document.createElement('div');ov.id='__vp_ov';ov.style.cssText='position:absolute;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:2147483647';var st=document.createElement('style');st.textContent='#__vp_ov div{position:absolute;box-sizing:border-box;pointer-events:none}#__vp_ov .s{border:3px solid '+INIT.acc+';background:rgba(37,99,235,.10)}#__vp_ov .f{background:'+INIT.acc+';opacity:.45;animation:__vpf 1s ease-out forwards}@keyframes __vpf{to{opacity:0}}';ov.appendChild(st);document.documentElement.appendChild(ov);q=0;return ov};
+  var box=function(el,cls){var r=el.getBoundingClientRect(),b=document.createElement('div');b.className=cls;b.style.left=(r.left+pageXOffset)+'px';b.style.top=(r.top+pageYOffset)+'px';b.style.width=r.width+'px';b.style.height=r.height+'px';return b};
+  var render=function(){var o=ensure();[].slice.call(o.querySelectorAll('.s')).forEach(function(n){n.remove()});selIds.forEach(function(id){var e=document.getElementById(id);if(e)o.appendChild(box(e,'s'))})};
+  var flash=function(ids){var o=ensure();ids.forEach(function(id){var e=document.getElementById(id);if(!e)return;var b=box(e,'f');o.appendChild(b);setTimeout(function(){b.remove()},1100)})};
+  /* localStorageの代わり */
+  var data=Object.create(null);Object.keys(INIT.ls||{}).forEach(function(k){data[k]=String(INIT.ls[k])});
+  var shim={getItem:function(k){k=String(k);send({k:'ls',op:'get',key:k,line:where(3)});return k in data?data[k]:null},
+    setItem:function(k,v){k=String(k);v=String(v);data[k]=v;send({k:'ls',op:'set',key:k,val:v,line:where(3)})},
+    removeItem:function(k){k=String(k);delete data[k];send({k:'ls',op:'del',key:k,line:where(3)})},
+    clear:function(){data=Object.create(null);send({k:'ls',op:'clear',line:where(3)})},
+    key:function(i){var a=Object.keys(data);return i<a.length?a[i]:null}};
+  Object.defineProperty(shim,'length',{get:function(){return Object.keys(data).length}});
+  try{Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return shim}})}catch(e){}
+  /* 書き換えを見張る（どの行が、どの部品を書き換えたか） */
+  var wrote=function(el,what,line){var id=idOf(el&&el.nodeType===1?el:el&&el.parentNode);send({k:'w',id:id,what:what,line:line});if(id)flash([id])};
+  var wrap=function(proto,prop){var d=Object.getOwnPropertyDescriptor(proto,prop);if(!d||!d.set)return;Object.defineProperty(proto,prop,{configurable:true,enumerable:d.enumerable,get:d.get,set:function(v){var l=where(3);d.set.call(this,v);if(!q)wrote(this,prop,l)}})};
+  wrap(Node.prototype,'textContent');wrap(Element.prototype,'innerHTML');wrap(HTMLElement.prototype,'innerText');
+  wrap(HTMLTextAreaElement.prototype,'value');wrap(HTMLInputElement.prototype,'value');wrap(HTMLSelectElement.prototype,'value');
+  /* 処理の登録を見張る（関数の中身の文字を親へ渡し、親がソースの何行目〜何行目かを探す） */
+  var W=new WeakMap(),HID=0,cap=function(o){return typeof o==='boolean'?o:!!(o&&o.capture)};
+  EventTarget.prototype.addEventListener=function(type,fn,opt){
+    if(typeof fn!=='function')return EA.call(this,type,fn,opt);
+    var list=W.get(fn);if(!list){list=[];W.set(fn,list)}
+    var c=cap(opt);for(var i=0;i<list.length;i++){if(list[i].t===this&&list[i].y===type&&list[i].c===c)return}
+    var h=++HID,line=where(3),text=Function.prototype.toString.call(fn);
+    var w=function(e){send({k:'run',h:h,type:String(e.type)});return fn.apply(this,arguments)};
+    list.push({t:this,y:type,c:c,w:w});
+    send({k:'reg',h:h,type:String(type),id:idOf(this),line:line,text:text.slice(0,6000)});
+    return EA.call(this,type,w,opt);
+  };
+  EventTarget.prototype.removeEventListener=function(type,fn,opt){
+    var list=typeof fn==='function'&&W.get(fn);
+    if(list){var c=cap(opt);for(var i=0;i<list.length;i++){var r=list[i];if(r.t===this&&r.y===type&&r.c===c){list.splice(i,1);return ER.call(this,type,r.w,opt)}}}
+    return ER.call(this,type,fn,opt);
+  };
+  /* 利用者の操作 */
+  ['click','input','change'].forEach(function(t){EA.call(window,t,function(e){if(mode==='insp')return;var id=idOf(e.target);send({k:'ev',type:t,id:id});if(id)flash([id])},true)});
+  /* 「調べる」の間は、部品を動かさず、押した部品を知らせるだけ（touchは止めない：止めると、指で押してもclickが起きない） */
+  var stop=function(e){if(mode!=='insp')return;if(String(e.type).indexOf('touch')!==0)e.preventDefault();e.stopImmediatePropagation()};
+  ['mousedown','mouseup','pointerdown','pointerup','touchstart','touchend','keydown','keypress','keyup','dblclick','contextmenu','submit','dragstart'].forEach(function(t){EA.call(window,t,stop,{capture:true,passive:false})});
+  EA.call(window,'click',function(e){if(mode!=='insp')return;e.preventDefault();e.stopImmediatePropagation();var t=e.target;send({k:'pick',id:idOf(t),tag:String(t&&t.tagName||'').toLowerCase()})},{capture:true,passive:false});
+  /* そのほかの変化（要素の追加・属性など）。読み込み中の変化は知らせない */
+  var pend={},sch=0,live=0;
+  var flush=function(){sch=0;var a=Object.keys(pend);pend={};if(a.length){send({k:'mut',ids:a.slice(0,50)});flash(a);if(selIds.length)render()}};
+  var mo=new MutationObserver(function(l){if(!live)return;for(var i=0;i<l.length;i++){var t=l[i].target;var id=idOf(t.nodeType===1?t:t.parentNode);if(id)pend[id]=1}if(!sch){sch=1;Promise.resolve().then(flush)}});
+  mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,characterData:true});
+  EA.call(window,'error',function(e){send({k:'err',msg:String(e.message||'error').slice(0,300),line:e.lineno|0})});
+  EA.call(window,'unhandledrejection',function(e){send({k:'err',msg:'Promise: '+String(e.reason&&e.reason.message||e.reason).slice(0,300),line:0})});
+  EA.call(window,'resize',function(){if(selIds.length)render()});
+  EA.call(window,'scroll',function(){if(selIds.length)render()},true);
+  EA.call(window,'load',function(){live=1;var a=[].slice.call(document.querySelectorAll('[id]')).map(function(e){return String(e.id)}).filter(function(i){return i.indexOf('__vp')!==0}).slice(0,200);send({k:'ready',ids:a})});
+  /* 親からの指示 */
+  EA.call(window,'message',function(e){if(e.source!==P)return;var d=e.data;if(!d||d.vp!==1)return;
+    if(d.k==='mode'){mode=d.m==='insp'?'insp':'run';try{if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()}catch(x){}}
+    else if(d.k==='sel'){selIds=Array.isArray(d.ids)?d.ids.map(String).slice(0,50):[];render()}
   });
-  return L;
 }
-/* コードの行。つなげると、そのまま読み戻せるJSONになる（反映の元） */
-function vplCodeLines(prog){
-  const L=[],J=JSON.stringify,ind=n=>'  '.repeat(n),add=(t,m)=>L.push(Object.assign({t,parts:[]},m||{}));
-  const keys=Object.keys(prog);
-  add('{');
-  keys.forEach((k,ki)=>{
-    const c=ki<keys.length-1?',':'';
-    if(k==='parts'&&Array.isArray(prog.parts)){
-      add(ind(1)+'"parts": [');
-      prog.parts.forEach((p,i)=>add(ind(2)+J(p)+(i<prog.parts.length-1?',':''),{sec:'part',part:p&&p.id,parts:p&&typeof p.id==='string'?[p.id]:[]}));
-      add(ind(1)+']'+c);
-    }else if(k==='rules'&&Array.isArray(prog.rules)){
-      add(ind(1)+'"rules": [');
-      prog.rules.forEach((r,ri)=>{
-        const rk=Object.keys(r),m={rule:r.id};
-        add(ind(2)+'{',Object.assign({sec:'head',parts:VPR.targets(r)},m));
-        rk.forEach((key,j)=>{
-          const cc=j<rk.length-1?',':'';
-          if((key==='if'||key==='do')&&Array.isArray(r[key])&&r[key].length){
-            const un=[];r[key].forEach(x=>{for(const id of VPR.stepTargets(key,x))if(!un.includes(id))un.push(id)});
-            add(ind(3)+J(key)+': [',Object.assign({sec:key==='if'?'ifh':'doh',parts:un},m));
-            r[key].forEach((x,i)=>add(ind(4)+J(x)+(i<r[key].length-1?',':''),Object.assign({sec:key,i,parts:VPR.stepTargets(key,x)},m)));
-            add(ind(3)+']'+cc,Object.assign({sec:'close'},m));
-          }else add(ind(3)+J(key)+': '+J(r[key])+cc,Object.assign({sec:key==='on'?'on':'etc',parts:key==='on'?VPR.stepTargets('on',r.on):[]},m));
-        });
-        add(ind(2)+'}'+(ri<prog.rules.length-1?',':''),Object.assign({sec:'close'},m));
-      });
-      add(ind(1)+']'+c);
-    }else add(ind(1)+J(k)+': '+J(prog[k])+c);
-  });
-  add('}');
-  return L;
-}
-const vplCodeText=()=>vplCodeLines(VPL.prog).map(l=>l.t).join('\n');
 
-function vplScript(){
-  const sc=vplQ('#vpScript');sc.innerHTML='';sc.classList.toggle('vpcode',VPL.view==='code'&&!VPL.editing);
-  vplQ('#vpVText').classList.toggle('on',VPL.view==='text');vplQ('#vpVCode').classList.toggle('on',VPL.view==='code');
-  vplQ('#vpVText').setAttribute('aria-pressed',VPL.view==='text');vplQ('#vpVCode').setAttribute('aria-pressed',VPL.view==='code');
-  vplQ('#vpEdit').hidden=!(VPL.view==='code'&&!VPL.editing);vplQ('#vpApply').hidden=!VPL.editing;vplQ('#vpCancel').hidden=!VPL.editing;
-  vplQ('#vpVText').disabled=VPL.editing;vplQ('#vpVCode').disabled=VPL.editing;
+/* ---- 枠へ入れる文書を作る：先頭（<head>の直後）に、通信を止める印（CSP）と差し替え窓口を足す。行数は変えない ---- */
+function vplSnap(){
+  const o={};
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(VPL.LSS)===0&&Object.keys(o).length<VPL.MAXKEYS)o[k.slice(VPL.LSS.length)]=localStorage.getItem(k)}}catch(_){}
+  return o;
+}
+function vplAcc(){
+  let c='';try{c=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()}catch(_){}
+  return /^(#[0-9a-f]{3,8}|rgb\([\d\s,.%]+\))$/i.test(c)?c:'#2563eb';
+}
+function vplInject(src){
+  const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; font-src data:; base-uri \'none\'; form-action \'none\'">';
+  const init=JSON.stringify({ls:vplSnap(),acc:vplAcc()}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+  const shim='<script>('+vplShim.toString().replace(/\n\s*/g,' ')+')('+init+')<\/script>';
+  const add=csp+shim;
+  const m=/<head(\s[^>]*)?>/i.exec(src)||/<html(\s[^>]*)?>/i.exec(src);
+  if(m){const e=m.index+m[0].length;return src.slice(0,e)+add+src.slice(e)}
+  const d=/^\s*<!doctype[^>]*>/i.exec(src);
+  if(d)return src.slice(0,d[0].length)+add+src.slice(d[0].length);
+  return add+src;
+}
+
+/* ---- ソースの文字を読んで、どの行が、どの部品（id）を使っているかを決める ---- */
+function vplAnalyze(src){
+  const lines=src.split('\n'),ids=[],def=new Map(),tag=new Map(),alias=new Map();
+  lines.forEach((t,i)=>{
+    for(const m of t.matchAll(/\bid\s*=\s*(["'])([A-Za-z_][\w:.-]{0,63})\1/g)){const id=m[2];if(!def.has(id)){def.set(id,i);ids.push(id)}}
+    for(const m of t.matchAll(/<([A-Za-z][\w-]*)\b[^<>]*?\bid\s*=\s*(["'])([A-Za-z_][\w:.-]{0,63})\2/g))if(!tag.has(m[3]))tag.set(m[3],m[1].toLowerCase());
+  });
+  lines.forEach(t=>{
+    for(const m of t.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:document\s*\.\s*)?(?:getElementById|querySelector|\$)\(\s*(["'`])#?([A-Za-z_][\w:.-]*)\2\s*\)/g))if(def.has(m[3])&&!alias.has(m[1]))alias.set(m[1],m[3]);
+  });
+  const idRe=ids.map(id=>[id,new RegExp('(["\'`]'+vplEsc(id)+'["\'`])|(#'+vplEsc(id)+'(?![\\w-]))')]);
+  const alRe=[...alias].map(([a,id])=>[id,new RegExp('(^|[^\\w$.])'+vplEsc(a)+'(?![\\w$])')]);
+  const refs=lines.map(t=>{const s=new Set();for(const[id,re]of idRe)if(re.test(t))s.add(id);for(const[id,re]of alRe)if(re.test(t))s.add(id);return[...s]});
+  const by=new Map();refs.forEach((a,i)=>a.forEach(id=>{if(!by.has(id))by.set(id,[]);by.get(id).push(i)}));
+  return{lines,ids,def,tag,alias,refs,by};
+}
+
+/* ---- 読み込み・実行（枠を作り直す） ---- */
+function vplLoadSrc(){
+  const raw=vplLs.get(VPL.LS);let s=null;
+  if(raw!=null&&raw!==''){
+    if(/^\s*</.test(raw)&&raw.length<=VPL.MAXSRC)s=raw.replace(/\r\n?/g,'\n');
+    else vplLs.set(VPL.LSB,raw);   /* 読めない中身は、消さずに別のキーへ残す */
+  }
+  VPL.src=s||VP_SAMPLE;
+}
+function vplRun(){
+  VPL.an=vplAnalyze(VPL.src);VPL.H={};VPL.ready=false;VPL.B=null;
+  const box=vplQ('#vpView');box.innerHTML='';
+  const f=document.createElement('iframe');
+  f.setAttribute('sandbox','allow-scripts');   /* 同じ出所にしない（本体に触れさせない） */
+  f.id='vpFrame';f.className='vpframe';f.title='ビューワー（動いている画面）';
+  f.srcdoc=vplInject(VPL.src);
+  VPL.frame=f;box.appendChild(f);
+}
+function vplSend(m){try{if(VPL.frame&&VPL.frame.contentWindow)VPL.frame.contentWindow.postMessage(Object.assign({vp:1},m),'*')}catch(_){}}
+
+/* ---- ソースの行 ---- */
+function vplCode(){
+  const sc=vplQ('#vpScript');sc.innerHTML='';
+  vplQ('#vpEdit').hidden=VPL.editing;vplQ('#vpApply').hidden=!VPL.editing;vplQ('#vpCancel').hidden=!VPL.editing;
   if(VPL.editing){
-    const ta=vplMk('textarea','vpedit');ta.id='vpEditTa';ta.value=vplCodeText();ta.spellcheck=false;ta.setAttribute('aria-label','スクリプト（コード）を書き換える');
+    const ta=vplMk('textarea','vpedit');ta.id='vpEditTa';ta.value=VPL.src;ta.spellcheck=false;ta.wrap='off';ta.setAttribute('aria-label','ソースコード（HTML・CSS・JavaScript）を書き換える');
     sc.appendChild(ta);return;
   }
-  const lines=VPL.view==='code'?vplCodeLines(VPL.prog):vplTextLines(VPL.prog);
-  lines.forEach((m,n)=>{
-    const d=vplMk('div','vpl'+(m.cls?' '+m.cls:''));
-    if(m.k)d.appendChild(vplMk('b','vpk',m.k+' '));
-    d.appendChild(document.createTextNode(m.t));
-    d.dataset.n=String(n);d.dataset.rule=m.rule==null?'':String(m.rule);d.dataset.sec=m.sec||'';d.dataset.i=m.i==null?'':String(m.i);d.dataset.parts=(m.parts||[]).join(' ');d.dataset.part=m.part==null?'':String(m.part);
-    d.tabIndex=0;d.setAttribute('role','button');
+  VPL.an.lines.forEach((t,i)=>{
+    const d=vplMk('div','vpl');d.append(vplMk('span','vpn',String(i+1)),vplMk('span','vpt',t));
+    d.dataset.n=String(i);d.dataset.ids=VPL.an.refs[i].join(' ');d.tabIndex=0;d.setAttribute('role','button');
     sc.appendChild(d);
   });
-  vplApplySel();
 }
+function vplLineEls(){const sc=vplQ('#vpScript');return sc?[...sc.querySelectorAll('.vpl')]:[]}
+function vplFl(el,cls){if(!el)return;cls=cls||'vpfl';el.classList.remove('vpfl','vpng');void el.offsetWidth;el.classList.add(cls);clearTimeout(el._vt);el._vt=setTimeout(()=>el.classList.remove('vpfl','vpng'),1000)}
+function vplFlashLines(idx,cls){const els=vplLineEls();if(!els.length)return;for(const i of idx)if(i>=0&&i<els.length)vplFl(els[i],cls)}
+const vplLn=n=>{n=Math.floor(+n)||0;return n>=1&&n<=VPL.an.lines.length?n-1:-1};   /* 枠が言う行番号（1から）→ 行の位置（0から）。範囲外は-1 */
 
 /* ---- 選ぶ・対応を光らせる ---- */
-function vplApplySel(scroll){
-  const sc=vplQ('#vpScript'),boxes=[...vplQ('#vpView').querySelectorAll('.vpp')],lines=[...sc.querySelectorAll('.vpl')];
-  boxes.forEach(b=>b.classList.remove('sel','hl'));lines.forEach(l=>l.classList.remove('sel','hl'));
-  let first=null;
-  if(VPL.selPart){
-    boxes.forEach(b=>{if(b.dataset.part===VPL.selPart)b.classList.add('sel')});
-    lines.forEach(l=>{if(l.dataset.parts.split(' ').includes(VPL.selPart)){l.classList.add('hl');if(!first)first=l}});
-  }else if(VPL.selLine){
-    const hit=lines.find(l=>l.dataset.n===VPL.selLine.n);
-    if(hit){hit.classList.add('sel');first=hit;const ps=VPL.selLine.parts;boxes.forEach(b=>{if(ps.includes(b.dataset.part))b.classList.add('hl')})}
+function vplSync(scroll){
+  const els=vplLineEls(),an=VPL.an;els.forEach(l=>l.classList.remove('sel','hl'));
+  let ids=[],first=null;
+  if(VPL.selId){
+    ids=[VPL.selId];const used=an.by.get(VPL.selId)||[];
+    used.forEach(i=>{if(els[i]){els[i].classList.add('hl');if(first==null)first=els[i]}});
+    const d=an.def.get(VPL.selId);if(d!=null&&els[d]){els[d].classList.add('sel');first=els[d]}
+  }else if(VPL.selLine!=null){
+    const i=VPL.selLine;if(els[i]){els[i].classList.add('sel');ids=an.refs[i]}
   }
+  vplSend({k:'sel',ids});
   if(scroll&&first)first.scrollIntoView({block:'nearest'});
   vplInfo();
 }
-function vplSelPart(id){VPL.selLine=null;VPL.selPart=VPL.selPart===id?null:id;vplApplySel(true)}
-function vplSelLine(d){
-  if(d.dataset.part){vplSelPart(d.dataset.part);return}   /* コードの「部品の定義の行」は、その部品を選ぶのと同じ */
-  const s={n:d.dataset.n,rule:d.dataset.rule,sec:d.dataset.sec,i:d.dataset.i,parts:d.dataset.parts.split(' ').filter(Boolean)};
-  const same=VPL.selLine&&VPL.selLine.n===s.n;
-  VPL.selPart=null;VPL.selLine=same?null:s;vplApplySel(false);
-}
+function vplSelId(id){VPL.selLine=null;VPL.selId=(!id||VPL.selId===id)?null:id;vplSync(true)}
+function vplSelLine(n){VPL.selId=null;VPL.selLine=VPL.selLine===n?null:n;vplSync(false)}
 function vplInfo(){
-  const el=vplQ('#vpInfo');if(!el)return;let t='';
-  if(VPL.selPart){
-    const id=VPL.selPart,p=VPL.prog.parts.find(x=>x&&x.id===id),st=VPL.S[id]||{};
-    const rs=VPL.prog.rules.filter(r=>VPR.targets(r).includes(id)).map(r=>r.id);
-    const vals=Object.keys(st).filter(k=>Object.prototype.hasOwnProperty.call(VPR.PROPS,k)).map(k=>VPR.PROPS[k]+'＝「'+vplShort(st[k])+'」');
-    t='選んだ部品：'+((p&&p.name)||id)+'（'+id+'）・'+(p&&VPK[p.kind]?VPK[p.kind].name:'未対応の部品')+'\n今の値：'+(vals.join('、')||'なし')+'\nこの部品を使う規則：'+(rs.join('、')||'なし');
-  }else if(VPL.selLine){
-    const s=VPL.selLine;
-    const what={head:'規則全体',on:'いつ',if:'もし',do:'なら',ifh:'もし',doh:'なら',etc:'規則のほかの項目',close:'規則の一部'}[s.sec]||'規則の一部';
-    t='選んだ行：規則 '+s.rule+'（'+what+(s.i!==''?(+s.i+1)+'つ目':'')+'）\nこの行が使う部品：'+(s.parts.map(id=>{const n=vplName(id);return n==null?id+'（見つかりません）':n+'（'+id+'）'}).join('、')||'なし');
-  }else t=VPL.mode==='insp'?'部品を押すと、その部品を使うスクリプトの行が光ります。スクリプトの行を押すと、その行が使う部品が光ります。':'「🔍 調べる」にすると、部品を押して選べます。スクリプトの行を押すと、その行が使う部品が光ります。';
+  const el=vplQ('#vpInfo');if(!el)return;const an=VPL.an;let t='';
+  if(VPL.selId){
+    const id=VPL.selId,used=(an.by.get(id)||[]).map(i=>i+1),d=an.def.get(id);
+    t='選んだ部品：#'+id+(an.tag.get(id)?'（'+an.tag.get(id)+'）':'')+'\n'
+      +(d!=null?'HTMLに書かれた行：'+(d+1)+'行目\nこの部品が出てくる行：'+used.join('、')+'（'+used.length+'行）':'この部品の id は、ソースに書かれていません（スクリプトが後から作った部品かもしれません）。');
+  }else if(VPL.selLine!=null){
+    const i=VPL.selLine,ids=an.refs[i];
+    t='選んだ行：'+(i+1)+'行目\n'+(ids.length?'この行が使う部品：'+ids.map(x=>'#'+x).join('、'):'この行は、部品の id を使っていません。');
+  }else t=VPL.mode==='insp'?'ビューワーの部品を押すと、その部品が出てくるソースの行が光ります。ソースの行を押すと、その行が使う部品に枠が出ます。':'「🔍 調べる」にすると、部品を押して選べます。ソースの行を押すと、その行が使う部品に枠が出ます。';
   el.textContent=t;
 }
-function vplMsg(t,bad){const m=vplQ('#vpMsg');m.textContent=t||'';m.hidden=!t;m.style.color=bad?'#c0392b':''}
-
-/* ---- 画面の切り替え・編集 ---- */
+function vplMsg(t,bad){const m=vplQ('#vpMsg');if(!m)return;m.textContent=t||'';m.hidden=!t;m.style.color=bad?'#c0392b':''}
 function vplMode(m){
-  VPL.mode=m;vplQ('#vpView').classList.toggle('insp',m==='insp');vplInert();
+  VPL.mode=m;vplQ('#vpView').classList.toggle('insp',m==='insp');vplSend({k:'mode',m});
   for(const[id,v]of[['#vpRun','run'],['#vpInsp','insp']]){const b=vplQ(id);b.classList.toggle('on',m===v);b.setAttribute('aria-pressed',m===v)}
   vplInfo();
 }
+
+/* ---- 枠からの知らせ（枠の中のコードは信用しない：型・長さ・範囲を確かめてから使う） ---- */
+function vplLocate(text){
+  if(typeof text!=='string'||text.length<6)return null;
+  const i=VPL.src.indexOf(text);if(i<0)return null;
+  const a=VPL.src.slice(0,i).split('\n').length-1;return[a,a+text.split('\n').length-1];
+}
+function vplBatch(){
+  if(!VPL.B)VPL.B={ev:null,start:false,runs:[],w:new Map(),ls:[],mut:new Set(),err:null};
+  clearTimeout(VPL.bt);VPL.bt=setTimeout(vplBatchEnd,90);return VPL.B;
+}
+function vplBatchEnd(){
+  const B=VPL.B;VPL.B=null;if(!B)return;
+  const nm=id=>id?'#'+id:'（id の無い所）';
+  const evT=B.start?'画面を読み込んだ（スクリプトを上から実行した）':B.ev?(B.ev.type==='click'?nm(B.ev.id)+'を押した':B.ev.type==='input'?nm(B.ev.id)+'に入力した':nm(B.ev.id)+'が変わった'):'スクリプトが動いた';
+  const parts=[];
+  if(B.runs.length)parts.push('動いた処理：'+B.runs.map(r=>r.type+'（'+(r.r?vplRange(r.r[0],r.r[1]):'場所不明')+'）').join('、'));
+  else if(B.ev)parts.push('動いた処理：なし（この部品に付けた処理はありません）');
+  if(B.w.size)parts.push('書き換えた部品：'+[...B.w.values()].map(w=>nm(w.id)+'の'+w.what+(w.line>=0?'（'+(w.line+1)+'行目）':'')).join('、'));
+  const wid=new Set([...B.w.values()].map(w=>w.id));const mo=[...B.mut].filter(i=>!wid.has(i));
+  if(mo.length)parts.push('ほかに変わった部品：'+mo.map(i=>'#'+i).join('、'));
+  if(B.ls.length)parts.push('端末への保存：'+B.ls.map(l=>'「'+l.key+'」を'+(l.op==='get'?'読んだ':l.op==='set'?'書いた':'消した')+(l.line>=0?'（'+(l.line+1)+'行目）':'')).join('、'));
+  if(B.err)parts.push('誤り：'+B.err);
+  vplLogAdd(evT+(parts.length?' → '+parts.join('／'):''));
+}
+function vplLogAdd(t){
+  VPL.log.unshift(t);if(VPL.log.length>10)VPL.log.length=10;
+  const box=vplQ('#vpLog');if(!box)return;box.innerHTML='';box.appendChild(vplMk('b','',VPL.log.length?'実行の記録（新しい順）':''));
+  for(const s of VPL.log)box.appendChild(vplMk('div','',s));
+}
+function vplOnMsg(e){
+  if(!VPL.frame||!VPL.an||e.source!==VPL.frame.contentWindow)return;
+  const m=e.data;if(!m||m.vp!==1||typeof m.k!=='string')return;
+  const str=(v,n)=>typeof v==='string'?v.slice(0,n):'';
+  switch(m.k){
+    case'ready':{VPL.ready=true;vplSend({k:'mode',m:VPL.mode});vplSync(false);vplBatch().start=true;break}
+    case'reg':{
+      const h=Math.floor(+m.h);if(!(h>0&&h<=5000)||Object.keys(VPL.H).length>=500)break;
+      VPL.H[h]={type:str(m.type,40),id:str(m.id,64),line:vplLn(m.line),r:vplLocate(m.text)};break}
+    case'run':{
+      const H=VPL.H[Math.floor(+m.h)];if(!H)break;const B=vplBatch();B.runs.push({type:H.type,r:H.r});
+      if(H.r){const idx=[];for(let i=H.r[0];i<=H.r[1];i++)idx.push(i);vplFlashLines(idx)}
+      else if(H.line>=0)vplFlashLines([H.line]);
+      break}
+    case'w':{
+      const line=vplLn(m.line),id=str(m.id,64),B=vplBatch();
+      if(B.w.size<60)B.w.set(id+'|'+str(m.what,20)+'|'+line,{id,what:str(m.what,20),line});
+      if(line>=0)vplFlashLines([line]);
+      if(id&&VPL.an.def.has(id))vplFlashLines([VPL.an.def.get(id)]);
+      break}
+    case'ls':{
+      const op=m.op==='get'||m.op==='set'||m.op==='del'||m.op==='clear'?m.op:'',key=str(m.key,64),line=vplLn(m.line),B=vplBatch();
+      if(!op)break;
+      if(op==='set'){
+        const val=str(m.val,VPL.MAXVAL+1);
+        if(val.length>VPL.MAXVAL)vplMsg('保存できません：1つの値が長すぎます（'+VPL.MAXVAL+'字まで）。',1);
+        else if(vplSnapKeys(key)>=VPL.MAXKEYS)vplMsg('保存できません：保存先の数が多すぎます（'+VPL.MAXKEYS+'個まで）。',1);
+        else if(!vplLs.set(VPL.LSS+key,val))vplMsg('この端末では覚えられないので、画面を閉じると保存した文字は消えます。',1);
+      }else if(op==='del')vplLs.del(VPL.LSS+key);
+      else if(op==='clear'){try{for(const k of Object.keys(localStorage))if(k.indexOf(VPL.LSS)===0)localStorage.removeItem(k)}catch(_){}}
+      if(B.ls.length<30)B.ls.push({op,key,line});
+      if(line>=0)vplFlashLines([line]);
+      break}
+    case'ev':{const B=vplBatch();B.ev={type:str(m.type,12),id:str(m.id,64)};break}
+    case'mut':{
+      const B=vplBatch();(Array.isArray(m.ids)?m.ids:[]).slice(0,50).forEach(i=>{i=str(i,64);if(i){B.mut.add(i);if(VPL.an.def.has(i))vplFlashLines([VPL.an.def.get(i)])}});break}
+    case'pick':{
+      if(VPL.mode!=='insp')break;const id=str(m.id,64);
+      if(id)vplSelId(id);
+      else{VPL.selId=null;VPL.selLine=null;vplSync(false);vplQ('#vpInfo').textContent='この部品には id が付いていないので、ソースの行と結べません'+(str(m.tag,20)?'（'+str(m.tag,20)+'）':'')+'。'}
+      break}
+    case'err':{
+      const line=vplLn(m.line),msg=str(m.msg,300);
+      vplMsg('実行中の誤り'+(line>=0?'（'+(line+1)+'行目）':'')+'：'+msg,1);
+      if(line>=0)vplFlashLines([line],'vpng');
+      vplBatch().err=msg+(line>=0?'（'+(line+1)+'行目）':'');break}
+  }
+}
+function vplSnapKeys(key){let n=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(VPL.LSS)===0&&k!==VPL.LSS+key)n++}}catch(_){}return n}
+addEventListener('message',vplOnMsg);
+
+/* ---- 編集・反映・見本に戻す ---- */
 function vplApply(){
-  const ta=vplQ('#vpEditTa');if(!ta)return;let o;
-  try{o=JSON.parse(ta.value)}catch(e){vplMsg('反映できません。JSONとして読めません：'+(e&&e.message||e),1);return}
-  const v=VPR.validate(o);
-  if(v.errs.length){vplMsg('反映できません：'+v.errs.join(' ／ '),1);return}
-  VPL.prog=o;const saved=vplSaveProg();VPL.editing=false;VPL.selPart=null;VPL.selLine=null;
-  vplBuild(true);vplScript();vplInfo();
-  vplMsg('反映しました。'+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）')+(v.warn.length?'注意：'+v.warn.join(' ／ '):''),saved?0:1);
+  const ta=vplQ('#vpEditTa');if(!ta)return;
+  const s=ta.value.replace(/\r\n?/g,'\n');
+  if(!s.trim()){vplMsg('反映できません：中身が空です。',1);return}
+  if(s.length>VPL.MAXSRC){vplMsg('反映できません：長すぎます（'+VPL.MAXSRC+'字まで）。',1);return}
+  VPL.src=s;const saved=vplLs.set(VPL.LS,s);
+  VPL.editing=false;VPL.selId=null;VPL.selLine=null;
+  vplRun();vplCode();vplSync(false);
+  vplMsg('反映しました。動き直しています。'+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）'),saved?0:1);
+  vplLogAdd('ソースを書き換えて、動き直した');
 }
 function vplReset(){
-  if(!confirm('見本のスクリプトに戻します。書き換えたスクリプトと、端末に保存した文字は消えます。'))return;
+  if(!confirm('見本のソースに戻します。書き換えたソースと、端末に保存した文字は消えます。'))return;
   vplLs.del(VPL.LS);
   try{for(const k of Object.keys(localStorage))if(k.indexOf(VPL.LSS)===0)localStorage.removeItem(k)}catch(_){}
-  VPL.prog=VPR.sample();VPL.editing=false;VPL.selPart=null;VPL.selLine=null;VPL.log=[];
-  vplBuild(false);vplScript();vplQ('#vpLog').innerHTML='';
-  vplMsg('見本に戻しました。',0);vplEmit({type:'start'});
+  VPL.src=VP_SAMPLE;VPL.editing=false;VPL.selId=null;VPL.selLine=null;VPL.log=[];
+  vplRun();vplCode();vplSync(false);vplQ('#vpLog').innerHTML='';vplMsg('見本に戻しました。',0);
 }
 
 CONSOLE.reg({id:'vp',ico:'🧩',name:'ビジュアルプログラミング',
@@ -241,32 +379,21 @@ CONSOLE.reg({id:'vp',ico:'🧩',name:'ビジュアルプログラミング',
     VPL.el=el;
     el.innerHTML='<div class="vpgrid">'
       +'<section class="vpcol"><div class="vpbar"><b>ビューワー</b>'
-      +'<span class="vpseg" role="group" aria-label="ビューワーの使い方"><button type="button" id="vpRun" class="on" aria-pressed="true" aria-label="部品を、実際に動かす">▶ 動かす</button><button type="button" id="vpInsp" aria-pressed="false" aria-label="部品を押すと、その部品を使うスクリプトの行が光る（部品は動かない）">🔍 調べる</button></span>'
-      +'<button type="button" id="vpReset" aria-label="見本のスクリプトに戻す（書き換えたスクリプトと、保存した文字は消える）">↺ 見本に戻す</button></div>'
+      +'<span class="vpseg" role="group" aria-label="ビューワーの使い方"><button type="button" id="vpRun" class="on" aria-pressed="true" aria-label="部品を、実際に動かす">▶ 動かす</button><button type="button" id="vpInsp" aria-pressed="false" aria-label="部品を押すと、その部品が出てくるソースの行が光る（部品は動かない）">🔍 調べる</button></span>'
+      +'<button type="button" id="vpReset" aria-label="見本のソースに戻す（書き換えたソースと、保存した文字は消える）">↺ 見本に戻す</button></div>'
       +'<div class="vpview" id="vpView"></div><div class="note vpinfo" id="vpInfo"></div></section>'
-      +'<section class="vpcol"><div class="vpbar"><b>スクリプト</b>'
-      +'<span class="vpseg" role="group" aria-label="スクリプトの見せ方"><button type="button" id="vpVText" class="on" aria-pressed="true" aria-label="日本語の文で見る">文</button><button type="button" id="vpVCode" aria-pressed="false" aria-label="コード（JSON）で見る・書き換える">コード</button></span>'
-      +'<button type="button" id="vpEdit" hidden aria-label="コードを書き換える">✎ 編集</button><button type="button" id="vpApply" hidden aria-label="書き換えたコードを反映する">✔ 反映</button><button type="button" id="vpCancel" hidden aria-label="書き換えをやめる">✕ やめる</button></div>'
-      +'<div class="note" id="vpMsg" style="margin:0" hidden></div><div class="vpscript" id="vpScript"></div><div class="vplog note" id="vpLog"></div></section></div>';
-    vplLoadProg();vplBuild(false);vplScript();vplInfo();
+      +'<section class="vpcol"><div class="vpbar"><b>ソースコード</b><span class="note" style="margin:0">HTML・CSS・JavaScript（動いているものそのまま）</span>'
+      +'<button type="button" id="vpEdit" aria-label="ソースコードを書き換える">✎ 編集</button><button type="button" id="vpApply" hidden aria-label="書き換えたソースコードを反映する">✔ 反映</button><button type="button" id="vpCancel" hidden aria-label="書き換えをやめる">✕ やめる</button></div>'
+      +'<div class="note" id="vpMsg" style="margin:0" hidden></div><div class="vpscript vpcode" id="vpScript"></div><div class="vplog note" id="vpLog"></div></section></div>';
+    vplLoadSrc();vplRun();vplCode();vplInfo();
     vplQ('#vpRun').onclick=()=>vplMode('run');vplQ('#vpInsp').onclick=()=>vplMode('insp');vplQ('#vpReset').onclick=vplReset;
-    vplQ('#vpVText').onclick=()=>{VPL.view='text';VPL.selLine=null;vplScript();vplApplySel()};
-    vplQ('#vpVCode').onclick=()=>{VPL.view='code';VPL.selLine=null;vplScript();vplApplySel()};
-    vplQ('#vpEdit').onclick=()=>{VPL.editing=true;vplMsg('');vplScript();const t=vplQ('#vpEditTa');if(t)t.focus()};
-    vplQ('#vpCancel').onclick=()=>{VPL.editing=false;vplMsg('');vplScript();vplApplySel()};
+    vplQ('#vpEdit').onclick=()=>{VPL.editing=true;vplMsg('');vplCode();const t=vplQ('#vpEditTa');if(t)t.focus()};
+    vplQ('#vpCancel').onclick=()=>{VPL.editing=false;vplMsg('');vplCode();vplSync(false)};
     vplQ('#vpApply').onclick=vplApply;
-    /* ビューワー：「調べる」の間は、部品を押すと選ぶ（部品は動かさない）。何も無い所を押すと、選びをはずす */
-    vplQ('#vpView').addEventListener('click',e=>{
-      if(VPL.mode!=='insp')return;
-      const b=e.target.closest('.vpp');
-      if(b)vplSelPart(b.dataset.part);else{VPL.selPart=null;VPL.selLine=null;vplApplySel()}
-      e.preventDefault();e.stopPropagation();
-    },true);
-    /* スクリプト：行を押す（キーボードのEnter・スペースも） */
+    /* ソース：行を押す（キーボードのEnter・スペースも） */
     const sc=vplQ('#vpScript');
-    sc.addEventListener('click',e=>{const d=e.target.closest('.vpl');if(d)vplSelLine(d)});
-    sc.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('vpl')){e.preventDefault();vplSelLine(e.target)}});
+    sc.addEventListener('click',e=>{const d=e.target.closest('.vpl');if(d)vplSelLine(+d.dataset.n)});
+    sc.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('vpl')){e.preventDefault();vplSelLine(+e.target.dataset.n)}});
     armTips(el);
-  },
-  enter(){if(!VPL.started){VPL.started=true;vplEmit({type:'start'})}}
+  }
 });
