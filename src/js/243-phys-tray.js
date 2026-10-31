@@ -9,6 +9,8 @@ function dvBuild(){
   const el=$('dvtray');if(!el||typeof PHDEV==='undefined')return;
   el.innerHTML=PHDEV.DEVICES.map(d=>'<button type="button" class="dv" data-dv="'+d.id+'" aria-label="'+d.label+'：'+d.desc+'（画面へドラッグして置く。タップで中ほどに置く）">'+dvIcon(d,30)+'<span>'+d.label+'</span></button>').join('')}
 function dvSync(t){const el=$('dvtray');if(!el)return;const want=t!=='ph';if(el.hidden!==want)el.hidden=want}
+/* 固定表示のタブの帯（#tabs）を装置トレーの下に出すため、トレーの高さを--dvhに測っておく（隠れている間は0。台帳Z-233。styles.cssの末尾） */
+(function(){const tr=$('dvtray'),tp=$('tp');if(!tr||!tp||typeof ResizeObserver!=='function')return;const f=()=>tp.style.setProperty('--dvh',(tr.hidden?0:Math.round(tr.getBoundingClientRect().height))+'px');new ResizeObserver(f).observe(tr);f()})();
 /* 置く場所（世界のm）。実験が開いていれば今の視点、無ければ新しく作る実験の視点（床がy=0・下に0.4mの余白） */
 const DV_VIEW0={x0:0,y0:-.4,w:6};
 const dvView=()=>SCN.src&&RUN.view?RUN.view:DV_VIEW0;

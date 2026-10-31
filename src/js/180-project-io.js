@@ -58,6 +58,8 @@ $('sv').onclick=saveProj;
 $('pf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadProj(r.result).catch(()=>{$('rtx').textContent='読み込めませんでした'});r.readAsText(f)};
 $('rs').onclick=()=>{try{loadProj(localStorage.getItem('am_auto'))}catch(_){}};
 addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnValue=''}});
-function autosave(){if(!dirtyProj||TL.busy)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
+/* 自動保存が入らない時（大きい作品で端末の保存の上限を超える等）は、重いser()を20秒ごとに繰り返さず、間隔を倍々に延ばす（上限5分）。最初の1回だけ知らせる（台帳Z-152・Z-233） */
+let asFail=0,asNext=0;
+function autosave(){if(!dirtyProj||TL.busy||Date.now()<asNext)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;asFail=0;asNext=0;if(!nw)$('rs').style.display=''}catch(_){asFail++;asNext=Date.now()+Math.min(20000*Math.pow(2,asFail),300000);if(asFail===1)note('この作品は大きくて、ブラウザの自動保存に入りません。消えないよう、ときどき「💾 保存」で作品ファイルに書き出してください',9000)}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
 function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document)}

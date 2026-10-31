@@ -292,9 +292,47 @@ body.consOpen #modeEdge{display:none}
   .vpframe{height:420px}
   .vpscript{max-height:none;flex:1 1 0}
 }
-}
 .startcard{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*12px);padding:8px 10px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .startcard .row{justify-content:center;gap:5px}.startcard .row button{padding:6px 8px;font-size:13px}#stX{min-width:30px}
+.startcard .stfoot{justify-content:space-between;margin-top:6px}   /* 「次回から…」と✕を同じ段に（✕だけが下の段に取り残されない。台帳Z-234） */
+@media (max-width:400px){.startcard .row button{padding:6px 6px;font-size:12.5px}}
+
+/* ===== 使いやすさの整備（台帳Z-233。2026-10-31）=====
+   ①選択欄が、いちばん長い選択肢の幅まで広がって窓の外へ出て、▾が見えない（物理タブの「サンプルを選ぶ」が371px）
+   ②日本語のボタン名が、語の途中（「だ／け」）で折り返される
+   ③ボタンだけの行で、高さがそろわない（道具の行が31／68／49／31px）
+   ④スマホで押しにくい部品（−＋・🪟▾・折りたたみの見出し・数値欄・色の欄が19〜27px）
+   ⑤タブの帯が操作窓の中身と一緒に流れ、長いタブ（色調整は中身が約1900px）から別のタブへ行くのに先頭まで戻る必要があった */
+select{max-width:100%;min-width:0}
+button,.file,select,summary,.lab,.opt{word-break:keep-all;overflow-wrap:break-word;line-break:strict}
+.row:not(:has(>:not(button))){align-items:stretch}
+.tools:has(>button:nth-child(4)) button{flex-basis:calc(25% - 6px)}
+@media (max-width:560px){.tools:has(>button:nth-child(4)) button{flex-basis:calc(50% - 6px)}}
+/* 指で触る端末だけ、操作窓の部品を押しやすい大きさにする（マウスの端末は今までどおり詰めたまま）。ビューワー上のボタン（.cbar）は、小さくしたい希望なので触らない */
+@media (pointer:coarse){
+  #tp :is(button,.file,select){min-height:36px;min-width:34px}
+  #tp .num,#tp input[type=color]{min-height:34px}
+  #tp .stp{min-width:38px}
+  #tp details summary{padding:7px 0}
+  #tp label:has(>input[type=checkbox],>input[type=radio]){min-height:32px}
+  #tp #tabs button{min-height:32px}   /* タブの帯は固定表示で窓の高さを使い続けるので、他より少し低く */
+  /* 持ち手は薄い帯のまま（台帳Z-106。check_uiが32px以下を守る）。🪟▾は、帯に収まる最大の実寸にする（高さ26px・幅34px。元は22px・23〜29px）。
+     #tp を付けるのは、上の「#tp :is(button,.file,select)」（.fileの分だけ優先度が高い）に勝つため */
+  #tp #grip button{min-height:26px;min-width:34px}
+}
+/* タブの帯：1行で横に流れ、中身をスクロールしても上に残る。選んだタブは帯の中央へ寄る（setTabのtabCenter）。
+   隠れているタブがある側には薄い影が出る（背景のlocalとscrollの重ね）。通常の枠では装置トレー（物理タブ）の下に出す（--dvhは243で測る） */
+#tabs{position:sticky;top:0;z-index:4;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0;
+  background:
+    linear-gradient(to right,var(--pane) 30%,transparent) 0 0/28px 100% no-repeat local,
+    linear-gradient(to left,var(--pane) 30%,transparent) 100% 0/28px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.16),transparent) 0 0/8px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.16),transparent) 100% 0/8px 100% no-repeat scroll,
+    var(--pane)}
+#tabs::-webkit-scrollbar{display:none}
+#tabs button,#tabs #tabObj{flex:1 0 auto}
+body:not(.fs):not(.big):not(.tpf) #tabs{top:var(--dvh,0px)}
+body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 </style>
 </head>
 <body>
@@ -688,8 +726,8 @@ body.consOpen #modeEdge{display:none}
 </div>
 <!-- 起動直後の入口（台帳Z-221）。起動時にキャンバスの上へ移す -->
 <div id="startcard" class="startcard" hidden>
-  <div class="row"><button id="stDraw" aria-label="白紙にそのまま描く（ペンが選ばれています）">✏️ 白紙に描く</button><button id="stImg" aria-label="絵（画像）を読み込む">🖼 絵を読み込む</button><button id="stSmp" aria-label="サンプルの絵（絵文字2個）を置いて始める">🎬 サンプルの絵</button><button id="stX" aria-label="この案内を閉じる">✕</button></div>
-  <label class="note" style="display:flex;gap:6px;align-items:center;margin:6px 0 0"><input type="checkbox" id="stPref">次回からサンプルの絵で始める</label>
+  <div class="row"><button id="stDraw" aria-label="白紙にそのまま描く（ペンが選ばれています）">✏️ 白紙に描く</button><button id="stImg" aria-label="絵（画像）を読み込む">🖼 絵を読み込む</button><button id="stSmp" aria-label="サンプルの絵（絵文字2個）を置いて始める">🎬 サンプルの絵</button></div>
+  <div class="row stfoot"><label class="note" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="stPref">次回からサンプルの絵で始める</label><button id="stX" aria-label="この案内を閉じる">✕</button></div>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -5741,7 +5779,9 @@ $('sv').onclick=saveProj;
 $('pf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadProj(r.result).catch(()=>{$('rtx').textContent='読み込めませんでした'});r.readAsText(f)};
 $('rs').onclick=()=>{try{loadProj(localStorage.getItem('am_auto'))}catch(_){}};
 addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnValue=''}});
-function autosave(){if(!dirtyProj||TL.busy)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;if(!nw)$('rs').style.display=''}catch(_){}}
+/* 自動保存が入らない時（大きい作品で端末の保存の上限を超える等）は、重いser()を20秒ごとに繰り返さず、間隔を倍々に延ばす（上限5分）。最初の1回だけ知らせる（台帳Z-152・Z-233） */
+let asFail=0,asNext=0;
+function autosave(){if(!dirtyProj||TL.busy||Date.now()<asNext)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;asFail=0;asNext=0;if(!nw)$('rs').style.display=''}catch(_){asFail++;asNext=Date.now()+Math.min(20000*Math.pow(2,asFail),300000);if(asFail===1)note('この作品は大きくて、ブラウザの自動保存に入りません。消えないよう、ときどき「💾 保存」で作品ファイルに書き出してください',9000)}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
 function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document)}
 
@@ -7576,7 +7616,9 @@ function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bp
   if(pcolPk)pcolPk.style.display=t==='pen'?'':'none';
   if(t!=='move'&&!seen[t]){seen[t]=1;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},4500)}}
 const TT={adj:()=>'move',fx:()=>'move',pt:()=>lastPart,pl:()=>'move',mo:()=>'move',bg:()=>'move',ph:()=>'move',wp:()=>'warp',dr:()=>lastPen,mk:()=>lastMask};
-function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();if(t==='ph')scnUi();else if(typeof scnObjBtn==='function')scnObjBtn();if(typeof dvSync==='function')dvSync(t);setTool(TT[t]())}
+function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();if(t==='ph')scnUi();else if(typeof scnObjBtn==='function')scnObjBtn();if(typeof dvSync==='function')dvSync(t);tabCenter(t);setTool(TT[t]())}
+/* 選んだタブを、タブの帯の中央へ寄せる（帯は横に流れて上に固定される。台帳Z-233）。帯の外は動かさないので、scrollIntoViewは使わない */
+function tabCenter(t){const ts=$('tabs'),b=ts&&ts.querySelector('[data-t="'+t+'"]');if(!b||ts.scrollWidth<=ts.clientWidth)return;ts.scrollLeft=Math.max(0,b.offsetLeft-(ts.clientWidth-b.offsetWidth)/2)}
 document.querySelectorAll('#tp [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 $('tc').onclick=()=>{const c=document.body.classList.toggle('tpc');$('tc').textContent=c?'▴':'▾'};
 $('gd').onclick=()=>{guide=!guide;$('gd').classList.toggle('on',guide)};
@@ -8046,6 +8088,8 @@ function dvBuild(){
   const el=$('dvtray');if(!el||typeof PHDEV==='undefined')return;
   el.innerHTML=PHDEV.DEVICES.map(d=>'<button type="button" class="dv" data-dv="'+d.id+'" aria-label="'+d.label+'：'+d.desc+'（画面へドラッグして置く。タップで中ほどに置く）">'+dvIcon(d,30)+'<span>'+d.label+'</span></button>').join('')}
 function dvSync(t){const el=$('dvtray');if(!el)return;const want=t!=='ph';if(el.hidden!==want)el.hidden=want}
+/* 固定表示のタブの帯（#tabs）を装置トレーの下に出すため、トレーの高さを--dvhに測っておく（隠れている間は0。台帳Z-233。styles.cssの末尾） */
+(function(){const tr=$('dvtray'),tp=$('tp');if(!tr||!tp||typeof ResizeObserver!=='function')return;const f=()=>tp.style.setProperty('--dvh',(tr.hidden?0:Math.round(tr.getBoundingClientRect().height))+'px');new ResizeObserver(f).observe(tr);f()})();
 /* 置く場所（世界のm）。実験が開いていれば今の視点、無ければ新しく作る実験の視点（床がy=0・下に0.4mの余白） */
 const DV_VIEW0={x0:0,y0:-.4,w:6};
 const dvView=()=>SCN.src&&RUN.view?RUN.view:DV_VIEW0;
