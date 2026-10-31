@@ -77,14 +77,14 @@ function layUi(){
     r.append(nm,
       mk(y.visible?'👁':'🚫','表示／非表示',()=>{pushUndo();y.visible=!y.visible;dirtyProj=true;layUi()},y.visible),
       mk(y.locked||!y.visible?'🔒':'🔓','ロック',()=>{if(!y.visible){note('非表示のレイヤーは常にロック扱いです');return}pushUndo();y.locked=!y.locked;dirtyProj=true;layUi()},y.locked||!y.visible),
-      mk('▲','手前へ',()=>moveLayTo(i,i+1)),mk('▼','奥へ',()=>moveLayTo(i,i-1)));
+      mk('▲','手前へ',()=>moveLayTo(i,i+1)),mk('▼','奥へ',()=>moveLayTo(i,i-1)));r.append(layRangeEl(y));
     r.onclick=()=>{curLid=y.id;layUi()};treeDrag(r);box.appendChild(r);
     if(!foldSet.has(y.id))mem.forEach((a,k)=>{
       const o=document.createElement('div');o.className='trow o'+(a===sel?' on':'')+(isVisible(a)?'':' off');o.dataset.k='o';o.dataset.id=a.id;
       const br=document.createElement('span');br.className='br';br.textContent=k===mem.length-1?'└':'├';
       const n2=document.createElement('span');n2.className='nm';n2.textContent=a.name;
-      o.append(br,th(a),n2);o.onclick=()=>setSel(a);treeDrag(o);box.appendChild(o)})}
-  $('lyphx').checked=physHideEx;lyPlace();
+      o.append(br,th(a),n2,objSubEl(a));o.onclick=()=>setSel(a);treeDrag(o);box.appendChild(o)})}
+  $('lyphx').checked=physHideEx;sizeTick(true);lyPlace();
 }
 $('lyadd').onclick=()=>{pushUndo();const id=Math.max(...LAYERS.map(y=>y.id))+1,i=LAYERS.findIndex(y=>y.id===curLid);LAYERS.splice(i+1,0,{id,name:'レイヤー'+id,visible:true,locked:false});curLid=id;dirtyProj=true;layUi()};
 $('lyren').onclick=()=>{const y=LY(curLid),v=prompt('レイヤー名',y.name);if(v&&v.trim()){pushUndo();y.name=v.trim();dirtyProj=true;chips()}};

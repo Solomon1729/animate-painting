@@ -333,6 +333,16 @@ button,.file,select,summary,.lab,.opt{word-break:keep-all;overflow-wrap:break-wo
 #tabs button,#tabs #tabObj{flex:1 0 auto}
 body:not(.fs):not(.big):not(.tpf) #tabs{top:var(--dvh,0px)}
 body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+/* 台帳Z-235：サイズの表示・マニュアル・切り抜きタブの見出し */
+.tab .sec{font-weight:var(--fw,900);font-size:13px;opacity:.85;margin:12px 0 2px}.tab .sec:first-child{margin-top:0}
+.szinfo{white-space:pre-line;line-height:1.5}
+.trow .sub{font-size:11px;opacity:.7;font-weight:400;line-height:1.3;white-space:nowrap}.trow.o .sub{flex:none}.trow.o .nm{min-width:3em}
+.trow.l{flex-wrap:wrap}.trow.l .sub{flex:0 0 100%;padding-left:34px}   /* レイヤー行だけ2行目に範囲（レイヤーは数が少ない） */
+#lycv{margin:4px 0 0}
+.manpop{position:fixed;z-index:310;left:50%;top:50%;transform:translate(-50%,-50%);width:min(94vw,480px);max-height:82vh;overflow:auto;background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*16px);box-shadow:0 10px 30px rgba(0,0,0,.35);padding:12px;overscroll-behavior:contain}.manpop[hidden]{display:none}
+.manpop .mantb{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.manpop .mancur{font-size:12px;line-height:1.5;white-space:pre-line;background:color-mix(in srgb,var(--acc) 8%,transparent);border-radius:calc(var(--rk,1)*8px);padding:6px 8px;margin:4px 0 8px}.manpop .mancur[hidden]{display:none}
+.manpop h4{margin:14px 0 4px;font-size:14px}.manpop p,.manpop li{font-size:13px;line-height:1.65;margin:4px 0}.manpop ul{padding-left:20px;margin:4px 0}
 </style>
 </head>
 <body>
@@ -364,17 +374,22 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
   </details>
 </div>
 <div class="cmenu" id="mA" hidden>
+  <div class="cmh">再生</div>
   <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
   <div class="cmh" id="mPh" hidden>物理</div>
   <button id="mPhArt" aria-label="選んでいる絵に物理を付ける／外す（付けると、見えている輪郭が当たり判定になって動く）" hidden>🌍 この絵に物理を付ける</button>
   <button id="mPlay" aria-label="物理を実行・一時停止" hidden>▶ 物理を実行</button>
   <button id="mRst" aria-label="物理を最初に戻す" hidden>⟲ 物理を最初へ</button>
   <button id="mGrab" aria-label="実行中にキャンバスを触って物を動かす（つかむ・つつく）のオン／オフ" aria-pressed="true" hidden>🖐 つかんで動かす</button>
+  <div class="cmh">操作の手順</div>
   <button id="mTl" aria-label="タイムラプス（作り方・操作の手順を、早送りで見る／自分の操作を記録する）">🎞 タイムラプス</button>
+  <div class="cmh">追加・保存</div>
   <button id="ad2" aria-label="画像を選んでオブジェクトを追加">🖼 画像を追加</button>
   <button id="sn2" aria-label="静止画を保存">📷 静止画を保存</button>
   <button id="rc2" aria-label="録画">⏺ 録画</button>
+  <div class="cmh">ヘルプ</div>
   <button id="hq" aria-label="使い方">？ 使い方</button>
+  <button id="mMan" aria-label="マニュアル（サイズについてなど）">📖 マニュアル</button>
 </div>
 <div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
 
@@ -422,6 +437,7 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
 
   <div class="tab on" data-tab="pl">
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
+    <div class="note szinfo" id="szinfo"></div>
     <div class="row"><span class="lab">大きさ</span><input id="sz" type="range" min="0.03" max="6" step="0.01" aria-label="大きさ"><b class="v" id="szv"></b></div>
     <div class="row"><span class="lab">角度</span><input id="rt" type="range" min="-180" max="180" step="5" value="0" data-snap="-180,-90,0,90,180" aria-label="止まったままの角度"><b class="v" id="rtv"></b></div>
     <div class="row" id="fbRow" style="display:none"><span class="lab">重なり</span><button id="fbF">😀 手前</button><button id="fbB">🫥 奥</button></div>
@@ -580,6 +596,7 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
   </div>
 
   <div class="tab" data-tab="pt">
+    <div class="sec">① 範囲を選ぶ</div>
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
     <div class="row tools"><button data-tool="pwand" aria-label="自動選択（タップした所と近い色でつながった範囲を選ぶ）">✨ 自動選択</button><button data-tool="pmag" aria-label="マグネット選択（輪郭に吸い付く線で囲む）">🧲 マグネット</button><button data-tool="ppoly" aria-label="輪郭を編集（選んだ範囲の輪郭の頂点を動かして直す）">◇ 輪郭を編集</button></div>
     <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
@@ -590,13 +607,15 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
       <div class="row" id="selPolRow"><button id="selPolDel">頂点を消す</button><button id="selPolRs">元の形に戻す</button></div>
       <div class="row"><span class="lab">輪郭に合わせる</span><input id="selSnap" type="range" min="0" max="100" step="1" value="0" aria-label="粗い囲みを、絵の輪郭に合わせて直す強さ（0＝そのまま。切り取り・コピー・分割に効く）"></div>
       <div class="note" id="selNote"></div></div>
+    <div class="sec">② 切り取る・コピーする</div>
+     <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
     <div class="row"><span class="lab">縁のぼかし</span><input id="ptf" type="range" min="0" max="40" step="1" value="0" aria-label="切り抜きの縁のぼかし（0＝くっきり。大きいほど縁が自然にぼける。境界がはっきりしない絵向け）"><b class="v" id="ptfv">0</b></div>
+    <details class="grp" id="ptset"><summary>⚙ 貼り付け・切り取りの設定（穴の空け方・貼る位置・切った跡など）</summary>
     <div class="row"><span class="lab">穴の空け方</span><select id="pthl" aria-label="切り取った跡の穴の空け方（戻せる＝縁のぼかしの帯は穴にしない。貼り戻すと元どおり／ぼかして切る＝縁も薄く抜く）"><option value="core" selected>戻せる（貼ると元どおり）</option><option value="soft">ぼかして切る（縁も薄く抜く）</option></select></div>
     <div class="row"><span class="lab">貼る位置</span><select id="ppos" aria-label="貼り付ける位置"><option value="auto" selected>自動（切り取り＝元の位置／コピー＝少しずらす）</option><option value="orig">いつも元の位置</option><option value="off">いつも少しずらす</option></select></div>
     <div class="row"><label class="opt"><input type="checkbox" id="ptnow" aria-label="切り取り・コピーしたら、置き場を経由せず、すぐ新しいオブジェクトにする">すぐ新しいオブジェクトにする</label><label class="opt"><input type="checkbox" id="ptmo" aria-label="元のオブジェクトの動き・物理の設定も引き継ぐ">動き・物理も引き継ぐ</label></div>
     <div class="row"><span class="lab">切った跡</span><select id="ptfill" aria-label="切り取った跡を周囲で埋める"><option value="off" selected>穴のまま</option><option value="smooth">周囲でなめらかに埋める</option><option value="grain">周囲で質感つきに埋める</option></select></div>
-     <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
-    <div class="row"><button id="pexp">📷 このオブジェクトだけ保存（色調整・質感・ぼかし込み／原寸）</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
+    </details>
     <div class="grp alt" id="spBox"><div class="gh">✂ 分割（1枚の絵を、いくつかの部分に分ける）</div>
       <div class="row"><button id="spTake">囲んだ所を1つに分ける</button><button id="spUn">1つ戻す</button></div>
       <div class="row"><button id="spDone">新しいレイヤーに作る</button><button id="spCn">やめる</button></div>
@@ -673,6 +692,8 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
     <div class="grp"><div class="gh">書き出し</div>
     <div class="row"><span class="lab">動画</span><button id="rec">⏺ 動画</button><button id="gif">🎞 GIF</button><span id="rtx" class="note" style="margin:0"></span></div>
     <div class="row"><span class="lab">静止画</span><select id="sq" aria-label="倍率"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select><select id="sf" aria-label="形式"><option value="png">PNG</option><option value="jpg">JPEG</option><option value="pdf">PDF</option></select><button id="snap">📷 保存</button></div>
+    <div class="row"><span class="lab">選んだ絵</span><button id="pexp" aria-label="選んでいるオブジェクトだけを、色調整・質感・ぼかし込みの原寸で保存（透明な余白は切り詰める）">📷 このオブジェクトだけ保存</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
+    <div class="note" id="pexpn">選んでいる絵だけを、色調整・質感・ぼかし込みの原寸で保存します（透明な余白は切り詰めます）。</div>
     <div id="out"></div>
     <div class="note">動画は WebM（対応端末ではMP4）、GIFは最大10秒・幅360pxです。保存できない環境では、表示された動画・画像を長押しして保存してください。</div>
     </div>
@@ -701,12 +722,20 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
 
 <input id="fadd" type="file" accept="image/*" multiple>
 <div id="lypop" class="lypop" hidden role="dialog" aria-label="レイヤーとオブジェクト">
+  <div class="note" id="lycv"></div>
   <div class="lyhd"><b>レイヤーとオブジェクト</b><button id="lyx" aria-label="閉じる">✕</button></div>
   <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd3" aria-label="サンプル絵文字のオブジェクトを追加">＋絵文字</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
   <div class="lytb"><button id="lymg" aria-label="今のレイヤーの、表示中のオブジェクトを1つの画像にする">レイヤー内を統合</button><button id="lymd" aria-label="今のレイヤーと、その1つ下のレイヤーを、1つの画像にする">下のレイヤーと統合</button><button id="lyma" aria-label="表示中のレイヤーすべてを1つの画像にする">表示中を全部統合</button></div>
   <div id="lyl"></div>
   <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="lyphx" checked>非表示レイヤーを物理の計算から除外する</label>
   <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。統合＝見えている通り（位置・歪み・ぼかし・マスク・色調整込み）に1つの画像にします（動き・物理は絵に焼き込まれて静止画になります。取り消しは「元に戻す」）。くっついたオブジェクトは一緒に統合され、非表示のものは対象外です。行は長押し（マウスはドラッグ）で並べ替え。入れたい行と行のすき間に点線が出るので、そこで離します（オブジェクトは別レイヤーのすき間にも入れられます。外で離すと取り消し）。上ほど手前。</div>
+</div>
+<!-- マニュアル（台帳Z-235）：🎬メニューの一番下の「📖 マニュアル」。ページは2467-manual.jsのMANPAGES -->
+<div id="man" class="manpop" hidden role="dialog" aria-label="マニュアル">
+  <div class="lyhd"><b id="manTitle">📖 マニュアル</b><button id="manX" aria-label="マニュアルを閉じる">✕</button></div>
+  <div class="mantb" id="manTb"></div>
+  <div class="mancur" id="manLive" hidden></div>
+  <div id="manBody"></div>
 </div>
 <!-- モード選択（台帳Z-204）：右の縁から中央へ引っ張る／👁メニューの「モードを切り替える」 -->
 <div id="modeEdge" aria-hidden="true"></div>
@@ -775,6 +804,9 @@ const ADJ0=()=>({brightness:0,contrast:0,saturation:0,hue:0,temperature:0,highli
 /* 編集コアの定数は1か所に集約（AGENTS §3.6）。試行錯誤は数値の書き換えだけで済ませる */
 const EDIT_CFG={
   prevLong:1024,                       // 操作中に同期で計算する解像度の上限（長辺px）
+  prevAuto:true,                       // 重い端末では、操作中の仮表示の解像度を自動で下げる（止まって220ms後に、必要な解像度へ仕上げ直す。最終の画質は変わらない。falseで常にprevLong）
+  prevTiers:[512,768,1024],            // 仮表示の解像度の候補（長辺px）。prevLong以下だけ使う
+  liveMs:20,                           // 仮表示の計算にかけてよい時間の目安（ms）。これを超えそうなら1段下げる（約50fps）
   tiers:[512,768,1024,1536,2048,3072,4096], // 表示に必要な解像度を、この階層に丸める
   settleMs:220,                        // 操作が止まってから、仕上げ計算を始めるまでの待ち
   pumpMs:9,                            // 仕上げ計算に1フレームで使う時間
@@ -797,11 +829,15 @@ let rngT='adj',lfSel='clarity',adjHQ=false,adjTouch=0,adjZs=1;
    ペン・消しゴムは変更した矩形だけパッチする。高解像度の書き出し(adjHQ)は常に実寸。 */
 const adjDrain=g=>{let r;while(!(r=g.next()).done);return r.value};
 const _pool={},poolSync=(k,n)=>{let b=_pool[k];if(!b||b.length<n)b=_pool[k]=new Float32Array(n);return b},poolJob=(k,n)=>new Float32Array(n);
+/* 同期の計算（adjBuild）の出力バッファ。毎回4MBを確保し直さない（GCの停止を避ける）。同期の計算は最後まで走り切るので、使い回してよい */
+let _u8=null;
+function adjOut(n){if(!_u8||_u8.byteLength<n)_u8=new ArrayBuffer(Math.max(n,1<<20));return new Uint8ClampedArray(_u8,0,n)}
 let _scr=null;
 function adjScratch(w,h){if(!_scr||_scr.width<w||_scr.height<h){_scr=allocCanvas(Math.max(w,_scr?_scr.width:0),Math.max(h,_scr?_scr.height:0),'色調整',true)}return _scr}
 function adjNeed(l){let n=S0*(l.size||1)*dpr*Z.s*1.15;if(hasWarp(l))n=Math.max(n,actorWR(l)/WX);return n}
 function adjTier(n,long){if(!(n<long))return long;for(const t of EDIT_CFG.tiers)if(t>=n)return t>=long?long:t;return long}
-function hue2(p,q,t){t=(t+1)%1;return t<.1666667?p+(q-p)*6*t:t<.5?q:t<.6666667?p+(q-p)*(.6666667-t)*6:p}
+function hue2(p,q,t){t+=1;t-=Math.floor(t);   /* (t+1)%1と同じ値（t+1>0。浮動小数の%は遅いので、floorで小数部を取る。台帳Z-236） */
+  return t<.1666667?p+(q-p)*6*t:t<.5?q:t<.6666667?p+(q-p)*(.6666667-t)*6:p}
 function adjPrep(l){
   const a=ensureAdj(l),b=a.brightness/100,co=a.contrast/100,hi=a.highlights/100,sh=a.shadows/100,wh=a.whites/100,bl=a.blacks/100,T=new Float32Array(1026),ss=v=>v*v*(3-2*v),c01=v=>v<0?0:v>1?1:v;
   for(let i=0;i<=1025;i++){const L=Math.min(1,i/1024);let v=L+b*.22;v+=wh*.20*Math.pow(v,3)+bl*.20*Math.pow(1-v,3);v+=hi*.18*ss(c01((v-.5)/.5))+sh*.18*(1-ss(c01(v/.5)));v=.5+(v-.5)*(1+co);T[i]=c01(v)}
@@ -810,16 +846,17 @@ function adjPrep(l){
 /* 範囲マスク（MR×MR）は「オブジェクトの正方形」基準で塗り・表示される。画像はその正方形の中に縦横比を保って収まる（img()：k=min(S/iw,S/ih)）ので、
    画像上の位置 t(0〜1) をマスク上の位置へ f（短辺側の比。縦長・横長でだけ<1）で変換する。正方形ではf=1で従来と同じ（台帳Z-77：縦長・横長で範囲がずれていた）。 */
 const mkIdx=(t,f)=>{const u=f===1?t:.5+(t-.5)*f,i=Math.floor(u*MR);return i<0?0:i>MR-1?MR-1:i};
-/* 色調整（画素独立）。p=RGBA、(ox,oy)は全体(tw×th)の中での位置。行ごとにyield */
-function* adjColorGen(p,w,h,ox,oy,tw,th,P){
+/* 色調整（画素独立）。S＝元のRGBA（読むだけ）、p＝書き込み先（S===pでもよい）。(ox,oy)は全体(tw×th)の中での位置。行ごとにyield。
+   Sとpを分けたのは、計算の前に絵を丸ごとコピーする1周を省くため（台帳Z-236）。結果は、コピーしてから直接書き換えていた従来と同じ */
+function* adjColorGen(S,p,w,h,ox,oy,tw,th,P){
   const T=P.T,hu=P.hu,sa=P.sa,te=P.te,MK=P.MK,useHS=hu!==0||sa!==0,useT=te!==0,k1=1+sa;
   const fu=tw>=th?1:tw/th,fv=th>=tw?1:th/tw;
   let mxi=null;if(MK){mxi=new Int32Array(w);for(let x=0;x<w;x++)mxi[x]=mkIdx((ox+x)/tw,fu)}
   for(let y=0;y<h;y++){
     const mrow=MK?mkIdx((oy+y)/th,fv)*MR:0;
     for(let x=0,j=y*w*4;x<w;x++,j+=4){
-      if(!p[j+3])continue;
-      const r0=p[j]*.00392157,g0=p[j+1]*.00392157,b0=p[j+2]*.00392157;
+      if(!S[j+3]){p[j]=S[j];p[j+1]=S[j+1];p[j+2]=S[j+2];p[j+3]=0;continue}
+      const r0=S[j]*.00392157,g0=S[j+1]*.00392157,b0=S[j+2]*.00392157;
       let r=r0,gc=g0,bv=b0;
       const L=.2126*r+.7152*gc+.0722*bv,ix=L*1024,i0=ix>=1024?1023:(ix|0),sc=(T[i0]+(T[i0+1]-T[i0])*(ix-i0))/(L>.0001?L:.0001);
       r*=sc;gc*=sc;bv*=sc;r=r>1?1:r;gc=gc>1?1:gc;bv=bv>1?1:bv;
@@ -827,13 +864,13 @@ function* adjColorGen(p,w,h,ox,oy,tw,th,P){
         const mx=r>gc?(r>bv?r:bv):(gc>bv?gc:bv),mn=r<gc?(r<bv?r:bv):(gc<bv?gc:bv),q=mx-mn;
         if(q>0){
           const ll=(mx+mn)*.5;let s=ll<.5?q/(mx+mn):q/(2-mx-mn),hh=mx===r?(gc-bv)/q:mx===gc?2+(bv-r)/q:4+(r-gc)/q;
-          hh=(hh<0?hh+6:hh)/6;hh=(hh+hu+1)%1;s*=k1;s=s<0?0:s>1?1:s;
+          hh=(hh<0?hh+6:hh)/6;hh+=hu+1;hh-=Math.floor(hh);s*=k1;s=s<0?0:s>1?1:s;
           if(s>0){const q2=ll<.5?ll*(1+s):ll+s-ll*s,p2=2*ll-q2;r=hue2(p2,q2,hh+.3333333);gc=hue2(p2,q2,hh);bv=hue2(p2,q2,hh-.3333333)}else{r=gc=bv=ll}
         }
       }
       if(useT){r+=te*.10;gc+=te*.025;bv-=te*.10;r=r<0?0:r>1?1:r;gc=gc<0?0:gc>1?1:gc;bv=bv<0?0:bv>1?1:bv}
       if(MK){const mix=MK[mrow+mxi[x]];if(mix<1){const im=1-mix;r=r0*im+r*mix;gc=g0*im+gc*mix;bv=b0*im+bv*mix}}
-      p[j]=r*255+.5|0;p[j+1]=gc*255+.5|0;p[j+2]=bv*255+.5|0;
+      p[j]=r*255+.5|0;p[j+1]=gc*255+.5|0;p[j+2]=bv*255+.5|0;p[j+3]=S[j+3];
     }
     if((y&31)===31)yield;
   }
@@ -911,15 +948,32 @@ function* adjGen(l,im,T,pool,reuse){
     const sc=adjScratch(tw,th),sg=sc.getContext('2d',{willReadFrequently:true});sg.setTransform(1,0,0,1,0,0);sg.globalCompositeOperation='source-over';sg.globalAlpha=1;sg.clearRect(0,0,tw,th);sg.imageSmoothingEnabled=true;sg.imageSmoothingQuality='high';sg.drawImage(im,0,0,tw,th);
     raw={im,sv:l._adjSV|0,w:tw,h:th,data:sg.getImageData(0,0,tw,th).data};l._raw=tw*th<=4e6?raw:null;
   }
-  const p=new Uint8ClampedArray(raw.data);yield;
-  const a=ensureAdj(l),lf=ensureLF(l);
-  if(adjActive(l))yield*adjColorGen(p,tw,th,0,0,tw,th,adjPrep(l));
+  const n4=tw*th*4,p=pool===poolSync?adjOut(n4):new Uint8ClampedArray(n4),a=ensureAdj(l),lf=ensureLF(l);
+  if(adjActive(l))yield*adjColorGen(raw.data,p,tw,th,0,0,tw,th,adjPrep(l));else{p.set(raw.data);yield}
   if(lfActive(l))yield*txGen(p,tw,th,lf,adjMask(l,a,'lfm'),tw/iw,Math.max(1,Math.min(iw,ih)/400),pool);
   const g=c.getContext('2d',{willReadFrequently:true});g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.putImageData(new ImageData(p,tw,th),0,0);
   return{c,s:tw/iw};
 }
+/* 仮表示（操作中の同期計算）の解像度を、端末の速さに合わせて自動で決める（台帳Z-236）。
+   直近の同期計算の「1メガ画素あたりのms」の中央値から、liveMs（既定20ms）に収まる最大の段を選ぶ。遅い端末だけ下がり、速い端末は従来どおりprevLong。
+   下げた分は、操作が止まって220ms後に、adjPumpが必要な解像度（want）へ時間分割で仕上げ直す。下げるのは速く、戻すのは余裕がある時だけ（行き来で毎フレーム作り直さない） */
+const adjLive={h:[],cap:0};
+function adjLiveNote(ms,px){const h=adjLive.h;h.push(ms/Math.max(px,1)*1e6);if(h.length>5)h.shift()}
+function adjPrevCap(iw,ih){
+  const top=EDIT_CFG.prevLong;if(!EDIT_CFG.prevAuto)return top;
+  const h=adjLive.h;if(h.length<3)return adjLive.cap||top;
+  const s=[...h].sort((a,b)=>a-b),mpx=s[s.length>>1],ar=Math.min(iw,ih)/Math.max(iw,ih,1),ms=T=>mpx*T*T*ar/1e6;
+  const ts=EDIT_CFG.prevTiers.filter(t=>t<=top);if(!ts.length)return top;
+  let best=ts[0];for(const t of ts)if(ms(t)<=EDIT_CFG.liveMs)best=t;
+  const cur=adjLive.cap||top;
+  if(best<cur)adjLive.cap=best;                                   // 遅ければすぐ下げる
+  else if(best>cur&&ms(best)<=EDIT_CFG.liveMs*.7)adjLive.cap=best;  // 戻すのは余裕がある時だけ
+  else adjLive.cap=cur;
+  return adjLive.cap;
+}
 function adjBuild(l,im,T){
-  const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,r=adjDrain(adjGen(l,im,T,poolSync,l._adjC));
+  const t0=performance.now(),iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,r=adjDrain(adjGen(l,im,T,poolSync,l._adjC));
+  if(!adjHQ&&T<=EDIT_CFG.prevLong)adjLiveNote(performance.now()-t0,r.c.width*r.c.height);
   l._adjC=r.c;l._adjT=T;l._adjS=r.s;l._adjRef=im;l._adjDirty=false;l._adjRect=null;l._adjJob=null;l._adjLong=Math.max(iw,ih);return r.c;
 }
 /* ペン・消しゴムで変えた矩形だけを、色調整だけ先に反映する（質感はペンを離した時に全面を計算し直す） */
@@ -930,7 +984,7 @@ function adjPatchNow(l,c,iw,ih){
   const sc=adjScratch(w,h),sg=sc.getContext('2d',{willReadFrequently:true});sg.setTransform(1,0,0,1,0,0);sg.globalCompositeOperation='source-over';sg.globalAlpha=1;sg.clearRect(0,0,w,h);sg.imageSmoothingEnabled=true;sg.imageSmoothingQuality='high';
   sg.drawImage(l.img,x0/s,y0/s,w/s,h/s,0,0,w,h);
   const d=sg.getImageData(0,0,w,h);
-  if(adjActive(l))adjDrain(adjColorGen(d.data,w,h,x0,y0,c.width,c.height,adjPrep(l)));
+  if(adjActive(l))adjDrain(adjColorGen(d.data,d.data,w,h,x0,y0,c.width,c.height,adjPrep(l)));
   const g=c.getContext('2d',{willReadFrequently:true});g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.putImageData(d,x0,y0);
 }
 /* 元の画像(l.img)の中身が変わった時に呼ぶ。rectを渡せば差分パッチ、無ければ全面の計算し直し */
@@ -953,7 +1007,7 @@ function adjSource(l){
     if(adjHQ&&l._adjT<long)c=adjBuild(l,im,long);
     return c;
   }
-  const want=adjTier(adjNeed(l),long),T=adjHQ?long:(want>EDIT_CFG.prevLong?Math.min(EDIT_CFG.prevLong,long):want);
+  const want=adjTier(adjNeed(l),long),T=adjHQ?long:Math.min(want,adjPrevCap(iw,ih),long);
   return adjBuild(l,im,T);
 }
 /* 毎フレーム1回：操作が止まったら、必要な解像度へ時間分割で仕上げる */
@@ -1239,7 +1293,7 @@ function drawRangeBox(){
 function loop(ts){
   const raw=ts-last,dt=Math.min(raw/1000,.05);last=ts;perfTick(warpMs);if(++fc%12===0)syncNums();
   if(!paused)for(const l of AC){for(const[k]of K){const c=l.ch[k];c.ph=(c.ph+dt*gs*c.hz)%1}for(const p of l.pins)p.ph=(p.ph+dt*gs*p.hz)%1}
-  if(SCN.on)scnTick(dt);wbTick(dt);paintFrame();crdTick();lupeTick();adjPump();
+  if(SCN.on)scnTick(dt);wbTick(dt);paintFrame();crdTick();lupeTick();adjPump();sizeTick();
   const zz=Z.s!==1||Z.x!==0||Z.y!==0;if(zz!==zshown){zshown=zz;$('zr').disabled=!zz}
   requestAnimationFrame(loop);
 }
@@ -4246,14 +4300,14 @@ function layUi(){
     r.append(nm,
       mk(y.visible?'👁':'🚫','表示／非表示',()=>{pushUndo();y.visible=!y.visible;dirtyProj=true;layUi()},y.visible),
       mk(y.locked||!y.visible?'🔒':'🔓','ロック',()=>{if(!y.visible){note('非表示のレイヤーは常にロック扱いです');return}pushUndo();y.locked=!y.locked;dirtyProj=true;layUi()},y.locked||!y.visible),
-      mk('▲','手前へ',()=>moveLayTo(i,i+1)),mk('▼','奥へ',()=>moveLayTo(i,i-1)));
+      mk('▲','手前へ',()=>moveLayTo(i,i+1)),mk('▼','奥へ',()=>moveLayTo(i,i-1)));r.append(layRangeEl(y));
     r.onclick=()=>{curLid=y.id;layUi()};treeDrag(r);box.appendChild(r);
     if(!foldSet.has(y.id))mem.forEach((a,k)=>{
       const o=document.createElement('div');o.className='trow o'+(a===sel?' on':'')+(isVisible(a)?'':' off');o.dataset.k='o';o.dataset.id=a.id;
       const br=document.createElement('span');br.className='br';br.textContent=k===mem.length-1?'└':'├';
       const n2=document.createElement('span');n2.className='nm';n2.textContent=a.name;
-      o.append(br,th(a),n2);o.onclick=()=>setSel(a);treeDrag(o);box.appendChild(o)})}
-  $('lyphx').checked=physHideEx;lyPlace();
+      o.append(br,th(a),n2,objSubEl(a));o.onclick=()=>setSel(a);treeDrag(o);box.appendChild(o)})}
+  $('lyphx').checked=physHideEx;sizeTick(true);lyPlace();
 }
 $('lyadd').onclick=()=>{pushUndo();const id=Math.max(...LAYERS.map(y=>y.id))+1,i=LAYERS.findIndex(y=>y.id===curLid);LAYERS.splice(i+1,0,{id,name:'レイヤー'+id,visible:true,locked:false});curLid=id;dirtyProj=true;layUi()};
 $('lyren').onclick=()=>{const y=LY(curLid),v=prompt('レイヤー名',y.name);if(v&&v.trim()){pushUndo();y.name=v.trim();dirtyProj=true;chips()}};
@@ -6811,6 +6865,7 @@ let noObjAuto=false;
 function noObjUi(on){
   const bd=document.body,was=bd.classList.contains('noobj');
   bd.classList.toggle('noobj',on);$('noobj').hidden=!on;
+  $('pexp').disabled=on;$('pxf').disabled=on;   /* 「このオブジェクトだけ保存」は背景・出力タブにある（台帳Z-235）。絵が無い時は押せない */
   const cur=(document.querySelector('.tab.on')||{dataset:{}}).dataset.tab;
   if(on&&!was){
     if(cur!=='bg'&&cur!=='ph'){noObjAuto=true;setTab('bg')}   /* 物理タブはオブジェクト0個でも使える（装置トレーで一から組み立てる。台帳Z-210）。Undoなどで0個になっても、物理タブからは動かさない */
@@ -8892,6 +8947,114 @@ CONSOLE.reg({id:'vp',ico:'🧩',name:'ビジュアルプログラミング',
     armTips(el);
   }
 });
+
+/* ===== サイズの表示とマニュアル（台帳Z-235） =====
+   ・オブジェクト／レイヤーの「キャンバス上の大きさ」「元の絵の大きさ」をpxで見せる（配置タブ・レイヤーとオブジェクトの一覧）。表示だけ：作品・Undo・保存には入れない。
+   ・マニュアル：🎬メニューの一番下「📖 マニュアル」。ページは表MANPAGESに1項目足すだけで増える（html＝文字列か関数、live＝上に出す「いまの値」の関数）。
+   大きさの決まり方（マニュアル「サイズについて」の根拠。変えたら、そのページも直す）：
+     絵は長辺＝S0×大きさ（S0＝紙の短辺×0.26）に縦横比を保って収まる（img()・boundsOf）。位置は紙に対する割合（fx×W・fy×H）。
+     紙（W×H）のpx＝DOC（0＝自動＝画面の枠のpx）。書き出しの1×＝DOC.w×DOC.h。元の絵のpxは紙を変えても変わらない。 */
+
+/* キャンバスのpx（自動の時は画面の枠のpx。座標表示のcrdX/crdYと同じ換算） */
+const cvPx=()=>[Math.round(DOC.w||W||0),Math.round(DOC.h||H||0)];
+/* 絵（オブジェクト）の元のpx */
+function imgPx(l){const im=l&&l.img;if(!im)return[0,0];return[im.naturalWidth||im.width||0,im.naturalHeight||im.height||0]}
+/* キャンバス上での絵の大きさ（px）。動き・物理は含めない止まった姿。img()と同じ収め方（長辺＝S0×大きさ） */
+function objCvPx(l){
+  if(!l||!l.img||!(W>0)||!(H>0))return[0,0];
+  const b=boundsOf(l,S0*(l.size||1));return[Math.round(b.w*(DOC.w||W)/W),Math.round(b.h*(DOC.h||H)/H)];
+}
+/* 一覧の1行用の短い形「元の絵 → キャンバス上」（行を縦に伸ばさない。並べ替えのドラッグが、一覧のスクロールで届かなくなるため）。詳しい説明は行のtitleと一覧の上の注 */
+const objSizeText=l=>{const[iw,ih]=imgPx(l),[dw,dh]=objCvPx(l);return iw?iw+'×'+ih+' → '+dw+'×'+dh:''};
+const objSizeTitle=l=>{const[iw,ih]=imgPx(l),[dw,dh]=objCvPx(l);return iw?'元の絵 '+iw+'×'+ih+' px → キャンバス上 '+dw+'×'+dh+' px':''};
+const objSizeLines=(l,cp)=>{const[iw,ih]=imgPx(l),[dw,dh]=objCvPx(l);return iw?'元の絵：'+iw+'×'+ih+' px\nキャンバス上：'+dw+'×'+dh+' px\nキャンバス：'+cp[0]+'×'+cp[1]+' px（背景・出力タブで変更）':''};
+/* レイヤーの絵がキャンバス上で占める範囲（px）。各絵の位置（fx,fy）と回転の外接の和。動き・物理・くっつきは含めない目安。絵が無ければnull */
+function layRange(y){
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9,n=0;
+  for(const a of AC){
+    if(layOf(a)!==y||!a.img)continue;
+    const b=boundsOf(a,S0*(a.size||1)),r=(a.rot||0)*Math.PI/180,c=Math.abs(Math.cos(r)),s=Math.abs(Math.sin(r)),hx=(c*b.w+s*b.h)/2,hy=(s*b.w+c*b.h)/2,cx=a.fx*W,cy=a.fy*H;
+    x0=Math.min(x0,cx-hx);x1=Math.max(x1,cx+hx);y0=Math.min(y0,cy-hy);y1=Math.max(y1,cy+hy);n++;
+  }
+  return n&&W>0&&H>0?[Math.round((x1-x0)*(DOC.w||W)/W),Math.round((y1-y0)*(DOC.h||H)/H)]:null;
+}
+const layRangeText=y=>{const r=layRange(y);return r?'範囲 '+r[0]+'×'+r[1]+' px':''};
+/* レイヤー一覧（70-layers.js layUi）に差し込む部品 */
+function layRangeEl(y){const s=document.createElement('span');s.className='sz sub';s.dataset.ly=y.id;s.textContent=layRangeText(y);s.title='このレイヤーの絵が、キャンバス上で占める範囲（px。動き・物理は含めない目安）';return s}
+function objSubEl(a){const s=document.createElement('small');s.className='sub';s.dataset.oid=a.id;s.textContent=objSizeText(a);s.title=objSizeTitle(a);return s}
+
+/* 表示の更新：loopから毎フレーム呼ぶが、250msに1回だけ測る（force＝すぐ） */
+let _szT=0;
+function sizeTick(force){
+  const now=performance.now();if(!force&&now-_szT<250)return;_szT=now;
+  const cp=cvPx(),e=$('szinfo');
+  if(e&&(force||e.offsetParent!==null)){const t=sel&&sel.img?objSizeLines(sel,cp):'';if(e.textContent!==t)e.textContent=t}
+  const pop=$('lypop');
+  if(pop&&!pop.hidden){
+    const h=$('lycv'),t='キャンバス '+cp[0]+'×'+cp[1]+' px（共通。背景・出力タブで変更）。各オブジェクトの数字＝元の絵のpx → キャンバス上のpx';if(h&&h.textContent!==t)h.textContent=t;
+    pop.querySelectorAll('small.sub[data-oid]').forEach(s=>{const a=byId(+s.dataset.oid);if(a){const t2=objSizeText(a);if(s.textContent!==t2){s.textContent=t2;s.title=objSizeTitle(a)}}});
+    pop.querySelectorAll('span.sz[data-ly]').forEach(s=>{const y=LAYERS.find(q=>q.id===+s.dataset.ly);if(y){const t2=layRangeText(y);if(s.textContent!==t2)s.textContent=t2}});
+  }
+  const m=$('man');if(m&&!m.hidden)manLiveUpdate();
+}
+$('sz').addEventListener('input',()=>sizeTick(true));
+
+/* ---- マニュアル ---- */
+const MANPAGES=[
+  {id:'size',title:'サイズについて',
+   live:()=>{const cp=cvPx(),l=sel;let t='いまの作品：キャンバス '+cp[0]+'×'+cp[1]+' px'+(DOC.w?'':'（自動＝画面の枠に合わせています）');
+     if(l&&l.img){const[iw,ih]=imgPx(l),[dw,dh]=objCvPx(l);t+='\n選んでいる絵：元の絵 '+iw+'×'+ih+' px → キャンバス上 '+dw+'×'+dh+' px（大きさ ×'+(l.size||1).toFixed(2)+'）'}return t},
+   html:()=>
+`<p><b>「キャンバスの大きさ」と「置いた絵の大きさ」は、別々に決まります。ぶつかる（衝突する）ことはありません。</b>どちらを変えても、もう一方の絵のデータは書き換わりません。</p>
+<h4>3つの大きさ</h4>
+<ul>
+<li><b>キャンバスの大きさ</b>（背景・出力タブの「キャンバス」）：作品全体の紙の大きさ（px）です。静止画の書き出しの「1×」がこのpxで、2×・3×はその倍です。座標の表示もこのpxで測ります。決めない間（自動）は、画面の枠に合わせます。幅・高さは16〜8192 px、合計2500万画素までで、超えると縦横比を保って縮めます。</li>
+<li><b>絵の元の大きさ</b>：読み込んだ画像そのもののpx（例：4000×3000）です。「＋白紙」は、そこで選んだ紙の大きさのpxです。キャンバスを変えても、この元のデータは縮んだり切れたりしません。</li>
+<li><b>キャンバス上での絵の大きさ</b>（配置タブの「大きさ」＝倍率）：絵は縦横比を保ったまま、<b>長いほうの辺が「キャンバスの短い辺の26% × 大きさ」</b>になります。たとえばキャンバスが1080×1080なら、×1.00で約281 px、画像を追加した時の最初の大きさ（×2.00）で約562 pxです。</li>
+</ul>
+<h4>ぶつからない理由</h4>
+<ul>
+<li>絵の位置と大きさは、<b>キャンバスに対する割合</b>で持っています。元のpxは関係しないので、4000×3000の写真も、64×64のアイコンも、同じ「大きさ」の数字なら、キャンバス上では同じくらいの大きさで並びます。</li>
+<li>キャンバスの大きさを変えると、絵は割合のまま一緒に拡大・縮小されます。縦横比を変えた時は、位置は幅・高さそれぞれの割合で動き、絵の大きさは短い辺に合わせて変わります。</li>
+<li>キャンバスからはみ出した部分は書き出しには入りませんが、絵のデータは消えません。キャンバスを広げ直すと、また見えます。</li>
+</ul>
+<h4>書き出しの細かさ</h4>
+<ul>
+<li>静止画は、キャンバスのpx×倍率の大きさに、絵の元のデータから描き直します。元の絵がキャンバス上の大きさより小さいと、引き伸ばされて粗く見えます。細かく出したい時は、元の絵が大きいものを使うか、倍率（2×・3×）を上げます。</li>
+<li>ペン・修整・統合などを使うと、長辺が4096 pxを超える絵は、使い始めに4096 px以内へ縮みます（編集しないかぎり元のままです）。</li>
+</ul>
+<h4>キャンバスを絵に合わせる</h4>
+<ul>
+<li>オブジェクトが0個のとき、「＋画像」の横の「1枚目：キャンバスを画像に合わせる」を入れて最初の1枚を追加すると、キャンバスがその画像のpxになり、画像がキャンバスいっぱいに置かれます。</li>
+<li>背景・出力タブの「選んだ絵に合わせる」は、選んでいる絵の元のpxにキャンバスを合わせます。</li>
+</ul>
+<h4>大きさを見られる場所</h4>
+<ul>
+<li>配置タブの「大きさ」の下：選んでいる絵の「元の絵／キャンバス上／キャンバス」のpx。</li>
+<li>「レイヤーとオブジェクト」の一覧：いちばん上にキャンバスのpx、各オブジェクトの下に「元の絵 ○×○ px／キャンバス上 ○×○ px」、各レイヤーの右にその絵が占める範囲（動き・物理を含めない目安）。</li>
+</ul>`}
+];
+let manCur=MANPAGES[0].id;
+function manLiveUpdate(){
+  const p=MANPAGES.find(x=>x.id===manCur),e=$('manLive');if(!e)return;
+  const t=p&&p.live?p.live():'';if(e.hidden!==!t)e.hidden=!t;if(e.textContent!==t)e.textContent=t;
+}
+function manShow(id){
+  const p=MANPAGES.find(x=>x.id===id)||MANPAGES[0];manCur=p.id;
+  $('manTitle').textContent='📖 マニュアル ／ '+p.title;
+  $('manBody').innerHTML=typeof p.html==='function'?p.html():p.html;
+  document.querySelectorAll('#manTb button').forEach(b=>b.classList.toggle('on',b.dataset.p===p.id));
+  manLiveUpdate();$('man').scrollTop=0;
+}
+function manOpen(id){
+  const tb=$('manTb');
+  if(tb.children.length!==MANPAGES.length){tb.innerHTML='';MANPAGES.forEach(p=>{const b=document.createElement('button');b.dataset.p=p.id;b.textContent=p.title;b.onclick=()=>manShow(p.id);tb.appendChild(b)})}
+  $('man').hidden=false;manShow(id||manCur);$('manX').focus();
+}
+function manClose(){$('man').hidden=true}
+$('mMan').onclick=()=>manOpen();
+$('manX').onclick=manClose;
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('man').hidden)manClose()});
 /* ===== 自由帳（台帳Z-221）。起動時の状態を決めるので、manifestの最後に置く =====
    起動時の既定＝「自由帳」：A4縦・150dpi（白紙の既定と同じ）の白紙1枚が紙いっぱいにあり、ペンが選ばれ、ペンの補正が弱くオンの状態。
    ・作品ファイルを開いた時・「復元」を押した時は、その作品が優先（ここは起動時の1回だけ）。起動時は自動保存（am_auto）を上書きしない（dirtyProjを立てない）。

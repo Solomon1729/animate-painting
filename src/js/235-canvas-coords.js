@@ -48,6 +48,7 @@ let noObjAuto=false;
 function noObjUi(on){
   const bd=document.body,was=bd.classList.contains('noobj');
   bd.classList.toggle('noobj',on);$('noobj').hidden=!on;
+  $('pexp').disabled=on;$('pxf').disabled=on;   /* 「このオブジェクトだけ保存」は背景・出力タブにある（台帳Z-235）。絵が無い時は押せない */
   const cur=(document.querySelector('.tab.on')||{dataset:{}}).dataset.tab;
   if(on&&!was){
     if(cur!=='bg'&&cur!=='ph'){noObjAuto=true;setTab('bg')}   /* 物理タブはオブジェクト0個でも使える（装置トレーで一から組み立てる。台帳Z-210）。Undoなどで0個になっても、物理タブからは動かさない */
