@@ -284,6 +284,44 @@ body.consOpen #modeEdge{display:none}
   .vpframe{height:420px}
   .vpscript{max-height:none;flex:1 1 0}
 }
-}
 .startcard{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*12px);padding:8px 10px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .startcard .row{justify-content:center;gap:5px}.startcard .row button{padding:6px 8px;font-size:13px}#stX{min-width:30px}
+.startcard .stfoot{justify-content:space-between;margin-top:6px}   /* 「次回から…」と✕を同じ段に（✕だけが下の段に取り残されない。台帳Z-234） */
+@media (max-width:400px){.startcard .row button{padding:6px 6px;font-size:12.5px}}
+
+/* ===== 使いやすさの整備（台帳Z-233。2026-10-31）=====
+   ①選択欄が、いちばん長い選択肢の幅まで広がって窓の外へ出て、▾が見えない（物理タブの「サンプルを選ぶ」が371px）
+   ②日本語のボタン名が、語の途中（「だ／け」）で折り返される
+   ③ボタンだけの行で、高さがそろわない（道具の行が31／68／49／31px）
+   ④スマホで押しにくい部品（−＋・🪟▾・折りたたみの見出し・数値欄・色の欄が19〜27px）
+   ⑤タブの帯が操作窓の中身と一緒に流れ、長いタブ（色調整は中身が約1900px）から別のタブへ行くのに先頭まで戻る必要があった */
+select{max-width:100%;min-width:0}
+button,.file,select,summary,.lab,.opt{word-break:keep-all;overflow-wrap:break-word;line-break:strict}
+.row:not(:has(>:not(button))){align-items:stretch}
+.tools:has(>button:nth-child(4)) button{flex-basis:calc(25% - 6px)}
+@media (max-width:560px){.tools:has(>button:nth-child(4)) button{flex-basis:calc(50% - 6px)}}
+/* 指で触る端末だけ、操作窓の部品を押しやすい大きさにする（マウスの端末は今までどおり詰めたまま）。ビューワー上のボタン（.cbar）は、小さくしたい希望なので触らない */
+@media (pointer:coarse){
+  #tp :is(button,.file,select){min-height:36px;min-width:34px}
+  #tp .num,#tp input[type=color]{min-height:34px}
+  #tp .stp{min-width:38px}
+  #tp details summary{padding:7px 0}
+  #tp label:has(>input[type=checkbox],>input[type=radio]){min-height:32px}
+  #tp #tabs button{min-height:32px}   /* タブの帯は固定表示で窓の高さを使い続けるので、他より少し低く */
+  /* 持ち手は薄い帯のまま（台帳Z-106。check_uiが32px以下を守る）。🪟▾は、帯に収まる最大の実寸にする（高さ26px・幅34px。元は22px・23〜29px）。
+     #tp を付けるのは、上の「#tp :is(button,.file,select)」（.fileの分だけ優先度が高い）に勝つため */
+  #tp #grip button{min-height:26px;min-width:34px}
+}
+/* タブの帯：1行で横に流れ、中身をスクロールしても上に残る。選んだタブは帯の中央へ寄る（setTabのtabCenter）。
+   隠れているタブがある側には薄い影が出る（背景のlocalとscrollの重ね）。通常の枠では装置トレー（物理タブ）の下に出す（--dvhは243で測る） */
+#tabs{position:sticky;top:0;z-index:4;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0;
+  background:
+    linear-gradient(to right,var(--pane) 30%,transparent) 0 0/28px 100% no-repeat local,
+    linear-gradient(to left,var(--pane) 30%,transparent) 100% 0/28px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.16),transparent) 0 0/8px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.16),transparent) 100% 0/8px 100% no-repeat scroll,
+    var(--pane)}
+#tabs::-webkit-scrollbar{display:none}
+#tabs button,#tabs #tabObj{flex:1 0 auto}
+body:not(.fs):not(.big):not(.tpf) #tabs{top:var(--dvh,0px)}
+body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
