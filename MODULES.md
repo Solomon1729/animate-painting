@@ -9,7 +9,7 @@
 | `src/document-before-script.html` | CSS終了タグから `<script>` 開始タグまでのHTML本体・UI要素 |
 | `src/js/00-bootstrap.js` | DOM取得、Canvas、共通定数、`emo` |
 | `src/js/10-motion.js` | 動き定義 `K`/`WN`/`WV`、アクター初期状態、`add`、統合の描画用の一時変数`drawOnly`・`MGR`（台帳Z-157） |
-| `src/js/20-adjustments.js` | 色調整・質感 `ensureAdj`/`ensureLF`、`adjSource`、`adjUi`、`lfUi` |
+| `src/js/20-adjustments.js` | 色調整・質感 `ensureAdj`/`ensureLF`、`adjSource`、`adjUi`、`lfUi`、**仮表示の解像度の自動調整`adjPrevCap`・出力バッファ`adjOut`・色調整の核`adjColorGen(S,p,…)`（読み取り元と書き込み先を分けた。台帳Z-236）** |
 | `src/js/30-actors-and-drawing.js` | 画像設定、特殊アクター、配置・描画 `fit`/`img`/`draw`、白紙の大きさ`BLS`/`blankDims`/`addBlank`・範囲表示`drawBlankHint`（台帳Z-117・Z-118・Z-126）、削除時の参照外し`unlinkRefs`、統合の描画に合わせた`fit`/`img`/`draw`の分岐（`MGR`・`drawOnly`。台帳Z-157） |
 | `src/js/40-masks.js` | マスク描画 `maskedImg`/`stroke`/`paintFrame`（統合の描画中は背景・補助表示を描かない。台帳Z-157） |
 | `src/js/50-physics.js` | 毎フレームのループ `loop` だけ（旧・簡易の物理は台帳Z-197で消した。ファイル名は読み込み順と台帳の参照のため残す） |
@@ -41,7 +41,7 @@
 | `src/js/190-hints-and-demos.js` | ヒント、サンプル生成 `demoA`/`demoB` |
 | `src/js/200-warp-ui.js` | 歪み選択・歪みUI（ブラシ/ピンの切替`wmUi`、ブラシ設定`wbUi`）、エフェクト全消去 |
 | `src/js/210-performance.js` | 処理品質の自動調整 `perfTick`/`setLvl` |
-| `src/js/220-parts.js` | 切り抜きのコピー・切り取り・貼り付け（調整込み。Z-83。共通部品`makeClip`/`clipToObj`、穴の空け方`ptHole`・貼る位置`ptPos`・切った跡の穴埋め`ptFill`。Z-143・Z-144）、範囲マスク`partMask`（高解像度`_hm`優先・輪郭に合わせる）、トレイ、切り出し用Canvas`boxCv(l,{adj,full})`、「このオブジェクトだけ保存」`pexp`（PNG/PDF） |
+| `src/js/220-parts.js` | 切り抜きのコピー・切り取り・貼り付け（調整込み。Z-83。共通部品`makeClip`/`clipToObj`、穴の空け方`ptHole`・貼る位置`ptPos`・切った跡の穴埋め`ptFill`。Z-143・Z-144）、範囲マスク`partMask`（高解像度`_hm`優先・輪郭に合わせる）、トレイ、切り出し用Canvas`boxCv(l,{adj,full})`、「このオブジェクトだけ保存」`pexp`（PNG/PDF。ボタンは背景・出力タブ。台帳Z-235） |
 | `src/js/223-selection.js` | 選択の強化（台帳Z-87・Z-127・Z-142・Z-145）：作業コピー`selPic`、高解像度選択マスク`l._hm`（`selSet`/`selPlane`/`selCombine`）、自動選択`selWand`、マグネット`magInit`/`magWire`/`magFlush`/`magPump`/`magPath`/`magClose`、輪郭に合わせる`selSnap`（`partMask`から）、輪郭の編集`polyLoad`/`polyDown`/`polyMove`/`polyRaster`、分割`spTake`/`spDone`、明暗の傾き`gdFit`/`gdApply`、重ね描き`selOverlay`、状態`SEL`・道具フラグ`pwand`/`pmag`/`ppoly` |
 | `src/js/225-commit.js` | 確定`cmCommit`（色調整・質感を絵に焼き込み）、レイヤーとして保存（シート`cmSheet`・`cmPlace`・範囲の切り抜き`cmCover`/`cmClip`）、色を合わせる`cmMatch`（Lab・Reinhard法）、UI`cmUi`（台帳Z-83〜Z-85） |
 | `src/js/226-merge.js` | 統合（レイヤー内／下のレイヤーと／表示中を全部。台帳Z-157）：親子まとめ`mgFamily`、動きの無い姿で対象だけを透明な紙へ描く`mgRender`（`drawOnly`・`MGR`・一時の`Z`/`hk`/`adjHQ`）、置き換え`mgMerge`、ボタン`#lymg`/`#lymd`/`#lyma` |
@@ -59,6 +59,7 @@
 | `src/js/245-console.js` | **コンソールモード**（台帳Z-207）：本体の作品・Undo・保存形式に触れない実験の場`#cons`。`CONSOLE.reg({id,ico,name,mount(el),enter?,leave?})`で試作を足す。開くと本体の再生を止め、閉じると戻す。最初の住人＝「使い方」（移植の手順）。 |
 | `src/js/246-memo.js` | **メモ帳**（台帳Z-222。コンソールの試作）：`MEMO`（端末のlocalStorage `am_memo`・版番号・未知のキーを保持）、txtの読み込み`memoDecode`（UTF-8／UTF-16／Shift_JIS）と出力、PDF＝`memoLayout`（並べる）・`memoRender`（描く。どのCanvasにも描ける）・`pdfPages`（包む）・`memoPdf`。`zlibDeflate`（`160-still-export.js`）を使う。 |
 | `src/js/2466-vp-lab.js` | **ビジュアルプログラミングの試作**（台帳Z-231・Z-232。コンソールの🧩）：`VPL`。左＝ビューワー＝**隔離した枠**（`iframe sandbox="allow-scripts"`・CSPで外への通信なし）で、**本物のHTML・CSS・JavaScriptの見本`VP_SAMPLE`**が動く（▶動かす／🔍調べる／↺見本に戻す）。右＝そのソースそのまま（行番号つき。✎編集→✔反映）と実行の記録。`vplShim`＝枠の先頭に入れる差し替え窓口（localStorage互換・書き換え`textContent`等と`addEventListener`と保存の呼ばれた行を、スタックから読んで親へ知らせる・「調べる」で押した部品を知らせる・選んだ部品の枠と光りを描く）／`vplInject`（`<head>`の直後に足す。行数は変えない）／`vplAnalyze`（ソースの文字から「どの行がどの部品idを使うか」を決める）／`vplOnMsg`（枠からの知らせ。型・長さ・範囲を確かめてから使う）／`vplSync`（選びと対応の表示）。保存先は`am_vplab`（ソース）・`am_vplab_s_*`（見本が保存した文字）・`am_vplab_bad`（読めなかったソース）。本体の作品・Undo・保存・メモ帳`am_memo`には触れない。 |
+| `src/js/2467-manual.js` | **サイズの表示とマニュアル**（台帳Z-235）：オブジェクト／レイヤーのキャンバス上の大きさ・元の絵のpx（`objCvPx`/`imgPx`/`layRange`。配置タブ`#szinfo`・「レイヤーとオブジェクト」一覧`#lycv`・`small.sub`・`span.sz`。`sizeTick`がloopから250msごとに更新。表示だけで作品・Undo・保存に入れない）と、🎬メニュー最下部の「📖 マニュアル」`#mMan`（ダイアログ`#man`。ページは表`MANPAGES`に1項目足すだけ。今は「サイズについて」。大きさの決まり方が変わったらこのページも直す） |
 | `src/js/247-freebook.js` | **自由帳**（台帳Z-221。起動状態を決めるので**manifestの最後**）：`startMode`（`?start=sample`／端末の設定`am_start`／既定は自由帳）・`startFree`・`startSample`・`toObject`（描いた絵をオブジェクトにする。既存の`makeClip`・`clipToObj`）・入口カード`#startcard`。 |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 
@@ -97,5 +98,7 @@
 | `tools/check_phys_std.py` | `python3 tools/check_phys_std.py <HTMLの絶対パス>`。絵に物理を付ける標準の形の検査（P1〜P8・48項目）：役割（動く・固定・地形・外す）・絵ごとのつまみ・床と壁と天井・非表示レイヤー・メニュー・保存/Undo・旧`phys`の置き換え・動きとの併用。ヘッドレスのみ（実機は未確認）。台帳Z-197 |
 | `tools/jaggy_test.js` | `node tools/jaggy_test.js`。ジャギー修正の核`IO.jaggy`（14項目）：ギザギザの合成画像を正解（16倍の超サンプリング）と比べる・平らな所／ノイズ／細い線／角・アルファの縁・色の縁。台帳Z-180 |
 | `tools/check_jaggy.py` | `python3 tools/check_jaggy.py <HTMLの絶対パス>`。修整「ジャギーをなめらかに」の画面内検査（19項目）：実際のマウスで円の縁をなぞる・なぞらない所は不変・Undo・タイルの継ぎ目・大きい絵の速さ。台帳Z-180 |
+| `tools/check_size_manual.py` | `python3 tools/check_size_manual.py <HTMLの絶対パス>`。サイズ表示（配置タブ・レイヤー一覧のpxが静止画1×の書き出しの実測と一致・キャンバスを変えても元の絵のpxは不変）／🎬メニュー最下部のマニュアル／「このオブジェクトだけ保存」が背景・出力タブにあり動く／切り抜きタブの整理（25項目）。全項目`OK`が正常（台帳Z-235） |
+| `tools/check_adj_same.py` | `python3 tools/check_adj_same.py <基準のHTML> <新しいHTML>`。色調整・質感・範囲指定・透明のある絵・仮表示の経路の38項目の出力が、基準の版と1画素も違わないか。色調整の計算を速くした時の安全網（基準＝速くする前の`index.html`を`git show`で取り出す）。全項目一致が正常（台帳Z-236） |
 | `tools/ledger.py` | `python3 tools/ledger.py`＝台帳（`roadmap.md`§Z）を状態ごとの表に振り分け、全文を`archive/ledger-detail.md`に無損失で保管する（台帳Z-101）。`--check`で整理済みか確認。 |
 | `tools/bench.py` | `python3 tools/bench.py <HTMLの絶対パス> [ラベル]`。色調整・質感・ペン・歪みの1操作の時間（6MP） |

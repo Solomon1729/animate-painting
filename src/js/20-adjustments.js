@@ -3,6 +3,9 @@ const ADJ0=()=>({brightness:0,contrast:0,saturation:0,hue:0,temperature:0,highli
 /* 編集コアの定数は1か所に集約（AGENTS §3.6）。試行錯誤は数値の書き換えだけで済ませる */
 const EDIT_CFG={
   prevLong:1024,                       // 操作中に同期で計算する解像度の上限（長辺px）
+  prevAuto:true,                       // 重い端末では、操作中の仮表示の解像度を自動で下げる（止まって220ms後に、必要な解像度へ仕上げ直す。最終の画質は変わらない。falseで常にprevLong）
+  prevTiers:[512,768,1024],            // 仮表示の解像度の候補（長辺px）。prevLong以下だけ使う
+  liveMs:20,                           // 仮表示の計算にかけてよい時間の目安（ms）。これを超えそうなら1段下げる（約50fps）
   tiers:[512,768,1024,1536,2048,3072,4096], // 表示に必要な解像度を、この階層に丸める
   settleMs:220,                        // 操作が止まってから、仕上げ計算を始めるまでの待ち
   pumpMs:9,                            // 仕上げ計算に1フレームで使う時間
@@ -25,11 +28,15 @@ let rngT='adj',lfSel='clarity',adjHQ=false,adjTouch=0,adjZs=1;
    ペン・消しゴムは変更した矩形だけパッチする。高解像度の書き出し(adjHQ)は常に実寸。 */
 const adjDrain=g=>{let r;while(!(r=g.next()).done);return r.value};
 const _pool={},poolSync=(k,n)=>{let b=_pool[k];if(!b||b.length<n)b=_pool[k]=new Float32Array(n);return b},poolJob=(k,n)=>new Float32Array(n);
+/* 同期の計算（adjBuild）の出力バッファ。毎回4MBを確保し直さない（GCの停止を避ける）。同期の計算は最後まで走り切るので、使い回してよい */
+let _u8=null;
+function adjOut(n){if(!_u8||_u8.byteLength<n)_u8=new ArrayBuffer(Math.max(n,1<<20));return new Uint8ClampedArray(_u8,0,n)}
 let _scr=null;
 function adjScratch(w,h){if(!_scr||_scr.width<w||_scr.height<h){_scr=allocCanvas(Math.max(w,_scr?_scr.width:0),Math.max(h,_scr?_scr.height:0),'色調整',true)}return _scr}
 function adjNeed(l){let n=S0*(l.size||1)*dpr*Z.s*1.15;if(hasWarp(l))n=Math.max(n,actorWR(l)/WX);return n}
 function adjTier(n,long){if(!(n<long))return long;for(const t of EDIT_CFG.tiers)if(t>=n)return t>=long?long:t;return long}
-function hue2(p,q,t){t=(t+1)%1;return t<.1666667?p+(q-p)*6*t:t<.5?q:t<.6666667?p+(q-p)*(.6666667-t)*6:p}
+function hue2(p,q,t){t+=1;t-=Math.floor(t);   /* (t+1)%1と同じ値（t+1>0。浮動小数の%は遅いので、floorで小数部を取る。台帳Z-236） */
+  return t<.1666667?p+(q-p)*6*t:t<.5?q:t<.6666667?p+(q-p)*(.6666667-t)*6:p}
 function adjPrep(l){
   const a=ensureAdj(l),b=a.brightness/100,co=a.contrast/100,hi=a.highlights/100,sh=a.shadows/100,wh=a.whites/100,bl=a.blacks/100,T=new Float32Array(1026),ss=v=>v*v*(3-2*v),c01=v=>v<0?0:v>1?1:v;
   for(let i=0;i<=1025;i++){const L=Math.min(1,i/1024);let v=L+b*.22;v+=wh*.20*Math.pow(v,3)+bl*.20*Math.pow(1-v,3);v+=hi*.18*ss(c01((v-.5)/.5))+sh*.18*(1-ss(c01(v/.5)));v=.5+(v-.5)*(1+co);T[i]=c01(v)}
@@ -38,16 +45,17 @@ function adjPrep(l){
 /* 範囲マスク（MR×MR）は「オブジェクトの正方形」基準で塗り・表示される。画像はその正方形の中に縦横比を保って収まる（img()：k=min(S/iw,S/ih)）ので、
    画像上の位置 t(0〜1) をマスク上の位置へ f（短辺側の比。縦長・横長でだけ<1）で変換する。正方形ではf=1で従来と同じ（台帳Z-77：縦長・横長で範囲がずれていた）。 */
 const mkIdx=(t,f)=>{const u=f===1?t:.5+(t-.5)*f,i=Math.floor(u*MR);return i<0?0:i>MR-1?MR-1:i};
-/* 色調整（画素独立）。p=RGBA、(ox,oy)は全体(tw×th)の中での位置。行ごとにyield */
-function* adjColorGen(p,w,h,ox,oy,tw,th,P){
+/* 色調整（画素独立）。S＝元のRGBA（読むだけ）、p＝書き込み先（S===pでもよい）。(ox,oy)は全体(tw×th)の中での位置。行ごとにyield。
+   Sとpを分けたのは、計算の前に絵を丸ごとコピーする1周を省くため（台帳Z-236）。結果は、コピーしてから直接書き換えていた従来と同じ */
+function* adjColorGen(S,p,w,h,ox,oy,tw,th,P){
   const T=P.T,hu=P.hu,sa=P.sa,te=P.te,MK=P.MK,useHS=hu!==0||sa!==0,useT=te!==0,k1=1+sa;
   const fu=tw>=th?1:tw/th,fv=th>=tw?1:th/tw;
   let mxi=null;if(MK){mxi=new Int32Array(w);for(let x=0;x<w;x++)mxi[x]=mkIdx((ox+x)/tw,fu)}
   for(let y=0;y<h;y++){
     const mrow=MK?mkIdx((oy+y)/th,fv)*MR:0;
     for(let x=0,j=y*w*4;x<w;x++,j+=4){
-      if(!p[j+3])continue;
-      const r0=p[j]*.00392157,g0=p[j+1]*.00392157,b0=p[j+2]*.00392157;
+      if(!S[j+3]){p[j]=S[j];p[j+1]=S[j+1];p[j+2]=S[j+2];p[j+3]=0;continue}
+      const r0=S[j]*.00392157,g0=S[j+1]*.00392157,b0=S[j+2]*.00392157;
       let r=r0,gc=g0,bv=b0;
       const L=.2126*r+.7152*gc+.0722*bv,ix=L*1024,i0=ix>=1024?1023:(ix|0),sc=(T[i0]+(T[i0+1]-T[i0])*(ix-i0))/(L>.0001?L:.0001);
       r*=sc;gc*=sc;bv*=sc;r=r>1?1:r;gc=gc>1?1:gc;bv=bv>1?1:bv;
@@ -55,13 +63,13 @@ function* adjColorGen(p,w,h,ox,oy,tw,th,P){
         const mx=r>gc?(r>bv?r:bv):(gc>bv?gc:bv),mn=r<gc?(r<bv?r:bv):(gc<bv?gc:bv),q=mx-mn;
         if(q>0){
           const ll=(mx+mn)*.5;let s=ll<.5?q/(mx+mn):q/(2-mx-mn),hh=mx===r?(gc-bv)/q:mx===gc?2+(bv-r)/q:4+(r-gc)/q;
-          hh=(hh<0?hh+6:hh)/6;hh=(hh+hu+1)%1;s*=k1;s=s<0?0:s>1?1:s;
+          hh=(hh<0?hh+6:hh)/6;hh+=hu+1;hh-=Math.floor(hh);s*=k1;s=s<0?0:s>1?1:s;
           if(s>0){const q2=ll<.5?ll*(1+s):ll+s-ll*s,p2=2*ll-q2;r=hue2(p2,q2,hh+.3333333);gc=hue2(p2,q2,hh);bv=hue2(p2,q2,hh-.3333333)}else{r=gc=bv=ll}
         }
       }
       if(useT){r+=te*.10;gc+=te*.025;bv-=te*.10;r=r<0?0:r>1?1:r;gc=gc<0?0:gc>1?1:gc;bv=bv<0?0:bv>1?1:bv}
       if(MK){const mix=MK[mrow+mxi[x]];if(mix<1){const im=1-mix;r=r0*im+r*mix;gc=g0*im+gc*mix;bv=b0*im+bv*mix}}
-      p[j]=r*255+.5|0;p[j+1]=gc*255+.5|0;p[j+2]=bv*255+.5|0;
+      p[j]=r*255+.5|0;p[j+1]=gc*255+.5|0;p[j+2]=bv*255+.5|0;p[j+3]=S[j+3];
     }
     if((y&31)===31)yield;
   }
@@ -139,15 +147,32 @@ function* adjGen(l,im,T,pool,reuse){
     const sc=adjScratch(tw,th),sg=sc.getContext('2d',{willReadFrequently:true});sg.setTransform(1,0,0,1,0,0);sg.globalCompositeOperation='source-over';sg.globalAlpha=1;sg.clearRect(0,0,tw,th);sg.imageSmoothingEnabled=true;sg.imageSmoothingQuality='high';sg.drawImage(im,0,0,tw,th);
     raw={im,sv:l._adjSV|0,w:tw,h:th,data:sg.getImageData(0,0,tw,th).data};l._raw=tw*th<=4e6?raw:null;
   }
-  const p=new Uint8ClampedArray(raw.data);yield;
-  const a=ensureAdj(l),lf=ensureLF(l);
-  if(adjActive(l))yield*adjColorGen(p,tw,th,0,0,tw,th,adjPrep(l));
+  const n4=tw*th*4,p=pool===poolSync?adjOut(n4):new Uint8ClampedArray(n4),a=ensureAdj(l),lf=ensureLF(l);
+  if(adjActive(l))yield*adjColorGen(raw.data,p,tw,th,0,0,tw,th,adjPrep(l));else{p.set(raw.data);yield}
   if(lfActive(l))yield*txGen(p,tw,th,lf,adjMask(l,a,'lfm'),tw/iw,Math.max(1,Math.min(iw,ih)/400),pool);
   const g=c.getContext('2d',{willReadFrequently:true});g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.putImageData(new ImageData(p,tw,th),0,0);
   return{c,s:tw/iw};
 }
+/* 仮表示（操作中の同期計算）の解像度を、端末の速さに合わせて自動で決める（台帳Z-236）。
+   直近の同期計算の「1メガ画素あたりのms」の中央値から、liveMs（既定20ms）に収まる最大の段を選ぶ。遅い端末だけ下がり、速い端末は従来どおりprevLong。
+   下げた分は、操作が止まって220ms後に、adjPumpが必要な解像度（want）へ時間分割で仕上げ直す。下げるのは速く、戻すのは余裕がある時だけ（行き来で毎フレーム作り直さない） */
+const adjLive={h:[],cap:0};
+function adjLiveNote(ms,px){const h=adjLive.h;h.push(ms/Math.max(px,1)*1e6);if(h.length>5)h.shift()}
+function adjPrevCap(iw,ih){
+  const top=EDIT_CFG.prevLong;if(!EDIT_CFG.prevAuto)return top;
+  const h=adjLive.h;if(h.length<3)return adjLive.cap||top;
+  const s=[...h].sort((a,b)=>a-b),mpx=s[s.length>>1],ar=Math.min(iw,ih)/Math.max(iw,ih,1),ms=T=>mpx*T*T*ar/1e6;
+  const ts=EDIT_CFG.prevTiers.filter(t=>t<=top);if(!ts.length)return top;
+  let best=ts[0];for(const t of ts)if(ms(t)<=EDIT_CFG.liveMs)best=t;
+  const cur=adjLive.cap||top;
+  if(best<cur)adjLive.cap=best;                                   // 遅ければすぐ下げる
+  else if(best>cur&&ms(best)<=EDIT_CFG.liveMs*.7)adjLive.cap=best;  // 戻すのは余裕がある時だけ
+  else adjLive.cap=cur;
+  return adjLive.cap;
+}
 function adjBuild(l,im,T){
-  const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,r=adjDrain(adjGen(l,im,T,poolSync,l._adjC));
+  const t0=performance.now(),iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,r=adjDrain(adjGen(l,im,T,poolSync,l._adjC));
+  if(!adjHQ&&T<=EDIT_CFG.prevLong)adjLiveNote(performance.now()-t0,r.c.width*r.c.height);
   l._adjC=r.c;l._adjT=T;l._adjS=r.s;l._adjRef=im;l._adjDirty=false;l._adjRect=null;l._adjJob=null;l._adjLong=Math.max(iw,ih);return r.c;
 }
 /* ペン・消しゴムで変えた矩形だけを、色調整だけ先に反映する（質感はペンを離した時に全面を計算し直す） */
@@ -158,7 +183,7 @@ function adjPatchNow(l,c,iw,ih){
   const sc=adjScratch(w,h),sg=sc.getContext('2d',{willReadFrequently:true});sg.setTransform(1,0,0,1,0,0);sg.globalCompositeOperation='source-over';sg.globalAlpha=1;sg.clearRect(0,0,w,h);sg.imageSmoothingEnabled=true;sg.imageSmoothingQuality='high';
   sg.drawImage(l.img,x0/s,y0/s,w/s,h/s,0,0,w,h);
   const d=sg.getImageData(0,0,w,h);
-  if(adjActive(l))adjDrain(adjColorGen(d.data,w,h,x0,y0,c.width,c.height,adjPrep(l)));
+  if(adjActive(l))adjDrain(adjColorGen(d.data,d.data,w,h,x0,y0,c.width,c.height,adjPrep(l)));
   const g=c.getContext('2d',{willReadFrequently:true});g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.putImageData(d,x0,y0);
 }
 /* 元の画像(l.img)の中身が変わった時に呼ぶ。rectを渡せば差分パッチ、無ければ全面の計算し直し */
@@ -181,7 +206,7 @@ function adjSource(l){
     if(adjHQ&&l._adjT<long)c=adjBuild(l,im,long);
     return c;
   }
-  const want=adjTier(adjNeed(l),long),T=adjHQ?long:(want>EDIT_CFG.prevLong?Math.min(EDIT_CFG.prevLong,long):want);
+  const want=adjTier(adjNeed(l),long),T=adjHQ?long:Math.min(want,adjPrevCap(iw,ih),long);
   return adjBuild(l,im,T);
 }
 /* 毎フレーム1回：操作が止まったら、必要な解像度へ時間分割で仕上げる */

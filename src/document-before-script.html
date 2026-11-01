@@ -29,17 +29,22 @@
   </details>
 </div>
 <div class="cmenu" id="mA" hidden>
+  <div class="cmh">再生</div>
   <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
   <div class="cmh" id="mPh" hidden>物理</div>
   <button id="mPhArt" aria-label="選んでいる絵に物理を付ける／外す（付けると、見えている輪郭が当たり判定になって動く）" hidden>🌍 この絵に物理を付ける</button>
   <button id="mPlay" aria-label="物理を実行・一時停止" hidden>▶ 物理を実行</button>
   <button id="mRst" aria-label="物理を最初に戻す" hidden>⟲ 物理を最初へ</button>
   <button id="mGrab" aria-label="実行中にキャンバスを触って物を動かす（つかむ・つつく）のオン／オフ" aria-pressed="true" hidden>🖐 つかんで動かす</button>
+  <div class="cmh">操作の手順</div>
   <button id="mTl" aria-label="タイムラプス（作り方・操作の手順を、早送りで見る／自分の操作を記録する）">🎞 タイムラプス</button>
+  <div class="cmh">追加・保存</div>
   <button id="ad2" aria-label="画像を選んでオブジェクトを追加">🖼 画像を追加</button>
   <button id="sn2" aria-label="静止画を保存">📷 静止画を保存</button>
   <button id="rc2" aria-label="録画">⏺ 録画</button>
+  <div class="cmh">ヘルプ</div>
   <button id="hq" aria-label="使い方">？ 使い方</button>
+  <button id="mMan" aria-label="マニュアル（サイズについてなど）">📖 マニュアル</button>
 </div>
 <div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
 
@@ -87,6 +92,7 @@
 
   <div class="tab on" data-tab="pl">
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
+    <div class="note szinfo" id="szinfo"></div>
     <div class="row"><span class="lab">大きさ</span><input id="sz" type="range" min="0.03" max="6" step="0.01" aria-label="大きさ"><b class="v" id="szv"></b></div>
     <div class="row"><span class="lab">角度</span><input id="rt" type="range" min="-180" max="180" step="5" value="0" data-snap="-180,-90,0,90,180" aria-label="止まったままの角度"><b class="v" id="rtv"></b></div>
     <div class="row" id="fbRow" style="display:none"><span class="lab">重なり</span><button id="fbF">😀 手前</button><button id="fbB">🫥 奥</button></div>
@@ -245,6 +251,7 @@
   </div>
 
   <div class="tab" data-tab="pt">
+    <div class="sec">① 範囲を選ぶ</div>
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
     <div class="row tools"><button data-tool="pwand" aria-label="自動選択（タップした所と近い色でつながった範囲を選ぶ）">✨ 自動選択</button><button data-tool="pmag" aria-label="マグネット選択（輪郭に吸い付く線で囲む）">🧲 マグネット</button><button data-tool="ppoly" aria-label="輪郭を編集（選んだ範囲の輪郭の頂点を動かして直す）">◇ 輪郭を編集</button></div>
     <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
@@ -255,13 +262,15 @@
       <div class="row" id="selPolRow"><button id="selPolDel">頂点を消す</button><button id="selPolRs">元の形に戻す</button></div>
       <div class="row"><span class="lab">輪郭に合わせる</span><input id="selSnap" type="range" min="0" max="100" step="1" value="0" aria-label="粗い囲みを、絵の輪郭に合わせて直す強さ（0＝そのまま。切り取り・コピー・分割に効く）"></div>
       <div class="note" id="selNote"></div></div>
+    <div class="sec">② 切り取る・コピーする</div>
+     <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
     <div class="row"><span class="lab">縁のぼかし</span><input id="ptf" type="range" min="0" max="40" step="1" value="0" aria-label="切り抜きの縁のぼかし（0＝くっきり。大きいほど縁が自然にぼける。境界がはっきりしない絵向け）"><b class="v" id="ptfv">0</b></div>
+    <details class="grp" id="ptset"><summary>⚙ 貼り付け・切り取りの設定（穴の空け方・貼る位置・切った跡など）</summary>
     <div class="row"><span class="lab">穴の空け方</span><select id="pthl" aria-label="切り取った跡の穴の空け方（戻せる＝縁のぼかしの帯は穴にしない。貼り戻すと元どおり／ぼかして切る＝縁も薄く抜く）"><option value="core" selected>戻せる（貼ると元どおり）</option><option value="soft">ぼかして切る（縁も薄く抜く）</option></select></div>
     <div class="row"><span class="lab">貼る位置</span><select id="ppos" aria-label="貼り付ける位置"><option value="auto" selected>自動（切り取り＝元の位置／コピー＝少しずらす）</option><option value="orig">いつも元の位置</option><option value="off">いつも少しずらす</option></select></div>
     <div class="row"><label class="opt"><input type="checkbox" id="ptnow" aria-label="切り取り・コピーしたら、置き場を経由せず、すぐ新しいオブジェクトにする">すぐ新しいオブジェクトにする</label><label class="opt"><input type="checkbox" id="ptmo" aria-label="元のオブジェクトの動き・物理の設定も引き継ぐ">動き・物理も引き継ぐ</label></div>
     <div class="row"><span class="lab">切った跡</span><select id="ptfill" aria-label="切り取った跡を周囲で埋める"><option value="off" selected>穴のまま</option><option value="smooth">周囲でなめらかに埋める</option><option value="grain">周囲で質感つきに埋める</option></select></div>
-     <div class="row"><button id="pcopy">📋 コピー</button><button id="pcut">✂ 切り取り</button><button id="pdup">🌀 全体を複製</button><button id="pclrh">置き場を空にする</button></div>
-    <div class="row"><button id="pexp">📷 このオブジェクトだけ保存（色調整・質感・ぼかし込み／原寸）</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
+    </details>
     <div class="grp alt" id="spBox"><div class="gh">✂ 分割（1枚の絵を、いくつかの部分に分ける）</div>
       <div class="row"><button id="spTake">囲んだ所を1つに分ける</button><button id="spUn">1つ戻す</button></div>
       <div class="row"><button id="spDone">新しいレイヤーに作る</button><button id="spCn">やめる</button></div>
@@ -338,6 +347,8 @@
     <div class="grp"><div class="gh">書き出し</div>
     <div class="row"><span class="lab">動画</span><button id="rec">⏺ 動画</button><button id="gif">🎞 GIF</button><span id="rtx" class="note" style="margin:0"></span></div>
     <div class="row"><span class="lab">静止画</span><select id="sq" aria-label="倍率"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select><select id="sf" aria-label="形式"><option value="png">PNG</option><option value="jpg">JPEG</option><option value="pdf">PDF</option></select><button id="snap">📷 保存</button></div>
+    <div class="row"><span class="lab">選んだ絵</span><button id="pexp" aria-label="選んでいるオブジェクトだけを、色調整・質感・ぼかし込みの原寸で保存（透明な余白は切り詰める）">📷 このオブジェクトだけ保存</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
+    <div class="note" id="pexpn">選んでいる絵だけを、色調整・質感・ぼかし込みの原寸で保存します（透明な余白は切り詰めます）。</div>
     <div id="out"></div>
     <div class="note">動画は WebM（対応端末ではMP4）、GIFは最大10秒・幅360pxです。保存できない環境では、表示された動画・画像を長押しして保存してください。</div>
     </div>
@@ -366,12 +377,20 @@
 
 <input id="fadd" type="file" accept="image/*" multiple>
 <div id="lypop" class="lypop" hidden role="dialog" aria-label="レイヤーとオブジェクト">
+  <div class="note" id="lycv"></div>
   <div class="lyhd"><b>レイヤーとオブジェクト</b><button id="lyx" aria-label="閉じる">✕</button></div>
   <div class="lytb"><button id="lyadd">＋レイヤー</button><button id="oadd3" aria-label="サンプル絵文字のオブジェクトを追加">＋絵文字</button><button id="oadd2">＋白紙</button><button id="lyren">レイヤー名</button><button id="lydel">🗑 レイヤー</button><button id="odel">🗑 オブジェクト</button></div>
   <div class="lytb"><button id="lymg" aria-label="今のレイヤーの、表示中のオブジェクトを1つの画像にする">レイヤー内を統合</button><button id="lymd" aria-label="今のレイヤーと、その1つ下のレイヤーを、1つの画像にする">下のレイヤーと統合</button><button id="lyma" aria-label="表示中のレイヤーすべてを1つの画像にする">表示中を全部統合</button></div>
   <div id="lyl"></div>
   <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="lyphx" checked>非表示レイヤーを物理の計算から除外する</label>
   <div class="note" style="margin-top:6px">👁＝表示／非表示（非表示は常にロック扱い）、🔒＝ロック（配置の移動だけ可）。統合＝見えている通り（位置・歪み・ぼかし・マスク・色調整込み）に1つの画像にします（動き・物理は絵に焼き込まれて静止画になります。取り消しは「元に戻す」）。くっついたオブジェクトは一緒に統合され、非表示のものは対象外です。行は長押し（マウスはドラッグ）で並べ替え。入れたい行と行のすき間に点線が出るので、そこで離します（オブジェクトは別レイヤーのすき間にも入れられます。外で離すと取り消し）。上ほど手前。</div>
+</div>
+<!-- マニュアル（台帳Z-235）：🎬メニューの一番下の「📖 マニュアル」。ページは2467-manual.jsのMANPAGES -->
+<div id="man" class="manpop" hidden role="dialog" aria-label="マニュアル">
+  <div class="lyhd"><b id="manTitle">📖 マニュアル</b><button id="manX" aria-label="マニュアルを閉じる">✕</button></div>
+  <div class="mantb" id="manTb"></div>
+  <div class="mancur" id="manLive" hidden></div>
+  <div id="manBody"></div>
 </div>
 <!-- モード選択（台帳Z-204）：右の縁から中央へ引っ張る／👁メニューの「モードを切り替える」 -->
 <div id="modeEdge" aria-hidden="true"></div>
