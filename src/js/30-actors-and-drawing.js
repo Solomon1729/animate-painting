@@ -116,6 +116,7 @@ function img(l,S,b){
   if(l.wo){dw=dh=S*WX}else{const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,k=Math.min(S/iw,S/ih);dw=iw*k;dh=ih*k}
   if(b>0&&FILT){if(l.wo){ctx.save();ctx.filter='blur('+b+'px)';ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.restore()}else drawBlurred(im,dw,dh,b)}
   else if(b>0){ctx.save();for(let i=0;i<9;i++){const a=i*.7854,r=i?b:0;ctx.globalAlpha=1/(i+1);ctx.drawImage(im,-dw/2+Math.cos(a)*r,-dh/2+Math.sin(a)*r,dw,dh)}ctx.restore()}
+  else if(!l.wo&&vwSharp(im,dw)){const s0=ctx.imageSmoothingEnabled;ctx.imageSmoothingEnabled=false;ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.imageSmoothingEnabled=s0}   /* 絵の1pxが画面の6px以上に見える拡大：補間せず四角いピクセルのまま（台帳Z-238） */
   else ctx.drawImage(im,-dw/2,-dh/2,dw,dh);
 }
 function boundsOf(l,S){

@@ -168,6 +168,13 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 .skrow{display:flex;align-items:center;gap:6px;margin-top:calc(var(--dp,1)*6px)}.skrow>label{flex:0 0 7.5em;font-size:12px;font-weight:var(--fw,900)}.skrow>select{flex:1;min-width:0}
 #skq{width:100%;margin-top:2px}
 .cmenu .cmh:not(:first-child){margin-top:6px}
+/* 👁メニューの「ピクセル・背景」（台帳Z-238）：チェック・色・濃さの行。指の端末では押しやすい大きさにする */
+.vwr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px;font-size:12px;font-weight:700}
+.vwr input[type=color]{width:44px;height:30px;padding:0;flex:none}
+.vwr input[type=range]{flex:1;min-width:90px}
+.vwck{display:flex;align-items:center;gap:6px;cursor:pointer}.vwck input{width:20px;height:20px;margin:0}
+#vwnote{font-size:11px;padding:0 4px;opacity:.75;margin:0}
+@media (any-pointer:coarse){.vwck input{width:28px;height:28px}.vwr input[type=color]{width:52px;height:36px}}
 /* ===== タイムラプス（操作の手順の記録・再生。台帳Z-192）。色はスキンの変数だけ。分類の色（--c）は意味を表す印なので固定の色相（背景は --pane に混ぜて文字の対比を保つ）。ホバー演出なし ===== */
 #tlp{position:sticky;top:0;z-index:6;background:var(--pane);max-height:78vh;overflow:auto;box-shadow:0 4px 14px rgba(0,0,0,.18)}
 #tlp [hidden]{display:none!important}
@@ -363,8 +370,14 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
   <div class="cmh">キャンバス・見た目</div>
   <button id="cvsb" aria-label="キャンバスの大きさを変える（背景・出力のタブを開く）">📐 キャンバスの大きさ</button>
   <select id="skq" aria-label="画面のテーマ（色の組み合わせ）。文字・角の丸みなどの細かい設定は、背景・出力タブの「画面の見た目」"></select>
+  <div class="cmh">ピクセル・背景</div>
+  <button id="vwpx" aria-label="ピクセルが見える倍率まで拡大する（1pxが画面の約12pxになる倍率。見えている範囲の中央を動かさない）">🔎 ピクセルが見える倍率へ</button>
+  <div class="vwr"><label class="vwck"><input type="checkbox" id="vwgb" aria-label="ピクセルの格子を表示（オン：拡大して1pxが6画面px以上になると、キャンバスのピクセルの境目に線を引く）"> ▦ ピクセルの格子</label><input type="color" id="vwgc" value="#2563eb" aria-label="格子の線の色"></div>
+  <label class="vwr">格子の濃さ<input type="range" id="vwga" min="10" max="100" step="5" value="60" aria-label="格子の線の濃さ"></label>
+  <div class="vwr"><span>背景（キャンバスの外）</span><input type="color" id="vwbg" value="#8c8c8c" aria-label="背景（キャンバスの外側）の色"><button id="vwbr" aria-label="背景の色を灰色に戻す">灰色へ</button></div>
+  <div class="note" id="vwnote"></div>
   <div class="cmh">補助表示</div>
-  <button id="crdb" aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
+  <button id="crdb"aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
   <button id="lpb" aria-label="手元の拡大窓（オン：ペン・切り抜き・ぼかしや色調整の範囲・歪みのピンを触っている間、指の下を隅に拡大して見せる）" aria-pressed="false">🔍 手元の拡大窓</button>
   <button id="lpz" aria-label="拡大窓の倍率：自動（使っている道具の太さに合わせる）と固定を切り替える" disabled>🔍 倍率：自動（太さに合わせる）</button>
   <details id="lpd" class="lpd"><summary>拡大窓の詳細</summary>
@@ -1195,6 +1208,7 @@ function img(l,S,b){
   if(l.wo){dw=dh=S*WX}else{const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,k=Math.min(S/iw,S/ih);dw=iw*k;dh=ih*k}
   if(b>0&&FILT){if(l.wo){ctx.save();ctx.filter='blur('+b+'px)';ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.restore()}else drawBlurred(im,dw,dh,b)}
   else if(b>0){ctx.save();for(let i=0;i<9;i++){const a=i*.7854,r=i?b:0;ctx.globalAlpha=1/(i+1);ctx.drawImage(im,-dw/2+Math.cos(a)*r,-dh/2+Math.sin(a)*r,dw,dh)}ctx.restore()}
+  else if(!l.wo&&vwSharp(im,dw)){const s0=ctx.imageSmoothingEnabled;ctx.imageSmoothingEnabled=false;ctx.drawImage(im,-dw/2,-dh/2,dw,dh);ctx.imageSmoothingEnabled=s0}   /* 絵の1pxが画面の6px以上に見える拡大：補間せず四角いピクセルのまま（台帳Z-238） */
   else ctx.drawImage(im,-dw/2,-dh/2,dw,dh);
 }
 function boundsOf(l,S){
@@ -1279,6 +1293,7 @@ function paintFrame(){
     P(r,ks.length?self=>{ks.filter(o=>!o.front).forEach(d);self();ks.filter(o=>o.front).forEach(d)}:undefined)});
   scnOver();
   if(drawOnly)return;   /* 統合の描画（226-merge.js）：背景・補助表示は描かない */
+  vwGrid();   /* ピクセルの格子（画面だけ。台帳Z-238） */
   drawBrushRing();paPreview();rtOverlay();selOverlay();sizeHintDraw();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
 }
@@ -4387,7 +4402,7 @@ cv.addEventListener('pointermove',e=>{
   if(e.pointerType!=='touch'&&tool==='warp'&&wmode==='brush'){const h=sp(e);wHov={x:h.x,y:h.y,t:performance.now(),m:e.pointerType==='mouse'}}
   if(!ptrs.has(e.pointerId))return;const q=sp(e);ptrs.set(e.pointerId,q);
   if(pz0&&ptrs.size===2){
-    const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},s=cl(pz0.Z.s*d/pz0.d,.5,6),w0={x:(pz0.m.x-pz0.Z.x)/pz0.Z.s,y:(pz0.m.y-pz0.Z.y)/pz0.Z.s};
+    const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},s=cl(pz0.Z.s*d/pz0.d,.5,zMax(pz0.Z.s)),w0={x:(pz0.m.x-pz0.Z.x)/pz0.Z.s,y:(pz0.m.y-pz0.Z.y)/pz0.Z.s};
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
   if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv||RUN.fmv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p)}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
@@ -4412,11 +4427,11 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){ptrs.clear
 cv.addEventListener('lostpointercapture',end);
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){wHov=null;cv.style.cursor=''}});
-cv.addEventListener('wheel',e=>{e.preventDefault();if(vLock)return;const q=sp(e),w=wp(q),s=cl(Z.s*(e.deltaY<0?1.1:1/1.1),.25,12);Z.s=s;Z.x=q.x-s*w.x;Z.y=q.y-s*w.y},{passive:false});
+cv.addEventListener('wheel',e=>{e.preventDefault();if(vLock)return;const q=sp(e),w=wp(q),s=cl(Z.s*(e.deltaY<0?1.1:1/1.1),.25,zMax(Z.s));Z.s=s;Z.x=q.x-s*w.x;Z.y=q.y-s*w.y},{passive:false});
 $('zr').onclick=()=>{if(vLock)return;Z.s=1;Z.x=0;Z.y=0};
 let handMode=false,vLock=false;$('vlk').onclick=()=>{vLock=!vLock;$('vlk').classList.toggle('on',vLock);$('vlk').textContent=vLock?'🔒 固定中（押すと解除）':'🔒 ビューワーを固定';$('mnv').textContent=vLock?'🔒':'👁'};
 $('hand').onclick=()=>{handMode=!handMode;$('hand').classList.toggle('on',handMode)};
-function zoomBy(k){if(vLock)return;const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,12);Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
+function zoomBy(k){if(vLock)return;const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,zMax(Z.s));Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
 $('zin').onclick=()=>zoomBy(1.35);$('zout').onclick=()=>zoomBy(1/1.35);
 
 /* UI */
@@ -4520,13 +4535,24 @@ $('bs').oninput=e=>{brushMask=+e.target.value};
 
 /* 背景 */
 const BG={m:'solid',c:'#ffffff',c2:'#ffffff',img:null,b:0};  /* 既定は白（背景が邪魔になることが多いため。2026-10-06ユーザー指定） */
+/* ビューワーの見た目の設定（台帳Z-237・Z-238。2468-view-grid.js）：キャンバス（紙）の外の色＝背景（既定は灰色）と、ピクセルの格子。
+   UIの一時設定＝作品・Undo・保存には入れない（localStorage am_view にだけ覚える）。上のBG（背景・出力タブ）は「キャンバス（紙）の色」。 */
+const VW={bg:'#8c8c8c',gon:false,gc:'#2563eb',ga:.6,GMIN:6,SHARP:6,LS:'am_view'};
+/* 画面に出す時だけ、紙（W×H。拡大・移動に従う）と、その外（VW.bg）を塗り分ける。書き出し（hk）・録画・GIF・統合の描画は、従来どおり画面いっぱいに塗る（vwSplit。2468-view-grid.js） */
 function drawBG(){
-  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.save();const bl=FILT&&BG.b?BG.b:0;if(bl)ctx.filter='blur('+bl+'px)';
-  const m=bl?Math.ceil(bl*3)+2:0;  /* ぼかす時は画面の外まで描いて、端が透明へにじんで薄くなるのを防ぐ */
+  const sp=vwSplit();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(sp){ctx.fillStyle=VW.bg;ctx.fillRect(0,0,W,H);ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y)}
+  ctx.save();const bl0=FILT&&BG.b?BG.b:0,bl=sp?Math.min(bl0*Z.s,40):bl0;if(bl)ctx.filter='blur('+bl+'px)';   /* ぼかしの幅は、紙の拡大に合わせて広げる（出力の画素単位なので。重くなるので上限40） */
+  const m=bl0?Math.ceil(bl0*3)+2:0;  /* ぼかす時は画面の外まで描いて、端が透明へにじんで薄くなるのを防ぐ */
+  if(sp){ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip()}
   if(BG.img){const iw=BG.img.naturalWidth||BG.img.width,ih=BG.img.naturalHeight||BG.img.height,k=Math.max((W+2*m)/iw,(H+2*m)/ih);ctx.drawImage(BG.img,(W-iw*k)/2,(H-ih*k)/2,iw*k,ih*k)}
   else if(BG.m==='solid'){ctx.fillStyle=BG.c;ctx.fillRect(-m,-m,W+2*m,H+2*m)}
   else if(BG.m==='grad'){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,BG.c);g.addColorStop(.62,BG.c);g.addColorStop(.62,BG.c2);g.addColorStop(1,BG.c2);ctx.fillStyle=g;ctx.fillRect(-m,-m,W+2*m,H+2*m)}
+  else if(sp){ctx.filter='none';ctx.clearRect(-m,-m,W+2*m,H+2*m)}   /* 透明（PNGのみ）：紙の中は、外の色を塗らずに透けさせる */
   ctx.restore();
+  if(sp&&(Z.x>0||Z.y>0||Z.x+W*Z.s<W||Z.y+H*Z.s<H)){   /* 紙の縁が見えている時だけ、細い縁取り */
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.save();ctx.lineWidth=1/dpr;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.strokeRect(Z.x,Z.y,W*Z.s,H*Z.s);ctx.restore()}
 }
 $('bg1').oninput=e=>{BG.c=e.target.value};$('bg2').oninput=e=>{BG.c2=e.target.value};$('bgm').onchange=e=>{BG.m=e.target.value};
 $('bgf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{BG.img=im};im.src=r.result};r.readAsDataURL(f)};
@@ -9055,6 +9081,72 @@ function manClose(){$('man').hidden=true}
 $('mMan').onclick=()=>manOpen();
 $('manX').onclick=manClose;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('man').hidden)manClose()});
+
+/* ===== ビューワーの見た目：キャンバスの外の色（背景）・ピクセルの格子・ピクセルまでの拡大（台帳Z-237・Z-238）=====
+   ・キャンバス（紙。W×H）と、その外（背景。既定は灰色）を塗り分ける。紙の色は従来どおり背景・出力タブ（BG）。紙は拡大・移動に従い、外は画面に残る。
+     塗り分けは画面に出す時だけ（vwSplit）。書き出し（hk）・録画・GIF・統合の描画は、従来どおり画面いっぱいに紙の色を塗る＝出力は変わらない。
+   ・ピクセルの格子：👁メニュー。「1px」は座標表示と同じ＝キャンバスのpx（DOC。自動サイズの間は画面の枠のpx）。1pxが VW.GMIN 画面px以上に見える時だけ出す（細かすぎると線で埋まるため）。
+     色・濃さは選べる（背景や絵と重なって見えない時のため）。
+   ・ピクセルまでの拡大：拡大の上限を、1pxが画面の16pxになる倍率まで広げた（zMax。大きいキャンバスほど大きく拡大できる）。
+     キャンバスの1pxが画面の VW.SHARP px以上に見えるほど拡大した時だけ、ふつうの絵（歪み・ぼかし・マスクなし）の、絵の1pxが画面の2px以上になる所を、補間せずに四角いピクセルのまま描く（img()の中のvwSharp）。ふだんの拡大・縮小は今までどおりなめらか。
+   ・設定（VW）は作品・Undo・保存に入れない。localStorage（am_view）にだけ覚える。
+   ・書き出しを足す・描画の経路を足す時：画面専用の描画は vwSplit() を見て、書き出し・録画・統合では描かない。 */
+const vwSplit=()=>!hk&&!MGR&&!drawOnly&&!mr&&!gf;
+/* 紙の1px（キャンバスのpx）が、画面で何px（CSS px）に見えるか */
+const vwCell=()=>Math.min(W*Z.s/(DOC.w||W),H*Z.s/(DOC.h||H));
+/* 拡大の上限。1pxが画面の16pxになる倍率（12〜160倍。自動サイズ＝1px＝画面の枠の1pxなら16倍）。今の拡大がそれを超えている時は、今の拡大を上限とする（急に縮まない） */
+const zMax=cur=>Math.max(cl(16*Math.max((DOC.w||W)/W,(DOC.h||H)/H),12,160),cur||0);
+/* 補間せずに描く条件：画面の描画で、キャンバスの1pxが画面の VW.SHARP px以上に見える拡大の時、かつ絵の1pxが画面の2px以上（縮小して見ている写真は、補間のまま）。dw＝絵の描く幅（座標系の単位） */
+function vwSharp(im,dw){
+  if(hk||MGR||adjHQ||vwCell()<VW.SHARP)return false;
+  const iw=im.naturalWidth||im.width;if(!iw)return false;
+  const t=ctx.getTransform();return dw*Math.hypot(t.a,t.b)/iw>=2;
+}
+/* ピクセルの格子（画面だけ。紙の中だけ。見えている範囲だけ線を引く） */
+function vwGrid(){
+  if(!$('mV').hidden)vwNote();
+  if(!VW.gon||!vwSplit())return;
+  const pw=DOC.w||W,ph=DOC.h||H,cx=W*Z.s/pw,cy=H*Z.s/ph;
+  if(Math.min(cx,cy)<VW.GMIN)return;
+  const ax=Z.x,ay=Z.y,x0=Math.max(0,ax),x1=Math.min(W,ax+W*Z.s),y0=Math.max(0,ay),y1=Math.min(H,ay+H*Z.s);
+  if(x1<=x0||y1<=y0)return;
+  const i0=Math.ceil((x0-ax)/cx-1e-6),i1=Math.floor((x1-ax)/cx+1e-6),j0=Math.ceil((y0-ay)/cy-1e-6),j1=Math.floor((y1-ay)/cy+1e-6);
+  const px=v=>Math.round(v*dpr)/dpr+.5/dpr;   /* 画面の1画素にそろえて、細い線をにじませない */
+  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.beginPath();ctx.rect(x0,y0,x1-x0,y1-y0);ctx.clip();
+  ctx.globalAlpha=VW.ga;ctx.strokeStyle=VW.gc;ctx.lineWidth=1/dpr;ctx.beginPath();
+  for(let i=i0;i<=i1;i++){const x=px(ax+i*cx);ctx.moveTo(x,y0);ctx.lineTo(x,y1)}
+  for(let j=j0;j<=j1;j++){const y=px(ay+j*cy);ctx.moveTo(x0,y);ctx.lineTo(x1,y)}
+  ctx.stroke();ctx.restore();
+}
+/* メニューの注：今の拡大で1pxが画面の何pxか（メニューが開いている間だけ更新） */
+function vwNote(){
+  const el=$('vwnote'),c=vwCell(),s=c>=10?c.toFixed(0):c.toFixed(1);
+  const t='いま：1px＝画面の'+s+'px'+(VW.gon?(c<VW.GMIN?'（格子は'+VW.GMIN+'px以上で出ます。拡大してください）':'（格子を表示中）'):'');
+  if(el.textContent!==t)el.textContent=t;
+}
+function vwSave(){try{localStorage.setItem(VW.LS,JSON.stringify({bg:VW.bg,gon:VW.gon,gc:VW.gc,ga:VW.ga}))}catch(_){}}
+function vwLoad(){
+  try{
+    const o=JSON.parse(localStorage.getItem(VW.LS)||'null');if(!o||typeof o!=='object')return;
+    const hex=v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v);
+    if(hex(o.bg))VW.bg=o.bg;if(hex(o.gc))VW.gc=o.gc;
+    if(typeof o.ga==='number'&&o.ga>=.1&&o.ga<=1)VW.ga=o.ga;
+    VW.gon=o.gon===true;
+  }catch(_){}
+}
+function vwUi(){$('vwgb').checked=VW.gon;$('vwgc').value=VW.gc;$('vwga').value=Math.round(VW.ga*100);$('vwbg').value=VW.bg}
+vwLoad();vwUi();
+$('vwgb').onchange=e=>{VW.gon=e.target.checked;vwSave()};
+$('vwgc').oninput=e=>{VW.gc=e.target.value;vwSave()};
+$('vwga').oninput=e=>{VW.ga=cl(+e.target.value/100,.1,1);vwSave()};
+$('vwbg').oninput=e=>{VW.bg=e.target.value;vwSave()};
+$('vwbr').onclick=()=>{VW.bg='#8c8c8c';vwUi();vwSave()};
+/* ピクセルが見える倍率へ：1pxが画面の12pxになる倍率（上限は zMax）。見えている範囲の中央を動かさない */
+$('vwpx').onclick=()=>{
+  if(vLock){note('ビューワーを固定中です。固定を解除してから押してください');return}
+  const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(12*Math.max((DOC.w||W)/W,(DOC.h||H)/H),1,zMax(Z.s));
+  Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y;
+};
 /* ===== 自由帳（台帳Z-221）。起動時の状態を決めるので、manifestの最後に置く =====
    起動時の既定＝「自由帳」：A4縦・150dpi（白紙の既定と同じ）の白紙1枚が紙いっぱいにあり、ペンが選ばれ、ペンの補正が弱くオンの状態。
    ・作品ファイルを開いた時・「復元」を押した時は、その作品が優先（ここは起動時の1回だけ）。起動時は自動保存（am_auto）を上書きしない（dirtyProjを立てない）。
