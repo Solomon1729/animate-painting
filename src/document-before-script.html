@@ -18,8 +18,14 @@
   <div class="cmh">キャンバス・見た目</div>
   <button id="cvsb" aria-label="キャンバスの大きさを変える（背景・出力のタブを開く）">📐 キャンバスの大きさ</button>
   <select id="skq" aria-label="画面のテーマ（色の組み合わせ）。文字・角の丸みなどの細かい設定は、背景・出力タブの「画面の見た目」"></select>
+  <div class="cmh">ピクセル・背景</div>
+  <button id="vwpx" aria-label="ピクセルが見える倍率まで拡大する（1pxが画面の約12pxになる倍率。見えている範囲の中央を動かさない）">🔎 ピクセルが見える倍率へ</button>
+  <div class="vwr"><label class="vwck"><input type="checkbox" id="vwgb" aria-label="ピクセルの格子を表示（オン：拡大して1pxが6画面px以上になると、キャンバスのピクセルの境目に線を引く）"> ▦ ピクセルの格子</label><input type="color" id="vwgc" value="#2563eb" aria-label="格子の線の色"></div>
+  <label class="vwr">格子の濃さ<input type="range" id="vwga" min="10" max="100" step="5" value="60" aria-label="格子の線の濃さ"></label>
+  <div class="vwr"><span>背景（キャンバスの外）</span><input type="color" id="vwbg" value="#8c8c8c" aria-label="背景（キャンバスの外側）の色"><button id="vwbr" aria-label="背景の色を灰色に戻す">灰色へ</button></div>
+  <div class="note" id="vwnote"></div>
   <div class="cmh">補助表示</div>
-  <button id="crdb" aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
+  <button id="crdb"aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
   <button id="lpb" aria-label="手元の拡大窓（オン：ペン・切り抜き・ぼかしや色調整の範囲・歪みのピンを触っている間、指の下を隅に拡大して見せる）" aria-pressed="false">🔍 手元の拡大窓</button>
   <button id="lpz" aria-label="拡大窓の倍率：自動（使っている道具の太さに合わせる）と固定を切り替える" disabled>🔍 倍率：自動（太さに合わせる）</button>
   <details id="lpd" class="lpd"><summary>拡大窓の詳細</summary>

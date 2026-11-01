@@ -160,6 +160,13 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 .skrow{display:flex;align-items:center;gap:6px;margin-top:calc(var(--dp,1)*6px)}.skrow>label{flex:0 0 7.5em;font-size:12px;font-weight:var(--fw,900)}.skrow>select{flex:1;min-width:0}
 #skq{width:100%;margin-top:2px}
 .cmenu .cmh:not(:first-child){margin-top:6px}
+/* 👁メニューの「ピクセル・背景」（台帳Z-238）：チェック・色・濃さの行。指の端末では押しやすい大きさにする */
+.vwr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px;font-size:12px;font-weight:700}
+.vwr input[type=color]{width:44px;height:30px;padding:0;flex:none}
+.vwr input[type=range]{flex:1;min-width:90px}
+.vwck{display:flex;align-items:center;gap:6px;cursor:pointer}.vwck input{width:20px;height:20px;margin:0}
+#vwnote{font-size:11px;padding:0 4px;opacity:.75;margin:0}
+@media (any-pointer:coarse){.vwck input{width:28px;height:28px}.vwr input[type=color]{width:52px;height:36px}}
 /* ===== タイムラプス（操作の手順の記録・再生。台帳Z-192）。色はスキンの変数だけ。分類の色（--c）は意味を表す印なので固定の色相（背景は --pane に混ぜて文字の対比を保つ）。ホバー演出なし ===== */
 #tlp{position:sticky;top:0;z-index:6;background:var(--pane);max-height:78vh;overflow:auto;box-shadow:0 4px 14px rgba(0,0,0,.18)}
 #tlp [hidden]{display:none!important}

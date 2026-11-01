@@ -65,7 +65,7 @@ cv.addEventListener('pointermove',e=>{
   if(e.pointerType!=='touch'&&tool==='warp'&&wmode==='brush'){const h=sp(e);wHov={x:h.x,y:h.y,t:performance.now(),m:e.pointerType==='mouse'}}
   if(!ptrs.has(e.pointerId))return;const q=sp(e);ptrs.set(e.pointerId,q);
   if(pz0&&ptrs.size===2){
-    const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},s=cl(pz0.Z.s*d/pz0.d,.5,6),w0={x:(pz0.m.x-pz0.Z.x)/pz0.Z.s,y:(pz0.m.y-pz0.Z.y)/pz0.Z.s};
+    const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},s=cl(pz0.Z.s*d/pz0.d,.5,zMax(pz0.Z.s)),w0={x:(pz0.m.x-pz0.Z.x)/pz0.Z.s,y:(pz0.m.y-pz0.Z.y)/pz0.Z.s};
     Z.s=s;Z.x=m.x-s*w0.x;Z.y=m.y-s*w0.y;return}
   if(e.pointerId!==pid)return;
   if(drawing){const fn=paint?stroke:adjMode?(p=>adjBrushAt(p,pl)):pbox?(p=>{boxEnd=loc(pl,p)}):(bpn||psn)?strokeSel:tool==='clone'?(p=>rtAt(p,pl)):(pmag||ppoly)?(p=>selAt(p,pl)):(p=>penAt(p,pl));for(const pt of evPts(e,q))fn(pt)}else if(wg)wmove(q);else if(wbg)wbMove(e,evPts(e,q));else if(RUN.grab||RUN.mv||RUN.fmv)scnPtrMove(wp(q));else if(tgt){const p=wp(q);mv(p)}else if(pan){Z.x=q.x-pan.x;Z.y=q.y-pan.y}
@@ -90,9 +90,9 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){ptrs.clear
 cv.addEventListener('lostpointercapture',end);
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){wHov=null;cv.style.cursor=''}});
-cv.addEventListener('wheel',e=>{e.preventDefault();if(vLock)return;const q=sp(e),w=wp(q),s=cl(Z.s*(e.deltaY<0?1.1:1/1.1),.25,12);Z.s=s;Z.x=q.x-s*w.x;Z.y=q.y-s*w.y},{passive:false});
+cv.addEventListener('wheel',e=>{e.preventDefault();if(vLock)return;const q=sp(e),w=wp(q),s=cl(Z.s*(e.deltaY<0?1.1:1/1.1),.25,zMax(Z.s));Z.s=s;Z.x=q.x-s*w.x;Z.y=q.y-s*w.y},{passive:false});
 $('zr').onclick=()=>{if(vLock)return;Z.s=1;Z.x=0;Z.y=0};
 let handMode=false,vLock=false;$('vlk').onclick=()=>{vLock=!vLock;$('vlk').classList.toggle('on',vLock);$('vlk').textContent=vLock?'🔒 固定中（押すと解除）':'🔒 ビューワーを固定';$('mnv').textContent=vLock?'🔒':'👁'};
 $('hand').onclick=()=>{handMode=!handMode;$('hand').classList.toggle('on',handMode)};
-function zoomBy(k){if(vLock)return;const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,12);Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
+function zoomBy(k){if(vLock)return;const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(Z.s*k,.25,zMax(Z.s));Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y}
 $('zin').onclick=()=>zoomBy(1.35);$('zout').onclick=()=>zoomBy(1/1.35);
