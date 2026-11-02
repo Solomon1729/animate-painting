@@ -1,10 +1,10 @@
 /* ===== ツールボックス方式（台帳Z-240）=====
    操作ウィンドウ（#tp。タブで切り替える窓）とは別の部品：画面の上に半透明で浮かぶ、専用の小さな枠（#tbx）に、道具を並べる。既定はこちら。
    🎬メニューの「操作方式」で、従来の操作ウィンドウに切り替えられる（従来の窓は、そのまま残す。窓にも利点があるので、置き換えではなく、別の表示様式）。
-   ・形：小さな道具の列。上の⠿をドラッグして画面のどこへでも動かせる（位置は端末に覚える）。▴で、持ち手だけに小さくたたむ。作品の上に半透明で浮くだけで、作品は動かさない・縮めない。列の下の「窓」で、いつでも従来の操作ウィンドウへ戻せる。
+   ・形：横2列の小さな道具の枠（縦に長くしない）。枠の上のどこをドラッグしても、画面のどこへでも動かせる（持ち手は付けない。位置は端末に覚える）。▴で、小さくたたむ。ペンの色・太さ・補正の横長の一行は、画面の下端に付く。作品の上に半透明で浮くだけで、作品は動かさない・縮めない。列の下の「窓」で、いつでも従来の操作ウィンドウへ戻せる。
    ・常に見えるのは「最低限の道具」だけ。ほかは、列の下の小さな枠（▾）に折りたたむ。押すと広がり、そのまま使える。✎で並べ替え・しまう／出す・左右・初期に戻す。
    ・各道具の右下の⚙を押した時だけ、その道具の細かい設定（今までのタブの中身そのもの）が、列のとなりに重なって出る（#tpを詳細の枠として使う）。
-   ・別の場所へ移す部品（移すだけ。部品も動作も同じ。窓の方式へ戻すと元の場所へ返す）：絵の選択（#ch1）→列の一番上の小さなボタン（#tbxObj）、作品が空の時の「＋画像」（#addrow・#noobj）→列のとなりの小さな案内（#tbxTop）、ペンの色と太さ（#pn）→列のとなりの小窓（#tbxQ）。
+   ・別の場所へ移す部品（移すだけ。部品も動作も同じ。窓の方式へ戻すと元の場所へ返す）：絵の選択（#ch1）→列の一番上の小さなボタン（#tbxObj）、作品が空の時の「＋画像」（#addrow・#noobj）→列のとなりの小さな案内（#tbxTop）、ペンの色と太さ（#pn）→画面の下端に付く横長の一行（#tbxQ）。
    ・タブの帯（#tabs）は窓の方式だけで使う。setTab・setToolの動きは変えない（このファイルは setTool を包んで印を更新するだけ）。
    ・UIの一時状態：作品・Undo・保存には入れない。端末のlocalStorageの am_ui（方式）と am_tbx（道具の並び。知らないキーは捨てずに書き戻す）だけ。
    ・起動時の方式：URLの ?ui=box|win ＞ ?start=（検査用の従来の起動。win）＞ 端末の設定 ＞ box。 */
@@ -25,7 +25,7 @@ const TBX_TOOLS=[
   {id:'bg',ico:'🖼',lab:'背景',full:'背景・出力',tab:'bg'}];
 const TBX_BY={};TBX_TOOLS.forEach(t=>{TBX_BY[t.id]=t});
 const TBX_N0=5;   /* 初期に常に見える道具の数（先頭から） */
-const TBX={o:TBX_TOOLS.map(t=>t.id),n:TBX_N0,more:false,edit:false,pick:null,det:null,x:{},fill:false,keep:''};
+const TBX={o:TBX_TOOLS.map(t=>t.id),n:TBX_N0,more:false,edit:false,pick:null,det:null,x:{},fill:false,keep:'',dragEnd:0};
 /* 枠へ移す部品。元の位置には目印（コメント）を残し、戻す時はそこへ返す（順序がずれない） */
 const TBX_MV=[['ch1','tbxObj'],['addrow','tbxTop'],['noobj','tbxTop'],['pn','tbxQ']].map(([a,b])=>{const e=$(a),m=document.createComment('tbx:'+a);if(e&&e.parentNode)e.parentNode.insertBefore(m,e);return{e,m,to:b}});
 
@@ -85,7 +85,7 @@ function tbxOpen(id){
   tbxTap(id);TBX.det=id;document.body.classList.add('tbxd');tbxSync()}
 function tbxClose(){TBX.det=null;document.body.classList.remove('tbxd');tbxSync();tbxFill()}
 function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';delete TBX.x.pos;tbxSave();tbxApplySide();tbxApplyPos()}
-/* 位置：⠿をドラッグして、画面のどこへでも動かせる。画面に対する割合で覚える（向きを変えても画面の中に残る）。無い時は端（左。右も選べる） */
+/* 位置：列をドラッグして、画面のどこへでも動かせる。画面に対する割合で覚える（向きを変えても画面の中に残る）。無い時は端（左。右も選べる） */
 function tbxApplyPos(){
   const t=$('tbx'),p=TBX.x.pos;if(!t)return;
   if(!p||typeof p.fx!=='number'||typeof p.fy!=='number'){t.style.left=t.style.top=t.style.right='';tbxLayout();return}
@@ -100,13 +100,15 @@ function tbxLayout(){
   document.body.classList.toggle('tbxfl',left);
   R.setProperty('--tbxfx',Math.round(r.right+6)+'px');R.setProperty('--tbxfx2',Math.round(innerWidth-r.left+6)+'px');
   R.setProperty('--tbxfy',Math.round(Math.max(8,Math.min(r.top,innerHeight-340)))+'px')}
+/* ドラッグで動かす：列の上のどこを押して引いてもよい（道具のボタンの上からでも）。7px以上動いたら移動とみなし、そのあとの押した扱い（click）は捨てる。短いタップは今までどおり道具を選ぶ */
 function tbxDrag(e){
-  const t=$('tbx'),g=$('tbxGrip');if(e.button>0)return;e.preventDefault();
-  const r=t.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top,id=e.pointerId;let moved=false;
-  try{g.setPointerCapture(id)}catch(_){}
-  const mv=ev=>{if(ev.pointerId!==id)return;moved=true;TBX.x.pos={fx:(ev.clientX-dx)/innerWidth,fy:(ev.clientY-dy)/innerHeight};tbxApplyPos()};
-  const up=ev=>{if(ev.pointerId!==id)return;g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);if(moved)tbxSave()};
-  g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up)}
+  if(e.button>0||UIM.m!=='box')return;
+  const t=$('tbx'),r=t.getBoundingClientRect(),id=e.pointerId,x0=e.clientX,y0=e.clientY,dx=x0-r.left,dy=y0-r.top;let on=false;
+  const mv=ev=>{if(ev.pointerId!==id)return;
+    if(!on){if(Math.hypot(ev.clientX-x0,ev.clientY-y0)<7)return;on=true;try{t.setPointerCapture(id)}catch(_){}}
+    TBX.x.pos={fx:(ev.clientX-dx)/innerWidth,fy:(ev.clientY-dy)/innerHeight};tbxApplyPos()};
+  const up=ev=>{if(ev.pointerId!==id)return;t.removeEventListener('pointermove',mv);t.removeEventListener('pointerup',up);t.removeEventListener('pointercancel',up);if(on){TBX.dragEnd=performance.now();tbxSave()}};
+  t.addEventListener('pointermove',mv);t.addEventListener('pointerup',up);t.addEventListener('pointercancel',up)}
 /* 濃さ（15〜100%）。既定は40%＝後ろの絵がよく透けて見える。列・小窓・詳細の枠・小さな案内が、同じ濃さ（--tbxa）を使う */
 function tbxApplyAlpha(){const v=Math.max(15,Math.min(100,Math.round(+TBX.x.alpha)||40));document.documentElement.style.setProperty('--tbxa',v+'%');$('tbxA').value=v;$('tbxAv').textContent=v+'%'}
 function tbxApplySide(){document.body.classList.toggle('tbxr',TBX.x.side==='r')}
@@ -160,7 +162,7 @@ $('tbx').addEventListener('click',e=>{const g=e.target.closest('.tbg'),b=e.targe
 $('tbxMore').onclick=()=>{if(TBX.edit)return;TBX.more=!TBX.more;tbxRender()};
 $('tbxEdit').onclick=()=>{TBX.edit=!TBX.edit;TBX.pick=null;if(TBX.edit)tbxClose();tbxRender()};
 $('tbxEx').onclick=()=>{TBX.edit=false;TBX.pick=null;tbxRender()};
-$('tbxGrip').addEventListener('pointerdown',tbxDrag);
+$('tbx').addEventListener('pointerdown',tbxDrag);$('tbx').addEventListener('click',e=>{if(performance.now()-(TBX.dragEnd||-1e9)<150){e.stopPropagation();e.preventDefault()}},true);
 $('tbxCol').onclick=()=>{TBX.x.col=!TBX.x.col;if(TBX.x.col){tbxClose();TBX.edit=false;TBX.more=false;tbxRender()}tbxSave();tbxApplyCol();tbxSync();tbxLayout()};
 $('tbxWin').onclick=()=>uiSet('win');
 $('tbxSide').onclick=tbxSide;$('tbxA').oninput=e=>{TBX.x.alpha=+e.target.value;tbxApplyAlpha()};$('tbxA').onchange=tbxSave;$('tbxL').onclick=()=>tbxMove(-1);$('tbxR').onclick=()=>tbxMove(1);$('tbxF').onclick=tbxFold;
