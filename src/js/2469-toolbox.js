@@ -1,10 +1,10 @@
 /* ===== ツールボックス方式（台帳Z-240）=====
-   操作ウィンドウ（#tp。タブで切り替える窓）とは別の部品：画面の下端に浮かぶ専用の枠（#tbx）に、道具を並べる。既定はこちら。
+   操作ウィンドウ（#tp。タブで切り替える窓）とは別の部品：画面の上に半透明で浮かぶ、専用の小さな枠（#tbx）に、道具を並べる。既定はこちら。
    🎬メニューの「操作方式」で、従来の操作ウィンドウに切り替えられる（従来の窓は、そのまま残す。窓にも利点があるので、置き換えではなく、別の表示様式）。
-   ・形：画面の端に縦に並ぶ、小さな道具の列（左右どちらかに置ける）。作品の上に浮くだけで、作品は動かさない。
+   ・形：小さな道具の列。上の⠿をドラッグして画面のどこへでも動かせる（位置は端末に覚える）。▴で、持ち手だけに小さくたたむ。作品の上に半透明で浮くだけで、作品は動かさない・縮めない。列の下の「窓」で、いつでも従来の操作ウィンドウへ戻せる。
    ・常に見えるのは「最低限の道具」だけ。ほかは、列の下の小さな枠（▾）に折りたたむ。押すと広がり、そのまま使える。✎で並べ替え・しまう／出す・左右・初期に戻す。
    ・各道具の右下の⚙を押した時だけ、その道具の細かい設定（今までのタブの中身そのもの）が、列のとなりに重なって出る（#tpを詳細の枠として使う）。
-   ・別の場所へ移す部品（移すだけ。部品も動作も同じ）：絵の選択（#ch1）と作品が空の時の「＋画像」（#addrow・#noobj）は下の細い帯（#tbxTop）へ、ペンの色と太さ（#pn）は列のとなりの小窓（#tbxQ）へ。窓の方式に戻すと元の場所へ返す。
+   ・別の場所へ移す部品（移すだけ。部品も動作も同じ。窓の方式へ戻すと元の場所へ返す）：絵の選択（#ch1）→列の一番上の小さなボタン（#tbxObj）、作品が空の時の「＋画像」（#addrow・#noobj）→列のとなりの小さな案内（#tbxTop）、ペンの色と太さ（#pn）→列のとなりの小窓（#tbxQ）。
    ・タブの帯（#tabs）は窓の方式だけで使う。setTab・setToolの動きは変えない（このファイルは setTool を包んで印を更新するだけ）。
    ・UIの一時状態：作品・Undo・保存には入れない。端末のlocalStorageの am_ui（方式）と am_tbx（道具の並び。知らないキーは捨てずに書き戻す）だけ。
    ・起動時の方式：URLの ?ui=box|win ＞ ?start=（検査用の従来の起動。win）＞ 端末の設定 ＞ box。 */
@@ -27,7 +27,7 @@ const TBX_BY={};TBX_TOOLS.forEach(t=>{TBX_BY[t.id]=t});
 const TBX_N0=5;   /* 初期に常に見える道具の数（先頭から） */
 const TBX={o:TBX_TOOLS.map(t=>t.id),n:TBX_N0,more:false,edit:false,pick:null,det:null,x:{},fill:false,keep:''};
 /* 枠へ移す部品。元の位置には目印（コメント）を残し、戻す時はそこへ返す（順序がずれない） */
-const TBX_MV=[['ch1','tbxTop'],['addrow','tbxTop'],['noobj','tbxTop'],['pn','tbxQ']].map(([a,b])=>{const e=$(a),m=document.createComment('tbx:'+a);if(e&&e.parentNode)e.parentNode.insertBefore(m,e);return{e,m,to:b}});
+const TBX_MV=[['ch1','tbxObj'],['addrow','tbxTop'],['noobj','tbxTop'],['pn','tbxQ']].map(([a,b])=>{const e=$(a),m=document.createComment('tbx:'+a);if(e&&e.parentNode)e.parentNode.insertBefore(m,e);return{e,m,to:b}});
 
 function tbxLoad(){
   let d=null;try{d=JSON.parse(localStorage.getItem(UIM.TB)||'null')}catch(_){}
@@ -70,7 +70,7 @@ function tbxSync(){
     if(t&&t.tab&&t.tab===tab)a=t.tool?(t.id==='eraser'?(tool==='eraser'||tool==='ieraser'):tool===t.tool):true;
     b.classList.toggle('on',a&&!TBX.edit);b.setAttribute('aria-pressed',a?'true':'false');b.classList.toggle('pick',TBX.edit&&TBX.pick===b.dataset.id)});
   document.querySelectorAll('#tbx .tbg').forEach(g=>g.classList.toggle('on',TBX.det===g.dataset.id));
-  $('tbxQ').hidden=!(UIM.m==='box'&&tab==='dr'&&!TBX.edit);
+  $('tbxQ').hidden=!(UIM.m==='box'&&tab==='dr'&&!TBX.edit&&!TBX.x.col);
   const d=TBX.det&&TBX_BY[TBX.det];$('tbxD').hidden=!(UIM.m==='box'&&d);if(d)$('tbxDt').textContent=(d.full||d.lab)+'の詳細'}
 function tbxTap(id){
   const t=TBX_BY[id];if(!t)return;
@@ -84,9 +84,31 @@ function tbxOpen(id){
   if(document.body.classList.contains('tbxd')&&TBX.det===id){tbxClose();return}
   tbxTap(id);TBX.det=id;document.body.classList.add('tbxd');tbxSync()}
 function tbxClose(){TBX.det=null;document.body.classList.remove('tbxd');tbxSync();tbxFill()}
-function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';tbxSave();tbxApplySide()}
-/* 濃さ（15〜100%）。既定は55%＝後ろの絵が透けて見える。列・小窓・詳細の枠・下の帯が、同じ濃さ（--tbxa）を使う */
-function tbxApplyAlpha(){const v=Math.max(15,Math.min(100,Math.round(+TBX.x.alpha)||55));document.documentElement.style.setProperty('--tbxa',v+'%');$('tbxA').value=v;$('tbxAv').textContent=v+'%'}
+function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';delete TBX.x.pos;tbxSave();tbxApplySide();tbxApplyPos()}
+/* 位置：⠿をドラッグして、画面のどこへでも動かせる。画面に対する割合で覚える（向きを変えても画面の中に残る）。無い時は端（左。右も選べる） */
+function tbxApplyPos(){
+  const t=$('tbx'),p=TBX.x.pos;if(!t)return;
+  if(!p||typeof p.fx!=='number'||typeof p.fy!=='number'){t.style.left=t.style.top=t.style.right='';tbxLayout();return}
+  const w=t.offsetWidth||58,h=t.offsetHeight||60;
+  const x=Math.max(2,Math.min(innerWidth-w-2,p.fx*innerWidth)),y=Math.max(2,Math.min(innerHeight-Math.min(h,40)-2,p.fy*innerHeight));
+  t.style.left=x+'px';t.style.top=y+'px';t.style.right='auto';tbxLayout()}
+function tbxApplyCol(){document.body.classList.toggle('tbxc',!!TBX.x.col);$('tbxCol').textContent=TBX.x.col?'▾':'▴';$('tbxCol').setAttribute('aria-label',TBX.x.col?'ツールボックスを広げる':'ツールボックスを小さくたたむ')}
+/* 小窓・詳細の枠は、列のとなりへ出す。右に余裕があれば右、無ければ左（列の位置から計算して、CSSの変数へ） */
+function tbxLayout(){
+  const t=$('tbx');if(!t||!document.body.classList.contains('ubox'))return;
+  const r=t.getBoundingClientRect(),R=document.documentElement.style,room=innerWidth-r.right-8,left=room<260&&r.left>room;
+  document.body.classList.toggle('tbxfl',left);
+  R.setProperty('--tbxfx',Math.round(r.right+6)+'px');R.setProperty('--tbxfx2',Math.round(innerWidth-r.left+6)+'px');
+  R.setProperty('--tbxfy',Math.round(Math.max(8,Math.min(r.top,innerHeight-340)))+'px')}
+function tbxDrag(e){
+  const t=$('tbx'),g=$('tbxGrip');if(e.button>0)return;e.preventDefault();
+  const r=t.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top,id=e.pointerId;let moved=false;
+  try{g.setPointerCapture(id)}catch(_){}
+  const mv=ev=>{if(ev.pointerId!==id)return;moved=true;TBX.x.pos={fx:(ev.clientX-dx)/innerWidth,fy:(ev.clientY-dy)/innerHeight};tbxApplyPos()};
+  const up=ev=>{if(ev.pointerId!==id)return;g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);if(moved)tbxSave()};
+  g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up)}
+/* 濃さ（15〜100%）。既定は40%＝後ろの絵がよく透けて見える。列・小窓・詳細の枠・小さな案内が、同じ濃さ（--tbxa）を使う */
+function tbxApplyAlpha(){const v=Math.max(15,Math.min(100,Math.round(+TBX.x.alpha)||40));document.documentElement.style.setProperty('--tbxa',v+'%');$('tbxA').value=v;$('tbxAv').textContent=v+'%'}
 function tbxApplySide(){document.body.classList.toggle('tbxr',TBX.x.side==='r')}
 function tbxMove(d){const i=TBX.o.indexOf(TBX.pick),j=i+d;if(i<0||j<0||j>=TBX.o.length)return;[TBX.o[i],TBX.o[j]]=[TBX.o[j],TBX.o[i]];tbxSave();tbxRender()}
 /* しまう／出す：常に見える側（先頭からn個）と折りたたみ側の境目へ動かして、境目を1つずらす */
@@ -99,19 +121,18 @@ function tbxPlace(box){
   for(const o of TBX_MV){if(!o.e||!o.m.parentNode)continue;
     if(box){const t=$(o.to);if(o.e.parentNode!==t)t.append(o.e)}
     else if(o.e.parentNode!==o.m.parentNode||o.e.previousSibling!==o.m)o.m.parentNode.insertBefore(o.e,o.m.nextSibling)}}
-/* 下の帯（#tbxTop）の高さ（--tbxh）と、ペンの小窓（#tbxQ）の高さ（--tbqh）を測る。詳細の枠の位置と、通常の枠の下の余白に使う */
+/* ペンの小窓（#tbxQ）の高さ（--tbqh）を測る（詳細の枠は、その下に出す） */
 function tbxMeasure(){
-  if(!document.body.classList.contains('ubox'))return;const R=document.documentElement,h=e=>e&&!e.hidden&&e.getClientRects().length?Math.ceil(e.getBoundingClientRect().height):0;
-  R.style.setProperty('--tbxh',h($('tbxTop'))+'px');const q=h($('tbxQ'));R.style.setProperty('--tbqh',(q?q+6:0)+'px')}
-/* 枠（ブラウザの枠）が「大」の時は、作品の高さ（--bigh）を、下の帯のすぐ上までにする。作品と帯の間に余白を作らない。
-   列も詳細の枠も作品の上に重なるだけなので、開け閉めしても作品は動かない。窓の方式へ戻す時は、元の値へ返す。 */
+  if(!document.body.classList.contains('ubox'))return;const R=document.documentElement,e=$('tbxQ'),q=e&&!e.hidden&&e.getClientRects().length?Math.ceil(e.getBoundingClientRect().height):0;
+  R.style.setProperty('--tbqh',(q?q+6:0)+'px');R.style.setProperty('--tbxh','0px')}
+/* 枠（ブラウザの枠）が「大」の時は、作品の高さ（--bigh）を画面いっぱいにする。ツールボックスは作品の上に半透明で浮くだけで、作品を縮めない（下に余白も作らない）。
+   窓の方式へ戻す時は、元の値へ返す。 */
 function tbxFill(){
   const B=document.body,R=document.documentElement;
   tbxMeasure();
   if(!B.classList.contains('ubox')||!B.classList.contains('big')||B.classList.contains('tpf'))return;
   if(!TBX.fill){TBX.fill=true;TBX.keep=R.style.getPropertyValue('--bigh')}
-  const bar=$('tbxTop'),bh=bar&&bar.getClientRects().length?Math.ceil(bar.getBoundingClientRect().height)+16:0;
-  const h=Math.round(Math.max(160,innerHeight-bh)),v=h+'px';
+  const v=Math.round(Math.max(160,innerHeight))+'px';
   if(R.style.getPropertyValue('--bigh')!==v)R.style.setProperty('--bigh',v)}
 function tbxUnfill(){
   if(!TBX.fill)return;TBX.fill=false;const R=document.documentElement;
@@ -139,11 +160,14 @@ $('tbx').addEventListener('click',e=>{const g=e.target.closest('.tbg'),b=e.targe
 $('tbxMore').onclick=()=>{if(TBX.edit)return;TBX.more=!TBX.more;tbxRender()};
 $('tbxEdit').onclick=()=>{TBX.edit=!TBX.edit;TBX.pick=null;if(TBX.edit)tbxClose();tbxRender()};
 $('tbxEx').onclick=()=>{TBX.edit=false;TBX.pick=null;tbxRender()};
+$('tbxGrip').addEventListener('pointerdown',tbxDrag);
+$('tbxCol').onclick=()=>{TBX.x.col=!TBX.x.col;if(TBX.x.col){tbxClose();TBX.edit=false;TBX.more=false;tbxRender()}tbxSave();tbxApplyCol();tbxSync();tbxLayout()};
+$('tbxWin').onclick=()=>uiSet('win');
 $('tbxSide').onclick=tbxSide;$('tbxA').oninput=e=>{TBX.x.alpha=+e.target.value;tbxApplyAlpha()};$('tbxA').onchange=tbxSave;$('tbxL').onclick=()=>tbxMove(-1);$('tbxR').onclick=()=>tbxMove(1);$('tbxF').onclick=tbxFold;
 $('tbxRs').onclick=()=>{TBX.o=TBX_TOOLS.map(t=>t.id);TBX.n=TBX_N0;TBX.pick=null;tbxSave();tbxRender()};
 $('tbxDx').onclick=tbxClose;
 document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{b.onclick=()=>uiSet(b.dataset.ui)});
-if(typeof ResizeObserver==='function')[$('tbxTop'),$('tbxQ')].forEach(e=>new ResizeObserver(()=>tbxFill()).observe(e));
+if(typeof ResizeObserver==='function')[$('tbxQ'),$('tbx')].forEach(e=>new ResizeObserver(()=>{tbxFill();tbxLayout()}).observe(e));
 new MutationObserver(()=>tbxFill()).observe(document.body,{attributes:true,attributeFilter:['class']});
-addEventListener('resize',()=>tbxFill());
-uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxRender();uiApply();
+addEventListener('resize',()=>{tbxApplyPos();tbxFill()});
+uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxApplyCol();tbxRender();uiApply();tbxApplyPos();

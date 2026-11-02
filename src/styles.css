@@ -343,62 +343,71 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
 .manpop .mancur{font-size:12px;line-height:1.5;white-space:pre-line;background:color-mix(in srgb,var(--acc) 8%,transparent);border-radius:calc(var(--rk,1)*8px);padding:6px 8px;margin:4px 0 8px}.manpop .mancur[hidden]{display:none}
 .manpop h4{margin:14px 0 4px;font-size:14px}.manpop p,.manpop li{font-size:13px;line-height:1.65;margin:4px 0}.manpop ul{padding-left:20px;margin:4px 0}
 
-/* 台帳Z-240：ツールボックス方式（2469-toolbox.js）。操作ウィンドウ（#tp）とは別の部品：画面の端（左または右）に縦に並ぶ、小さな道具の列（#tbx）。
-   🎬メニューの「操作方式」で、従来の操作ウィンドウ（タブ方式）に切り替えられる（従来の窓は、そのまま残す）。
-   body.ubox＝ツールボックス方式。body.tbxd＝⚙で詳細を開いている間（その道具の設定＝今までのタブの中身が、列のとなりに重なる。#tpを詳細の枠として使う）。body.tbxr＝右側に置く。
-   列も詳細も作品の上に浮くだけで、作品は動かさない（枠が「大」の時だけ、作品の高さを下の帯の分だけ縮める。--bigh。2469のtbxFill）。 */
+/* 台帳Z-240：ツールボックス方式（2469-toolbox.js）。操作ウィンドウ（#tp）とは別の部品：作品の上に半透明で浮かぶ、小さな道具の列（#tbx）。
+   上の⠿をドラッグして画面のどこへでも動かせる。▴で持ち手だけにたたむ。列の下の「窓」／🎬メニューの「操作方式」で、従来の操作ウィンドウ（タブ方式）へ切り替えられる（従来の窓は、そのまま残す）。
+   body.ubox＝ツールボックス方式。body.tbxd＝⚙で詳細を開いている間（その道具の設定＝今までのタブの中身が、列のとなりに重なる。#tpを詳細の枠として使う）。
+   body.tbxr＝右側が既定位置。body.tbxc＝たたんでいる。body.tbxfl＝小窓・詳細を列の左へ出す（右に余裕が無い時）。作品は動かさず・縮めない。 */
 #tbx,#tbxD,#tbxQ,#tbxEd,#tbxTop{display:none}
-body.ubox #tbx{display:flex;flex-direction:column;align-items:stretch;gap:4px;position:fixed;left:6px;top:calc(56px + env(safe-area-inset-top,0px));z-index:65;box-sizing:border-box;width:58px;
-  max-height:calc(100vh - 66px - var(--tbxh,0px) - env(safe-area-inset-top,0px));max-height:calc(100dvh - 66px - var(--tbxh,0px) - env(safe-area-inset-top,0px));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:4px;
-  background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*16px);box-shadow:0 2px 12px rgba(0,0,0,.22)}
+body.ubox #tbx{display:flex;flex-direction:column;align-items:stretch;gap:3px;position:fixed;left:6px;top:calc(56px + env(safe-area-inset-top,0px));z-index:65;box-sizing:border-box;width:50px;padding:2px;
+  max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;
+  color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px)}
 body.ubox #tbx::-webkit-scrollbar{display:none}
 body.ubox.tbxr #tbx{left:auto;right:6px}
-.tbcol{display:flex;flex-direction:column;gap:4px}.tbcol[hidden]{display:none}
+#tbxHd{display:flex;gap:2px}
+#tbx #tbxGrip{flex:1 1 auto;min-width:0;min-height:22px;padding:0;font-size:13px;line-height:1;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
+#tbx #tbxCol{flex:0 0 18px;min-width:0;min-height:22px;padding:0;font-size:10px;line-height:1}
+#tbxBody{display:flex;flex-direction:column;gap:3px}
+body.ubox.tbxc #tbxBody{display:none}
+#tbxObj #ch1{margin:0}
+#tbxObj #lyopen{display:flex;align-items:center;justify-content:center;gap:0;width:100%;min-width:0;min-height:34px;padding:1px;font-size:0;line-height:1}
+#tbxObj #lyopen img{width:22px;height:22px;object-fit:cover;border-radius:5px}
+#tbxObj #lyopen::after{content:"🗂";font-size:14px;margin-left:1px}
+.tbcol{display:flex;flex-direction:column;gap:3px}.tbcol[hidden]{display:none}
 .tbw{position:relative}
-#tbx .tbw .tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:100%;min-width:0;min-height:50px;padding:3px 0 2px;line-height:1.1;font-weight:var(--fw,900)}
-.tb .ti{font-size:21px;line-height:1}
-.tb .tl{display:block;width:100%;box-sizing:border-box;padding-right:11px;font-size:8.5px;white-space:nowrap;text-align:center;overflow:hidden}
+#tbx .tbw .tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;width:100%;min-width:0;min-height:40px;padding:2px 0 1px;line-height:1.05;font-weight:var(--fw,900)}
+.tb .ti{font-size:18px;line-height:1}
+.tb .tl{display:block;width:100%;box-sizing:border-box;padding-right:11px;font-size:8px;white-space:nowrap;text-align:center;overflow:hidden}
 .tb.pick{outline:3px solid var(--acc);outline-offset:1px}
 /* 各道具の右下の⚙（その道具の詳細設定） */
-#tbx .tbw .tbg{position:absolute;right:1px;bottom:1px;width:16px;height:16px;min-width:0;min-height:0;padding:0;font-size:10px;line-height:1;border-radius:calc(var(--rk,1)*6px);opacity:.9}
+#tbx .tbw .tbg{position:absolute;right:1px;bottom:1px;width:14px;height:14px;min-width:0;min-height:0;padding:0;font-size:9px;line-height:1;border-radius:calc(var(--rk,1)*5px);opacity:.9}
 #tbx .tbw .tbg.on{background:var(--acc);color:#fff;opacity:1}
 body.ubox.tbxe #tbx .tbw .tbg{display:none}
 /* 使わない道具の折りたたみ：小さな枠（点線）と下向きの▾。押すと、道具が広がる */
-#tbxMore{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:30px;padding:2px 0;font-size:13px;line-height:1.1;border-style:dashed}
-#tbxMore::after{content:attr(data-n);font-size:9px;opacity:.8}#tbxMore[hidden]{display:none}
-#tbxEdit{min-height:28px;padding:2px 0;font-size:13px;line-height:1.1}#tbxEdit.on{background:var(--acc);color:#fff}
-/* ペンの色・太さの小窓、並べ替えの小窓、下の細い帯（絵の選択など） */
-body.ubox #tbxQ:not([hidden]){display:block;position:fixed;z-index:63;left:72px;top:calc(56px + env(safe-area-inset-top,0px));width:min(calc(100vw - 80px),380px);box-sizing:border-box;padding:6px 8px;
-  background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px);box-shadow:0 2px 12px rgba(0,0,0,.22)}
-body.ubox.tbxr #tbxQ{left:auto;right:72px}
+#tbxMore{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:26px;padding:1px 0;font-size:12px;line-height:1.05;border-style:dashed}
+#tbxMore::after{content:attr(data-n);font-size:8px;opacity:.8}#tbxMore[hidden]{display:none}
+#tbxFt{display:flex;gap:2px}
+#tbxFt button{flex:1 1 0;min-width:0;min-height:24px;padding:0;font-size:11px;line-height:1}#tbxEdit.on{background:var(--acc);color:#fff}
+/* ペンの色・太さの小窓、並べ替えの小窓、作品が空の時の小さな案内（列のとなりに出す。位置は2469のtbxLayoutが--tbxfx／--tbxfx2／--tbxfyへ入れる） */
+body.ubox :is(#tbxQ,#tbxEd,#tbxTop):not([hidden]){position:fixed;z-index:63;left:var(--tbxfx,64px);top:var(--tbxfy,56px);box-sizing:border-box;width:min(calc(100vw - var(--tbxfx,64px) - 8px),380px);padding:6px 8px;
+  color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px)}
+body.ubox.tbxfl :is(#tbxQ,#tbxEd,#tbxTop):not([hidden]){left:auto;right:var(--tbxfx2,64px);width:min(calc(100vw - var(--tbxfx2,64px) - 8px),380px)}
+body.ubox #tbxQ:not([hidden]){display:block}
+body.ubox #tbxEd:not([hidden]){display:flex;flex-wrap:wrap;gap:6px;z-index:66;width:min(calc(100vw - var(--tbxfx,64px) - 8px),340px)}
+body.ubox.tbxfl #tbxEd:not([hidden]){width:min(calc(100vw - var(--tbxfx2,64px) - 8px),340px)}
 #tbxQ #pn{margin-top:0}
-body.ubox #tbxEd:not([hidden]){display:flex;flex-wrap:wrap;gap:6px;position:fixed;z-index:66;left:72px;top:calc(56px + env(safe-area-inset-top,0px));width:min(calc(100vw - 80px),340px);box-sizing:border-box;padding:8px;
-  background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px);box-shadow:0 4px 18px rgba(0,0,0,.3)}
-body.ubox.tbxr #tbxEd{left:auto;right:72px}
-body.ubox #tbxTop{display:flex;flex-direction:column;gap:6px;position:fixed;z-index:62;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;max-width:560px;margin:0 auto;padding:6px 8px;
-  background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px);box-shadow:0 2px 12px rgba(0,0,0,.22)}
-body.ubox:not(.noobj) #tbxTop:has(#ch1:empty){display:none}
+body.ubox.noobj:not(.tbxc) #tbxTop{display:flex;flex-direction:column;gap:6px;top:calc(var(--tbxfy,56px) + var(--tbqh,0px))}
 #tbxTop>.row{margin-top:0}
 body.ubox #addrow{display:none}body.ubox.noobj #tbxTop #addrow{display:flex}   /* 「＋画像」と1枚目の設定は、作品が空の時だけ出す（普段は道具の「画像」） */
-body.ubox:not(.big):not(.fs){padding-bottom:calc(var(--tbxh,0px) + 16px)}   /* 通常の枠：ページの一番下まで動かすと、帯の上に出る */
+body.ubox:not(.noobj) #noobj{display:none}
 /* 詳細の枠（#tp）：⚙で開いた時だけ、列のとなりに重ねる。タイムラプスの枠（#tlp）が開いている時も、同じ枠に出す */
 body.ubox #tabs,body.ubox #grip,body.ubox #grip2,body.ubox #tpz,body.ubox #tpb::after{display:none!important}
 body.ubox:not(.tbxd) .tab{display:none!important}
 body.ubox #tbxD:not([hidden]){display:flex}
-html body.ubox #tp{display:none;position:fixed;left:72px;right:8px;top:calc(56px + var(--tbqh,0px) + env(safe-area-inset-top,0px));bottom:auto;z-index:64;box-sizing:border-box;width:auto;max-width:420px;margin:0;padding:0;
-  max-height:calc(100vh - 72px - var(--tbqh,0px) - var(--tbxh,0px) - env(safe-area-inset-top,0px));max-height:calc(100dvh - 72px - var(--tbqh,0px) - var(--tbxh,0px) - env(safe-area-inset-top,0px));flex-direction:column;overflow:hidden;
+html body.ubox #tp{display:none;position:fixed;left:var(--tbxfx,64px);right:8px;top:calc(var(--tbxfy,56px) + var(--tbqh,0px));bottom:auto;z-index:64;box-sizing:border-box;width:auto;max-width:420px;margin:0;padding:0;
+  max-height:calc(100vh - var(--tbxfy,56px) - var(--tbqh,0px) - 12px);max-height:calc(100dvh - var(--tbxfy,56px) - var(--tbqh,0px) - 12px);flex-direction:column;overflow:hidden;
   border-radius:calc(var(--rk,1)*16px)}   /* 背景・影は、下の「半透明」の指定 */
-html body.ubox.tbxr #tp{left:8px;right:72px;margin-left:auto}
+html body.ubox.tbxfl #tp{left:8px;right:var(--tbxfx2,64px);margin-left:auto}
 html body.ubox.tbxd #tp,html body.ubox:has(#tlp:not([hidden])) #tp{display:flex}
+html body.ubox.tbxc #tp{display:none}
 html body.ubox #tpb{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 10px 8px}
-/* 半透明：列・小窓・詳細の枠・下の帯は、すべて半透明（既定55%）。後ろの絵が透けて見える。字は縁取りで読めるようにする。濃さは並べ替え（✎）の小窓のつまみ（--tbxa） */
-body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp){background:color-mix(in srgb,var(--pane) var(--tbxa,55%),transparent);   /* ぼかしは使わない（後ろの絵をそのまま見せる） */
-  border-color:color-mix(in srgb,var(--line) 60%,transparent);text-shadow:0 0 2px var(--pane),0 0 3px var(--pane),0 0 6px var(--pane)}
-body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) :is(button,select,.file,.num,input[type=text],input[type=number]){background:color-mix(in srgb,var(--bg) calc(var(--tbxa,55%) * .45),transparent)}
+#tbxD{align-items:center;gap:6px;margin-top:8px;padding:4px 0}
+/* 半透明：列・小窓・詳細の枠・小さな案内は、すべて半透明（既定40%）。後ろの絵が透けて見える。字は縁取りで読めるようにする。濃さは✎の小窓のつまみ（--tbxa） */
+body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp){background:color-mix(in srgb,var(--pane) var(--tbxa,40%),transparent);   /* ぼかしは使わない（後ろの絵をそのまま見せる） */
+  border-color:color-mix(in srgb,var(--line) 55%,transparent);text-shadow:0 0 2px var(--pane),0 0 3px var(--pane),0 0 6px var(--pane);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) :is(button,select,.file,.num,input[type=text],input[type=number]){background:color-mix(in srgb,var(--bg) calc(var(--tbxa,40%) * .5),transparent)}
 body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) button.on,body.ubox #tbx .tbg.on{background:color-mix(in srgb,var(--acc) 85%,transparent);text-shadow:none}
 body.ubox #tp .grp.alt{background:transparent}
-body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp){box-shadow:0 2px 10px rgba(0,0,0,.14)}
-@media (pointer:coarse){#tbx .tbw .tbg{width:20px;height:20px;font-size:12px}.tb .tl{padding-right:13px}#tbx button:not(.tbg):not(.tb){min-height:34px}}
+@media (pointer:coarse){#tbx .tbw .tbg{width:20px;height:20px;font-size:12px}.tb .tl{padding-right:15px}body.ubox #tbx{width:56px}#tbx .tbw .tb{min-height:46px}#tbx #tbxGrip{min-height:30px}#tbx #tbxCol{flex-basis:24px;min-height:30px}#tbxFt button{min-height:32px}#tbxMore{min-height:32px}#tbxObj #lyopen{min-height:40px}}
 /* 右上の2つのボタンに、小さく名前を添える（👁＝補助、🎬＝設定）。ボタンの高さは変えず、絵文字の下に8pxの字 */
 #mnv,#mna{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:14px}
 #mnv::after{content:"補助"}#mna::after{content:"設定"}

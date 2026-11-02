@@ -56,19 +56,23 @@
 </div>
 <div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
 
-<div id="tbx" role="toolbar" aria-label="ツールボックス（道具を選ぶ。各道具の右下の⚙で、その道具の詳細設定）">
-  <div class="tbcol" id="tbxMain"></div>
-  <button type="button" id="tbxMore" aria-expanded="false" hidden></button>
-  <div class="tbcol" id="tbxRest" hidden></div>
-  <button type="button" id="tbxEdit" aria-label="道具の並べ替え・しまう／出す・置く側（左右）">✎</button>
+<div id="tbx" role="toolbar" aria-label="ツールボックス（上の⠿をドラッグで動かせる。各道具の右下の⚙で、その道具の詳細設定）">
+  <div id="tbxHd"><button type="button" id="tbxGrip" aria-label="ツールボックスを動かす（押したままドラッグ）">⠿</button><button type="button" id="tbxCol" aria-label="ツールボックスを小さくたたむ／広げる">▴</button></div>
+  <div id="tbxBody">
+    <div id="tbxObj"></div>
+    <div class="tbcol" id="tbxMain"></div>
+    <button type="button" id="tbxMore" aria-expanded="false" hidden></button>
+    <div class="tbcol" id="tbxRest" hidden></div>
+    <div id="tbxFt"><button type="button" id="tbxEdit" aria-label="道具の並べ替え・しまう／出す・濃さ">✎</button><button type="button" id="tbxWin" aria-label="従来の操作ウィンドウ（タブで切り替える方式）に切り替える">窓</button></div>
+  </div>
 </div>
 <div id="tbxQ" hidden></div>
 <div class="tbxfly" id="tbxEd" hidden>
   <span class="note" id="tbxEn" style="margin:0;flex:1 1 100%">動かしたい道具を押してください</span>
   <button type="button" id="tbxL" aria-label="選んだ道具を上へ動かす">▲ 上へ</button><button type="button" id="tbxR" aria-label="選んだ道具を下へ動かす">▼ 下へ</button>
   <button type="button" id="tbxF" aria-label="選んだ道具を、折りたたみへしまう／いつも見える所へ出す">しまう／出す</button>
-  <button type="button" id="tbxSide" aria-label="ツールボックスを置く側（左／右）を切り替える">⇄ 左右</button>
-  <label class="tbxa" style="flex:1 1 100%;display:flex;align-items:center;gap:6px"><span class="lab">濃さ</span><input type="range" id="tbxA" min="15" max="100" step="5" value="55" style="flex:1" aria-label="ツールボックスの濃さ（左ほど透けて、後ろの絵が見える）"><b class="v" id="tbxAv" style="min-width:2.6em;text-align:right">55%</b></label>
+  <button type="button" id="tbxSide" aria-label="ツールボックスを初期の位置へ戻す（左と右を交互に）">⇄ 位置を戻す</button>
+  <label class="tbxa" style="flex:1 1 100%;display:flex;align-items:center;gap:6px"><span class="lab">濃さ</span><input type="range" id="tbxA" min="15" max="100" step="5" value="40" style="flex:1" aria-label="ツールボックスの濃さ（左ほど透けて、後ろの絵が見える）"><b class="v" id="tbxAv" style="min-width:2.6em;text-align:right">40%</b></label>
   <button type="button" id="tbxRs" aria-label="道具の並びを初期に戻す">初期に戻す</button><button type="button" id="tbxEx" aria-label="並べ替えを終える">終わる</button>
 </div>
 <div id="tbxTop"></div>
