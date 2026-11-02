@@ -173,7 +173,7 @@ function scnTick(dt){
   if(RUN.playing&&!paused&&!S.done){
     RUN.acc+=Math.min(dt,.05)*SCN.speed*gs;const t0=performance.now(),tp=S.W.t;let n=0;   /* 全体の速さgs（動きタブ）も掛ける＝0で止まる */
     while(RUN.acc>=TIME.DT&&!S.done){S.step();RUN.acc-=TIME.DT;n++;scnAfter();
-      if(SCN.timer!=null&&tp<SCN.timer-1e-9&&S.W.t>=SCN.timer-1e-9){RUN.playing=false;RUN.acc=0;note('タイマー（'+scnFmt(SCN.timer)+'秒）で一時停止しました。▶ で続けます（物理が終わったわけではありません）',4500);break}   /* タイマーは使う人が選んだ一時停止。時刻が物理を止めるのではない（台帳Z-214） */
+      if(SCN.timer!=null&&tp<SCN.timer-1e-9&&S.W.t>=SCN.timer-1e-9){RUN.playing=false;RUN.acc=0;note('タイマー（'+scnFmt(SCN.timer)+'秒）で止めました。「物理：オン（停止中）」を押すと続きます（物理が終わったわけではありません）',4500);break}   /* タイマーは使う人が選んだ一時停止。時刻が物理を止めるのではない（台帳Z-214） */
       if(n>=TIME.MAXSTEP||performance.now()-t0>TIME.BUDGET){RUN.acc=Math.min(RUN.acc,TIME.DT*2);break}}
     if(S.measured&&!RUN.res){try{RUN.res=S.finish()}catch(e){RUN.err=String(e&&e.message||e)}RUN.uiAns=1}   /* 測定区間（run.t）が終わった：答え合わせは確定。続きの再生はこのあとも続く */
     if(S.done)scnEnd();
@@ -183,6 +183,13 @@ function scnTick(dt){
 function scnPlay(){
   if(!RUN.sess)return;if(RUN.sess.done){scnBuild();scnSyncLinks()}   /* 時刻では最初に戻さない（台帳Z-214）。終わるのは、実験が自分で終わりにした時だけ（endlessでは起きない） */
   if(paused)$('pl').click();RUN.playing=!RUN.playing;RUN.acc=0;scnUi()}
+/* 物理のオン／オフ（台帳Z-242）。時間を主軸にした「再生」ではなく、物理を絵（キャンバス）に当てるかどうかのスイッチ。
+   オン＝物理が当たり、絵が動く。オフ＝物理を当てない＝絵は置いたとおり（最初の状態に戻して止める）。
+   タイマー・コマ送り・終了で止まっているだけの時は「オン（停止中）」と出し、押すと続きから動く（オフにするのは、動いている時に押した時）。 */
+function scnPhase(){const S=RUN.sess;if(!S)return'off';if(RUN.playing)return'on';return(S.W.t>1e-9||S.done)?'hold':'off'}
+function scnOnOff(){if(!RUN.sess)return;if(scnPhase()==='on'){scnReset();RUN.uiAns=1}else scnPlay()}
+function scnOnTxt(){const p=scnPhase();return p==='on'?'🌍 物理：オン':p==='hold'?'🌍 物理：オン（停止中）':'🌍 物理：オフ'}
+function scnOnSync(id){const e=$(id);if(!e)return;const p=scnPhase();e.textContent=scnOnTxt();e.classList.toggle('on',p!=='off');e.setAttribute('aria-pressed',p==='on'?'true':'false')}
 function scnStepN(n){if(!RUN.sess)return;RUN.playing=false;const S=RUN.sess;for(let i=0;i<n&&!S.done;i++){S.step();scnAfter()}if(S.done)scnEnd();else if(S.measured&&!RUN.res){RUN.res=S.finish();RUN.uiAns=1}scnUi()}
 function scnSeek(t){   /* その時刻へ。進むだけなら今の状態から、戻るなら作り直して進める */
   if(!RUN.sess)return;RUN.playing=false;
@@ -485,7 +492,7 @@ function scnUiTime(force){
   if(ex.length){const dp=Math.min(devicePixelRatio||1,2),w=Math.max(120,gc.clientWidth),h=150;if(gc.width!==Math.round(w*dp)||gc.height!==Math.round(h*dp)){gc.width=Math.round(w*dp);gc.height=Math.round(h*dp)}
     const g=gc.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,gc.width,gc.height);
     PHR.graph(g,{x:0,y:0,w:gc.width,h:gc.height},ex.map(e=>({name:e,ts:S.ts,vs:S.series[e]})),{px:dp,tcur:t,t1:Math.max(T,S.ts[S.ts.length-1]||0)})}
-  $('scPlay').textContent=RUN.playing?'⏸ 一時停止':(S.done?'↺ もう一度':'▶ 実行');
+  scnOnSync('scPlay');
 }
 function scnUi(){
   const g=$('scGrp');if(!g)return;
@@ -504,9 +511,7 @@ function scnUi(){
 /* 操作窓の一番上の「オブジェクトを対象化」（台帳Z-218）。絵（オブジェクト）を選んでいて、物理タブでない時だけ出す。
    押すと、物理が付いていなければ付け（動く物体）、物理タブへ移る。物理タブの中では、同じ設定が下の「オブジェクトを対象化」の枠に出る（絵を選んでいる時だけ） */
 function scnObjBtn(){
-  const b=$('tabObj');if(!b)return;const on=document.querySelector('#tabs [data-t].on'),t=on?on.dataset.t:'';
-  const show=!!sel&&t!=='ph';b.hidden=!show;if(!show)return;
-  b.textContent=scnRoleOf(sel)?'🌍 対象化済み（物理の設定へ）':'🌍 オブジェクトを対象化'}
+  const b=$('tabObj');if(!b)return;b.hidden=true}   /* 台帳Z-242：「オブジェクトを対象化」は物理タブの枠（#scArt）だけに置く。操作窓の一番上のボタンは出さない（部品は、検査と古い呼び出しのために残す） */
 /* 選んでいる絵の、物理での役割 */
 function scnRoleOf(a){
   if(!a||!SCN.src)return null;
@@ -521,7 +526,7 @@ function scnUiRole(){
   for(const id of['scArtB','scArtF','scArtT'])$(id).disabled=!sel;
   $('scArtX').disabled=!sel||!r;
   $('scArtS').disabled=!sel;
-  $('scArtSt').textContent=!sel?'絵（オブジェクト）を選ぶと、ここで物理を付けられます。':!r?'この絵には物理が付いていません。「動く」を押すと、見えている輪郭がそのまま当たり判定になり、▶ で動きます。（動かない台は「固定」、坂や丘は「地形」）':
+  $('scArtSt').textContent=!sel?'絵（オブジェクト）を選ぶと、ここで物理を付けられます。':!r?'この絵には物理が付いていません。「動く」を押すと、見えている輪郭がそのまま当たり判定になり、「物理：オン」で動きます。（動かない台は「固定」、坂や丘は「地形」）':
     r.kind==='terrain'?'この絵は地形です（上から乗る物が対象）。止まっている間にドラッグすると置き直せます。描き足すと、当たり判定も追従します。':
     r.kind==='fixed'?'この絵は固定の土台です（動きません。台・壁・障害物）。':
     r.kind==='body'?'この絵は物理で動きます。下のつまみで、この絵だけの質量・反発・摩擦・初速を変えられます。実行中はドラッグでつかめます。':
@@ -533,7 +538,7 @@ function scnMenuSync(){
   if($('mPh'))$('mPh').hidden=!(on||sel);   /* 見出し：実験が開いている時、または絵を選んでいる時（絵に物理を付けられる） */
   if($('mPhArt')){$('mPhArt').hidden=!sel;$('mPhArt').textContent=scnRoleOf(sel)?'🌍 この絵の物理を外す':'🌍 この絵に物理を付ける'}
   if(!on)return;const S=RUN.sess;RUN.menuPlaying=RUN.playing;
-  $('mPlay').textContent=RUN.playing?'⏸ 物理を一時停止':(S&&S.done?'↺ 物理をもう一度':'▶ 物理を実行');
+  scnOnSync('mPlay');
   for(const id of['scGrab','mGrab']){$(id).classList.toggle('on',PTR.on);$(id).setAttribute('aria-pressed',PTR.on?'true':'false')}}
 /* JSONを貼って読み込む・検査する・コピーする */
 function scnApplyJson(){
@@ -548,9 +553,9 @@ $('scNew').onclick=()=>{const r=scnSetSource(PHS.template());if(!r.ok)note(r.err
 $('scOff').onclick=()=>scnClose();
 $('tabObj').onclick=()=>{if(!sel)return;if(!scnRoleOf(sel)&&!artBody(sel,{}))return;setTab('ph')};
 $('scGrab').onclick=$('mGrab').onclick=()=>{PTR.on=!PTR.on;scnMenuSync();note(PTR.on?'実行中に、物をドラッグでつかめます（短いタップでつつく）':'触っても物理は動きません（絵の配置だけ）',3500)};
-$('mPlay').onclick=()=>scnPlay();$('mRst').onclick=()=>{scnReset();RUN.uiAns=1};
+$('mPlay').onclick=()=>scnOnOff();$('mRst').onclick=()=>{scnReset();RUN.uiAns=1};
 $('scArtX').onclick=()=>{const r=scnRoleOf(sel);if(!r){note('この絵は物理に参加していません');return}if(r.art)scnRemoveBody(r.id);else{pushUndo();scnUnlinkBody(r.id);scnUi()}};
-$('scPlay').onclick=scnPlay;$('scStep').onclick=()=>scnStepN(2);$('scReset').onclick=()=>{scnReset();RUN.uiAns=1};
+$('scPlay').onclick=scnOnOff;$('scStep').onclick=()=>scnStepN(2);$('scReset').onclick=()=>{scnReset();RUN.uiAns=1};
 $('scSpd').onchange=e=>{SCN.speed=+e.target.value||1;dirtyProj=true};
 $('scTimer').onchange=e=>{const v=e.target.value;SCN.timer=v===''?null:Math.max(0,+v||0)||null;dirtyProj=true};   /* タイマー（自動で一時停止する秒数）。物理は作り直さない。時刻が物理を止めるのではなく、使う人が選んだ一時停止（台帳Z-214） */
 $('scT').oninput=e=>scnSeek(+e.target.value);

@@ -38,6 +38,8 @@ def new(b, touch=False, init=None, w=412, h=860):
 
 
 def load(pg, q=''):
+    if 'ui=' not in q:   # この検査は操作ウィンドウ（タブ）で操作する。ツールボックスの検査は check_toolbox.py（台帳Z-240）
+        q += ('&' if '?' in q else '?') + 'ui=win'
     pg.goto(URL + q)
     pg.wait_for_timeout(500)
 
