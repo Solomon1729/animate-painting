@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ツールボックス方式の検査（台帳Z-240）。使い方: python3 tools/check_toolbox.py <HTMLの絶対パス>
   T1 起動時の方式：?ui=box|win／?start=（検査用の従来起動）は窓／何も無い時はツールボックス
-  T2 形：操作ウィンドウ（#tp）とは別の部品／縦の小さな列（幅70px以下）／初期は5道具／各道具の右下に⚙（画像を除く）
+  T2 形：操作ウィンドウ（#tp）とは別の部品／小さな枠（幅120px以下・道具は横2列）／初期は5道具／各道具の右下に⚙（画像を除く）
   T3 道具を押すと、その道具になる（ペン・消しゴム・配置・物理）。印（.on）が付く
   T4 ⚙で詳細が開閉する。作品（#wrap）は動かない・大きさも変わらない（Z-115）。タブの帯は出ない
   T5 折りたたみ：枠（▾）を押すと残りの道具が広がり、そのまま使える
@@ -51,7 +51,9 @@ with sync_playwright() as p:
     # ---------- T2 形 ----------
     chk('T2 ツールボックスは操作ウィンドウ（#tp）の中ではなく、別の部品', ev("()=>!document.getElementById('tp').contains(document.getElementById('tbx'))"))
     r = ev(JS_R, '#tbx')
-    chk('T2 縦の小さな列（幅70px以下・画面の端・作品の上に浮く）', r['vis'] and r['w'] <= 70 and r['l'] <= 12 and ev("()=>getComputedStyle(document.getElementById('tbx')).position") == 'fixed', r)
+    chk('T2 小さな枠（幅120px以下・画面の端・作品の上に浮く）', r['vis'] and r['w'] <= 120 and r['l'] <= 12 and ev("()=>getComputedStyle(document.getElementById('tbx')).position") == 'fixed', r)
+    xs = ev("()=>[...new Set([...document.querySelectorAll('#tbxMain .tb')].map(b=>Math.round(b.getBoundingClientRect().left)))]")
+    chk('T2 道具は横2列に並ぶ（縦に長くならない：高さ300px以下・初期の道具が2つの左端に並ぶ）', len(xs) == 2 and r['h'] <= 300, [xs, r['h']])
     ids = ev("()=>[...document.querySelectorAll('#tbxMain .tb')].map(b=>b.dataset.id)")
     chk('T2 初期に見える道具は5つ（ペン・消しゴム・配置・画像・物理）', ids == ['pen', 'eraser', 'pl', 'add', 'ph'], ids)
     gear = ev("""()=>[...document.querySelectorAll('#tbxMain .tbw')].map(w=>{const t=w.querySelector('.tb'),g=w.querySelector('.tbg');if(!g)return null;const a=t.getBoundingClientRect(),c=g.getBoundingClientRect();return [(c.left+c.right)/2>(a.left+a.right)/2,(c.top+c.bottom)/2>(a.top+a.bottom)/2]})""")
@@ -60,8 +62,8 @@ with sync_playwright() as p:
     chk('T2 操作ウィンドウは、⚙を押すまで出ない', not ev(JS_R, '#tp')['vis'])
     w0 = ev(JS_R, '#wrap')
     chk('T2 作品（ビューワー）は画面いっぱい（ツールボックスは作品を縮めない・下に余白を作らない）', ev("()=>document.body.classList.contains('big')") is False or abs(w0['b'] - 800) < 3, w0)
-    chk('T2 列の一番上は、動かす持ち手（⠿）とたたむボタン（▴）・下は「窓」（従来の操作ウィンドウへ戻す）と✎', ev("()=>!!document.getElementById('tbxGrip')&&!!document.getElementById('tbxCol')&&!!document.getElementById('tbxWin')&&!!document.getElementById('tbxEdit')"))
-    chk('T2 絵の選択は、列の一番上の小さなボタン（#tbxObj）', ev("()=>document.getElementById('tbxObj').contains(document.getElementById('ch1'))") and ev(JS_R, '#tbxObj')['w'] <= 60)
+    chk('T2 持ち手は付けない（列そのものをドラッグで動かす）。たたむ▴・下に「窓」（従来の操作ウィンドウへ戻す）と✎', ev("()=>!document.getElementById('tbxGrip')&&!!document.getElementById('tbxCol')&&!!document.getElementById('tbxWin')&&!!document.getElementById('tbxEdit')"))
+    chk('T2 絵の選択は、列の一番上の小さなボタン（#tbxObj）', ev("()=>document.getElementById('tbxObj').contains(document.getElementById('ch1'))") and ev(JS_R, '#tbxObj')['w'] <= 120)
     chk('T2 列は小さい（高さ画面の6割以下）', ev(JS_R, '#tbx')['h'] <= 480, ev(JS_R, '#tbx'))
 
     # ---------- T3 道具を押す ----------
@@ -69,7 +71,8 @@ with sync_playwright() as p:
     chk('T3 「ペン」で、描くタブ・ペン', ev(JS_TAB) == 'dr' and ev("()=>tool") == 'pen')
     chk('T3 選んだ道具に印（.on）が付く', ev("()=>document.querySelector('#tbx .tb[data-id=pen]').classList.contains('on')") and not ev("()=>document.querySelector('#tbx .tb[data-id=pl]').classList.contains('on')"))
     q = ev(JS_R, '#tbxQ')
-    chk('T3 ペンの色・太さの小窓が、列のとなりに出る（#pnが入っている）', q['vis'] and ev("()=>document.getElementById('pn').parentNode.id") == 'tbxQ', q)
+    chk('T3 ペンの色・太さの横長の一行が、画面の下端に付く（1行・幅いっぱい・#pnが入っている）', q['vis'] and q['b'] >= 797 and q['w'] >= 380 and q['h'] <= 60 and ev("()=>document.getElementById('pn').parentNode.id") == 'tbxQ', q)
+    chk('T3 その一行の中に、色・太さのバー・数値がすべて入る（はみ出さない）', ev("()=>{const b=document.getElementById('tbxQ').getBoundingClientRect();return ['pcol','ps'].every(i=>{const r=document.getElementById(i).getBoundingClientRect();return r.left>=b.left-1&&r.right<=b.right+1})}"))
     pg.click('#tbx .tb[data-id=eraser]')
     chk('T3 「消去」で消しゴム', ev("()=>tool") == 'eraser' and ev("()=>document.querySelector('#tbx .tb[data-id=eraser]').classList.contains('on')"))
     pg.click('#tbx .tb[data-id=pl]')
@@ -98,16 +101,17 @@ with sync_playwright() as p:
     # ---------- T5 折りたたみ ----------
     m = ev(JS_R, '#tbxMore')
     chk('T5 折りたたみの枠（▾）が列にあり、残りの数が出る', m['vis'] and '▾' in ev("()=>document.getElementById('tbxMore').textContent") and ev("()=>document.getElementById('tbxMore').dataset.n") == '+8', m)
-    chk('T5 たたんでいる間、残りの道具は出ない', not ev(JS_R, '#tbxRest')['vis'])
+    chk('T5 たたんでいる間、残りの道具は出ない', ev("()=>!document.querySelectorAll('#tbxRest .tb').length||document.getElementById('tbxRest').hidden"))
+    chk('T5 「▾」の枠は、5つの道具のすぐ後ろ（同じ格子の6番目）に入る', abs(m['t'] - ev(JS_R, '#tbxMain .tbw:last-child .tb')['t']) < 3 and m['l'] > ev(JS_R, '#tbxMain .tbw:last-child .tb')['l'], m)
     pg.click('#tbxMore')
     rest = ev("()=>[...document.querySelectorAll('#tbxRest .tb')].map(b=>b.dataset.id)")
-    chk('T5 押すと残りの道具が広がる', rest == ['adj', 'pt', 'clone', 'mo', 'wp', 'fx', 'mk', 'bg'] and ev(JS_R, '#tbxRest')['vis'], rest)
+    chk('T5 押すと残りの道具が広がる', rest == ['adj', 'pt', 'clone', 'mo', 'wp', 'fx', 'mk', 'bg'] and ev(JS_R, '#tbxRest .tb[data-id=adj]')['vis'] and ev(JS_R, '#tbx')['b'] <= 800, rest)
     pg.click('#tbxRest .tb[data-id=adj]')
     chk('T5 広げた道具も、そのまま使える（色調整）', ev(JS_TAB) == 'adj')
     pg.click('#tbxRest .tb[data-id=clone]')
     chk('T5 修整は、描くタブの修整の道具', ev(JS_TAB) == 'dr' and ev("()=>tool") == 'clone')
     pg.click('#tbxMore')
-    chk('T5 もう一度押すとたたまれる', not ev(JS_R, '#tbxRest')['vis'])
+    chk('T5 もう一度押すとたたまれる', ev("()=>document.getElementById('tbxRest').hidden"))
 
     # ---------- T6 並べ替え ----------
     pg.click('#tbxEdit')
@@ -180,13 +184,15 @@ with sync_playwright() as p:
 
     # ---------- T7c 動かせる・たためる・窓へ戻せる ----------
     r0 = ev(JS_R, '#tbx')
-    g = ev(JS_R, '#tbxGrip')
+    g = ev(JS_R, '#tbx .tb[data-id=pl]')   # 道具のボタンの上から引いても動く（持ち手は無い）
+    tab0 = ev(JS_TAB)
     pg.mouse.move(g['l'] + g['w'] / 2, g['t'] + g['h'] / 2)
     pg.mouse.down()
     pg.mouse.move(g['l'] + g['w'] / 2 + 150, g['t'] + g['h'] / 2 + 220, steps=6)
     pg.mouse.up()
     r1 = ev(JS_R, '#tbx')
-    chk('T7c ⠿をドラッグすると、ツールボックスが動く（自由に）', abs((r1['l'] - r0['l']) - 150) < 4 and abs((r1['t'] - r0['t']) - 220) < 4, [r0, r1])
+    chk('T7c 列をドラッグすると、ツールボックスが動く（自由に。道具のボタンの上からでも）', abs((r1['l'] - r0['l']) - 150) < 4 and abs((r1['t'] - r0['t']) - 220) < 4, [r0, r1])
+    chk('T7c ドラッグで動かした時は、その道具を選んだことにならない', ev(JS_TAB) == tab0 and not ev("()=>document.body.classList.contains('tbxd')"))
     chk('T7c 動かしても、作品は動かない', abs(ev(JS_R, '#wrap')['h'] - w0['h']) < 1 and ev("()=>({s:Z.s,x:Z.x,y:Z.y})") == z0)
     saved = json.loads(ev("()=>localStorage.getItem('am_tbx')"))
     chk('T7c 位置を端末に覚える（画面に対する割合）', 0 < saved['pos']['fx'] < 1 and 0 < saved['pos']['fy'] < 1, saved.get('pos'))
@@ -200,23 +206,24 @@ with sync_playwright() as p:
     pg.mouse.down()
     pg.mouse.move(250, 300, steps=4)
     pg.mouse.up()
+    pg.wait_for_timeout(250)
     pg.click('#tbx .tb[data-id=pen]')
     q = ev(JS_R, '#tbxQ')
     t2 = ev(JS_R, '#tbx')
-    chk('T7c ペンの小窓は、動かした列のとなりに出る（右か左）', q['vis'] and (q['l'] >= t2['r'] - 2 or q['r'] <= t2['l'] + 2), [q, t2])
+    chk('T7c 列を動かしても、ペンの横長の一行は画面の下端に付いたまま', q['vis'] and q['b'] >= 797 and q['w'] >= 380, q)
     pg.click('#tbx .tbg[data-id=pen]')
     pg.wait_for_timeout(150)
     d = ev(JS_R, '#tp')
-    chk('T7c 詳細の枠も、列を避けて出る・画面に収まる', d['vis'] and (d['l'] >= t2['r'] - 2 or d['r'] <= t2['l'] + 2) and d['r'] <= 392 and d['b'] <= 802, [d, t2])
+    chk('T7c 詳細の枠も、列を避けて出る・画面に収まる・下端の一行に重ならない', d['vis'] and (d['l'] >= t2['r'] - 2 or d['r'] <= t2['l'] + 2) and d['r'] <= 392 and d['b'] <= q['t'] + 2, [d, t2, q])
     pg.click('#tbxDx')
     pg.click('#tbxCol')
-    chk('T7c ▴で持ち手だけに小さくたたまれる（道具・小窓は隠れる）', ev(JS_R, '#tbx')['h'] <= 40 and not ev(JS_R, '#tbxMain')['vis'] and not ev(JS_R, '#tbxQ')['vis'])
+    chk('T7c ▴で小さくたたまれる（道具・下端の一行は隠れる）', ev(JS_R, '#tbx')['h'] <= 40 and not ev(JS_R, '#tbxMain .tb')['vis'] and not ev(JS_R, '#tbxQ')['vis'])
     pg.reload(wait_until='load')
     pg.wait_for_timeout(600)
     t3 = ev(JS_R, '#tbx')
     chk('T7c 読み込み直しても、動かした位置・たたんだ状態が残る', ev("()=>document.body.classList.contains('tbxc')") and abs(t3['l'] - t2['l']) < 4 and abs(t3['t'] - t2['t']) < 4, [t2, t3])
     pg.click('#tbxCol')
-    chk('T7c もう一度押すと広がる', ev(JS_R, '#tbxMain')['vis'])
+    chk('T7c もう一度押すと広がる', ev(JS_R, '#tbxMain .tb')['vis'])
     ev("()=>{document.body.style.zoom=1}")
     pg.click('#tbxWin')
     pg.wait_for_timeout(250)

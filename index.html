@@ -351,23 +351,25 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
 .manpop .mancur{font-size:12px;line-height:1.5;white-space:pre-line;background:color-mix(in srgb,var(--acc) 8%,transparent);border-radius:calc(var(--rk,1)*8px);padding:6px 8px;margin:4px 0 8px}.manpop .mancur[hidden]{display:none}
 .manpop h4{margin:14px 0 4px;font-size:14px}.manpop p,.manpop li{font-size:13px;line-height:1.65;margin:4px 0}.manpop ul{padding-left:20px;margin:4px 0}
 
-/* 台帳Z-240：ツールボックス方式（2469-toolbox.js）。操作ウィンドウ（#tp）とは別の部品：作品の上に半透明で浮かぶ、小さな道具の列（#tbx）。
-   上の⠿をドラッグして画面のどこへでも動かせる。▴で持ち手だけにたたむ。列の下の「窓」／🎬メニューの「操作方式」で、従来の操作ウィンドウ（タブ方式）へ切り替えられる（従来の窓は、そのまま残す）。
+/* 台帳Z-240：ツールボックス方式（2469-toolbox.js）。操作ウィンドウ（#tp）とは別の部品：作品の上に半透明で浮かぶ、横2列の小さな道具の枠（#tbx）。
+   列の上のどこをドラッグしても、画面のどこへでも動かせる（持ち手は付けない）。▴で小さくたたむ。ペンの色・太さの横長の一行（#tbxQ）は画面の下端に付く。列の下の「窓」／🎬メニューの「操作方式」で、従来の操作ウィンドウ（タブ方式）へ切り替えられる（従来の窓は、そのまま残す）。
    body.ubox＝ツールボックス方式。body.tbxd＝⚙で詳細を開いている間（その道具の設定＝今までのタブの中身が、列のとなりに重なる。#tpを詳細の枠として使う）。
    body.tbxr＝右側が既定位置。body.tbxc＝たたんでいる。body.tbxfl＝小窓・詳細を列の左へ出す（右に余裕が無い時）。作品は動かさず・縮めない。 */
 #tbx,#tbxD,#tbxQ,#tbxEd,#tbxTop{display:none}
-body.ubox #tbx{display:flex;flex-direction:column;align-items:stretch;gap:3px;position:fixed;left:6px;top:calc(56px + env(safe-area-inset-top,0px));z-index:65;box-sizing:border-box;width:50px;padding:2px;
+body.ubox #tbx{touch-action:none;-webkit-user-select:none;user-select:none;cursor:grab;display:flex;flex-direction:column;align-items:stretch;gap:3px;position:fixed;left:6px;top:calc(56px + env(safe-area-inset-top,0px));z-index:65;box-sizing:border-box;width:98px;padding:2px;
   max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;
   color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px)}
 body.ubox #tbx::-webkit-scrollbar{display:none}
 body.ubox.tbxr #tbx{left:auto;right:6px}
 #tbxHd{display:flex;gap:2px}
-#tbx #tbxGrip{flex:1 1 auto;min-width:0;min-height:22px;padding:0;font-size:13px;line-height:1;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
-#tbx #tbxCol{flex:0 0 18px;min-width:0;min-height:22px;padding:0;font-size:10px;line-height:1}
-#tbxBody{display:flex;flex-direction:column;gap:3px}
+#tbx #tbxCol{flex:1 1 auto;min-width:0;min-height:18px;padding:0;font-size:10px;line-height:1}
+/* 道具は横に2列（縦に長くならない）。#tbxMain・#tbxRestの箱は消して、道具とすぐ後ろの「▾」を同じ格子に並べる（5つ＋▾＝3段ちょうど） */
+#tbxBody{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+#tbxBody>.tbcol{display:contents}#tbxBody>.tbcol[hidden]{display:none}
+#tbxBody>:is(#tbxObj,#tbxFt){grid-column:1/-1}
 body.ubox.tbxc #tbxBody{display:none}
 #tbxObj #ch1{margin:0}
-#tbxObj #lyopen{display:flex;align-items:center;justify-content:center;gap:0;width:100%;min-width:0;min-height:34px;padding:1px;font-size:0;line-height:1}
+#tbxObj #lyopen{display:flex;align-items:center;justify-content:center;gap:0;width:100%;min-width:0;min-height:30px;padding:1px;font-size:0;line-height:1}
 #tbxObj #lyopen img{width:22px;height:22px;object-fit:cover;border-radius:5px}
 #tbxObj #lyopen::after{content:"🗂";font-size:14px;margin-left:1px}
 .tbcol{display:flex;flex-direction:column;gap:3px}.tbcol[hidden]{display:none}
@@ -381,19 +383,25 @@ body.ubox.tbxc #tbxBody{display:none}
 #tbx .tbw .tbg.on{background:var(--acc);color:#fff;opacity:1}
 body.ubox.tbxe #tbx .tbw .tbg{display:none}
 /* 使わない道具の折りたたみ：小さな枠（点線）と下向きの▾。押すと、道具が広がる */
-#tbxMore{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:26px;padding:1px 0;font-size:12px;line-height:1.05;border-style:dashed}
+#tbxMore{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:40px;padding:1px 0;font-size:12px;line-height:1.05;border-style:dashed}
 #tbxMore::after{content:attr(data-n);font-size:8px;opacity:.8}#tbxMore[hidden]{display:none}
 #tbxFt{display:flex;gap:2px}
 #tbxFt button{flex:1 1 0;min-width:0;min-height:24px;padding:0;font-size:11px;line-height:1}#tbxEdit.on{background:var(--acc);color:#fff}
 /* ペンの色・太さの小窓、並べ替えの小窓、作品が空の時の小さな案内（列のとなりに出す。位置は2469のtbxLayoutが--tbxfx／--tbxfx2／--tbxfyへ入れる） */
-body.ubox :is(#tbxQ,#tbxEd,#tbxTop):not([hidden]){position:fixed;z-index:63;left:var(--tbxfx,64px);top:var(--tbxfy,56px);box-sizing:border-box;width:min(calc(100vw - var(--tbxfx,64px) - 8px),380px);padding:6px 8px;
+body.ubox :is(#tbxEd,#tbxTop):not([hidden]){position:fixed;z-index:63;left:var(--tbxfx,64px);top:var(--tbxfy,56px);box-sizing:border-box;width:min(calc(100vw - var(--tbxfx,64px) - 8px),380px);padding:6px 8px;
   color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px)}
-body.ubox.tbxfl :is(#tbxQ,#tbxEd,#tbxTop):not([hidden]){left:auto;right:var(--tbxfx2,64px);width:min(calc(100vw - var(--tbxfx2,64px) - 8px),380px)}
-body.ubox #tbxQ:not([hidden]){display:block}
+body.ubox.tbxfl :is(#tbxEd,#tbxTop):not([hidden]){left:auto;right:var(--tbxfx2,64px);width:min(calc(100vw - var(--tbxfx2,64px) - 8px),380px)}
 body.ubox #tbxEd:not([hidden]){display:flex;flex-wrap:wrap;gap:6px;z-index:66;width:min(calc(100vw - var(--tbxfx,64px) - 8px),340px)}
 body.ubox.tbxfl #tbxEd:not([hidden]){width:min(calc(100vw - var(--tbxfx2,64px) - 8px),340px)}
-#tbxQ #pn{margin-top:0}
-body.ubox.noobj:not(.tbxc) #tbxTop{display:flex;flex-direction:column;gap:6px;top:calc(var(--tbxfy,56px) + var(--tbqh,0px))}
+/* ペンの色・太さ・補正の横長の一行：画面の下端に付く（半透明・1行） */
+body.ubox #tbxQ:not([hidden]){display:block;position:fixed;z-index:63;left:0;right:0;bottom:0;box-sizing:border-box;width:min(100%,760px);margin:0 auto;padding:3px 8px calc(3px + env(safe-area-inset-bottom,0px));
+  color:var(--ink);border:var(--bw,2px) solid var(--line);border-bottom:0;border-radius:calc(var(--rk,1)*12px) calc(var(--rk,1)*12px) 0 0}
+#tbxQ #pn{margin-top:0;flex-wrap:nowrap;gap:4px}
+#tbxQ #pn :is(button,.pk){min-width:30px;min-height:30px;padding:2px 5px}
+#tbxQ #pn input[type=range]{flex:1 1 60px;min-width:40px}
+#tbxQ #pn .num{width:52px;min-width:0;flex:0 0 auto}
+body.ubox.noobj:not(.tbxc) #tbxTop{display:flex;flex-direction:column;gap:6px}
+body.ubox .startcard{bottom:calc(10px + var(--tbqh,0px))}   /* 入口カードは、画面の下端に付く一行（#tbxQ）の上に出す（✕・3つの選択が隠れない） */
 #tbxTop>.row{margin-top:0}
 body.ubox #addrow{display:none}body.ubox.noobj #tbxTop #addrow{display:flex}   /* 「＋画像」と1枚目の設定は、作品が空の時だけ出す（普段は道具の「画像」） */
 body.ubox:not(.noobj) #noobj{display:none}
@@ -401,7 +409,7 @@ body.ubox:not(.noobj) #noobj{display:none}
 body.ubox #tabs,body.ubox #grip,body.ubox #grip2,body.ubox #tpz,body.ubox #tpb::after{display:none!important}
 body.ubox:not(.tbxd) .tab{display:none!important}
 body.ubox #tbxD:not([hidden]){display:flex}
-html body.ubox #tp{display:none;position:fixed;left:var(--tbxfx,64px);right:8px;top:calc(var(--tbxfy,56px) + var(--tbqh,0px));bottom:auto;z-index:64;box-sizing:border-box;width:auto;max-width:420px;margin:0;padding:0;
+html body.ubox #tp{display:none;position:fixed;left:var(--tbxfx,64px);right:8px;top:var(--tbxfy,56px);bottom:auto;z-index:64;box-sizing:border-box;width:auto;max-width:420px;margin:0;padding:0;
   max-height:calc(100vh - var(--tbxfy,56px) - var(--tbqh,0px) - 12px);max-height:calc(100dvh - var(--tbxfy,56px) - var(--tbqh,0px) - 12px);flex-direction:column;overflow:hidden;
   border-radius:calc(var(--rk,1)*16px)}   /* 背景・影は、下の「半透明」の指定 */
 html body.ubox.tbxfl #tp{left:8px;right:var(--tbxfx2,64px);margin-left:auto}
@@ -415,7 +423,7 @@ body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp){background:color-mix(in srgb,var(--
 body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) :is(button,select,.file,.num,input[type=text],input[type=number]){background:color-mix(in srgb,var(--bg) calc(var(--tbxa,40%) * .5),transparent)}
 body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) button.on,body.ubox #tbx .tbg.on{background:color-mix(in srgb,var(--acc) 85%,transparent);text-shadow:none}
 body.ubox #tp .grp.alt{background:transparent}
-@media (pointer:coarse){#tbx .tbw .tbg{width:20px;height:20px;font-size:12px}.tb .tl{padding-right:15px}body.ubox #tbx{width:56px}#tbx .tbw .tb{min-height:46px}#tbx #tbxGrip{min-height:30px}#tbx #tbxCol{flex-basis:24px;min-height:30px}#tbxFt button{min-height:32px}#tbxMore{min-height:32px}#tbxObj #lyopen{min-height:40px}}
+@media (pointer:coarse){#tbx .tbw .tbg{width:20px;height:20px;font-size:12px}.tb .tl{padding-right:15px}body.ubox #tbx{width:112px}#tbx .tbw .tb{min-height:46px}#tbx #tbxCol{flex-basis:24px;min-height:30px}#tbxFt button{min-height:32px}#tbxMore{min-height:46px}#tbxObj #lyopen{min-height:36px}}
 /* 右上の2つのボタンに、小さく名前を添える（👁＝補助、🎬＝設定）。ボタンの高さは変えず、絵文字の下に8pxの字 */
 #mnv,#mna{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:14px}
 #mnv::after{content:"補助"}#mna::after{content:"設定"}
@@ -478,8 +486,8 @@ body.ubox #tp .grp.alt{background:transparent}
 </div>
 <div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
 
-<div id="tbx" role="toolbar" aria-label="ツールボックス（上の⠿をドラッグで動かせる。各道具の右下の⚙で、その道具の詳細設定）">
-  <div id="tbxHd"><button type="button" id="tbxGrip" aria-label="ツールボックスを動かす（押したままドラッグ）">⠿</button><button type="button" id="tbxCol" aria-label="ツールボックスを小さくたたむ／広げる">▴</button></div>
+<div id="tbx" role="toolbar" aria-label="ツールボックス（枠の上をドラッグで動かせる。各道具の右下の⚙で、その道具の詳細設定）">
+  <div id="tbxHd"><button type="button" id="tbxCol" aria-label="ツールボックスを小さくたたむ／広げる">▴</button></div>
   <div id="tbxBody">
     <div id="tbxObj"></div>
     <div class="tbcol" id="tbxMain"></div>
@@ -9249,10 +9257,10 @@ $('vwpx').onclick=()=>{
 /* ===== ツールボックス方式（台帳Z-240）=====
    操作ウィンドウ（#tp。タブで切り替える窓）とは別の部品：画面の上に半透明で浮かぶ、専用の小さな枠（#tbx）に、道具を並べる。既定はこちら。
    🎬メニューの「操作方式」で、従来の操作ウィンドウに切り替えられる（従来の窓は、そのまま残す。窓にも利点があるので、置き換えではなく、別の表示様式）。
-   ・形：小さな道具の列。上の⠿をドラッグして画面のどこへでも動かせる（位置は端末に覚える）。▴で、持ち手だけに小さくたたむ。作品の上に半透明で浮くだけで、作品は動かさない・縮めない。列の下の「窓」で、いつでも従来の操作ウィンドウへ戻せる。
+   ・形：横2列の小さな道具の枠（縦に長くしない）。枠の上のどこをドラッグしても、画面のどこへでも動かせる（持ち手は付けない。位置は端末に覚える）。▴で、小さくたたむ。ペンの色・太さ・補正の横長の一行は、画面の下端に付く。作品の上に半透明で浮くだけで、作品は動かさない・縮めない。列の下の「窓」で、いつでも従来の操作ウィンドウへ戻せる。
    ・常に見えるのは「最低限の道具」だけ。ほかは、列の下の小さな枠（▾）に折りたたむ。押すと広がり、そのまま使える。✎で並べ替え・しまう／出す・左右・初期に戻す。
    ・各道具の右下の⚙を押した時だけ、その道具の細かい設定（今までのタブの中身そのもの）が、列のとなりに重なって出る（#tpを詳細の枠として使う）。
-   ・別の場所へ移す部品（移すだけ。部品も動作も同じ。窓の方式へ戻すと元の場所へ返す）：絵の選択（#ch1）→列の一番上の小さなボタン（#tbxObj）、作品が空の時の「＋画像」（#addrow・#noobj）→列のとなりの小さな案内（#tbxTop）、ペンの色と太さ（#pn）→列のとなりの小窓（#tbxQ）。
+   ・別の場所へ移す部品（移すだけ。部品も動作も同じ。窓の方式へ戻すと元の場所へ返す）：絵の選択（#ch1）→列の一番上の小さなボタン（#tbxObj）、作品が空の時の「＋画像」（#addrow・#noobj）→列のとなりの小さな案内（#tbxTop）、ペンの色と太さ（#pn）→画面の下端に付く横長の一行（#tbxQ）。
    ・タブの帯（#tabs）は窓の方式だけで使う。setTab・setToolの動きは変えない（このファイルは setTool を包んで印を更新するだけ）。
    ・UIの一時状態：作品・Undo・保存には入れない。端末のlocalStorageの am_ui（方式）と am_tbx（道具の並び。知らないキーは捨てずに書き戻す）だけ。
    ・起動時の方式：URLの ?ui=box|win ＞ ?start=（検査用の従来の起動。win）＞ 端末の設定 ＞ box。 */
@@ -9273,7 +9281,7 @@ const TBX_TOOLS=[
   {id:'bg',ico:'🖼',lab:'背景',full:'背景・出力',tab:'bg'}];
 const TBX_BY={};TBX_TOOLS.forEach(t=>{TBX_BY[t.id]=t});
 const TBX_N0=5;   /* 初期に常に見える道具の数（先頭から） */
-const TBX={o:TBX_TOOLS.map(t=>t.id),n:TBX_N0,more:false,edit:false,pick:null,det:null,x:{},fill:false,keep:''};
+const TBX={o:TBX_TOOLS.map(t=>t.id),n:TBX_N0,more:false,edit:false,pick:null,det:null,x:{},fill:false,keep:'',dragEnd:0};
 /* 枠へ移す部品。元の位置には目印（コメント）を残し、戻す時はそこへ返す（順序がずれない） */
 const TBX_MV=[['ch1','tbxObj'],['addrow','tbxTop'],['noobj','tbxTop'],['pn','tbxQ']].map(([a,b])=>{const e=$(a),m=document.createComment('tbx:'+a);if(e&&e.parentNode)e.parentNode.insertBefore(m,e);return{e,m,to:b}});
 
@@ -9333,7 +9341,7 @@ function tbxOpen(id){
   tbxTap(id);TBX.det=id;document.body.classList.add('tbxd');tbxSync()}
 function tbxClose(){TBX.det=null;document.body.classList.remove('tbxd');tbxSync();tbxFill()}
 function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';delete TBX.x.pos;tbxSave();tbxApplySide();tbxApplyPos()}
-/* 位置：⠿をドラッグして、画面のどこへでも動かせる。画面に対する割合で覚える（向きを変えても画面の中に残る）。無い時は端（左。右も選べる） */
+/* 位置：列をドラッグして、画面のどこへでも動かせる。画面に対する割合で覚える（向きを変えても画面の中に残る）。無い時は端（左。右も選べる） */
 function tbxApplyPos(){
   const t=$('tbx'),p=TBX.x.pos;if(!t)return;
   if(!p||typeof p.fx!=='number'||typeof p.fy!=='number'){t.style.left=t.style.top=t.style.right='';tbxLayout();return}
@@ -9348,13 +9356,15 @@ function tbxLayout(){
   document.body.classList.toggle('tbxfl',left);
   R.setProperty('--tbxfx',Math.round(r.right+6)+'px');R.setProperty('--tbxfx2',Math.round(innerWidth-r.left+6)+'px');
   R.setProperty('--tbxfy',Math.round(Math.max(8,Math.min(r.top,innerHeight-340)))+'px')}
+/* ドラッグで動かす：列の上のどこを押して引いてもよい（道具のボタンの上からでも）。7px以上動いたら移動とみなし、そのあとの押した扱い（click）は捨てる。短いタップは今までどおり道具を選ぶ */
 function tbxDrag(e){
-  const t=$('tbx'),g=$('tbxGrip');if(e.button>0)return;e.preventDefault();
-  const r=t.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top,id=e.pointerId;let moved=false;
-  try{g.setPointerCapture(id)}catch(_){}
-  const mv=ev=>{if(ev.pointerId!==id)return;moved=true;TBX.x.pos={fx:(ev.clientX-dx)/innerWidth,fy:(ev.clientY-dy)/innerHeight};tbxApplyPos()};
-  const up=ev=>{if(ev.pointerId!==id)return;g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);if(moved)tbxSave()};
-  g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up)}
+  if(e.button>0||UIM.m!=='box')return;
+  const t=$('tbx'),r=t.getBoundingClientRect(),id=e.pointerId,x0=e.clientX,y0=e.clientY,dx=x0-r.left,dy=y0-r.top;let on=false;
+  const mv=ev=>{if(ev.pointerId!==id)return;
+    if(!on){if(Math.hypot(ev.clientX-x0,ev.clientY-y0)<7)return;on=true;try{t.setPointerCapture(id)}catch(_){}}
+    TBX.x.pos={fx:(ev.clientX-dx)/innerWidth,fy:(ev.clientY-dy)/innerHeight};tbxApplyPos()};
+  const up=ev=>{if(ev.pointerId!==id)return;t.removeEventListener('pointermove',mv);t.removeEventListener('pointerup',up);t.removeEventListener('pointercancel',up);if(on){TBX.dragEnd=performance.now();tbxSave()}};
+  t.addEventListener('pointermove',mv);t.addEventListener('pointerup',up);t.addEventListener('pointercancel',up)}
 /* 濃さ（15〜100%）。既定は40%＝後ろの絵がよく透けて見える。列・小窓・詳細の枠・小さな案内が、同じ濃さ（--tbxa）を使う */
 function tbxApplyAlpha(){const v=Math.max(15,Math.min(100,Math.round(+TBX.x.alpha)||40));document.documentElement.style.setProperty('--tbxa',v+'%');$('tbxA').value=v;$('tbxAv').textContent=v+'%'}
 function tbxApplySide(){document.body.classList.toggle('tbxr',TBX.x.side==='r')}
@@ -9408,7 +9418,7 @@ $('tbx').addEventListener('click',e=>{const g=e.target.closest('.tbg'),b=e.targe
 $('tbxMore').onclick=()=>{if(TBX.edit)return;TBX.more=!TBX.more;tbxRender()};
 $('tbxEdit').onclick=()=>{TBX.edit=!TBX.edit;TBX.pick=null;if(TBX.edit)tbxClose();tbxRender()};
 $('tbxEx').onclick=()=>{TBX.edit=false;TBX.pick=null;tbxRender()};
-$('tbxGrip').addEventListener('pointerdown',tbxDrag);
+$('tbx').addEventListener('pointerdown',tbxDrag);$('tbx').addEventListener('click',e=>{if(performance.now()-(TBX.dragEnd||-1e9)<150){e.stopPropagation();e.preventDefault()}},true);
 $('tbxCol').onclick=()=>{TBX.x.col=!TBX.x.col;if(TBX.x.col){tbxClose();TBX.edit=false;TBX.more=false;tbxRender()}tbxSave();tbxApplyCol();tbxSync();tbxLayout()};
 $('tbxWin').onclick=()=>uiSet('win');
 $('tbxSide').onclick=tbxSide;$('tbxA').oninput=e=>{TBX.x.alpha=+e.target.value;tbxApplyAlpha()};$('tbxA').onchange=tbxSave;$('tbxL').onclick=()=>tbxMove(-1);$('tbxR').onclick=()=>tbxMove(1);$('tbxF').onclick=tbxFold;
