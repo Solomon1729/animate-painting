@@ -103,8 +103,8 @@ def main():
         chk('V2b 変えたあとも物理は続く', r['t'] > 0.99)
         r = ev("""()=>{scnSetParam('m',7);return {dirty:RUN.dirty,m:RUN.sess.W.byId.get('blk').m}}""")
         chk('V2b 質量を触っても作り直さない・質量は入れ替わる', r['dirty'] is False and abs(r['m'] - 7) < 1e-9, r)
-        ev("()=>scnSetParam('theta',20)")
-        chk('V2b 「はじめの値」（斜面の角度＝形）を触った時だけ、作り直しになる', ev("()=>RUN.dirty") is True)
+        dirty_theta = ev("()=>{scnSetParam('theta',20);return RUN.dirty}")   # 同じ呼び出しの中で見る（別の呼び出しにすると、間に描画の更新が入って作り直し済みになることがある）
+        chk('V2b 「はじめの値」（斜面の角度＝形）を触った時だけ、作り直しになる', dirty_theta is True)
         ev("()=>scnTick(0)")
         chk('V2b 作り直したら、最初の時刻に戻る', ev("()=>RUN.sess.W.t") == 0)
         r = ev("""()=>{const S=RUN.sess;for(let i=0;i<60;i++){S.step();scnAfter()}const t=S.W.t;scnSeek(0.2);const a=[RUN.sess.W.t];scnSeek(t);

@@ -103,7 +103,7 @@ function sayOf(op,fs){const f=SAY[op.op];if(f)try{return f(op)}catch(_){}
   const D=PHAPI.OPS[op.op];return '「'+(D?D.label:op.op)+'」を行う'+(fs.length?'：'+fs.slice(0,3).map(x=>x.l+' '+x.v).join('、'):'')}
 function howOf(op,cat,fs){
   const D=PHAPI.OPS[op.op],lab=D?D.label:op.op;
-  if(op.op==='play')return['画面の「▶ 実行」を押す（ブロック列の最後に「▶ 実行」ブロックを置いてもよい）','物体が動き、測定値がたまっていく'];
+  if(op.op==='play')return['画面の「🌍 物理：オン」を押す（ブロック列の最後に「▶ 実行」ブロックを置いてもよい）','物体が動き、測定値がたまっていく'];
   if(op.op==='result')return['「検査する」を押す（ブロック列の最後に「答え合わせ」ブロックを置いてもよい）','測定値と理論値、保存則の検査が一覧で出る'];
   const L=['「＋ブロック」→ パレットの「'+CAT[cat]+'」→「'+lab+'」をタップ'];
   const cut=s=>s.length>70?s.slice(0,68)+'…':s;

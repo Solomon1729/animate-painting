@@ -44,7 +44,7 @@ function dvPlace(id,p){
     const ops=[{op:'newScenario',id:'tray',title:'装置で組み立てる',floor:false,width:DV_VIEW0.w},{op:'setView',x0:DV_VIEW0.x0,y0:DV_VIEW0.y0,w:DV_VIEW0.w}];
     if(id!=='floor')ops.push({op:'addDevice',device:'floor',pos:[0,0]});
     ops.push({op:'addDevice',device:id,pos});r=PHAPI.execBatch(ops)}
-  if(typeof note==='function')note(r.ok?'「'+d.label+'」を置きました（▶ 実行で動きます）':'置けませんでした：'+(r.errors||[]).slice(0,2).join(' / '),r.ok?2600:5000);
+  if(typeof note==='function')note(r.ok?'「'+d.label+'」を置きました（「物理：オン」で動きます）':'置けませんでした：'+(r.errors||[]).slice(0,2).join(' / '),r.ok?2600:5000);
   return r}
 /* 画面（ビューワー）の上で離したか。窓・ボタン・メニューの上なら取り消し。戻り値＝キャンバスの座標（拡大前）かnull */
 function dvCanvasPoint(cx,cy){

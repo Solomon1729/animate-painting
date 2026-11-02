@@ -350,6 +350,67 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
 .manpop .mantb{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .manpop .mancur{font-size:12px;line-height:1.5;white-space:pre-line;background:color-mix(in srgb,var(--acc) 8%,transparent);border-radius:calc(var(--rk,1)*8px);padding:6px 8px;margin:4px 0 8px}.manpop .mancur[hidden]{display:none}
 .manpop h4{margin:14px 0 4px;font-size:14px}.manpop p,.manpop li{font-size:13px;line-height:1.65;margin:4px 0}.manpop ul{padding-left:20px;margin:4px 0}
+
+/* 台帳Z-240：ツールボックス方式（2469-toolbox.js）。操作ウィンドウ（#tp）とは別の部品：画面の端（左または右）に縦に並ぶ、小さな道具の列（#tbx）。
+   🎬メニューの「操作方式」で、従来の操作ウィンドウ（タブ方式）に切り替えられる（従来の窓は、そのまま残す）。
+   body.ubox＝ツールボックス方式。body.tbxd＝⚙で詳細を開いている間（その道具の設定＝今までのタブの中身が、列のとなりに重なる。#tpを詳細の枠として使う）。body.tbxr＝右側に置く。
+   列も詳細も作品の上に浮くだけで、作品は動かさない（枠が「大」の時だけ、作品の高さを下の帯の分だけ縮める。--bigh。2469のtbxFill）。 */
+#tbx,#tbxD,#tbxQ,#tbxEd,#tbxTop{display:none}
+body.ubox #tbx{display:flex;flex-direction:column;align-items:stretch;gap:4px;position:fixed;left:6px;top:calc(56px + env(safe-area-inset-top,0px));z-index:65;box-sizing:border-box;width:58px;
+  max-height:calc(100vh - 66px - var(--tbxh,0px) - env(safe-area-inset-top,0px));max-height:calc(100dvh - 66px - var(--tbxh,0px) - env(safe-area-inset-top,0px));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:4px;
+  background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*16px);box-shadow:0 2px 12px rgba(0,0,0,.22)}
+body.ubox #tbx::-webkit-scrollbar{display:none}
+body.ubox.tbxr #tbx{left:auto;right:6px}
+.tbcol{display:flex;flex-direction:column;gap:4px}.tbcol[hidden]{display:none}
+.tbw{position:relative}
+#tbx .tbw .tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:100%;min-width:0;min-height:50px;padding:3px 0 2px;line-height:1.1;font-weight:var(--fw,900)}
+.tb .ti{font-size:21px;line-height:1}
+.tb .tl{display:block;width:100%;box-sizing:border-box;padding-right:11px;font-size:8.5px;white-space:nowrap;text-align:center;overflow:hidden}
+.tb.pick{outline:3px solid var(--acc);outline-offset:1px}
+/* 各道具の右下の⚙（その道具の詳細設定） */
+#tbx .tbw .tbg{position:absolute;right:1px;bottom:1px;width:16px;height:16px;min-width:0;min-height:0;padding:0;font-size:10px;line-height:1;border-radius:calc(var(--rk,1)*6px);opacity:.9}
+#tbx .tbw .tbg.on{background:var(--acc);color:#fff;opacity:1}
+body.ubox.tbxe #tbx .tbw .tbg{display:none}
+/* 使わない道具の折りたたみ：小さな枠（点線）と下向きの▾。押すと、道具が広がる */
+#tbxMore{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:30px;padding:2px 0;font-size:13px;line-height:1.1;border-style:dashed}
+#tbxMore::after{content:attr(data-n);font-size:9px;opacity:.8}#tbxMore[hidden]{display:none}
+#tbxEdit{min-height:28px;padding:2px 0;font-size:13px;line-height:1.1}#tbxEdit.on{background:var(--acc);color:#fff}
+/* ペンの色・太さの小窓、並べ替えの小窓、下の細い帯（絵の選択など） */
+body.ubox #tbxQ:not([hidden]){display:block;position:fixed;z-index:63;left:72px;top:calc(56px + env(safe-area-inset-top,0px));width:min(calc(100vw - 80px),380px);box-sizing:border-box;padding:6px 8px;
+  background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px);box-shadow:0 2px 12px rgba(0,0,0,.22)}
+body.ubox.tbxr #tbxQ{left:auto;right:72px}
+#tbxQ #pn{margin-top:0}
+body.ubox #tbxEd:not([hidden]){display:flex;flex-wrap:wrap;gap:6px;position:fixed;z-index:66;left:72px;top:calc(56px + env(safe-area-inset-top,0px));width:min(calc(100vw - 80px),340px);box-sizing:border-box;padding:8px;
+  background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px);box-shadow:0 4px 18px rgba(0,0,0,.3)}
+body.ubox.tbxr #tbxEd{left:auto;right:72px}
+body.ubox #tbxTop{display:flex;flex-direction:column;gap:6px;position:fixed;z-index:62;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));box-sizing:border-box;max-width:560px;margin:0 auto;padding:6px 8px;
+  background:var(--pane);color:var(--ink);border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*14px);box-shadow:0 2px 12px rgba(0,0,0,.22)}
+body.ubox:not(.noobj) #tbxTop:has(#ch1:empty){display:none}
+#tbxTop>.row{margin-top:0}
+body.ubox #addrow{display:none}body.ubox.noobj #tbxTop #addrow{display:flex}   /* 「＋画像」と1枚目の設定は、作品が空の時だけ出す（普段は道具の「画像」） */
+body.ubox:not(.big):not(.fs){padding-bottom:calc(var(--tbxh,0px) + 16px)}   /* 通常の枠：ページの一番下まで動かすと、帯の上に出る */
+/* 詳細の枠（#tp）：⚙で開いた時だけ、列のとなりに重ねる。タイムラプスの枠（#tlp）が開いている時も、同じ枠に出す */
+body.ubox #tabs,body.ubox #grip,body.ubox #grip2,body.ubox #tpz,body.ubox #tpb::after{display:none!important}
+body.ubox:not(.tbxd) .tab{display:none!important}
+body.ubox #tbxD:not([hidden]){display:flex}
+html body.ubox #tp{display:none;position:fixed;left:72px;right:8px;top:calc(56px + var(--tbqh,0px) + env(safe-area-inset-top,0px));bottom:auto;z-index:64;box-sizing:border-box;width:auto;max-width:420px;margin:0;padding:0;
+  max-height:calc(100vh - 72px - var(--tbqh,0px) - var(--tbxh,0px) - env(safe-area-inset-top,0px));max-height:calc(100dvh - 72px - var(--tbqh,0px) - var(--tbxh,0px) - env(safe-area-inset-top,0px));flex-direction:column;overflow:hidden;
+  border-radius:calc(var(--rk,1)*16px)}   /* 背景・影は、下の「半透明」の指定 */
+html body.ubox.tbxr #tp{left:8px;right:72px;margin-left:auto}
+html body.ubox.tbxd #tp,html body.ubox:has(#tlp:not([hidden])) #tp{display:flex}
+html body.ubox #tpb{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 10px 8px}
+/* 半透明：列・小窓・詳細の枠・下の帯は、すべて半透明（既定55%）。後ろの絵が透けて見える。字は縁取りで読めるようにする。濃さは並べ替え（✎）の小窓のつまみ（--tbxa） */
+body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp){background:color-mix(in srgb,var(--pane) var(--tbxa,55%),transparent);   /* ぼかしは使わない（後ろの絵をそのまま見せる） */
+  border-color:color-mix(in srgb,var(--line) 60%,transparent);text-shadow:0 0 2px var(--pane),0 0 3px var(--pane),0 0 6px var(--pane)}
+body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) :is(button,select,.file,.num,input[type=text],input[type=number]){background:color-mix(in srgb,var(--bg) calc(var(--tbxa,55%) * .45),transparent)}
+body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) button.on,body.ubox #tbx .tbg.on{background:color-mix(in srgb,var(--acc) 85%,transparent);text-shadow:none}
+body.ubox #tp .grp.alt{background:transparent}
+body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp){box-shadow:0 2px 10px rgba(0,0,0,.14)}
+@media (pointer:coarse){#tbx .tbw .tbg{width:20px;height:20px;font-size:12px}.tb .tl{padding-right:13px}#tbx button:not(.tbg):not(.tb){min-height:34px}}
+/* 右上の2つのボタンに、小さく名前を添える（👁＝補助、🎬＝設定）。ボタンの高さは変えず、絵文字の下に8pxの字 */
+#mnv,#mna{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:14px}
+#mnv::after{content:"補助"}#mna::after{content:"設定"}
+#mnv::after,#mna::after{font-size:8px;line-height:1;font-weight:700;letter-spacing:0;opacity:.85}
 </style>
 </head>
 <body>
@@ -387,11 +448,13 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
   </details>
 </div>
 <div class="cmenu" id="mA" hidden>
+  <div class="cmh">操作方式</div>
+  <div class="row" id="uiSeg" role="group" aria-label="操作方式の切り替え"><button type="button" data-ui="box" aria-pressed="true" aria-label="ツールボックス方式：道具を並べた小さな枠で操作する">🧰 ツールボックス</button><button type="button" data-ui="win" aria-pressed="false" aria-label="操作ウィンドウ方式：タブで切り替える従来の操作窓">🪟 操作ウィンドウ</button></div>
   <div class="cmh">再生</div>
   <button id="pz" aria-label="止める／うごかす">⏸ とめる</button>
   <div class="cmh" id="mPh" hidden>物理</div>
   <button id="mPhArt" aria-label="選んでいる絵に物理を付ける／外す（付けると、見えている輪郭が当たり判定になって動く）" hidden>🌍 この絵に物理を付ける</button>
-  <button id="mPlay" aria-label="物理を実行・一時停止" hidden>▶ 物理を実行</button>
+  <button id="mPlay" aria-label="物理のオン・オフ（オン：物理が絵に当たって動く／オフ：物理を当てず、絵は置いたとおり）" aria-pressed="false" hidden>🌍 物理：オフ</button>
   <button id="mRst" aria-label="物理を最初に戻す" hidden>⟲ 物理を最初へ</button>
   <button id="mGrab" aria-label="実行中にキャンバスを触って物を動かす（つかむ・つつく）のオン／オフ" aria-pressed="true" hidden>🖐 つかんで動かす</button>
   <div class="cmh">操作の手順</div>
@@ -405,6 +468,23 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
   <button id="mMan" aria-label="マニュアル（サイズについてなど）">📖 マニュアル</button>
 </div>
 <div id="tray"></div><div class="pop" id="hint" hidden><span id="ht">オブジェクトをドラッグして配置。2本指で拡大・移動できます。</span><button id="hx" aria-label="閉じる">✕</button></div></div>
+
+<div id="tbx" role="toolbar" aria-label="ツールボックス（道具を選ぶ。各道具の右下の⚙で、その道具の詳細設定）">
+  <div class="tbcol" id="tbxMain"></div>
+  <button type="button" id="tbxMore" aria-expanded="false" hidden></button>
+  <div class="tbcol" id="tbxRest" hidden></div>
+  <button type="button" id="tbxEdit" aria-label="道具の並べ替え・しまう／出す・置く側（左右）">✎</button>
+</div>
+<div id="tbxQ" hidden></div>
+<div class="tbxfly" id="tbxEd" hidden>
+  <span class="note" id="tbxEn" style="margin:0;flex:1 1 100%">動かしたい道具を押してください</span>
+  <button type="button" id="tbxL" aria-label="選んだ道具を上へ動かす">▲ 上へ</button><button type="button" id="tbxR" aria-label="選んだ道具を下へ動かす">▼ 下へ</button>
+  <button type="button" id="tbxF" aria-label="選んだ道具を、折りたたみへしまう／いつも見える所へ出す">しまう／出す</button>
+  <button type="button" id="tbxSide" aria-label="ツールボックスを置く側（左／右）を切り替える">⇄ 左右</button>
+  <label class="tbxa" style="flex:1 1 100%;display:flex;align-items:center;gap:6px"><span class="lab">濃さ</span><input type="range" id="tbxA" min="15" max="100" step="5" value="55" style="flex:1" aria-label="ツールボックスの濃さ（左ほど透けて、後ろの絵が見える）"><b class="v" id="tbxAv" style="min-width:2.6em;text-align:right">55%</b></label>
+  <button type="button" id="tbxRs" aria-label="道具の並びを初期に戻す">初期に戻す</button><button type="button" id="tbxEx" aria-label="並べ替えを終える">終わる</button>
+</div>
+<div id="tbxTop"></div>
 
 <div class="pane" id="tp">
   <div id="grip"><span id="gdrag" aria-label="操作窓の持ち手（ドラッグ。分離中は移動、そうでなければ高さ。ダブルタップで元に戻す）"></span><button id="tpa" aria-label="操作窓を透け透けにする（オン／オフ。分離中）" aria-pressed="true">透</button><button id="tpd" aria-label="操作窓を作品の上に浮かせる／下に戻す">🪟</button><button id="tc" aria-label="パネルを開閉">▾</button></div>
@@ -446,6 +526,7 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
   <div class="row" id="ch1"></div>
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
+  <div class="row" id="tbxD" hidden><span class="lab" id="tbxDt" style="flex:1">詳細</span><button type="button" id="tbxDx" aria-label="詳細設定を閉じる">▴ 閉じる</button></div>
   <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
@@ -642,7 +723,7 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
 
   <div class="tab" data-tab="ph">
     <div class="grp" id="scGrp"><div class="gh">物理</div>
-    <div class="note" id="scHelp">絵（オブジェクト）を選ぶと「オブジェクトを対象化」が出ます。「動く」を押すだけで、物理で動きます（▶ で実行）。<b>実行中は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
+    <div class="note" id="scHelp">絵（オブジェクト）を選ぶと「オブジェクトを対象化」が出ます。「動く」を押して「物理：オン」にするだけで、物理で動きます。<b>オンの間は、物をドラッグでつかんで投げられ、タップでつつけます。</b>止まっている間にドラッグすると、置き場所が初期位置になります。動き・歪み・ついていく・レイヤー・録画とも一緒に使えます。サンプルや問題づくりは、下の「くわしく」から。</div>
     <div class="grp alt" id="scArt" hidden><div class="gh">オブジェクトを対象化</div>
       <div class="row seg" id="scRole"><button id="scArtB" aria-label="選んでいる絵を、物理で動く物体にする（絵の輪郭が当たり判定）">🌍 動く</button><button id="scArtF" aria-label="選んでいる絵を、固定の土台にする（物理には参加するが動かない。台・壁・障害物）">固定</button><button id="scArtT" aria-label="選んでいる絵を、物理の地形（丘・坂・線のレール・床）にする">地形</button><button id="scArtX" aria-label="選んでいる絵から物理を外す（絵は残ります）">外す</button></div>
       <div class="row"><span class="lab">形</span><select id="scArtS" aria-label="物体の形"><option value="auto">自動</option><option value="circle">丸</option><option value="box">四角</option><option value="hull">輪郭</option><option value="static">固定の障害物</option></select></div>
@@ -657,7 +738,7 @@ body.tpf.tpt #tabs{background:color-mix(in srgb,var(--pane) 55%,transparent);-we
       <div class="note" id="scArtSt"></div>
     </div>
     <div id="scBody" hidden>
-      <div class="row" id="scBar"><button id="scPlay" aria-label="実行・一時停止">▶ 実行</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
+      <div class="row" id="scBar"><button id="scPlay" aria-label="物理のオン・オフ（オン：物理が絵に当たって動く／オフ：物理を当てず、絵は置いたとおり）" aria-pressed="false">🌍 物理：オフ</button><button id="scStep" aria-label="1コマ（1/60秒）進める">⏭</button><button id="scReset" aria-label="最初に戻す">⟲ 最初へ</button><select id="scSpd" aria-label="再生の速さ"><option value="0.1">×0.1</option><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option><option value="4">×4</option></select></div>
       <div class="row"><button id="scGrab" class="on" aria-pressed="true" aria-label="実行中にキャンバスを触って物を動かす（オン：ドラッグでつかむ・タップでつつく／オフ：触っても物理は動かず、絵の配置だけ）">🖐 つかんで動かす</button><span class="note" style="margin:0">ドラッグ＝つかむ・タップ＝つつく</span><button id="scOff" aria-label="物理をすべて外す（自動で作った絵も消えます）" hidden>✕ 物理を全部外す</button></div>
       <div class="row" id="scWorld" hidden><span class="lab">まわり</span><button id="wlFloor" class="on" aria-pressed="true" aria-label="床（下の面）">床</button><button id="wlWall" class="on" aria-pressed="true" aria-label="左右の壁">左右の壁</button><button id="wlTop" aria-pressed="false" aria-label="天井（上の面）">天井</button></div>
       <div class="row"><span class="lab">時刻</span><input id="scT" type="range" min="0" max="1" step="0.0083333" value="0" aria-label="時刻（動かすと、その時刻の姿になります。右端＝いままでに進んだ時刻。物理は時刻で止まりません）"><b class="v" id="scTv" style="min-width:7em">0.00 s</b></div>
@@ -2579,7 +2660,7 @@ function scnTick(dt){
   if(RUN.playing&&!paused&&!S.done){
     RUN.acc+=Math.min(dt,.05)*SCN.speed*gs;const t0=performance.now(),tp=S.W.t;let n=0;   /* 全体の速さgs（動きタブ）も掛ける＝0で止まる */
     while(RUN.acc>=TIME.DT&&!S.done){S.step();RUN.acc-=TIME.DT;n++;scnAfter();
-      if(SCN.timer!=null&&tp<SCN.timer-1e-9&&S.W.t>=SCN.timer-1e-9){RUN.playing=false;RUN.acc=0;note('タイマー（'+scnFmt(SCN.timer)+'秒）で一時停止しました。▶ で続けます（物理が終わったわけではありません）',4500);break}   /* タイマーは使う人が選んだ一時停止。時刻が物理を止めるのではない（台帳Z-214） */
+      if(SCN.timer!=null&&tp<SCN.timer-1e-9&&S.W.t>=SCN.timer-1e-9){RUN.playing=false;RUN.acc=0;note('タイマー（'+scnFmt(SCN.timer)+'秒）で止めました。「物理：オン（停止中）」を押すと続きます（物理が終わったわけではありません）',4500);break}   /* タイマーは使う人が選んだ一時停止。時刻が物理を止めるのではない（台帳Z-214） */
       if(n>=TIME.MAXSTEP||performance.now()-t0>TIME.BUDGET){RUN.acc=Math.min(RUN.acc,TIME.DT*2);break}}
     if(S.measured&&!RUN.res){try{RUN.res=S.finish()}catch(e){RUN.err=String(e&&e.message||e)}RUN.uiAns=1}   /* 測定区間（run.t）が終わった：答え合わせは確定。続きの再生はこのあとも続く */
     if(S.done)scnEnd();
@@ -2589,6 +2670,13 @@ function scnTick(dt){
 function scnPlay(){
   if(!RUN.sess)return;if(RUN.sess.done){scnBuild();scnSyncLinks()}   /* 時刻では最初に戻さない（台帳Z-214）。終わるのは、実験が自分で終わりにした時だけ（endlessでは起きない） */
   if(paused)$('pl').click();RUN.playing=!RUN.playing;RUN.acc=0;scnUi()}
+/* 物理のオン／オフ（台帳Z-242）。時間を主軸にした「再生」ではなく、物理を絵（キャンバス）に当てるかどうかのスイッチ。
+   オン＝物理が当たり、絵が動く。オフ＝物理を当てない＝絵は置いたとおり（最初の状態に戻して止める）。
+   タイマー・コマ送り・終了で止まっているだけの時は「オン（停止中）」と出し、押すと続きから動く（オフにするのは、動いている時に押した時）。 */
+function scnPhase(){const S=RUN.sess;if(!S)return'off';if(RUN.playing)return'on';return(S.W.t>1e-9||S.done)?'hold':'off'}
+function scnOnOff(){if(!RUN.sess)return;if(scnPhase()==='on'){scnReset();RUN.uiAns=1}else scnPlay()}
+function scnOnTxt(){const p=scnPhase();return p==='on'?'🌍 物理：オン':p==='hold'?'🌍 物理：オン（停止中）':'🌍 物理：オフ'}
+function scnOnSync(id){const e=$(id);if(!e)return;const p=scnPhase();e.textContent=scnOnTxt();e.classList.toggle('on',p!=='off');e.setAttribute('aria-pressed',p==='on'?'true':'false')}
 function scnStepN(n){if(!RUN.sess)return;RUN.playing=false;const S=RUN.sess;for(let i=0;i<n&&!S.done;i++){S.step();scnAfter()}if(S.done)scnEnd();else if(S.measured&&!RUN.res){RUN.res=S.finish();RUN.uiAns=1}scnUi()}
 function scnSeek(t){   /* その時刻へ。進むだけなら今の状態から、戻るなら作り直して進める */
   if(!RUN.sess)return;RUN.playing=false;
@@ -2891,7 +2979,7 @@ function scnUiTime(force){
   if(ex.length){const dp=Math.min(devicePixelRatio||1,2),w=Math.max(120,gc.clientWidth),h=150;if(gc.width!==Math.round(w*dp)||gc.height!==Math.round(h*dp)){gc.width=Math.round(w*dp);gc.height=Math.round(h*dp)}
     const g=gc.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,gc.width,gc.height);
     PHR.graph(g,{x:0,y:0,w:gc.width,h:gc.height},ex.map(e=>({name:e,ts:S.ts,vs:S.series[e]})),{px:dp,tcur:t,t1:Math.max(T,S.ts[S.ts.length-1]||0)})}
-  $('scPlay').textContent=RUN.playing?'⏸ 一時停止':(S.done?'↺ もう一度':'▶ 実行');
+  scnOnSync('scPlay');
 }
 function scnUi(){
   const g=$('scGrp');if(!g)return;
@@ -2910,9 +2998,7 @@ function scnUi(){
 /* 操作窓の一番上の「オブジェクトを対象化」（台帳Z-218）。絵（オブジェクト）を選んでいて、物理タブでない時だけ出す。
    押すと、物理が付いていなければ付け（動く物体）、物理タブへ移る。物理タブの中では、同じ設定が下の「オブジェクトを対象化」の枠に出る（絵を選んでいる時だけ） */
 function scnObjBtn(){
-  const b=$('tabObj');if(!b)return;const on=document.querySelector('#tabs [data-t].on'),t=on?on.dataset.t:'';
-  const show=!!sel&&t!=='ph';b.hidden=!show;if(!show)return;
-  b.textContent=scnRoleOf(sel)?'🌍 対象化済み（物理の設定へ）':'🌍 オブジェクトを対象化'}
+  const b=$('tabObj');if(!b)return;b.hidden=true}   /* 台帳Z-242：「オブジェクトを対象化」は物理タブの枠（#scArt）だけに置く。操作窓の一番上のボタンは出さない（部品は、検査と古い呼び出しのために残す） */
 /* 選んでいる絵の、物理での役割 */
 function scnRoleOf(a){
   if(!a||!SCN.src)return null;
@@ -2927,7 +3013,7 @@ function scnUiRole(){
   for(const id of['scArtB','scArtF','scArtT'])$(id).disabled=!sel;
   $('scArtX').disabled=!sel||!r;
   $('scArtS').disabled=!sel;
-  $('scArtSt').textContent=!sel?'絵（オブジェクト）を選ぶと、ここで物理を付けられます。':!r?'この絵には物理が付いていません。「動く」を押すと、見えている輪郭がそのまま当たり判定になり、▶ で動きます。（動かない台は「固定」、坂や丘は「地形」）':
+  $('scArtSt').textContent=!sel?'絵（オブジェクト）を選ぶと、ここで物理を付けられます。':!r?'この絵には物理が付いていません。「動く」を押すと、見えている輪郭がそのまま当たり判定になり、「物理：オン」で動きます。（動かない台は「固定」、坂や丘は「地形」）':
     r.kind==='terrain'?'この絵は地形です（上から乗る物が対象）。止まっている間にドラッグすると置き直せます。描き足すと、当たり判定も追従します。':
     r.kind==='fixed'?'この絵は固定の土台です（動きません。台・壁・障害物）。':
     r.kind==='body'?'この絵は物理で動きます。下のつまみで、この絵だけの質量・反発・摩擦・初速を変えられます。実行中はドラッグでつかめます。':
@@ -2939,7 +3025,7 @@ function scnMenuSync(){
   if($('mPh'))$('mPh').hidden=!(on||sel);   /* 見出し：実験が開いている時、または絵を選んでいる時（絵に物理を付けられる） */
   if($('mPhArt')){$('mPhArt').hidden=!sel;$('mPhArt').textContent=scnRoleOf(sel)?'🌍 この絵の物理を外す':'🌍 この絵に物理を付ける'}
   if(!on)return;const S=RUN.sess;RUN.menuPlaying=RUN.playing;
-  $('mPlay').textContent=RUN.playing?'⏸ 物理を一時停止':(S&&S.done?'↺ 物理をもう一度':'▶ 物理を実行');
+  scnOnSync('mPlay');
   for(const id of['scGrab','mGrab']){$(id).classList.toggle('on',PTR.on);$(id).setAttribute('aria-pressed',PTR.on?'true':'false')}}
 /* JSONを貼って読み込む・検査する・コピーする */
 function scnApplyJson(){
@@ -2954,9 +3040,9 @@ $('scNew').onclick=()=>{const r=scnSetSource(PHS.template());if(!r.ok)note(r.err
 $('scOff').onclick=()=>scnClose();
 $('tabObj').onclick=()=>{if(!sel)return;if(!scnRoleOf(sel)&&!artBody(sel,{}))return;setTab('ph')};
 $('scGrab').onclick=$('mGrab').onclick=()=>{PTR.on=!PTR.on;scnMenuSync();note(PTR.on?'実行中に、物をドラッグでつかめます（短いタップでつつく）':'触っても物理は動きません（絵の配置だけ）',3500)};
-$('mPlay').onclick=()=>scnPlay();$('mRst').onclick=()=>{scnReset();RUN.uiAns=1};
+$('mPlay').onclick=()=>scnOnOff();$('mRst').onclick=()=>{scnReset();RUN.uiAns=1};
 $('scArtX').onclick=()=>{const r=scnRoleOf(sel);if(!r){note('この絵は物理に参加していません');return}if(r.art)scnRemoveBody(r.id);else{pushUndo();scnUnlinkBody(r.id);scnUi()}};
-$('scPlay').onclick=scnPlay;$('scStep').onclick=()=>scnStepN(2);$('scReset').onclick=()=>{scnReset();RUN.uiAns=1};
+$('scPlay').onclick=scnOnOff;$('scStep').onclick=()=>scnStepN(2);$('scReset').onclick=()=>{scnReset();RUN.uiAns=1};
 $('scSpd').onchange=e=>{SCN.speed=+e.target.value||1;dirtyProj=true};
 $('scTimer').onchange=e=>{const v=e.target.value;SCN.timer=v===''?null:Math.max(0,+v||0)||null;dirtyProj=true};   /* タイマー（自動で一時停止する秒数）。物理は作り直さない。時刻が物理を止めるのではなく、使う人が選んだ一時停止（台帳Z-214） */
 $('scT').oninput=e=>scnSeek(+e.target.value);
@@ -3372,7 +3458,7 @@ function artTerrain(a,opt){opt=opt||{};
   const body={id:artId('t',a),type:'static',pos:[artR(v.x0+cx/kpm),artR(v.y0+(H-cy)/kpm)],mu:artRef('mu',.4),e:1,label:'',shapes};
   if(!artCommit(a,body,false,undefined,opt.noUndo))return false;
   SCN.link[body.id].art={};
-  if(!opt.quiet)note('「'+a.name+'」を地形にしました（'+shapes.length+'個の台形）。上から乗る物が対象です（ひさしやループは表せません）。▶で動かせます',7000);return body.id}
+  if(!opt.quiet)note('「'+a.name+'」を地形にしました（'+shapes.length+'個の台形）。上から乗る物が対象です（ひさしやループは表せません）。「物理：オン」で動かせます',7000);return body.id}
 
 /* ---------- 物体 ---------- */
 function artBody(a,opt){
@@ -3400,7 +3486,7 @@ function artBody(a,opt){
   const poly=shape.t==='poly',com=poly?artCentroid(hull):[shape.ox,shape.oy];   /* 重心（絵の中心からの相対m）。物体の重心と同じ多角形から求める */
   const topAt=x=>{let t=-1e9;const P=poly?hull:null;if(!P)return t;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];if((p[0]-x)*(q[0]-x)<=0&&p[0]!==q[0]){t=Math.max(t,p[1]+(q[1]-p[1])*(x-p[0])/(q[0]-p[0]))}}return t};
   ART.last={id:body.id,kind:asCircle?'circle':asBox?'box':'poly',hull,box:bx,center:G,area,com,topAbove:poly?[com[0],topAt(com[0])]:[com[0],com[1]+(asCircle?shape.r:bx.h/2)],top:hull.reduce((t,p)=>p[1]>t[1]?p:t,hull[0])};   /* topAbove＝重心の真上で、輪郭の上の端（釘をかける所） */
-  if(!opt.quiet)note('「'+a.name+'」を'+(fixed?'固定の障害物':'物体')+'にしました（'+(asCircle?'円':asBox?'四角':hull.length+'角形')+'）。質量・反発・摩擦はスライダーで変えられます。▶で動かせます',7000);return body.id}
+  if(!opt.quiet)note('「'+a.name+'」を'+(fixed?'固定の障害物':'物体')+'にしました（'+(asCircle?'円':asBox?'四角':hull.length+'角形')+'）。質量・反発・摩擦はスライダーで変えられます。「物理：オン」で動かせます',7000);return body.id}
 
 /* ---------- 物理タブのボタン・絵ごとの物理のつまみ（台帳Z-197）----------
    「絵に物理を付ける」が標準の入口：絵を選んで 動く／固定／地形 を押すと、見えている輪郭が当たり判定になる。質量・反発・摩擦・初速・当たり判定は、その絵だけのつまみ。
@@ -3478,7 +3564,7 @@ function artMigrateOld(){
     if(isFinite(p.e))b.e=Math.min(1,Math.max(0,+p.e));
     const vx=+p.vx||0,vy=+p.vy||0,sp=Math.hypot(vx,vy)/Math.max(1,W)*ART.W;
     if(!p.fixed&&sp>.05)b.vel={speed:+sp.toFixed(3),angle:+(Math.atan2(-vy,vx)*180/Math.PI).toFixed(2)}}
-  if(n){RUN.dirty=true;dirtyProj=true;scnUi();note('旧・簡易の物理の設定を、新しい物理に置き換えました（'+n+'個）。▶ で動かせます',7000)}
+  if(n){RUN.dirty=true;dirtyProj=true;scnUi();note('旧・簡易の物理の設定を、新しい物理に置き換えました（'+n+'個）。「物理：オン」で動かせます',7000)}
   return n}
 /* ===== お絵かき×物理のサンプル（台帳Z-177）=====
    「🎬 サンプルを見る」の c〜h。絵はコードで描いた（描画キャンバス・絵文字）もので、地形・物体は 56-phys-art.js の「絵→物理」で作る。
@@ -4036,7 +4122,7 @@ function sayOf(op,fs){const f=SAY[op.op];if(f)try{return f(op)}catch(_){}
   const D=PHAPI.OPS[op.op];return '「'+(D?D.label:op.op)+'」を行う'+(fs.length?'：'+fs.slice(0,3).map(x=>x.l+' '+x.v).join('、'):'')}
 function howOf(op,cat,fs){
   const D=PHAPI.OPS[op.op],lab=D?D.label:op.op;
-  if(op.op==='play')return['画面の「▶ 実行」を押す（ブロック列の最後に「▶ 実行」ブロックを置いてもよい）','物体が動き、測定値がたまっていく'];
+  if(op.op==='play')return['画面の「🌍 物理：オン」を押す（ブロック列の最後に「▶ 実行」ブロックを置いてもよい）','物体が動き、測定値がたまっていく'];
   if(op.op==='result')return['「検査する」を押す（ブロック列の最後に「答え合わせ」ブロックを置いてもよい）','測定値と理論値、保存則の検査が一覧で出る'];
   const L=['「＋ブロック」→ パレットの「'+CAT[cat]+'」→「'+lab+'」をタップ'];
   const cut=s=>s.length>70?s.slice(0,68)+'…':s;
@@ -8204,7 +8290,7 @@ function dvPlace(id,p){
     const ops=[{op:'newScenario',id:'tray',title:'装置で組み立てる',floor:false,width:DV_VIEW0.w},{op:'setView',x0:DV_VIEW0.x0,y0:DV_VIEW0.y0,w:DV_VIEW0.w}];
     if(id!=='floor')ops.push({op:'addDevice',device:'floor',pos:[0,0]});
     ops.push({op:'addDevice',device:id,pos});r=PHAPI.execBatch(ops)}
-  if(typeof note==='function')note(r.ok?'「'+d.label+'」を置きました（▶ 実行で動きます）':'置けませんでした：'+(r.errors||[]).slice(0,2).join(' / '),r.ok?2600:5000);
+  if(typeof note==='function')note(r.ok?'「'+d.label+'」を置きました（「物理：オン」で動きます）':'置けませんでした：'+(r.errors||[]).slice(0,2).join(' / '),r.ok?2600:5000);
   return r}
 /* 画面（ビューワー）の上で離したか。窓・ボタン・メニューの上なら取り消し。戻り値＝キャンバスの座標（拡大前）かnull */
 function dvCanvasPoint(cx,cy){
@@ -9147,6 +9233,155 @@ $('vwpx').onclick=()=>{
   const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(12*Math.max((DOC.w||W)/W,(DOC.h||H)/H),1,zMax(Z.s));
   Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y;
 };
+/* ===== ツールボックス方式（台帳Z-240）=====
+   操作ウィンドウ（#tp。タブで切り替える窓）とは別の部品：画面の下端に浮かぶ専用の枠（#tbx）に、道具を並べる。既定はこちら。
+   🎬メニューの「操作方式」で、従来の操作ウィンドウに切り替えられる（従来の窓は、そのまま残す。窓にも利点があるので、置き換えではなく、別の表示様式）。
+   ・形：画面の端に縦に並ぶ、小さな道具の列（左右どちらかに置ける）。作品の上に浮くだけで、作品は動かさない。
+   ・常に見えるのは「最低限の道具」だけ。ほかは、列の下の小さな枠（▾）に折りたたむ。押すと広がり、そのまま使える。✎で並べ替え・しまう／出す・左右・初期に戻す。
+   ・各道具の右下の⚙を押した時だけ、その道具の細かい設定（今までのタブの中身そのもの）が、列のとなりに重なって出る（#tpを詳細の枠として使う）。
+   ・別の場所へ移す部品（移すだけ。部品も動作も同じ）：絵の選択（#ch1）と作品が空の時の「＋画像」（#addrow・#noobj）は下の細い帯（#tbxTop）へ、ペンの色と太さ（#pn）は列のとなりの小窓（#tbxQ）へ。窓の方式に戻すと元の場所へ返す。
+   ・タブの帯（#tabs）は窓の方式だけで使う。setTab・setToolの動きは変えない（このファイルは setTool を包んで印を更新するだけ）。
+   ・UIの一時状態：作品・Undo・保存には入れない。端末のlocalStorageの am_ui（方式）と am_tbx（道具の並び。知らないキーは捨てずに書き戻す）だけ。
+   ・起動時の方式：URLの ?ui=box|win ＞ ?start=（検査用の従来の起動。win）＞ 端末の設定 ＞ box。 */
+const UIM={m:'box',LS:'am_ui',TB:'am_tbx'};
+const TBX_TOOLS=[
+  {id:'pen',ico:'✏️',lab:'ペン',tab:'dr',tool:'pen'},
+  {id:'eraser',ico:'🧽',lab:'消去',full:'消しゴム',tab:'dr',tool:'eraser'},
+  {id:'pl',ico:'✥',lab:'配置',tab:'pl'},
+  {id:'add',ico:'＋',lab:'画像',act:'add'},
+  {id:'ph',ico:'🌍',lab:'物理',tab:'ph'},
+  {id:'adj',ico:'🎨',lab:'色調',full:'色調整',tab:'adj'},
+  {id:'pt',ico:'✂️',lab:'切抜',full:'切り抜き',tab:'pt'},
+  {id:'clone',ico:'🩹',lab:'修整',tab:'dr',tool:'clone'},
+  {id:'mo',ico:'🎞',lab:'動き',tab:'mo'},
+  {id:'wp',ico:'〰',lab:'歪み',tab:'wp'},
+  {id:'fx',ico:'✨',lab:'質感',tab:'fx'},
+  {id:'mk',ico:'🎭',lab:'マスク',tab:'mk'},
+  {id:'bg',ico:'🖼',lab:'背景',full:'背景・出力',tab:'bg'}];
+const TBX_BY={};TBX_TOOLS.forEach(t=>{TBX_BY[t.id]=t});
+const TBX_N0=5;   /* 初期に常に見える道具の数（先頭から） */
+const TBX={o:TBX_TOOLS.map(t=>t.id),n:TBX_N0,more:false,edit:false,pick:null,det:null,x:{},fill:false,keep:''};
+/* 枠へ移す部品。元の位置には目印（コメント）を残し、戻す時はそこへ返す（順序がずれない） */
+const TBX_MV=[['ch1','tbxTop'],['addrow','tbxTop'],['noobj','tbxTop'],['pn','tbxQ']].map(([a,b])=>{const e=$(a),m=document.createComment('tbx:'+a);if(e&&e.parentNode)e.parentNode.insertBefore(m,e);return{e,m,to:b}});
+
+function tbxLoad(){
+  let d=null;try{d=JSON.parse(localStorage.getItem(UIM.TB)||'null')}catch(_){}
+  if(!d||typeof d!=='object'||!Array.isArray(d.o))return;
+  const seen=new Set(),o=[];for(const id of d.o)if(typeof id==='string'&&TBX_BY[id]&&!seen.has(id)){seen.add(id);o.push(id)}
+  for(const t of TBX_TOOLS)if(!seen.has(t.id))o.push(t.id);   /* このビルドで増えた道具は、いちばん後ろ（折りたたみ側）へ */
+  TBX.o=o;TBX.n=Math.max(0,Math.min(o.length,Number.isInteger(d.n)?d.n:TBX_N0));
+  const x={};for(const k of Object.keys(d))if(k!=='v'&&k!=='o'&&k!=='n')x[k]=d[k];TBX.x=x}
+function tbxSave(){try{localStorage.setItem(UIM.TB,JSON.stringify(Object.assign({},TBX.x,{v:1,o:TBX.o,n:TBX.n})))}catch(_){note('この端末では、道具の並びを覚えられません')}}
+
+function tbxBtn(t){
+  const w=document.createElement('div');w.className='tbw';
+  const b=document.createElement('button');b.type='button';b.className='tb';b.dataset.id=t.id;
+  b.setAttribute('aria-label',t.act?'画像を選んで新しいオブジェクトを追加':(t.full||t.lab)+'を使う');
+  const i=document.createElement('span');i.className='ti';i.textContent=t.ico;
+  const l=document.createElement('span');l.className='tl';l.textContent=t.lab;b.append(i,l);w.append(b);
+  if(t.tab){const g=document.createElement('button');g.type='button';g.className='tbg';g.dataset.id=t.id;g.textContent='⚙';g.setAttribute('aria-label',(t.full||t.lab)+'の詳細設定を開く／閉じる');w.append(g)}
+  return w}
+function tbxRender(){
+  const m=$('tbxMain'),r=$('tbxRest');m.textContent='';r.textContent='';
+  TBX.o.forEach((id,i)=>{(i<TBX.n?m:r).append(tbxBtn(TBX_BY[id]))});
+  const rest=TBX.o.slice(TBX.n),open=TBX.more||TBX.edit;
+  r.hidden=!open||!rest.length;
+  const mb=$('tbxMore');mb.hidden=!rest.length;
+  mb.textContent=open?'▴':'▾';mb.dataset.n=open?'':'+'+rest.length;
+  mb.setAttribute('aria-expanded',open?'true':'false');
+  mb.setAttribute('aria-label',open?'ほかの道具をたたむ':'ほかの道具（'+rest.length+'個：'+rest.map(id=>TBX_BY[id].full||TBX_BY[id].lab).join('・')+'）を広げる。広げると、そのまま使えます');
+  document.body.classList.toggle('tbxe',TBX.edit);$('tbxEd').hidden=!TBX.edit;$('tbxEdit').classList.toggle('on',TBX.edit);
+  const p=TBX.pick&&TBX_BY[TBX.pick],k=p?TBX.o.indexOf(p.id):-1;
+  $('tbxEn').textContent=p?'「'+(p.full||p.lab)+'」を選んでいます。▲▼で動かせます':'動かしたい道具を押してください';
+  $('tbxL').disabled=k<=0;$('tbxR').disabled=k<0||k>=TBX.o.length-1;$('tbxF').disabled=k<0;
+  $('tbxF').textContent=k<0?'しまう／出す':(k<TBX.n?'しまう（折りたたみへ）':'出す（いつも見える所へ）');
+  tbxSync()}
+/* いま選んでいる道具の印・詳細の見出し・色と太さの一行を合わせる（setTool／setTabの後に呼ばれる） */
+function tbxSync(){
+  if(!$('tbx'))return;
+  const on=document.querySelector('.tab.on'),tab=on?on.dataset.tab:'';
+  document.querySelectorAll('#tbx .tb').forEach(b=>{
+    const t=TBX_BY[b.dataset.id];let a=false;
+    if(t&&t.tab&&t.tab===tab)a=t.tool?(t.id==='eraser'?(tool==='eraser'||tool==='ieraser'):tool===t.tool):true;
+    b.classList.toggle('on',a&&!TBX.edit);b.setAttribute('aria-pressed',a?'true':'false');b.classList.toggle('pick',TBX.edit&&TBX.pick===b.dataset.id)});
+  document.querySelectorAll('#tbx .tbg').forEach(g=>g.classList.toggle('on',TBX.det===g.dataset.id));
+  $('tbxQ').hidden=!(UIM.m==='box'&&tab==='dr'&&!TBX.edit);
+  const d=TBX.det&&TBX_BY[TBX.det];$('tbxD').hidden=!(UIM.m==='box'&&d);if(d)$('tbxDt').textContent=(d.full||d.lab)+'の詳細'}
+function tbxTap(id){
+  const t=TBX_BY[id];if(!t)return;
+  if(TBX.edit){TBX.pick=id;tbxRender();return}
+  if(t.act==='add'){$('qadd').click();return}
+  setTab(t.tab);if(t.tool)setTool(t.tool);
+  if(TBX.det)TBX.det=id;
+  tbxSync()}
+function tbxOpen(id){
+  if(TBX.edit)return;
+  if(document.body.classList.contains('tbxd')&&TBX.det===id){tbxClose();return}
+  tbxTap(id);TBX.det=id;document.body.classList.add('tbxd');tbxSync()}
+function tbxClose(){TBX.det=null;document.body.classList.remove('tbxd');tbxSync();tbxFill()}
+function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';tbxSave();tbxApplySide()}
+/* 濃さ（15〜100%）。既定は55%＝後ろの絵が透けて見える。列・小窓・詳細の枠・下の帯が、同じ濃さ（--tbxa）を使う */
+function tbxApplyAlpha(){const v=Math.max(15,Math.min(100,Math.round(+TBX.x.alpha)||55));document.documentElement.style.setProperty('--tbxa',v+'%');$('tbxA').value=v;$('tbxAv').textContent=v+'%'}
+function tbxApplySide(){document.body.classList.toggle('tbxr',TBX.x.side==='r')}
+function tbxMove(d){const i=TBX.o.indexOf(TBX.pick),j=i+d;if(i<0||j<0||j>=TBX.o.length)return;[TBX.o[i],TBX.o[j]]=[TBX.o[j],TBX.o[i]];tbxSave();tbxRender()}
+/* しまう／出す：常に見える側（先頭からn個）と折りたたみ側の境目へ動かして、境目を1つずらす */
+function tbxFold(){
+  const i=TBX.o.indexOf(TBX.pick);if(i<0)return;
+  const id=TBX.o.splice(i,1)[0];
+  if(i<TBX.n){TBX.o.splice(TBX.n-1,0,id);TBX.n--}else{TBX.o.splice(TBX.n,0,id);TBX.n++}
+  tbxSave();tbxRender()}
+function tbxPlace(box){
+  for(const o of TBX_MV){if(!o.e||!o.m.parentNode)continue;
+    if(box){const t=$(o.to);if(o.e.parentNode!==t)t.append(o.e)}
+    else if(o.e.parentNode!==o.m.parentNode||o.e.previousSibling!==o.m)o.m.parentNode.insertBefore(o.e,o.m.nextSibling)}}
+/* 下の帯（#tbxTop）の高さ（--tbxh）と、ペンの小窓（#tbxQ）の高さ（--tbqh）を測る。詳細の枠の位置と、通常の枠の下の余白に使う */
+function tbxMeasure(){
+  if(!document.body.classList.contains('ubox'))return;const R=document.documentElement,h=e=>e&&!e.hidden&&e.getClientRects().length?Math.ceil(e.getBoundingClientRect().height):0;
+  R.style.setProperty('--tbxh',h($('tbxTop'))+'px');const q=h($('tbxQ'));R.style.setProperty('--tbqh',(q?q+6:0)+'px')}
+/* 枠（ブラウザの枠）が「大」の時は、作品の高さ（--bigh）を、下の帯のすぐ上までにする。作品と帯の間に余白を作らない。
+   列も詳細の枠も作品の上に重なるだけなので、開け閉めしても作品は動かない。窓の方式へ戻す時は、元の値へ返す。 */
+function tbxFill(){
+  const B=document.body,R=document.documentElement;
+  tbxMeasure();
+  if(!B.classList.contains('ubox')||!B.classList.contains('big')||B.classList.contains('tpf'))return;
+  if(!TBX.fill){TBX.fill=true;TBX.keep=R.style.getPropertyValue('--bigh')}
+  const bar=$('tbxTop'),bh=bar&&bar.getClientRects().length?Math.ceil(bar.getBoundingClientRect().height)+16:0;
+  const h=Math.round(Math.max(160,innerHeight-bh)),v=h+'px';
+  if(R.style.getPropertyValue('--bigh')!==v)R.style.setProperty('--bigh',v)}
+function tbxUnfill(){
+  if(!TBX.fill)return;TBX.fill=false;const R=document.documentElement;
+  if(TBX.keep)R.style.setProperty('--bigh',TBX.keep);else R.style.removeProperty('--bigh');TBX.keep=''}
+
+function uiApply(){
+  const box=UIM.m==='box';document.body.classList.toggle('ubox',box);
+  if(box&&typeof UIS!=='undefined'&&UIS.tpf)tpToggle();   /* 分離していた窓は戻す（枠の方式には分離が無い） */
+  tbxPlace(box);if(!box)tbxClose();
+  document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{const a=b.dataset.ui===UIM.m;b.classList.toggle('on',a);b.setAttribute('aria-pressed',a?'true':'false')});
+  tbxSync();if(box)tbxFill();else tbxUnfill()}
+function uiSet(m){
+  if(m!=='box'&&m!=='win')return;UIM.m=m;
+  try{localStorage.setItem(UIM.LS,m)}catch(_){note('この端末では、この選択を覚えられません')}
+  uiApply()}
+function uiInit(){
+  let m=null;
+  try{const q=new URLSearchParams(location.search),u=q.get('ui');if(u==='box'||u==='win')m=u;else if(q.get('start'))m='win'}catch(_){}
+  if(!m){try{const s=localStorage.getItem(UIM.LS);if(s==='box'||s==='win')m=s}catch(_){}}
+  UIM.m=m||'box'}
+
+/* setToolを包んで、道具が変わるたびに印を合わせる（setTabも最後にsetToolを呼ぶので、タブの切り替えも拾える） */
+(function(){const f=setTool;setTool=function(t){const r=f.apply(this,arguments);try{tbxSync()}catch(_){}return r}})();
+$('tbx').addEventListener('click',e=>{const g=e.target.closest('.tbg'),b=e.target.closest('.tb');if(g)tbxOpen(g.dataset.id);else if(b)tbxTap(b.dataset.id)});
+$('tbxMore').onclick=()=>{if(TBX.edit)return;TBX.more=!TBX.more;tbxRender()};
+$('tbxEdit').onclick=()=>{TBX.edit=!TBX.edit;TBX.pick=null;if(TBX.edit)tbxClose();tbxRender()};
+$('tbxEx').onclick=()=>{TBX.edit=false;TBX.pick=null;tbxRender()};
+$('tbxSide').onclick=tbxSide;$('tbxA').oninput=e=>{TBX.x.alpha=+e.target.value;tbxApplyAlpha()};$('tbxA').onchange=tbxSave;$('tbxL').onclick=()=>tbxMove(-1);$('tbxR').onclick=()=>tbxMove(1);$('tbxF').onclick=tbxFold;
+$('tbxRs').onclick=()=>{TBX.o=TBX_TOOLS.map(t=>t.id);TBX.n=TBX_N0;TBX.pick=null;tbxSave();tbxRender()};
+$('tbxDx').onclick=tbxClose;
+document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{b.onclick=()=>uiSet(b.dataset.ui)});
+if(typeof ResizeObserver==='function')[$('tbxTop'),$('tbxQ')].forEach(e=>new ResizeObserver(()=>tbxFill()).observe(e));
+new MutationObserver(()=>tbxFill()).observe(document.body,{attributes:true,attributeFilter:['class']});
+addEventListener('resize',()=>tbxFill());
+uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxRender();uiApply();
 /* ===== 自由帳（台帳Z-221）。起動時の状態を決めるので、manifestの最後に置く =====
    起動時の既定＝「自由帳」：A4縦・150dpi（白紙の既定と同じ）の白紙1枚が紙いっぱいにあり、ペンが選ばれ、ペンの補正が弱くオンの状態。
    ・作品ファイルを開いた時・「復元」を押した時は、その作品が優先（ここは起動時の1回だけ）。起動時は自動保存（am_auto）を上書きしない（dirtyProjを立てない）。

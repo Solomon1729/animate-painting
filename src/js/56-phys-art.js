@@ -87,7 +87,7 @@ function artTerrain(a,opt){opt=opt||{};
   const body={id:artId('t',a),type:'static',pos:[artR(v.x0+cx/kpm),artR(v.y0+(H-cy)/kpm)],mu:artRef('mu',.4),e:1,label:'',shapes};
   if(!artCommit(a,body,false,undefined,opt.noUndo))return false;
   SCN.link[body.id].art={};
-  if(!opt.quiet)note('「'+a.name+'」を地形にしました（'+shapes.length+'個の台形）。上から乗る物が対象です（ひさしやループは表せません）。▶で動かせます',7000);return body.id}
+  if(!opt.quiet)note('「'+a.name+'」を地形にしました（'+shapes.length+'個の台形）。上から乗る物が対象です（ひさしやループは表せません）。「物理：オン」で動かせます',7000);return body.id}
 
 /* ---------- 物体 ---------- */
 function artBody(a,opt){
@@ -115,7 +115,7 @@ function artBody(a,opt){
   const poly=shape.t==='poly',com=poly?artCentroid(hull):[shape.ox,shape.oy];   /* 重心（絵の中心からの相対m）。物体の重心と同じ多角形から求める */
   const topAt=x=>{let t=-1e9;const P=poly?hull:null;if(!P)return t;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];if((p[0]-x)*(q[0]-x)<=0&&p[0]!==q[0]){t=Math.max(t,p[1]+(q[1]-p[1])*(x-p[0])/(q[0]-p[0]))}}return t};
   ART.last={id:body.id,kind:asCircle?'circle':asBox?'box':'poly',hull,box:bx,center:G,area,com,topAbove:poly?[com[0],topAt(com[0])]:[com[0],com[1]+(asCircle?shape.r:bx.h/2)],top:hull.reduce((t,p)=>p[1]>t[1]?p:t,hull[0])};   /* topAbove＝重心の真上で、輪郭の上の端（釘をかける所） */
-  if(!opt.quiet)note('「'+a.name+'」を'+(fixed?'固定の障害物':'物体')+'にしました（'+(asCircle?'円':asBox?'四角':hull.length+'角形')+'）。質量・反発・摩擦はスライダーで変えられます。▶で動かせます',7000);return body.id}
+  if(!opt.quiet)note('「'+a.name+'」を'+(fixed?'固定の障害物':'物体')+'にしました（'+(asCircle?'円':asBox?'四角':hull.length+'角形')+'）。質量・反発・摩擦はスライダーで変えられます。「物理：オン」で動かせます',7000);return body.id}
 
 /* ---------- 物理タブのボタン・絵ごとの物理のつまみ（台帳Z-197）----------
    「絵に物理を付ける」が標準の入口：絵を選んで 動く／固定／地形 を押すと、見えている輪郭が当たり判定になる。質量・反発・摩擦・初速・当たり判定は、その絵だけのつまみ。
@@ -193,5 +193,5 @@ function artMigrateOld(){
     if(isFinite(p.e))b.e=Math.min(1,Math.max(0,+p.e));
     const vx=+p.vx||0,vy=+p.vy||0,sp=Math.hypot(vx,vy)/Math.max(1,W)*ART.W;
     if(!p.fixed&&sp>.05)b.vel={speed:+sp.toFixed(3),angle:+(Math.atan2(-vy,vx)*180/Math.PI).toFixed(2)}}
-  if(n){RUN.dirty=true;dirtyProj=true;scnUi();note('旧・簡易の物理の設定を、新しい物理に置き換えました（'+n+'個）。▶ で動かせます',7000)}
+  if(n){RUN.dirty=true;dirtyProj=true;scnUi();note('旧・簡易の物理の設定を、新しい物理に置き換えました（'+n+'個）。「物理：オン」で動かせます',7000)}
   return n}
