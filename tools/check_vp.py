@@ -50,8 +50,7 @@ def ready(pg):
 
 
 def open_lab(pg):
-    pg.evaluate("()=>modeSet('cons')")
-    pg.click('#cstabs button[data-lab=vp]')
+    pg.evaluate("()=>modeSet('cons2')")
     ready(pg)
 
 

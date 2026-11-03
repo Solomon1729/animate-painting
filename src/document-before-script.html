@@ -8,7 +8,7 @@
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
   <div class="cmh">モード</div>
-  <button id="mdb" aria-label="モードを切り替える（編集・アニメーション／物理／コンソール）。画面の右の縁から中央へ引っ張っても出ます">🧭 モードを切り替える</button>
+  <button id="mdb" aria-label="モードを切り替える（編集・アニメーション／物理／コンソール1／コンソール2）。画面の右の縁から中央へ引っ張っても出ます">🧭 モードを切り替える</button>
   <div class="cmh">枠の大きさ</div>
   <div class="cseg" id="frSeg"><button data-fr="n" aria-label="通常の枠（正方形）">通常</button><button data-fr="b" aria-label="大きい枠（画面いっぱいに近い・操作窓は下）">大</button><button data-fr="f" aria-label="全画面">全画面</button></div>
   <div class="cmh">画面</div>
@@ -431,9 +431,8 @@
   </div>
 </div>
 <!-- コンソールモード（台帳Z-207）：本体の作品・元に戻す・保存に触れない実験の場 -->
-<div id="cons" class="cons" hidden role="dialog" aria-label="コンソール（実験の場）">
-  <div class="cshd"><b>🧪 コンソール（実験の場）</b><span class="note">ここでの操作は、作品・元に戻す・保存に入りません。</span><button id="csmd" aria-label="モードを切り替える">🧭 モード</button><button id="csx" aria-label="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button></div>
-  <div class="cstabs" id="cstabs"></div>
+<div id="cons" class="cons" hidden role="dialog" aria-label="コンソール">
+  <div class="cshd"><b id="cstl">🧪 コンソール</b><span class="note">ここでの操作は、作品・元に戻す・保存に入りません。</span><button id="csmd" aria-label="モードを切り替える">🧭 モード</button><button id="csx" aria-label="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button></div>
   <div class="csbody" id="csbody"></div>
 </div>
 <!-- 起動直後の入口（台帳Z-221）。起動時にキャンバスの上へ移す -->
