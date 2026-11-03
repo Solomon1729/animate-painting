@@ -191,7 +191,7 @@ function memoUi(){
   sel.value=memoCur().id;
   const n=memoCur();memoQ('#mmTitle').value=n.title;memoQ('#mmTa').value=n.text;memoStatus();
 }
-CONSOLE.reg({id:'memo',ico:'📝',name:'メモ帳',
+CONSOLE.reg({id:'memo',no:1,mode:'cons1',ico:'📝',name:'メモ帳',
   mount(el){
     el.innerHTML='<div class="mmbar"><select id="mmSel" aria-label="メモを選ぶ（一覧）"></select><button id="mmNew" aria-label="新しいメモを作る">＋新規</button><button id="mmDel" aria-label="いま開いているメモを削除する">🗑 削除</button></div>'
       +'<input id="mmTitle" type="text" maxlength="80" placeholder="題名（空なら、メモの1行目）" aria-label="メモの題名">'
@@ -228,4 +228,3 @@ CONSOLE.reg({id:'memo',ico:'📝',name:'メモ帳',
   enter(){if(!MEMO.loaded)memoRead();memoUi()},
   leave(){if(MEMO.dirty)memoWrite()}
 });
-CONSOLE.cur='memo';   /* 開いて最初に見せる試作 */

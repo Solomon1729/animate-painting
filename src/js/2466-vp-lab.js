@@ -374,7 +374,7 @@ function vplReset(){
   vplRun();vplCode();vplSync(false);vplQ('#vpLog').innerHTML='';vplMsg('見本に戻しました。',0);
 }
 
-CONSOLE.reg({id:'vp',ico:'🧩',name:'ビジュアルプログラミング',
+CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログラミング',
   mount(el){
     VPL.el=el;
     el.innerHTML='<div class="vpgrid">'

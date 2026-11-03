@@ -256,8 +256,6 @@ body.consOpen #modeEdge{display:none}
 .cons{position:fixed;inset:0;z-index:250;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px)}
 .cshd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:var(--bw,1px) solid var(--line);background:var(--pane)}
 .cshd b{font-size:15px}.cshd .note{margin:0;flex:1 1 160px}
-.cstabs{display:flex;gap:6px;padding:8px 10px 0;flex-wrap:wrap}
-.cstabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .csbody{flex:1;min-height:0;overflow:auto;padding:10px;display:flex;flex-direction:column;overscroll-behavior:contain}
 .csbody>div{display:flex;flex-direction:column;flex:1;min-height:0;gap:8px}
 .csbody>div[hidden]{display:none}
@@ -447,7 +445,7 @@ body.ubox #tp .grp.alt{background:transparent}
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
   <div class="cmh">モード</div>
-  <button id="mdb" aria-label="モードを切り替える（編集・アニメーション／物理／コンソール）。画面の右の縁から中央へ引っ張っても出ます">🧭 モードを切り替える</button>
+  <button id="mdb" aria-label="モードを切り替える（編集・アニメーション／物理／コンソール1／コンソール2）。画面の右の縁から中央へ引っ張っても出ます">🧭 モードを切り替える</button>
   <div class="cmh">枠の大きさ</div>
   <div class="cseg" id="frSeg"><button data-fr="n" aria-label="通常の枠（正方形）">通常</button><button data-fr="b" aria-label="大きい枠（画面いっぱいに近い・操作窓は下）">大</button><button data-fr="f" aria-label="全画面">全画面</button></div>
   <div class="cmh">画面</div>
@@ -870,9 +868,8 @@ body.ubox #tp .grp.alt{background:transparent}
   </div>
 </div>
 <!-- コンソールモード（台帳Z-207）：本体の作品・元に戻す・保存に触れない実験の場 -->
-<div id="cons" class="cons" hidden role="dialog" aria-label="コンソール（実験の場）">
-  <div class="cshd"><b>🧪 コンソール（実験の場）</b><span class="note">ここでの操作は、作品・元に戻す・保存に入りません。</span><button id="csmd" aria-label="モードを切り替える">🧭 モード</button><button id="csx" aria-label="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button></div>
-  <div class="cstabs" id="cstabs"></div>
+<div id="cons" class="cons" hidden role="dialog" aria-label="コンソール">
+  <div class="cshd"><b id="cstl">🧪 コンソール</b><span class="note">ここでの操作は、作品・元に戻す・保存に入りません。</span><button id="csmd" aria-label="モードを切り替える">🧭 モード</button><button id="csx" aria-label="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button></div>
   <div class="csbody" id="csbody"></div>
 </div>
 <!-- 起動直後の入口（台帳Z-221）。起動時にキャンバスの上へ移す -->
@@ -8346,20 +8343,21 @@ dvBuild();dvBind();
    出し方：①画面の右の縁（細い帯 #modeEdge）から中央へ引っ張る　②👁メニューの「モードを切り替える」（マウスや、縁を引きにくい端末向け）
    ・①は、帯の上で押して左へ56px以上、かつ横の動きが縦の1.6倍以上の時だけ。縦のスクロールはブラウザに任せる（touch-action:pan-y）。
      他の指が画面に触れている間は反応しない（ピンチ・2本指・✋と衝突しない）。操作窓の持ち手は押した所で捕まえている（setPointerCapture）ので、帯の上へ掃いても反応しない。
-   ・モードの一覧は MODES。窓の一新（モードごとの窓）は、各モードの open に足していく。実体があるのは「編集・アニメーション」と「コンソール」。
+   ・モードの一覧は MODES。窓の一新（モードごとの窓）は、各モードの open に足していく。実体があるのは「編集・アニメーション」「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」。
+     **コンソールは1つにつきプロジェクト1つ**（台帳Z-245）。コンソールの項目は `con:true` を付け、`open()` で開く試作のidを渡す（`CONSOLE.open('memo')`）。
    ・UIの一時状態：作品・Undo・保存には入れない。 */
 const MODES=[
   {id:'edit',ico:'🎬',name:'編集・アニメーション',note:'いままでの画面です（描く・動き・歪み・色調整・物理など全部）。'},
   {id:'phys',ico:'🌍',name:'物理',note:'編集画面の「物理」タブへ移ります。独立したモードにはしていません（台帳Z-205）。',open(){
     document.body.classList.contains('tpc')&&$('tc').click();setTab('ph')}},
-  {id:'vp',ico:'🧩',name:'ビジュアルプログラミング',note:'準備中です（設計案を台帳Z-206に書いた段階。まだ使えません）。',off:true},
-  {id:'cons',ico:'🧪',name:'コンソール（実験の場）',note:'本体の作品に触れずに、新しい機能やメモを試す場所です。',open(){CONSOLE.open()}}
+  {id:'cons1',con:true,ico:'📝',name:'コンソール1（メモ帳）',note:'本体の作品に触れずに使うメモ帳です（txtの読み込み・出力、PDFの出力）。',open(){CONSOLE.open('memo')}},
+  {id:'cons2',con:true,ico:'🧩',name:'コンソール2（ビジュアルプログラミング）',note:'本体の作品に触れずに試す、ビジュアルプログラミングの試作です（動く画面とソースコードが対応して見えます）。',open(){CONSOLE.open('vp')}}
 ];
 const MODE={cur:'edit',pull:56,ratio:1.6};
 
 function modeIsOpen(){return !$('modes').hidden}
 function modeUi(){
-  const cur=CONSOLE.isOpen()?'cons':'edit';MODE.cur=cur;
+  const cur=CONSOLE.modeId();MODE.cur=cur;
   $('mdl').innerHTML='';
   for(const m of MODES){
     const b=document.createElement('button');b.className='mdi';b.dataset.mode=m.id;b.disabled=!!m.off;
@@ -8376,13 +8374,13 @@ function modeOpen(){
   const f=$('mdl').querySelector('button:not(:disabled)');if(f)try{f.focus({preventScroll:true})}catch(_){}
 }
 function modeClose(){$('modes').hidden=true}
-/* モードを切り替える。コンソールを開いている時に別のモードへ移る時は、先にコンソールを閉じる（本体の再生の状態は閉じる時に戻る） */
+/* モードを切り替える。コンソールを開いている時にコンソール以外のモードへ移る時は、先にコンソールを閉じる（本体の再生の状態は閉じる時に戻る）。コンソール1⇄2は、閉じずに入れ替える */
 function modeSet(id){
   const m=MODES.find(x=>x.id===id);if(!m||m.off)return;
   modeClose();
-  if(id!=='cons'&&CONSOLE.isOpen())CONSOLE.close();
+  if(!m.con&&CONSOLE.isOpen())CONSOLE.close();
   if(m.open)m.open();
-  MODE.cur=CONSOLE.isOpen()?'cons':'edit';
+  MODE.cur=CONSOLE.modeId();
 }
 $('mdx').onclick=modeClose;$('mdbk').onclick=modeClose;$('mdb').onclick=modeOpen;
 /* Escapeは、閉じるものがある時だけここで受ける（他の既存のEscape処理より先＝キャプチャ） */
@@ -8406,39 +8404,44 @@ addEventListener('blur',()=>_mdPtr.clear());document.addEventListener('visibilit
   });
   ['pointerup','pointercancel','lostpointercapture'].forEach(t=>eg.addEventListener(t,e=>{if(g&&e.pointerId===g.id)g=null}));
 })();
-/* ===== コンソールモード（台帳Z-207）=====
+/* ===== コンソールモード（台帳Z-207。2026-11-03に、1つのコンソール＝1つのプロジェクトへ分離。台帳Z-245）=====
    本体と切り離した実験の場。同じアプリの中の隠しモード（別ファイルではない）。
+   ・**1つのコンソールには、プロジェクト（試作）を1つだけ置く**。コンソール1＝メモ帳／コンソール2＝ビジュアルプログラミング。別々にモード選択から開く（タブで切り替える形はやめた）。
    ・本体の作品の保存形式（snap／ser／loadProj）・Undo（US）・AC・LAYERS・DOCには、一切触れない（読むだけの窓口を使う）。ここでの操作は、作品・元に戻す・保存に入らない。
-   ・開いている間は、本体の再生を止める（閉じる時、ここで止めたものだけ戻す）。
-   ・置けるもの＝試作（lab）。`CONSOLE.reg({id,ico,name,mount(el),enter?(),leave?()})` で登録する。mountは最初に開く時に1回、enter/leaveは見せる／隠す時に呼ばれる。
+   ・開いている間は、本体の再生を止める（閉じる時、ここで止めたものだけ戻す）。コンソール1→2へ直接移る時は、止めた記録を引き継ぐ。
+   ・置けるもの＝試作（lab）。`CONSOLE.reg({id,no,mode,ico,name,mount(el),enter?(),leave?()})` で登録する。noはコンソールの番号、modeはモード選択の項目id（`cons`＋番号。`MODES`の項目と同じ）。
+     mountは最初に開く時に1回、enter/leaveは見せる／隠す時に呼ばれる。**同じnoの試作を2つ登録しない**（新しい試作は新しい番号のコンソールにする）。
    ・移植の手順（台帳Z-207）：①ここで実機確認 → ②ユーザーがゴーサイン → ③Claudeが本体へ移し、台帳に「移植済」と書く。
    ・UIの一時状態：作品・Undo・保存には入れない。 */
 const CONSOLE={labs:[],cur:null,was:null,els:{},
-  reg(l){if(!this.labs.some(x=>x.id===l.id))this.labs.push(l)},
+  reg(l){if(!this.labs.some(x=>x.id===l.id||x.no===l.no))this.labs.push(l)},
   isOpen(){return !$('cons').hidden},
-  open(){
-    if(this.isOpen())return;
-    this.was={paused};if(!paused)$('pl').click();   /* 本体の再生を止める */
-    menuClose();hideTip();
-    $('cons').hidden=false;document.body.classList.add('consOpen');MODE.cur='cons';
-    this.tabs();this.show(this.cur&&this.labs.some(x=>x.id===this.cur)?this.cur:(this.labs[0]||{}).id);
+  lab(){return this.labs.find(x=>x.id===this.cur)||null},
+  /* 開いているコンソールのモードid（開いていなければ編集） */
+  modeId(){const l=this.isOpen()?this.lab():null;return l?l.mode:'edit'},
+  /* id＝試作のid（'memo'｜'vp'）。開いている間に別のコンソールへ移る時は、閉じずに入れ替える（本体の再生の記録はそのまま） */
+  open(id){
+    const l=this.labs.find(x=>x.id===id);if(!l)return;
+    if(!this.isOpen()){
+      this.was={paused};if(!paused)$('pl').click();   /* 本体の再生を止める */
+      menuClose();hideTip();
+      $('cons').hidden=false;document.body.classList.add('consOpen');
+    }
+    this.show(id);
   },
   close(){
     if(!this.isOpen())return;
-    const l=this.labs.find(x=>x.id===this.cur);if(l&&l.leave)try{l.leave()}catch(_){}
+    const l=this.lab();if(l&&l.leave)try{l.leave()}catch(_){}
     $('cons').hidden=true;document.body.classList.remove('consOpen');MODE.cur='edit';
     if(this.was&&!this.was.paused&&paused)$('pl').click();this.was=null;
   },
-  tabs(){
-    const t=$('cstabs');t.innerHTML='';
-    for(const l of this.labs){const b=document.createElement('button');b.textContent=l.ico+' '+l.name;b.dataset.lab=l.id;b.onclick=()=>this.show(l.id);t.appendChild(b)}
-  },
   show(id){
     const l=this.labs.find(x=>x.id===id);if(!l)return;
-    const prev=this.labs.find(x=>x.id===this.cur);if(prev&&prev!==l&&prev.leave)try{prev.leave()}catch(_){}
-    this.cur=id;
-    document.querySelectorAll('#cstabs button').forEach(b=>b.classList.toggle('on',b.dataset.lab===id));
-    for(const k in this.els)this.els[k].hidden=k!==id;
+    const prev=this.lab();if(prev&&prev!==l&&prev.leave)try{prev.leave()}catch(_){}
+    this.cur=id;MODE.cur=l.mode;
+    $('cstl').textContent=l.ico+' コンソール'+l.no+'（'+l.name+'）';
+    $('cons').setAttribute('aria-label','コンソール'+l.no+'（'+l.name+'）');
+    for(const k in this.els)this.els[k].hidden=k!==id;   /* 見せるのは、このコンソールの試作だけ */
     if(!this.els[id]){const el=document.createElement('div');el.dataset.lab=id;$('csbody').appendChild(el);this.els[id]=el;try{l.mount(el)}catch(e){el.textContent='この試作を開けませんでした：'+(e&&e.message||e)}}
     this.els[id].hidden=false;
     if(l.enter)try{l.enter()}catch(_){}
@@ -8447,16 +8450,6 @@ const CONSOLE={labs:[],cur:null,was:null,els:{},
 $('csx').onclick=()=>CONSOLE.close();
 $('csmd').onclick=modeOpen;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&CONSOLE.isOpen()&&!modeIsOpen()){CONSOLE.close();e.stopImmediatePropagation();e.preventDefault()}},true);
-
-/* 最初の試作＝この場所の使い方と移植の手順（文書。中身は固定） */
-CONSOLE.reg({id:'about',ico:'ℹ️',name:'使い方',mount(el){
-  el.innerHTML='<div class="note" style="line-height:1.7"><b>コンソールは、本体と切り離した実験の場です。</b><br>'
-    +'・ここでの操作は、作品・「元に戻す」・保存に入りません。本体の作品を壊すことはありません。<br>'
-    +'・開いている間は、本体の再生を止めています（閉じると戻ります）。<br>'
-    +'・失敗しそうなもの、実機で試さないと分からないもの、いまの仕組みを大きく書き換えるのが不安なものは、まずここに置いて試します。<br><br>'
-    +'<b>本体へ移す手順</b><br>①ここで実機で確認する　②良ければ、ゴーサインを出す　③Claudeが本体へ移し、台帳に「移植済」と書く<br><br>'
-    +'<b>いまある試作</b><br>・📝 メモ帳（メモを書く・txtの読み込みと出力・PDFの出力。端末に保存されます）<br>・🧩 ビジュアルプログラミング（動いている画面と、そのHTML・JavaScriptのソースが、行ごとに対応して見える試作。見本のテキストエディタが、本物のHTMLとJavaScriptで動いています）</div>';
-}});
 /* ===== メモ帳（コンソールモードの中。台帳Z-222）=====
    保存：端末のlocalStorage（am_memo）。作品ファイル・Undo・snap／serには入れない。版番号v付き。
          このビルドが知らないキーは捨てずに持ち（MEMO.x／各メモのx）、そのまま書き戻す（作品ファイルPROJと同じ規則。新しい版が書いたものも壊さない）。
@@ -8650,7 +8643,7 @@ function memoUi(){
   sel.value=memoCur().id;
   const n=memoCur();memoQ('#mmTitle').value=n.title;memoQ('#mmTa').value=n.text;memoStatus();
 }
-CONSOLE.reg({id:'memo',ico:'📝',name:'メモ帳',
+CONSOLE.reg({id:'memo',no:1,mode:'cons1',ico:'📝',name:'メモ帳',
   mount(el){
     el.innerHTML='<div class="mmbar"><select id="mmSel" aria-label="メモを選ぶ（一覧）"></select><button id="mmNew" aria-label="新しいメモを作る">＋新規</button><button id="mmDel" aria-label="いま開いているメモを削除する">🗑 削除</button></div>'
       +'<input id="mmTitle" type="text" maxlength="80" placeholder="題名（空なら、メモの1行目）" aria-label="メモの題名">'
@@ -8686,9 +8679,7 @@ CONSOLE.reg({id:'memo',ico:'📝',name:'メモ帳',
   },
   enter(){if(!MEMO.loaded)memoRead();memoUi()},
   leave(){if(MEMO.dirty)memoWrite()}
-});
-CONSOLE.cur='memo';   /* 開いて最初に見せる試作 */
-/* ===== ビジュアルプログラミングの試作（コンソールの中。台帳Z-231・Z-232。2026-10-30）=====
+});/* ===== ビジュアルプログラミングの試作（コンソールの中。台帳Z-231・Z-232。2026-10-30）=====
    目的：ビューワー（動いている画面）と、その中身のソースコードが、Chromeの開発者ツール（F12）のように、対応して見えること。
    最初の到達点：メモ帳のようなテキストエディタが、ここで見えること（見本＝VP_SAMPLE。本物のHTML・CSS・JavaScript）。
    ・「コード」は、実際に動いているHTML・CSS・JavaScriptそのもの（日本語に書き換えた独自の書き方は使わない。台帳Z-232）。
@@ -9064,7 +9055,7 @@ function vplReset(){
   vplRun();vplCode();vplSync(false);vplQ('#vpLog').innerHTML='';vplMsg('見本に戻しました。',0);
 }
 
-CONSOLE.reg({id:'vp',ico:'🧩',name:'ビジュアルプログラミング',
+CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログラミング',
   mount(el){
     VPL.el=el;
     el.innerHTML='<div class="vpgrid">'
