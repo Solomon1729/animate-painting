@@ -77,9 +77,35 @@ async function addImages(files){
 $('fadd').onchange=e=>{if(e.target.files&&e.target.files.length)addImages(e.target.files)};
 $('oadd3').onclick=()=>{pushUndo();add()};
 $('ad2').onclick=pickImages;
-{const w=$('wrap');
- w.addEventListener('dragover',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files'))e.preventDefault()});
- w.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){e.preventDefault();addImages(e.dataTransfer.files)}});}
+/* ドラッグ＆ドロップ（台帳Z-247）：**画面のどこに落としても受ける**。以前は作品の枠（#wrap）だけで、操作窓・ツールボックス・枠の外へ落とすと、ブラウザが画像そのものを開いて作業が消えた。
+   ・画像 → 作品へ追加（`addImages`。コンソール・モード選択を開いている間は、裏の作品へ足さずに知らせる）／HTML → ビジュアルプログラミングへ読み込む（`vplImportFile`。2466）。
+   ・ドラッグ中は、画面いっぱいの点線の枠（#drophint）で「落とせる」ことを示す。コンソールの中の枠（iframe）は、ドラッグ中だけ指を通さない（枠の中のページへ落ちて、そのページが開かれるのを防ぐ）。
+   ・UIの一時状態：作品・Undo・保存には入れない。 */
+const DROP={el:null,tm:0};
+const dropIsFiles=e=>!!(e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files'));
+function dropHint(on){
+  clearTimeout(DROP.tm);
+  if(!on){if(DROP.el)DROP.el.hidden=true;document.body.classList.remove('dropping');return}
+  if(!DROP.el){const d=document.createElement('div');d.id='drophint';d.className='drophint';d.setAttribute('aria-hidden','true');document.body.appendChild(d);DROP.el=d}
+  DROP.el.textContent=(typeof CONSOLE!=='undefined'&&CONSOLE.isOpen())?'HTMLファイルをここへ落とすと、ビジュアルプログラミングに読み込みます':'画像をここへ落とすと追加します（HTMLファイルは、ビジュアルプログラミングに読み込みます）';
+  DROP.el.hidden=false;document.body.classList.add('dropping');
+  DROP.tm=setTimeout(()=>dropHint(false),1500);   /* ドラッグが途中で消えた時の保険（dragoverが続く間は延ばされる） */
+}
+function dropRoute(fs){
+  const isHtml=f=>/\.(x?html?)$/i.test(f.name||'')||f.type==='text/html';
+  const isImg=f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(f.name||'');
+  const hs=fs.filter(isHtml),im=fs.filter(f=>!isHtml(f)&&isImg(f));
+  if(hs.length&&typeof vplImportFile==='function'){vplImportFile(hs[0],hs.length>1?hs.length-1:0)}
+  if(im.length){
+    if((typeof CONSOLE!=='undefined'&&CONSOLE.isOpen())||(typeof modeIsOpen==='function'&&modeIsOpen())){if(!hs.length)note('画像は、本体の画面に落とすと作品へ追加されます（いまはコンソール／モード選択が開いています）')}
+    else addImages(im);
+  }
+  if(!hs.length&&!im.length)note('画像かHTMLのファイルを落としてください');
+}
+addEventListener('dragover',e=>{if(!dropIsFiles(e))return;e.preventDefault();try{e.dataTransfer.dropEffect='copy'}catch(_){}dropHint(true)});
+addEventListener('dragleave',e=>{if(!e.relatedTarget)dropHint(false)});   /* 消すだけなので、ファイルのドラッグかは問わない（ブラウザによってdragleaveの種類情報が空でも、確実に消す） */
+addEventListener('dragend',()=>dropHint(false));
+addEventListener('drop',e=>{if(!dropIsFiles(e))return;e.preventDefault();dropHint(false);const fs=[...(e.dataTransfer.files||[])];if(fs.length)dropRoute(fs)});
 document.addEventListener('paste',e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test((e.target||{}).tagName||''))return;const fs=e.clipboardData&&e.clipboardData.files;if(fs&&fs.length&&[...fs].some(f=>/^image\//.test(f.type))){e.preventDefault();addImages(fs)}});
 $('f').onchange=e=>{const f=e.target.files[0];if(!f)return;const l=sel;loadImg(f).then(im=>{if(!im)return;setImg(l,im);chips()})};
 

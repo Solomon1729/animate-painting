@@ -42,5 +42,4 @@ const CONSOLE={labs:[],cur:null,was:null,els:{},
   }
 };
 $('csx').onclick=()=>CONSOLE.close();
-$('csmd').onclick=modeOpen;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&CONSOLE.isOpen()&&!modeIsOpen()){CONSOLE.close();e.stopImmediatePropagation();e.preventDefault()}},true);

@@ -231,10 +231,12 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 body.dvdrag,body.dvdrag *{cursor:grabbing!important}
 
 /* ===== モード選択・コンソール・自由帳の入口（台帳Z-204・Z-207・Z-221・Z-222） ===== */
-#modeEdge{display:none;position:fixed;top:0;bottom:0;right:0;width:10px;z-index:70;touch-action:pan-y}   /* 右の縁の細い帯。縦のスクロールはブラウザに任せ、左への横引きだけ受ける。キャンバスは画面の右端まで届くので、帯の幅の分だけ、そこから始める操作は受け取れない＝細くし、指で触る端末（any-pointer:coarse）でだけ有効にする。マウスは👁メニューの「モードを切り替える」 */
-@media (any-pointer:coarse){#modeEdge{display:block}}
+#modeEdge{display:block;position:fixed;top:0;bottom:0;right:0;width:10px;z-index:70;touch-action:pan-y}   /* 右の縁の細い帯＝モードを切り替える唯一の入口（台帳Z-246。指でもマウスでも）。縦のスクロールはブラウザに任せ、左への横引きだけ受ける。キャンバスは画面の右端まで届くので、帯の幅の分だけ、そこから始める操作は受け取れない＝細くしてある */
 #modeEdge::before{content:"";position:absolute;right:3px;top:50%;width:4px;height:46px;margin-top:-23px;border-radius:2px;background:var(--ink);opacity:.22}
-body.consOpen #modeEdge{display:none}
+body.consOpen #modeEdge{z-index:260}   /* コンソール（z-index:250）の上。コンソールの中からもモードを切り替えられる（モード選択の窓280の下） */
+.drophint{position:fixed;inset:6px;z-index:300;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;border:3px dashed var(--acc);border-radius:calc(var(--rk,1)*14px);background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--ink);font-weight:700;font-size:15px;pointer-events:none}   /* ドラッグ＆ドロップの案内（台帳Z-247） */
+.drophint[hidden]{display:none}
+body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソールの中の枠を通さない（枠の中のページへ落ちて開かれるのを防ぐ） */
 .modes{position:fixed;inset:0;z-index:280;display:flex;justify-content:flex-end}
 .modes[hidden],.cons[hidden],.startcard[hidden]{display:none}
 .mdbk{position:absolute;inset:0;background:rgba(0,0,0,.38)}
@@ -245,7 +247,7 @@ body.consOpen #modeEdge{display:none}
 .mdi b{display:block;font-size:15px}.mdi span{display:block;font-size:12px;font-weight:500;opacity:.8;margin-top:2px}
 .mdi[aria-current="true"]{background:var(--acc);color:#fff;border-color:var(--acc)}
 .mdi:disabled{opacity:.5}
-.cons{position:fixed;inset:0;z-index:250;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px)}
+.cons{position:fixed;inset:0;z-index:250;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px);padding-right:max(20px,env(safe-area-inset-right,0px))}   /* 右の20pxは空ける＝モード選択の縁の帯（#modeEdge。10px幅）の隣に入力欄などを置かない。指のタッチは判定に広がりがあり、帯の隣に入力欄があると、タッチがそちらに取られて右スワイプが効かない（実測：空き0pxで24回中4回しか帯に届かない／12px以上で全部届く。台帳Z-246） */
 .cshd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:var(--bw,1px) solid var(--line);background:var(--pane)}
 .cshd b{font-size:15px}.cshd .note{margin:0;flex:1 1 160px}
 .csbody{flex:1;min-height:0;overflow:auto;padding:10px;display:flex;flex-direction:column;overscroll-behavior:contain}
