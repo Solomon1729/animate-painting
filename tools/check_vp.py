@@ -14,6 +14,7 @@
   P6 本体に触れない：作品（ser）・Undo・Redo・変更あり・メモ帳・自動保存・保存先・再生／枠の中のコードが本体・外・保存先を壊せない
   P7 安全：HTMLとして解釈しない／壊れた保存／保存できない端末／偽の知らせ・大量の知らせ
   P8 画面：スマホ幅ではみ出さない・PC幅で2列・実行の記録が潰れない・タッチ
+  P9 始め方・HTMLの読み込みと出力・ドロップ（台帳Z-247・Z-248）：お絵かきの見本・HTMLの読み込み（Shift_JIS・外を指す記述・大きすぎ・やめる）・HTMLで出力・画面のどこへ落としても受ける・コンソール中の扱い
 """
 import sys, json
 from playwright.sync_api import sync_playwright
@@ -486,6 +487,220 @@ for (let i = 0; i < 60; i++) localStorage.setItem('k' + i, 'v');
     pg.tap('#vpScript .vpl[data-n="%d"]' % (n - 1))
     pg.wait_for_timeout(100)
     chk('タッチ：ソースの行を指で押すと選ばれる', ev(pg, SEL) == [n])
+    chk('エラーなし', errs == [], errs)
+    ctx.close()
+
+    # ---------------- P9 始め方・HTMLの読み込みと出力・ドロップ（台帳Z-247・Z-248） ----------------
+    print('--- P9 始め方・HTMLの読み込み・出力・ドロップ')
+    ctx, pg, errs = new(b, w=1000, h=900)
+    load(pg)
+    open_lab(pg)
+    r = ev(pg, "()=>({st:!!document.querySelector('#vpStText'),pt:!!document.querySelector('#vpStPaint'),fl:!!document.querySelector('#vpFile'),sv:!!document.querySelector('#vpSave'),acc:document.querySelector('#vpFile').accept,txt:[...document.querySelectorAll('.vpstart button,.vpstart .file')].map(e=>e.textContent.trim())})")
+    chk('始め方が3つ（テキストエディタ／お絵かき／HTMLを読み込む）と、HTMLで出力のボタンが出る', r['st'] and r['pt'] and r['fl'] and r['sv'], r['txt'])
+    chk('読み込みの入力はHTMLだけを受ける', '.html' in r['acc'] and '.htm' in r['acc'], r['acc'])
+    chk('最初は、テキストエディタの見本のまま', ev(pg, "()=>VPL.src===VP_SAMPLE") and fr(pg).locator('#editor').count() == 1)
+
+    # --- お絵かきの見本
+    pg.click('#vpStPaint')
+    ready(pg)
+    chk('「🎨 お絵かき」：お絵かきの見本に切り替わる（本物のHTML・JavaScript）', ev(pg, "()=>VPL.src===VP_PAINT&&VPL.src.includes('<canvas id=\"board\"')") and fr(pg).locator('#board').count() == 1)
+    chk('お絵かき：ソースが行で並ぶ（200行未満・コメント無しの素直なコード）', 60 < ev(pg, "()=>VPL.an.lines.length") < 200 and lineno(pg, "const dropBtn") > 0)
+    bb = fr(pg).locator('#board').bounding_box()
+    y = bb['y'] + bb['height'] * 0.5
+    pg.mouse.move(bb['x'] + 4, y)
+    pg.mouse.down()
+    pg.mouse.move(bb['x'] + bb['width'] * 0.5, y, steps=8)
+    pg.mouse.move(bb['x'] + bb['width'] - 4, y, steps=8)
+    pg.mouse.up()
+    pg.wait_for_timeout(100)
+    ink = frm(pg).evaluate("()=>{const d=inkCtx.getImageData(0,0,ink.width,ink.height).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]>40)n++;return n}")
+    chk('お絵かき：なぞると線が引ける', ink > 800, ink)
+    fr(pg).locator('#drop').click()
+    ys = []
+    for _ in range(14):
+        pg.wait_for_timeout(150)
+        ys.append(frm(pg).evaluate("()=>balls.length?balls[0].y:-1"))
+    mid = frm(pg).evaluate("()=>board.height*0.5")
+    chk('お絵かき：落とした1個のボールが、引いた線（高さの半分）の上で跳ねて、すり抜けない', max(ys) > mid - 60 and max(ys) < mid + 1 and min(ys) >= 0, (round(max(ys)), round(mid)))
+    fr(pg).locator('#clear').click()
+    chk('お絵かき：「全部消す」で線もボールも消える', frm(pg).evaluate("()=>balls.length===0&&inkCtx.getImageData(0,0,ink.width,ink.height).data.every((v,i)=>i%4!==3||v===0)"))
+    # 連動：調べる→部品を押すと、その部品を使う行が光る
+    pg.click('#vpInsp')
+    fr(pg).locator('#drop').click()
+    pg.wait_for_timeout(120)
+    hl = ev(pg, HL)
+    chk('お絵かきでも、画面とソースが連動する（「調べる」で #drop を押すと、使う行が光る）', lineno(pg, 'const dropBtn') in hl and lineno(pg, '<button id="drop">') in hl, hl)
+    pg.click('#vpRun')
+    chk('お絵かき：エラーなし（枠の中も）', ev(pg, "()=>VPL.log.every(t=>!/誤り/.test(t))"))
+
+    # --- テキストエディタへ戻す
+    pg.click('#vpStText')
+    ready(pg)
+    chk('「📝 テキストエディタ」：見本に戻る・見本のテキストエディタは端末に覚えない', ev(pg, "()=>VPL.src===VP_SAMPLE&&localStorage.getItem('am_vplab')===null") and fr(pg).locator('#editor').count() == 1)
+
+    # --- HTMLの読み込み
+    page_html = '<!doctype html>\n<html>\n<head><meta charset="utf-8"><title>mine</title></head>\n<body>\n<h1 id="hello">こんにちは</h1>\n<button id="go">押す</button>\n<p id="out"></p>\n<script>\nconst go = document.getElementById("go");\nconst out = document.getElementById("out");\ngo.addEventListener("click", () => {\n  out.textContent = "押されました";\n});\n</script>\n</body>\n</html>\n'
+    pg.set_input_files('#vpFile', {'name': 'my page.html', 'mimeType': 'text/html', 'buffer': page_html.encode('utf-8')})
+    ready(pg)
+    chk('HTMLを読み込むと、ソースがそのまま並び、ビューワーに出る', ev(pg, "()=>VPL.src").strip() == page_html.strip() and fr(pg).locator('#hello').text_content() == 'こんにちは')
+    chk('読み込みの知らせ（ファイル名・行数）と実行の記録', '「my page.html」を読み込みました' in ev(pg, MSG) and any('読み込んだ' in t for t in ev(pg, LOG)), ev(pg, MSG))
+    fr(pg).locator('#go').click()
+    pg.wait_for_timeout(150)
+    chk('読み込んだHTMLも動く（ボタン→画面の書き換え）・動いた処理が光る', fr(pg).locator('#out').text_content() == '押されました' and len(ev(pg, FLASH)) >= 1, ev(pg, FLASH))
+    pg.click('#vpInsp')
+    fr(pg).locator('#go').click()
+    pg.wait_for_timeout(120)
+    hl = ev(pg, HL)
+    chk('読み込んだHTMLも、画面⇔ソースの連動が効く（#go を選ぶと、使う行が光る）', lineno(pg, 'const go') in hl and lineno(pg, '<button id="go">') in hl and lineno(pg, 'go.addEventListener') in hl, hl)
+    pg.click('#vpRun')
+    pg.click('#vpEdit')
+    pg.click('#vpCancel')
+    chk('読み込んだHTMLを、そのまま編集・反映できる', ev(pg, "()=>!VPL.editing"))
+    chk('読み込んだ内容は端末に覚え、開き直しても出る', ev(pg, LS('am_vplab')).strip() == page_html.strip())
+    keys = ev(pg, "()=>Object.keys(localStorage).filter(k=>k.indexOf('am_vplab_s_')===0)")
+    chk('読み込む時に、前の見本が保存した文字は消える', keys == [], keys)
+
+    # --- 出力
+    with pg.expect_download() as dl:
+        pg.click('#vpSave')
+    d = dl.value
+    txt = open(d.path(), encoding='utf-8').read()
+    chk('HTMLで出力：ファイル名は読み込んだ名前から（my page.html）', d.suggested_filename == 'my page.html', d.suggested_filename)
+    chk('HTMLで出力：いま動いているソースそのまま（差し替え窓口などの余分な物を含まない）', txt == ev(pg, "()=>VPL.src") and '__vp' not in txt and 'Content-Security-Policy' not in txt)
+    import tempfile, os
+    outp = os.path.join(tempfile.mkdtemp(), d.suggested_filename)   # ダウンロード先は拡張子の無い名前なので、.htmlの名前で保存し直して開く
+    d.save_as(outp)
+    pg2 = ctx.new_page()
+    pg2.goto('file://' + outp)
+    pg2.click('#go')
+    chk('HTMLで出力：出力したファイルを単独で開くと、同じように動く', pg2.text_content('#out') == '押されました')
+    pg2.close()
+    chk('出力の知らせが出る', 'HTMLで出力しました' in ev(pg, MSG))
+
+    # --- 読み込めないもの
+    before = ev(pg, "()=>VPL.src")
+    pg.set_input_files('#vpFile', {'name': 'note.txt', 'mimeType': 'text/plain', 'buffer': 'ただの文章です。タグはありません。'.encode('utf-8')})
+    pg.wait_for_timeout(300)
+    chk('HTMLでないファイルは読み込まず、理由を出す（ソースは変わらない）', ev(pg, "()=>VPL.src") == before and '読み込めません' in ev(pg, MSG) and 'HTMLファイルではない' in ev(pg, MSG), ev(pg, MSG))
+    pg.set_input_files('#vpFile', {'name': 'big.html', 'mimeType': 'text/html', 'buffer': ('<p>' + 'あ' * 200001 + '</p>').encode('utf-8')})
+    pg.wait_for_timeout(400)
+    chk('長すぎるHTML（20万字超）は読み込まず、理由を出す', ev(pg, "()=>VPL.src") == before and '長すぎます' in ev(pg, MSG), ev(pg, MSG))
+    pg.set_input_files('#vpFile', {'name': 'huge.html', 'mimeType': 'text/html', 'buffer': b'<p>' + b'a' * (900 * 1024) + b'</p>'})
+    pg.wait_for_timeout(400)
+    chk('大きすぎるファイル（約900KB）は、中身を読まずに断る', ev(pg, "()=>VPL.src") == before and '大きすぎます' in ev(pg, MSG), ev(pg, MSG))
+    # 読み込み前の確認でやめる
+    pg.evaluate("()=>{window.__cf=window.confirm;window.confirm=()=>false}")
+    pg.set_input_files('#vpFile', {'name': 'other.html', 'mimeType': 'text/html', 'buffer': b'<h1 id="o">other</h1>'})
+    pg.wait_for_timeout(300)
+    chk('いまのソースが見本のままでない時は確認し、やめるとソースも名前も変わらない', ev(pg, "()=>VPL.src===" + json.dumps(before) + "&&VPL.name==='my page.html'"))
+    pg.click('#vpStPaint')
+    pg.wait_for_timeout(200)
+    chk('始め方の切り替えも同じ確認をする（やめると変わらない）', ev(pg, "()=>VPL.src===" + json.dumps(before)))
+    pg.evaluate("()=>{window.confirm=window.__cf}")
+
+    # --- 外を指す記述・文字コード
+    ext = '<!doctype html><html><body><h1 id="e">ext</h1><script src="https://cdn.example.com/lib.js"></script></body></html>'
+    pg.set_input_files('#vpFile', {'name': 'ext.html', 'mimeType': 'text/html', 'buffer': ext.encode('utf-8')})
+    ready(pg)
+    chk('外のサイトを指す記述があれば、読み込んだうえで「動かない」ことを知らせる', '外のサイトを指す' in ev(pg, MSG) and fr(pg).locator('#e').count() == 1, ev(pg, MSG))
+    sj = '<!doctype html><html><body><h1 id="sj">日本語のタイトル</h1></body></html>'
+    pg.set_input_files('#vpFile', {'name': 'sjis.html', 'mimeType': 'text/html', 'buffer': sj.encode('cp932')})
+    ready(pg)
+    chk('Shift_JISのHTMLも文字化けせず読み込める', fr(pg).locator('#sj').text_content() == '日本語のタイトル', fr(pg).locator('#sj').text_content())
+    pg.reload()
+    pg.wait_for_timeout(450)
+    open_lab(pg)
+    chk('ページを読み込み直しても、最後に読み込んだHTMLが出る', fr(pg).locator('#sj').count() == 1 and ev(pg, "()=>VPL.src.includes('id=\"sj\"')"))
+    chk('エラーなし', errs == [], errs)
+    ctx.close()
+
+    # --- ドラッグ＆ドロップ（画面のどこでも）
+    ctx, pg, errs = new(b, w=900, h=800)
+    load(pg)
+    pg.evaluate("""()=>{
+      window.mkFile=async(kind)=>{
+        if(kind==='png'){const c=document.createElement('canvas');c.width=40;c.height=30;const g=c.getContext('2d');g.fillStyle='#e11d48';g.fillRect(0,0,40,30);
+          const bl=await new Promise(r=>c.toBlob(r,'image/png'));return new File([bl],'red.png',{type:'image/png'})}
+        if(kind==='html')return new File(['<!doctype html><h1 id="dz">drop</h1>'],'dz.html',{type:'text/html'});
+        return new File(['abc'],'a.txt',{type:'text/plain'})};
+      window.fire=(type,dt,target)=>{const e=new DragEvent(type,{dataTransfer:dt,bubbles:true,cancelable:true});(target||document.body).dispatchEvent(e);return e.defaultPrevented};
+    }""")
+    n0 = ev(pg, "()=>AC.length")
+    r = ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(await mkFile('png'));
+      const dp=fire('dragover',dt,document.getElementById('tp')||document.body);
+      const h=document.getElementById('drophint');
+      return {dp,vis:!!h&&!h.hidden,body:document.body.classList.contains('dropping'),txt:h?h.textContent:''}}""")
+    chk('ファイルをドラッグすると、画面いっぱいの案内が出て、ブラウザの既定（ファイルを開く）を止める', r['dp'] and r['vis'] and r['body'] and '画像' in r['txt'], r)
+    ev(pg, """()=>{const e=new DragEvent('dragleave',{bubbles:true,cancelable:true,relatedTarget:null});document.body.dispatchEvent(e)}""")
+    chk('画面の外へ出ると（dragleave）、案内が消える', ev(pg, "()=>document.getElementById('drophint').hidden&&!document.body.classList.contains('dropping')"))
+    r = ev(pg, """()=>{const dt=new DataTransfer();dt.setData('text/plain','hello');const e=new DragEvent('dragover',{dataTransfer:dt,bubbles:true,cancelable:true});document.body.dispatchEvent(e);return {dp:e.defaultPrevented,vis:!document.getElementById('drophint').hidden}}""")
+    chk('文字のドラッグ（ファイルでない）には反応しない', r['dp'] is False and r['vis'] is False, r)
+    # 画像を、作品の枠(#wrap)の外（操作窓の上）へ落とす
+    dp = ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(await mkFile('png'));return fire('drop',dt,document.getElementById('tp')||document.body)}""")
+    pg.wait_for_function("(n)=>AC.length>n", arg=n0, timeout=5000)
+    chk('画像を、操作窓の上に落としても作品に追加される（枠の外でも受ける）・既定の動作は止める', dp is True and ev(pg, "()=>AC.length") == n0 + 1, (n0, ev(pg, "()=>AC.length")))
+    chk('追加したオブジェクトは、ファイル名が名前になる', ev(pg, "()=>AC[AC.length-1].name") == 'red', ev(pg, "()=>AC[AC.length-1].name"))
+    pg.keyboard.press('Control+z')
+    pg.wait_for_timeout(200)
+    chk('元に戻す（Ctrl+Z）で、落とした画像の追加が取り消せる', ev(pg, "()=>AC.length") == n0, ev(pg, "()=>AC.length"))
+    # 作品の枠の上（従来どおり）
+    ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(await mkFile('png'));fire('drop',dt,document.getElementById('wrap'))}""")
+    pg.wait_for_function("(n)=>AC.length>n", arg=n0, timeout=5000)
+    chk('作品の枠の上に落とすのも、従来どおり追加される（1回だけ・二重に足さない）', ev(pg, "()=>AC.length") == n0 + 1, ev(pg, "()=>AC.length"))
+    pg.wait_for_timeout(500)
+    chk('…ほかのオブジェクトを増やしていない', ev(pg, "()=>AC.length") == n0 + 1)
+    # 画像でもHTMLでもない
+    ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(await mkFile('txt'));fire('drop',dt)}""")
+    pg.wait_for_timeout(150)
+    chk('画像でもHTMLでもないファイルは、案内を出して何も足さない', '画像かHTML' in ev(pg, "()=>$('ht').textContent") and ev(pg, "()=>AC.length") == n0 + 1)
+    # HTMLを落とす（コンソールが閉じている本体の画面で）
+    base = ev(pg, "()=>({ser:ser(),US:US.length,RS:RS.length,AC:AC.length})")
+    ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(await mkFile('html'));fire('drop',dt)}""")
+    pg.wait_for_function("()=>CONSOLE.isOpen()&&CONSOLE.cur==='vp'&&VPL.ready&&VPL.src.includes('id=\"dz\"')", timeout=6000)
+    pg.wait_for_timeout(250)
+    chk('HTMLを落とすと、ビジュアルプログラミング（コンソール2）が開いて読み込まれる', fr(pg).locator('#dz').text_content() == 'drop' and ev(pg, "()=>VPL.name")=='dz.html')
+    after = ev(pg, "()=>({ser:ser(),US:US.length,RS:RS.length,AC:AC.length})")
+    chk('HTMLを落としても、本体の作品・Undo・Redo・オブジェクトは変わらない', after == base, (base['US'], after['US']))
+    # コンソールが開いている間は、画像で作品を変えない
+    ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(await mkFile('png'));fire('drop',dt)}""")
+    pg.wait_for_timeout(500)
+    chk('コンソールを開いている間に画像を落としても、裏の作品へは足さず、理由を知らせる', ev(pg, "()=>AC.length") == base['AC'] and '作品へ追加' in ev(pg, "()=>$('ht').textContent"), ev(pg, "()=>$('ht').textContent"))
+    r = ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(await mkFile('html'));fire('dragover',dt);const h=document.getElementById('drophint');return {t:h.textContent,f:getComputedStyle(document.querySelector('#vpFrame')).pointerEvents}}""")
+    chk('コンソールの中のドラッグ：案内はHTML用になり、ドラッグ中だけ枠の中のページを通さない（枠の中に落ちてページが開かれるのを防ぐ）', 'HTMLファイル' in r['t'] and r['f'] == 'none', r)
+    ev(pg, "()=>document.body.dispatchEvent(new DragEvent('dragend',{bubbles:true}))")
+    chk('ドラッグが終わると、枠の中のページへ通すのに戻る', ev(pg, "()=>getComputedStyle(document.querySelector('#vpFrame')).pointerEvents") != 'none')
+    # メモ帳が開いている時にHTMLを落とす → ビジュアルプログラミングへ
+    ev(pg, "()=>modeSet('cons1')")
+    ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(new File(['<!doctype html><h1 id="m2">memo2</h1>'],'m2.html',{type:'text/html'}));fire('drop',dt)}""")
+    pg.wait_for_function("()=>CONSOLE.cur==='vp'&&VPL.src.includes('id=\"m2\"')", timeout=6000)
+    chk('メモ帳（コンソール1）が開いている時にHTMLを落とすと、コンソール2へ移って読み込まれる', ev(pg, "()=>CONSOLE.cur==='vp'&&!document.querySelector('#csbody>div[data-lab=memo]:not([hidden])')"))
+    # モード選択が開いている時
+    ev(pg, "()=>modeOpen()")
+    ev(pg, """async()=>{const dt=new DataTransfer();dt.items.add(await mkFile('png'));fire('drop',dt)}""")
+    pg.wait_for_timeout(400)
+    chk('モード選択が開いている間も、画像を裏の作品へ足さない', ev(pg, "()=>AC.length") == base['AC'])
+    chk('エラーなし', errs == [], errs)
+    ctx.close()
+
+    # --- 画面：始め方の行がスマホ幅ではみ出さない
+    ctx, pg, errs = new(b, touch=True)
+    load(pg)
+    open_lab(pg)
+    r = ev(pg, "()=>{const bs=[...document.querySelectorAll('.vpstart button,.vpstart .file')].map(e=>e.getBoundingClientRect());return {dw:document.documentElement.scrollWidth,w:innerWidth,right:Math.max(...bs.map(r=>r.right)),minh:Math.min(...bs.map(r=>r.height)),n:bs.length}}")
+    chk('スマホ幅：始め方の4つのボタンが、はみ出さず・指で押せる高さ（28px以上）', r['n'] == 4 and r['dw'] <= r['w'] and r['right'] <= r['w'] and r['minh'] >= 28, r)
+    pg.tap('#vpStPaint')
+    ready(pg)
+    chk('タッチ：「🎨 お絵かき」を指で押して切り替わる', fr(pg).locator('#board').count() == 1)
+    box = fr(pg).locator('#board').bounding_box()
+    cdp = ctx.new_cdp_session(pg)
+    yy = box['y'] + box['height'] * 0.5
+    cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': box['x'] + 4, 'y': yy, 'id': 1}]})
+    for k in range(1, 11):
+        cdp.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'x': box['x'] + 4 + (box['width'] - 8) * k / 10, 'y': yy, 'id': 1}]})
+    cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+    pg.wait_for_timeout(150)
+    ink = frm(pg).evaluate("()=>{const d=inkCtx.getImageData(0,0,ink.width,ink.height).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]>40)n++;return n}")
+    chk('タッチ：お絵かきの見本で、指でなぞって線が引ける（ページはスクロールしない）', ink > 500 and ev(pg, "()=>scrollY") == 0, ink)
     chk('エラーなし', errs == [], errs)
     ctx.close()
 

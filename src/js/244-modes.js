@@ -1,7 +1,7 @@
-/* ===== モード選択（台帳Z-204）=====
+/* ===== モード選択（台帳Z-204・Z-246）=====
    モード＝画面（手元の窓）の組み合わせの切り替え。機能がモードに属するわけではない（AGENTS.md §3.5。ペンも色調整も、どの画面から使っても同じ機能）。
-   出し方：①画面の右の縁（細い帯 #modeEdge）から中央へ引っ張る　②👁メニューの「モードを切り替える」（マウスや、縁を引きにくい端末向け）
-   ・①は、帯の上で押して左へ56px以上、かつ横の動きが縦の1.6倍以上の時だけ。縦のスクロールはブラウザに任せる（touch-action:pan-y）。
+   出し方：**画面の右の縁（細い帯 #modeEdge）から中央へなぞる操作だけ**（台帳Z-246。ユーザー指示「モード変更は右スワイプで統一」。切り替え用のボタンは置かない。指でもマウスでも。コンソールの中でも同じ）
+   ・帯の上で押して左へ56px以上、かつ横の動きが縦の1.6倍以上の時だけ。縦のスクロールはブラウザに任せる（touch-action:pan-y）。
      他の指が画面に触れている間は反応しない（ピンチ・2本指・✋と衝突しない）。操作窓の持ち手は押した所で捕まえている（setPointerCapture）ので、帯の上へ掃いても反応しない。
    ・モードの一覧は MODES。窓の一新（モードごとの窓）は、各モードの open に足していく。実体があるのは「編集・アニメーション」「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」。
      **コンソールは1つにつきプロジェクト1つ**（台帳Z-245）。コンソールの項目は `con:true` を付け、`open()` で開く試作のidを渡す（`CONSOLE.open('memo')`）。
@@ -42,7 +42,7 @@ function modeSet(id){
   if(m.open)m.open();
   MODE.cur=CONSOLE.modeId();
 }
-$('mdx').onclick=modeClose;$('mdbk').onclick=modeClose;$('mdb').onclick=modeOpen;
+$('mdx').onclick=modeClose;$('mdbk').onclick=modeClose;
 /* Escapeは、閉じるものがある時だけここで受ける（他の既存のEscape処理より先＝キャプチャ） */
 addEventListener('keydown',e=>{if(e.key==='Escape'&&modeIsOpen()){modeClose();e.stopImmediatePropagation();e.preventDefault()}},true);
 

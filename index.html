@@ -239,10 +239,12 @@ body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important
 body.dvdrag,body.dvdrag *{cursor:grabbing!important}
 
 /* ===== モード選択・コンソール・自由帳の入口（台帳Z-204・Z-207・Z-221・Z-222） ===== */
-#modeEdge{display:none;position:fixed;top:0;bottom:0;right:0;width:10px;z-index:70;touch-action:pan-y}   /* 右の縁の細い帯。縦のスクロールはブラウザに任せ、左への横引きだけ受ける。キャンバスは画面の右端まで届くので、帯の幅の分だけ、そこから始める操作は受け取れない＝細くし、指で触る端末（any-pointer:coarse）でだけ有効にする。マウスは👁メニューの「モードを切り替える」 */
-@media (any-pointer:coarse){#modeEdge{display:block}}
+#modeEdge{display:block;position:fixed;top:0;bottom:0;right:0;width:10px;z-index:70;touch-action:pan-y}   /* 右の縁の細い帯＝モードを切り替える唯一の入口（台帳Z-246。指でもマウスでも）。縦のスクロールはブラウザに任せ、左への横引きだけ受ける。キャンバスは画面の右端まで届くので、帯の幅の分だけ、そこから始める操作は受け取れない＝細くしてある */
 #modeEdge::before{content:"";position:absolute;right:3px;top:50%;width:4px;height:46px;margin-top:-23px;border-radius:2px;background:var(--ink);opacity:.22}
-body.consOpen #modeEdge{display:none}
+body.consOpen #modeEdge{z-index:260}   /* コンソール（z-index:250）の上。コンソールの中からもモードを切り替えられる（モード選択の窓280の下） */
+.drophint{position:fixed;inset:6px;z-index:300;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;border:3px dashed var(--acc);border-radius:calc(var(--rk,1)*14px);background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--ink);font-weight:700;font-size:15px;pointer-events:none}   /* ドラッグ＆ドロップの案内（台帳Z-247） */
+.drophint[hidden]{display:none}
+body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソールの中の枠を通さない（枠の中のページへ落ちて開かれるのを防ぐ） */
 .modes{position:fixed;inset:0;z-index:280;display:flex;justify-content:flex-end}
 .modes[hidden],.cons[hidden],.startcard[hidden]{display:none}
 .mdbk{position:absolute;inset:0;background:rgba(0,0,0,.38)}
@@ -253,7 +255,7 @@ body.consOpen #modeEdge{display:none}
 .mdi b{display:block;font-size:15px}.mdi span{display:block;font-size:12px;font-weight:500;opacity:.8;margin-top:2px}
 .mdi[aria-current="true"]{background:var(--acc);color:#fff;border-color:var(--acc)}
 .mdi:disabled{opacity:.5}
-.cons{position:fixed;inset:0;z-index:250;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px)}
+.cons{position:fixed;inset:0;z-index:250;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px);padding-right:max(20px,env(safe-area-inset-right,0px))}   /* 右の20pxは空ける＝モード選択の縁の帯（#modeEdge。10px幅）の隣に入力欄などを置かない。指のタッチは判定に広がりがあり、帯の隣に入力欄があると、タッチがそちらに取られて右スワイプが効かない（実測：空き0pxで24回中4回しか帯に届かない／12px以上で全部届く。台帳Z-246） */
 .cshd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:var(--bw,1px) solid var(--line);background:var(--pane)}
 .cshd b{font-size:15px}.cshd .note{margin:0;flex:1 1 160px}
 .csbody{flex:1;min-height:0;overflow:auto;padding:10px;display:flex;flex-direction:column;overscroll-behavior:contain}
@@ -444,8 +446,6 @@ body.ubox #tp .grp.alt{background:transparent}
 <div class="cbar" id="cz"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button><button id="hand" aria-label="画面を動かす（常にドラッグでパン）">✋</button><button id="un2" aria-label="元に戻す">↩</button><button id="rd2" aria-label="やり直す">↪</button></div>
 <div class="cbar" id="cm"><button id="mnv" aria-label="表示メニュー（枠の大きさ・固定・1倍・操作窓）" aria-haspopup="true" aria-expanded="false">👁</button><button id="mna" aria-label="操作メニュー（とめる・戻す・保存・録画・画像追加）" aria-haspopup="true" aria-expanded="false">🎬</button></div>
 <div class="cmenu" id="mV" hidden>
-  <div class="cmh">モード</div>
-  <button id="mdb" aria-label="モードを切り替える（編集・アニメーション／物理／コンソール1／コンソール2）。画面の右の縁から中央へ引っ張っても出ます">🧭 モードを切り替える</button>
   <div class="cmh">枠の大きさ</div>
   <div class="cseg" id="frSeg"><button data-fr="n" aria-label="通常の枠（正方形）">通常</button><button data-fr="b" aria-label="大きい枠（画面いっぱいに近い・操作窓は下）">大</button><button data-fr="f" aria-label="全画面">全画面</button></div>
   <div class="cmh">画面</div>
@@ -857,7 +857,7 @@ body.ubox #tp .grp.alt{background:transparent}
   <div class="mancur" id="manLive" hidden></div>
   <div id="manBody"></div>
 </div>
-<!-- モード選択（台帳Z-204）：右の縁から中央へ引っ張る／👁メニューの「モードを切り替える」 -->
+<!-- モード選択（台帳Z-204・Z-246）：切り替えは、画面の右の縁から中央へなぞる操作だけ（ボタンは置かない） -->
 <div id="modeEdge" aria-hidden="true"></div>
 <div id="modes" class="modes" hidden role="dialog" aria-label="モードの選択">
   <div class="mdbk" id="mdbk"></div>
@@ -869,7 +869,7 @@ body.ubox #tp .grp.alt{background:transparent}
 </div>
 <!-- コンソールモード（台帳Z-207）：本体の作品・元に戻す・保存に触れない実験の場 -->
 <div id="cons" class="cons" hidden role="dialog" aria-label="コンソール">
-  <div class="cshd"><b id="cstl">🧪 コンソール</b><span class="note">ここでの操作は、作品・元に戻す・保存に入りません。</span><button id="csmd" aria-label="モードを切り替える">🧭 モード</button><button id="csx" aria-label="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button></div>
+  <div class="cshd"><b id="cstl">🧪 コンソール</b><span class="note">ここでの操作は、作品・元に戻す・保存に入りません。モードは、画面の右の縁から中央へなぞると切り替えられます。</span><button id="csx" aria-label="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button></div>
   <div class="csbody" id="csbody"></div>
 </div>
 <!-- 起動直後の入口（台帳Z-221）。起動時にキャンバスの上へ移す -->
@@ -7843,9 +7843,35 @@ async function addImages(files){
 $('fadd').onchange=e=>{if(e.target.files&&e.target.files.length)addImages(e.target.files)};
 $('oadd3').onclick=()=>{pushUndo();add()};
 $('ad2').onclick=pickImages;
-{const w=$('wrap');
- w.addEventListener('dragover',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files'))e.preventDefault()});
- w.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){e.preventDefault();addImages(e.dataTransfer.files)}});}
+/* ドラッグ＆ドロップ（台帳Z-247）：**画面のどこに落としても受ける**。以前は作品の枠（#wrap）だけで、操作窓・ツールボックス・枠の外へ落とすと、ブラウザが画像そのものを開いて作業が消えた。
+   ・画像 → 作品へ追加（`addImages`。コンソール・モード選択を開いている間は、裏の作品へ足さずに知らせる）／HTML → ビジュアルプログラミングへ読み込む（`vplImportFile`。2466）。
+   ・ドラッグ中は、画面いっぱいの点線の枠（#drophint）で「落とせる」ことを示す。コンソールの中の枠（iframe）は、ドラッグ中だけ指を通さない（枠の中のページへ落ちて、そのページが開かれるのを防ぐ）。
+   ・UIの一時状態：作品・Undo・保存には入れない。 */
+const DROP={el:null,tm:0};
+const dropIsFiles=e=>!!(e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files'));
+function dropHint(on){
+  clearTimeout(DROP.tm);
+  if(!on){if(DROP.el)DROP.el.hidden=true;document.body.classList.remove('dropping');return}
+  if(!DROP.el){const d=document.createElement('div');d.id='drophint';d.className='drophint';d.setAttribute('aria-hidden','true');document.body.appendChild(d);DROP.el=d}
+  DROP.el.textContent=(typeof CONSOLE!=='undefined'&&CONSOLE.isOpen())?'HTMLファイルをここへ落とすと、ビジュアルプログラミングに読み込みます':'画像をここへ落とすと追加します（HTMLファイルは、ビジュアルプログラミングに読み込みます）';
+  DROP.el.hidden=false;document.body.classList.add('dropping');
+  DROP.tm=setTimeout(()=>dropHint(false),1500);   /* ドラッグが途中で消えた時の保険（dragoverが続く間は延ばされる） */
+}
+function dropRoute(fs){
+  const isHtml=f=>/\.(x?html?)$/i.test(f.name||'')||f.type==='text/html';
+  const isImg=f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(f.name||'');
+  const hs=fs.filter(isHtml),im=fs.filter(f=>!isHtml(f)&&isImg(f));
+  if(hs.length&&typeof vplImportFile==='function'){vplImportFile(hs[0],hs.length>1?hs.length-1:0)}
+  if(im.length){
+    if((typeof CONSOLE!=='undefined'&&CONSOLE.isOpen())||(typeof modeIsOpen==='function'&&modeIsOpen())){if(!hs.length)note('画像は、本体の画面に落とすと作品へ追加されます（いまはコンソール／モード選択が開いています）')}
+    else addImages(im);
+  }
+  if(!hs.length&&!im.length)note('画像かHTMLのファイルを落としてください');
+}
+addEventListener('dragover',e=>{if(!dropIsFiles(e))return;e.preventDefault();try{e.dataTransfer.dropEffect='copy'}catch(_){}dropHint(true)});
+addEventListener('dragleave',e=>{if(!e.relatedTarget)dropHint(false)});   /* 消すだけなので、ファイルのドラッグかは問わない（ブラウザによってdragleaveの種類情報が空でも、確実に消す） */
+addEventListener('dragend',()=>dropHint(false));
+addEventListener('drop',e=>{if(!dropIsFiles(e))return;e.preventDefault();dropHint(false);const fs=[...(e.dataTransfer.files||[])];if(fs.length)dropRoute(fs)});
 document.addEventListener('paste',e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test((e.target||{}).tagName||''))return;const fs=e.clipboardData&&e.clipboardData.files;if(fs&&fs.length&&[...fs].some(f=>/^image\//.test(f.type))){e.preventDefault();addImages(fs)}});
 $('f').onchange=e=>{const f=e.target.files[0];if(!f)return;const l=sel;loadImg(f).then(im=>{if(!im)return;setImg(l,im);chips()})};
 
@@ -8338,10 +8364,10 @@ function dvBind(){
   el.addEventListener('pointerup',e=>end(e,false));el.addEventListener('pointercancel',e=>end(e,true));
   el.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.dv');if(!b||b.dataset.dvskip)return;dvPlace(b.dataset.dv,null)})}
 dvBuild();dvBind();
-/* ===== モード選択（台帳Z-204）=====
+/* ===== モード選択（台帳Z-204・Z-246）=====
    モード＝画面（手元の窓）の組み合わせの切り替え。機能がモードに属するわけではない（AGENTS.md §3.5。ペンも色調整も、どの画面から使っても同じ機能）。
-   出し方：①画面の右の縁（細い帯 #modeEdge）から中央へ引っ張る　②👁メニューの「モードを切り替える」（マウスや、縁を引きにくい端末向け）
-   ・①は、帯の上で押して左へ56px以上、かつ横の動きが縦の1.6倍以上の時だけ。縦のスクロールはブラウザに任せる（touch-action:pan-y）。
+   出し方：**画面の右の縁（細い帯 #modeEdge）から中央へなぞる操作だけ**（台帳Z-246。ユーザー指示「モード変更は右スワイプで統一」。切り替え用のボタンは置かない。指でもマウスでも。コンソールの中でも同じ）
+   ・帯の上で押して左へ56px以上、かつ横の動きが縦の1.6倍以上の時だけ。縦のスクロールはブラウザに任せる（touch-action:pan-y）。
      他の指が画面に触れている間は反応しない（ピンチ・2本指・✋と衝突しない）。操作窓の持ち手は押した所で捕まえている（setPointerCapture）ので、帯の上へ掃いても反応しない。
    ・モードの一覧は MODES。窓の一新（モードごとの窓）は、各モードの open に足していく。実体があるのは「編集・アニメーション」「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」。
      **コンソールは1つにつきプロジェクト1つ**（台帳Z-245）。コンソールの項目は `con:true` を付け、`open()` で開く試作のidを渡す（`CONSOLE.open('memo')`）。
@@ -8382,7 +8408,7 @@ function modeSet(id){
   if(m.open)m.open();
   MODE.cur=CONSOLE.modeId();
 }
-$('mdx').onclick=modeClose;$('mdbk').onclick=modeClose;$('mdb').onclick=modeOpen;
+$('mdx').onclick=modeClose;$('mdbk').onclick=modeClose;
 /* Escapeは、閉じるものがある時だけここで受ける（他の既存のEscape処理より先＝キャプチャ） */
 addEventListener('keydown',e=>{if(e.key==='Escape'&&modeIsOpen()){modeClose();e.stopImmediatePropagation();e.preventDefault()}},true);
 
@@ -8448,7 +8474,6 @@ const CONSOLE={labs:[],cur:null,was:null,els:{},
   }
 };
 $('csx').onclick=()=>CONSOLE.close();
-$('csmd').onclick=modeOpen;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&CONSOLE.isOpen()&&!modeIsOpen()){CONSOLE.close();e.stopImmediatePropagation();e.preventDefault()}},true);
 /* ===== メモ帳（コンソールモードの中。台帳Z-222）=====
    保存：端末のlocalStorage（am_memo）。作品ファイル・Undo・snap／serには入れない。版番号v付き。
@@ -8692,7 +8717,7 @@ CONSOLE.reg({id:'memo',no:1,mode:'cons1',ico:'📝',name:'メモ帳',
    ・コンソールの決まり：本体の作品・Undo・保存（snap／ser／US／AC／LAYERS／DOC）には触れない。保存先は `am_vplab*` だけ（メモ帳の `am_memo` にも触れない）。
    ・ソース・名前・記録の文字は、必ず textContent で出す（HTMLとして解釈しない）。 */
 const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',MAXSRC:200000,MAXVAL:200000,MAXKEYS:50,
-  src:'',an:null,frame:null,ready:false,mode:'run',editing:false,selId:null,selLine:null,H:{},B:null,bt:0,log:[],el:null};
+  src:'',an:null,frame:null,ready:false,mode:'run',editing:false,selId:null,selLine:null,H:{},B:null,bt:0,log:[],el:null,name:''};
 
 /* 見本のソース（本物のHTML・CSS・JavaScript。そのまま動く） */
 const VP_SAMPLE=`<!doctype html>
@@ -8763,6 +8788,132 @@ if (first !== null) {
   editor.value = first;
   updateCount();
 }
+<\/script>
+</body>
+</html>`;
+
+/* 見本2：お絵かき＋簡単な物理（本物のHTML・CSS・JavaScript。線を引くと、落ちるボールが線の上で跳ねる。台帳Z-248）。本体のお絵かき・物理エンジンそのものではなく、始めるための小さな叩き台 */
+const VP_PAINT=`<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 15px/1.5 sans-serif; margin: 0; padding: 12px; color: #111; background: #fff; }
+  h1 { font-size: 17px; margin: 0 0 8px; }
+  #board { display: block; width: 100%; max-width: 480px; height: auto; border: 1px solid #999; touch-action: none; }
+  .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
+  button { font: inherit; padding: 6px 10px; }
+  #status { min-height: 1.5em; color: #067a3b; }
+</style>
+</head>
+<body>
+<h1 id="title">お絵かきと物理（見本）</h1>
+<canvas id="board" width="480" height="300"></canvas>
+<div class="tools">
+  <input id="color" type="color" value="#2563eb" aria-label="色">
+  <input id="size" type="range" min="1" max="24" value="5" aria-label="太さ">
+  <button id="drop">⚪ ボールを落とす</button>
+  <button id="clear">🗑 全部消す</button>
+</div>
+<div id="status">線を引くと、落ちてくるボールが線の上で跳ねます。</div>
+<script>
+const board = document.getElementById('board');
+const ctx = board.getContext('2d');
+const colorInput = document.getElementById('color');
+const sizeInput = document.getElementById('size');
+const dropBtn = document.getElementById('drop');
+const clearBtn = document.getElementById('clear');
+const msg = document.getElementById('status');
+
+const ink = document.createElement('canvas');
+ink.width = board.width;
+ink.height = board.height;
+const inkCtx = ink.getContext('2d', { willReadFrequently: true });
+inkCtx.lineCap = 'round';
+inkCtx.lineJoin = 'round';
+
+let balls = [];
+let pen = null;
+
+function pos(e) {
+  const r = board.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * board.width / r.width, y: (e.clientY - r.top) * board.height / r.height };
+}
+
+board.addEventListener('pointerdown', (e) => {
+  pen = pos(e);
+  board.setPointerCapture(e.pointerId);
+  inkCtx.fillStyle = colorInput.value;
+  inkCtx.beginPath();
+  inkCtx.arc(pen.x, pen.y, sizeInput.value / 2, 0, Math.PI * 2);
+  inkCtx.fill();
+});
+
+board.addEventListener('pointermove', (e) => {
+  if (!pen) return;
+  const p = pos(e);
+  inkCtx.strokeStyle = colorInput.value;
+  inkCtx.lineWidth = sizeInput.value;
+  inkCtx.beginPath();
+  inkCtx.moveTo(pen.x, pen.y);
+  inkCtx.lineTo(p.x, p.y);
+  inkCtx.stroke();
+  pen = p;
+});
+
+board.addEventListener('pointerup', () => { pen = null; });
+board.addEventListener('pointercancel', () => { pen = null; });
+
+dropBtn.addEventListener('click', () => {
+  if (balls.length >= 40) balls.shift();
+  balls.push({ x: 40 + Math.random() * (board.width - 80), y: 14, vx: (Math.random() - 0.5) * 2, vy: 0, r: 10 });
+  msg.textContent = 'ボールを落としました（' + balls.length + '個）';
+});
+
+clearBtn.addEventListener('click', () => {
+  inkCtx.clearRect(0, 0, ink.width, ink.height);
+  balls = [];
+  msg.textContent = '全部消しました';
+});
+
+function touchesInk(x, y) {
+  if (x < 0 || y < 0 || x >= ink.width || y >= ink.height) return false;
+  return inkCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data[3] > 40;
+}
+
+function hitInk(x, y0, y1) {
+  for (let y = y0; y <= y1; y += 2) {
+    if (touchesInk(x, y)) return y;
+  }
+  return touchesInk(x, y1) ? y1 : -1;
+}
+
+function step() {
+  for (const b of balls) {
+    const prev = b.y;
+    b.vy += 0.35;
+    b.x += b.vx;
+    b.y += b.vy;
+    if (b.x < b.r) { b.x = b.r; b.vx = -b.vx * 0.8; }
+    if (b.x > board.width - b.r) { b.x = board.width - b.r; b.vx = -b.vx * 0.8; }
+    if (b.y > board.height - b.r) { b.y = board.height - b.r; b.vy = -b.vy * 0.7; }
+    if (b.vy > 0) {
+      const hit = hitInk(b.x, prev + b.r, b.y + b.r);
+      if (hit >= 0) { b.y = hit - b.r - 1; b.vy = -b.vy * 0.6; }
+    }
+  }
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, board.width, board.height);
+  ctx.drawImage(ink, 0, 0);
+  ctx.fillStyle = '#e11d48';
+  for (const b of balls) {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  requestAnimationFrame(step);
+}
+step();
 <\/script>
 </body>
 </html>`;
@@ -9036,14 +9187,19 @@ function vplSnapKeys(key){let n=0;try{for(let i=0;i<localStorage.length;i++){con
 addEventListener('message',vplOnMsg);
 
 /* ---- 編集・反映・見本に戻す ---- */
+/* ソースを差し替えて、動き直す（反映・始め方・HTMLの読み込みで共通）。keep＝端末に覚える（見本の「テキストエディタ」だけ覚えない＝見本が更新されたら追従する）。覚えられたかを返す */
+function vplSetSource(s,keep){
+  VPL.src=s;const saved=keep?vplLs.set(VPL.LS,s):(vplLs.del(VPL.LS),true);
+  VPL.editing=false;VPL.selId=null;VPL.selLine=null;
+  vplRun();vplCode();vplSync(false);
+  return saved;
+}
 function vplApply(){
   const ta=vplQ('#vpEditTa');if(!ta)return;
   const s=ta.value.replace(/\r\n?/g,'\n');
   if(!s.trim()){vplMsg('反映できません：中身が空です。',1);return}
   if(s.length>VPL.MAXSRC){vplMsg('反映できません：長すぎます（'+VPL.MAXSRC+'字まで）。',1);return}
-  VPL.src=s;const saved=vplLs.set(VPL.LS,s);
-  VPL.editing=false;VPL.selId=null;VPL.selLine=null;
-  vplRun();vplCode();vplSync(false);
+  const saved=vplSetSource(s,true);
   vplMsg('反映しました。動き直しています。'+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）'),saved?0:1);
   vplLogAdd('ソースを書き換えて、動き直した');
 }
@@ -9051,14 +9207,59 @@ function vplReset(){
   if(!confirm('見本のソースに戻します。書き換えたソースと、端末に保存した文字は消えます。'))return;
   vplLs.del(VPL.LS);
   try{for(const k of Object.keys(localStorage))if(k.indexOf(VPL.LSS)===0)localStorage.removeItem(k)}catch(_){}
-  VPL.src=VP_SAMPLE;VPL.editing=false;VPL.selId=null;VPL.selLine=null;VPL.log=[];
+  VPL.src=VP_SAMPLE;VPL.name='';VPL.editing=false;VPL.selId=null;VPL.selLine=null;VPL.log=[];
   vplRun();vplCode();vplSync(false);vplQ('#vpLog').innerHTML='';vplMsg('見本に戻しました。',0);
+}
+
+/* ---- 始め方（テキストエディタ／お絵かき／ファイルを読み込む）・HTMLの読み込みと出力（台帳Z-248）----
+   ・読み込んだHTMLも、見本と同じ道（vplSetSource→vplRun）で動く＝ビューワーとソースの連動はそのまま使える（部品はidのある要素。idが無い所は連動しない）。
+   ・隔離した枠なので、外への通信（CDNなど）はCSPで止まる。読み込む時に、外を指す記述があれば知らせる。
+   ・出力は、いま動いているソース（VPL.src）そのまま（差し替え窓口vplShimは入らない。単独で開ける本物のHTML）。 */
+function vplClearStored(){try{for(const k of Object.keys(localStorage))if(k.indexOf(VPL.LSS)===0)localStorage.removeItem(k)}catch(_){}}
+/* いまのソースが見本のままでなく、または、枠の中で保存した文字がある時は、差し替える前に確かめる */
+function vplCustom(){return (VPL.src!==VP_SAMPLE&&VPL.src!==VP_PAINT)||vplSnapKeys('')>0}
+function vplStart(kind){
+  const s=kind==='paint'?VP_PAINT:VP_SAMPLE,nm=kind==='paint'?'お絵かき':'テキストエディタ';
+  if(VPL.src===s&&vplSnapKeys('')===0){vplMsg('いま、'+nm+'の見本です。',0);return}
+  if(vplCustom()&&!confirm('いまのソースと、端末に保存した文字は消えます。'+nm+'の見本に切り替えますか？'))return;
+  vplClearStored();VPL.name='';
+  const saved=vplSetSource(s,kind==='paint');
+  vplMsg(nm+'の見本にしました。'+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）'),saved?0:1);
+  vplLogAdd(nm+'の見本に切り替えた');
+}
+async function vplImportFile(f,more){
+  if(!f)return;
+  if(!CONSOLE.isOpen()||CONSOLE.cur!=='vp')modeSet('cons2');   /* ビジュアルプログラミングを開く（まだ開いていなければ、ここで作る） */
+  const bad=t=>{vplMsg(t,1);note(t)};
+  if(f.size>VPL.MAXSRC*4){bad('読み込めません：ファイルが大きすぎます（'+Math.round(f.size/1024)+'KB）。ソースは'+VPL.MAXSRC+'字までです。');return}
+  let s;try{s=memoDecode(new Uint8Array(await f.arrayBuffer()))}catch(_){bad('読み込めません：ファイルを読み取れませんでした。');return}
+  if(!/<\s*(!doctype|html|head|body|script|style|canvas|svg|div|p|h[1-6]|button|input|textarea|form|table|ul|ol|a|img|span|section|main)\b/i.test(s.slice(0,20000))){bad('読み込めません：HTMLファイルではないようです。');return}
+  if(s.length>VPL.MAXSRC){bad('読み込めません：ソースが長すぎます（'+s.length+'字。'+VPL.MAXSRC+'字まで）。');return}
+  if(vplCustom()&&!confirm('いまのソースと、端末に保存した文字は消えます。「'+(f.name||'HTML')+'」を読み込みますか？'))return;
+  vplClearStored();VPL.name=(f.name||'').slice(0,60);
+  const saved=vplSetSource(s,true);
+  const ext=/\b(?:src|href)\s*=\s*["']?(?:https?:)?\/\//i.test(s)||/\bimport\s*[^;]*\bfrom\s*["']https?:/i.test(s);
+  vplMsg('「'+(VPL.name||'HTML')+'」を読み込みました（'+VPL.an.lines.length+'行）。'+(ext?'外のサイトを指す記述があります。安全のため外への通信は止めているので、その部分は動きません。':'')+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）'),(ext||!saved)?1:0);
+  vplLogAdd('HTMLファイル「'+(VPL.name||'HTML')+'」を読み込んだ');
+  if(more>0)note('HTMLは1つずつ読み込みます（ほか'+more+'個は読み込んでいません）');
+}
+function vplExport(){
+  const ta=vplQ('#vpEditTa'),pending=!!(VPL.editing&&ta&&ta.value.replace(/\r\n?/g,'\n')!==VPL.src);
+  const base=(VPL.name||'visual-programming').replace(/\.x?html?$/i,'').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').trim().slice(0,40)||'visual-programming';
+  memoDownload(new Blob([VPL.src],{type:'text/html;charset=utf-8'}),base+'.html');
+  vplMsg('HTMLで出力しました（ダウンロード）。'+(pending?'反映していない書き換えは含まれていません。':''),pending?1:0);
+  vplLogAdd('ソースをHTMLで出力した');
 }
 
 CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログラミング',
   mount(el){
     VPL.el=el;
-    el.innerHTML='<div class="vpgrid">'
+    el.innerHTML='<div class="vpbar vpstart" role="group" aria-label="始め方"><b>始め方</b>'
+      +'<button type="button" id="vpStText" aria-label="テキストエディタの見本から始める">📝 テキストエディタ</button>'
+      +'<button type="button" id="vpStPaint" aria-label="お絵かきと物理の見本から始める">🎨 お絵かき</button>'
+      +'<label class="file" aria-label="HTMLファイルを読み込む（この画面へ落としても読み込めます）">📂 HTMLを読み込む<input id="vpFile" type="file" accept=".html,.htm,text/html"></label>'
+      +'<button type="button" id="vpSave" aria-label="いまのソースをHTMLファイルで出力する">💾 HTMLで出力</button></div>'
+      +'<div class="vpgrid">'
       +'<section class="vpcol"><div class="vpbar"><b>ビューワー</b>'
       +'<span class="vpseg" role="group" aria-label="ビューワーの使い方"><button type="button" id="vpRun" class="on" aria-pressed="true" aria-label="部品を、実際に動かす">▶ 動かす</button><button type="button" id="vpInsp" aria-pressed="false" aria-label="部品を押すと、その部品が出てくるソースの行が光る（部品は動かない）">🔍 調べる</button></span>'
       +'<button type="button" id="vpReset" aria-label="見本のソースに戻す（書き換えたソースと、保存した文字は消える）">↺ 見本に戻す</button></div>'
@@ -9067,6 +9268,8 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
       +'<button type="button" id="vpEdit" aria-label="ソースコードを書き換える">✎ 編集</button><button type="button" id="vpApply" hidden aria-label="書き換えたソースコードを反映する">✔ 反映</button><button type="button" id="vpCancel" hidden aria-label="書き換えをやめる">✕ やめる</button></div>'
       +'<div class="note" id="vpMsg" style="margin:0" hidden></div><div class="vpscript vpcode" id="vpScript"></div><div class="vplog note" id="vpLog"></div></section></div>';
     vplLoadSrc();vplRun();vplCode();vplInfo();
+    vplQ('#vpStText').onclick=()=>vplStart('text');vplQ('#vpStPaint').onclick=()=>vplStart('paint');vplQ('#vpSave').onclick=vplExport;
+    vplQ('#vpFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vplImportFile(f)};
     vplQ('#vpRun').onclick=()=>vplMode('run');vplQ('#vpInsp').onclick=()=>vplMode('insp');vplQ('#vpReset').onclick=vplReset;
     vplQ('#vpEdit').onclick=()=>{VPL.editing=true;vplMsg('');vplCode();const t=vplQ('#vpEditTa');if(t)t.focus()};
     vplQ('#vpCancel').onclick=()=>{VPL.editing=false;vplMsg('');vplCode();vplSync(false)};
