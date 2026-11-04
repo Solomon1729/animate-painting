@@ -18,6 +18,7 @@ function drawBG(){
   else if(BG.m==='grad'){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,BG.c);g.addColorStop(.62,BG.c);g.addColorStop(.62,BG.c2);g.addColorStop(1,BG.c2);ctx.fillStyle=g;ctx.fillRect(-m,-m,W+2*m,H+2*m)}
   else if(sp){ctx.filter='none';ctx.clearRect(-m,-m,W+2*m,H+2*m)}   /* 透明（PNGのみ）：紙の中は、外の色を塗らずに透けさせる */
   ctx.restore();
+  if(typeof vdDraw==='function')vdDraw();   /* 動画タブ：背景の上・絵の下に動画（と効果）を描く（2470-video.js） */
   if(sp&&(Z.x>0||Z.y>0||Z.x+W*Z.s<W||Z.y+H*Z.s<H)){   /* 紙の縁が見えている時だけ、細い縁取り */
     ctx.setTransform(dpr,0,0,dpr,0,0);ctx.save();ctx.lineWidth=1/dpr;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.strokeRect(Z.x,Z.y,W*Z.s,H*Z.s);ctx.restore()}
 }

@@ -148,8 +148,8 @@ body.big.tpf #wrap{height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-a
 /* 「＋画像」の段のオプション（台帳Z-96）／オブジェクト0個の表示（Z-97）／座標のラベル（Z-98） */
 .opt{display:inline-flex;gap:5px;align-items:center;font-size:12px;opacity:.9}.opt.dis{opacity:.45}.opt input{width:16px;height:16px;margin:0}
 #noobj{padding:8px 10px;border:var(--bw,2px) dashed var(--line);border-radius:calc(var(--rk,1)*10px)}#noobj[hidden]{display:none}
-body.noobj #tabs button:not([data-t="bg"]):not([data-t="ph"]){display:none}
-body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important}
+body.noobj #tabs button:not([data-t="bg"]):not([data-t="ph"]):not([data-t="vd"]){display:none}
+body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]):not([data-tab="vd"]){display:none!important}
 .crdl{position:absolute;left:0;top:0;z-index:6;pointer-events:none;font:11px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:calc(var(--rk,1)*6px);background:rgba(20,16,32,.74);color:#fff;white-space:pre}  /* preは改行（座標の2行目・3行目。台帳Z-114）を残し、折り返さない */
 .crdl.o{background:rgba(255,45,135,.88)}.crdl[hidden]{display:none}
 .lupe{position:absolute;left:0;top:0;z-index:7;pointer-events:none;border-radius:calc(var(--rk,1)*14px);border:2px solid rgba(255,255,255,.95);box-shadow:0 0 0 1px rgba(20,16,32,.55),0 4px 14px rgba(0,0,0,.4);background:#e9e6ef}.lupe[hidden]{display:none}.lpd{font-size:12px;padding:2px 4px}.lpd summary{cursor:pointer;font-weight:700;padding:6px 4px}.lpd label{display:block;margin:6px 0;font-weight:700}.lpd.dis{opacity:.5}

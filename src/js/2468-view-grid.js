@@ -8,7 +8,8 @@
      キャンバスの1pxが画面の VW.SHARP px以上に見えるほど拡大した時だけ、ふつうの絵（歪み・ぼかし・マスクなし）の、絵の1pxが画面の2px以上になる所を、補間せずに四角いピクセルのまま描く（img()の中のvwSharp）。ふだんの拡大・縮小は今までどおりなめらか。
    ・設定（VW）は作品・Undo・保存に入れない。localStorage（am_view）にだけ覚える。
    ・書き出しを足す・描画の経路を足す時：画面専用の描画は vwSplit() を見て、書き出し・録画・統合では描かない。 */
-const vwSplit=()=>!hk&&!MGR&&!drawOnly&&!mr&&!gf;
+let vwNoSplit=false;   /* 動画タブの書き出し中だけtrue（2470-video.js。録画と同じく、紙の全体を描く） */
+const vwSplit=()=>!hk&&!MGR&&!drawOnly&&!mr&&!gf&&!vwNoSplit;
 /* 紙の1px（キャンバスのpx）が、画面で何px（CSS px）に見えるか */
 const vwCell=()=>Math.min(W*Z.s/(DOC.w||W),H*Z.s/(DOC.h||H));
 /* 拡大の上限。1pxが画面の16pxになる倍率（12〜160倍。自動サイズ＝1px＝画面の枠の1pxなら16倍）。今の拡大がそれを超えている時は、今の拡大を上限とする（急に縮まない） */

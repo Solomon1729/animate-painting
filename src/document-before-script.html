@@ -114,7 +114,7 @@
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
   <div class="row" id="tbxD" hidden><span class="lab" id="tbxDt" style="flex:1">詳細</span><button type="button" id="tbxDx" aria-label="詳細設定を閉じる">✕ 閉じる</button></div>
-  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="vd">動画</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
@@ -356,6 +356,51 @@
       <div class="note">サンプル（東大物理・物理オリンピック風など）を開くと、条件・測定・答え合わせ・グラフ・JSONで、問題づくりや実験ができます。</div>
     </details>
     <div class="note" id="scErr" style="color:#b91c1c;opacity:1"></div>
+    </div>
+  </div>
+
+  <div class="tab" data-tab="vd">
+    <div class="grp"><div class="gh">動画を読み込む</div>
+    <div class="row"><label class="file">📂 動画を選ぶ<input id="vdFile" type="file" accept="video/*"></label><button id="vdRm" aria-label="読み込んだ動画を外す">外す</button></div>
+    <div class="row"><button id="vdBack" aria-label="最初に戻す">⏮</button><button id="vdPlay" aria-label="再生・一時停止">▶ 再生</button><span id="vdTime" class="note" style="margin:0">0:00 / 0:00</span></div>
+    <div class="row"><input id="vdSeek" data-e="1" type="range" min="0" max="1000" value="0" aria-label="再生位置" style="flex:1;min-width:0"></div>
+    <div class="row"><button id="vdFit" aria-label="キャンバスの大きさを動画の大きさ（px）に合わせる">📐 キャンバスを動画の大きさにする</button></div>
+    <div class="note" id="vdInfo">動画はビューワーの背景として出ます。上にお絵かき・動き・物理を重ねられます。動画ファイルは作品ファイルには入りません（開き直したら選び直してください）。</div>
+    </div>
+    <div class="grp"><div class="gh">効果（時間と場所を決めて、そこだけにかける）</div>
+    <div class="row"><select id="vdFxSel" aria-label="効果を選ぶ"></select><button id="vdFxAdd">＋足す</button><button id="vdFxDel">消す</button></div>
+    <div class="row"><label><input id="vdFxOn" type="checkbox" checked> この効果を使う</label></div>
+    <div class="row"><span class="lab">時間</span><input id="vdA" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="効果を始める秒" style="width:72px"><span>〜</span><input id="vdB" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="効果を終える秒（0＝最後まで）" style="width:72px"><span class="note" style="margin:0">秒（終わり0＝最後まで）</span></div>
+    <div class="row"><button id="vdSetA">いまの位置を始めに</button><button id="vdSetB">いまの位置を終わりに</button></div>
+    <div class="row"><span class="lab">なめらかに</span><input id="vdRamp" type="range" min="0" max="3" step="0.1" value="0.5" aria-label="入りと出の、効果が徐々に強まる・弱まる秒数"></div>
+    <div class="row"><span class="lab">場所</span><button id="vdPick" aria-label="動画の上を指でなぞって四角を選ぶ">✋ 四角をなぞって選ぶ</button><button id="vdAll">全体にする</button></div>
+    <div class="row"><span class="lab">左</span><input id="vdX" type="range" min="0" max="100" step="1" value="0" aria-label="場所の左端（%）"></div>
+    <div class="row"><span class="lab">上</span><input id="vdY" type="range" min="0" max="100" step="1" value="0" aria-label="場所の上端（%）"></div>
+    <div class="row"><span class="lab">幅</span><input id="vdW" type="range" min="1" max="100" step="1" value="100" aria-label="場所の幅（%）"></div>
+    <div class="row"><span class="lab">高さ</span><input id="vdH" type="range" min="1" max="100" step="1" value="100" aria-label="場所の高さ（%）"></div>
+    </div>
+    <div class="grp"><div class="gh">色を重ねる（色シート）</div>
+    <div class="row"><span class="lab">色</span><input id="vdCc" type="color" value="#0000ff" aria-label="重ねる色"><button class="pk" data-for="vdCc" aria-label="スポイト">💧</button><select id="vdCm" aria-label="重ね方"><option value="lighten">比較（明）：黒をその色に</option><option value="screen">スクリーン：明るく</option><option value="multiply">乗算：暗く</option><option value="overlay">オーバーレイ</option><option value="soft-light">ソフトライト</option><option value="color">色（色相と彩度だけ）</option><option value="hue">色相</option><option value="darken">比較（暗）</option><option value="source-over">通常（上から塗る）</option></select></div>
+    <div class="row"><span class="lab">濃さ</span><input id="vdCa" type="range" min="0" max="100" step="1" value="0" aria-label="色を重ねる濃さ（0＝なし）"></div>
+    </div>
+    <div class="grp"><div class="gh">色の調整</div>
+    <div class="row"><span class="lab">明るさ</span><input id="vdBr" type="range" min="0" max="200" step="1" value="100" data-snap="100" aria-label="明るさ（100＝そのまま）"></div>
+    <div class="row"><span class="lab">コントラスト</span><input id="vdCt" type="range" min="0" max="200" step="1" value="100" data-snap="100" aria-label="コントラスト（100＝そのまま）"></div>
+    <div class="row"><span class="lab">彩度</span><input id="vdSa" type="range" min="0" max="300" step="1" value="100" data-snap="100" aria-label="彩度（100＝そのまま）"></div>
+    <div class="row"><span class="lab">色相</span><input id="vdHu" type="range" min="-180" max="180" step="1" value="0" data-snap="0" aria-label="色相の回転（度）"></div>
+    </div>
+    <div class="grp"><div class="gh">歪み</div>
+    <div class="row"><select id="vdWt" aria-label="歪みの種類"><option value="none">なし</option><option value="wh">波（横にゆれる）</option><option value="wv">波（縦にゆれる）</option><option value="ww">水面（ゆらゆら）</option><option value="bulge">膨らみ（マイナスでへこみ）</option><option value="swirl">渦</option></select></div>
+    <div class="row"><span class="lab">強さ</span><input id="vdWs" type="range" min="-100" max="100" step="1" value="30" data-snap="0" aria-label="歪みの強さ"></div>
+    <div class="row"><span class="lab">波の数</span><input id="vdWf" type="range" min="1" max="30" step="1" value="6" aria-label="波の数（波・水面だけ）"></div>
+    <div class="row"><span class="lab">ゆれる速さ</span><input id="vdWp" type="range" min="0" max="5" step="0.1" value="0.5" aria-label="波が動く速さ（波・水面だけ。0＝止める）"></div>
+    </div>
+    <div class="grp"><div class="gh">書き出し（動画と同じ長さ、実時間でかかります）</div>
+    <div class="row"><span class="lab">範囲</span><input id="vdExS" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="書き出しの開始（秒）" style="width:72px"><span>〜</span><input id="vdExE" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="書き出しの終わり（秒。0＝最後まで）" style="width:72px"><span class="note" style="margin:0">秒</span></div>
+    <div class="row"><label><input id="vdSnd" type="checkbox" checked> 音声を入れる</label></div>
+    <div class="row"><button id="vdExGo">⏺ 動画を書き出す</button><span id="vdExTx" class="note" style="margin:0"></span></div>
+    <div class="note" id="vdExNote">書き出し中は、この画面を開いたままにしてください（別のタブやアプリに切り替えると、描画が止まります）。</div>
+    <div id="vdOut"></div>
     </div>
   </div>
 

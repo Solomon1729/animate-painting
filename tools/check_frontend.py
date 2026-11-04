@@ -109,9 +109,9 @@ with sync_playwright() as p:
     ctx, pg, errs = new_page(b, 1366, 768, False)
     st = pg.evaluate("()=>{const e=document.querySelector('#tp .stp');return e?Math.round(e.getBoundingClientRect().height):-1}")
     chk('F3 PC（マウス）：−＋ボタンは従来の大きさのまま（指の端末の拡大は掛からない）', 0 < st < 30, st)
-    # ---------- F4 PC：10個のタブが1行に全部見える ----------
+    # ---------- F4 PC：11個のタブ（動画タブを足した。2026-11-04）が1行に全部見える ----------
     ts = pg.evaluate("()=>{const t=document.getElementById('tabs');const bs=[...t.querySelectorAll('button[data-t]')].filter(b=>b.getBoundingClientRect().width>0);return {sw:t.scrollWidth,cw:t.clientWidth,n:bs.length,tops:[...new Set(bs.map(b=>Math.round(b.getBoundingClientRect().top)))].length}}")
-    chk('F4 PC：10個のタブが1行に全部収まり、横に流す必要がない', ts['n'] == 10 and ts['tops'] == 1 and ts['sw'] <= ts['cw'] + 1, ts)
+    chk('F4 PC：11個のタブが1行に全部収まり、横に流す必要がない', ts['n'] == 11 and ts['tops'] == 1 and ts['sw'] <= ts['cw'] + 1, ts)
     chk('F4 PC：ページエラーなし', not errs, errs[:2])
     ctx.close()
 
