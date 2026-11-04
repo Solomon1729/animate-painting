@@ -100,12 +100,12 @@ with sync_playwright() as p:
 
     # ---------- T5 折りたたみ ----------
     m = ev(JS_R, '#tbxMore')
-    chk('T5 折りたたみの枠（▾）が列にあり、残りの数が出る', m['vis'] and '▾' in ev("()=>document.getElementById('tbxMore').textContent") and ev("()=>document.getElementById('tbxMore').dataset.n") == '+8', m)
+    chk('T5 折りたたみの枠（▾）が列にあり、残りの数が出る', m['vis'] and '▾' in ev("()=>document.getElementById('tbxMore').textContent") and ev("()=>document.getElementById('tbxMore').dataset.n") == '+9', m)
     chk('T5 たたんでいる間、残りの道具は出ない', ev("()=>!document.querySelectorAll('#tbxRest .tb').length||document.getElementById('tbxRest').hidden"))
     chk('T5 「▾」の枠は、5つの道具のすぐ後ろ（同じ格子の6番目）に入る', abs(m['t'] - ev(JS_R, '#tbxMain .tbw:last-child .tb')['t']) < 3 and m['l'] > ev(JS_R, '#tbxMain .tbw:last-child .tb')['l'], m)
     pg.click('#tbxMore')
     rest = ev("()=>[...document.querySelectorAll('#tbxRest .tb')].map(b=>b.dataset.id)")
-    chk('T5 押すと残りの道具が広がる', rest == ['adj', 'pt', 'clone', 'mo', 'wp', 'fx', 'mk', 'bg'] and ev(JS_R, '#tbxRest .tb[data-id=adj]')['vis'] and ev(JS_R, '#tbx')['b'] <= 800, rest)
+    chk('T5 押すと残りの道具が広がる', rest == ['vd', 'adj', 'pt', 'clone', 'mo', 'wp', 'fx', 'mk', 'bg'] and ev(JS_R, '#tbxRest .tb[data-id=adj]')['vis'] and ev(JS_R, '#tbx')['b'] <= 800, rest)
     pg.click('#tbxRest .tb[data-id=adj]')
     chk('T5 広げた道具も、そのまま使える（色調整）', ev(JS_TAB) == 'adj')
     pg.click('#tbxRest .tb[data-id=clone]')

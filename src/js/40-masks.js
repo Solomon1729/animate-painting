@@ -36,6 +36,7 @@ function paintFrame(){
   scnOver();
   if(drawOnly)return;   /* 統合の描画（226-merge.js）：背景・補助表示は描かない */
   vwGrid();   /* ピクセルの格子（画面だけ。台帳Z-238） */
+  if(typeof vdOutline==='function')vdOutline();   /* 動画タブ：効果をかける四角の枠（画面だけ。2470-video.js） */
   drawBrushRing();paPreview();rtOverlay();selOverlay();sizeHintDraw();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
 }

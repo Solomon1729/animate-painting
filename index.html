@@ -156,8 +156,8 @@ body.big.tpf #wrap{height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-a
 /* 「＋画像」の段のオプション（台帳Z-96）／オブジェクト0個の表示（Z-97）／座標のラベル（Z-98） */
 .opt{display:inline-flex;gap:5px;align-items:center;font-size:12px;opacity:.9}.opt.dis{opacity:.45}.opt input{width:16px;height:16px;margin:0}
 #noobj{padding:8px 10px;border:var(--bw,2px) dashed var(--line);border-radius:calc(var(--rk,1)*10px)}#noobj[hidden]{display:none}
-body.noobj #tabs button:not([data-t="bg"]):not([data-t="ph"]){display:none}
-body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]){display:none!important}
+body.noobj #tabs button:not([data-t="bg"]):not([data-t="ph"]):not([data-t="vd"]){display:none}
+body.noobj .tab:not([data-tab="bg"]):not([data-tab="ph"]):not([data-tab="vd"]){display:none!important}
 .crdl{position:absolute;left:0;top:0;z-index:6;pointer-events:none;font:11px/1.25 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 6px;border-radius:calc(var(--rk,1)*6px);background:rgba(20,16,32,.74);color:#fff;white-space:pre}  /* preは改行（座標の2行目・3行目。台帳Z-114）を残し、折り返さない */
 .crdl.o{background:rgba(255,45,135,.88)}.crdl[hidden]{display:none}
 .lupe{position:absolute;left:0;top:0;z-index:7;pointer-events:none;border-radius:calc(var(--rk,1)*14px);border:2px solid rgba(255,255,255,.95);box-shadow:0 0 0 1px rgba(20,16,32,.55),0 4px 14px rgba(0,0,0,.4);background:#e9e6ef}.lupe[hidden]{display:none}.lpd{font-size:12px;padding:2px 4px}.lpd summary{cursor:pointer;font-weight:700;padding:6px 4px}.lpd label{display:block;margin:6px 0;font-weight:700}.lpd.dis{opacity:.5}
@@ -553,7 +553,7 @@ body.ubox #tp .grp.alt{background:transparent}
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
   <div class="row" id="tbxD" hidden><span class="lab" id="tbxDt" style="flex:1">詳細</span><button type="button" id="tbxDx" aria-label="詳細設定を閉じる">✕ 閉じる</button></div>
-  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="vd">動画</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
@@ -795,6 +795,51 @@ body.ubox #tp .grp.alt{background:transparent}
       <div class="note">サンプル（東大物理・物理オリンピック風など）を開くと、条件・測定・答え合わせ・グラフ・JSONで、問題づくりや実験ができます。</div>
     </details>
     <div class="note" id="scErr" style="color:#b91c1c;opacity:1"></div>
+    </div>
+  </div>
+
+  <div class="tab" data-tab="vd">
+    <div class="grp"><div class="gh">動画を読み込む</div>
+    <div class="row"><label class="file">📂 動画を選ぶ<input id="vdFile" type="file" accept="video/*"></label><button id="vdRm" aria-label="読み込んだ動画を外す">外す</button></div>
+    <div class="row"><button id="vdBack" aria-label="最初に戻す">⏮</button><button id="vdPlay" aria-label="再生・一時停止">▶ 再生</button><span id="vdTime" class="note" style="margin:0">0:00 / 0:00</span></div>
+    <div class="row"><input id="vdSeek" data-e="1" type="range" min="0" max="1000" value="0" aria-label="再生位置" style="flex:1;min-width:0"></div>
+    <div class="row"><button id="vdFit" aria-label="キャンバスの大きさを動画の大きさ（px）に合わせる">📐 キャンバスを動画の大きさにする</button></div>
+    <div class="note" id="vdInfo">動画はビューワーの背景として出ます。上にお絵かき・動き・物理を重ねられます。動画ファイルは作品ファイルには入りません（開き直したら選び直してください）。</div>
+    </div>
+    <div class="grp"><div class="gh">効果（時間と場所を決めて、そこだけにかける）</div>
+    <div class="row"><select id="vdFxSel" aria-label="効果を選ぶ"></select><button id="vdFxAdd">＋足す</button><button id="vdFxDel">消す</button></div>
+    <div class="row"><label><input id="vdFxOn" type="checkbox" checked> この効果を使う</label></div>
+    <div class="row"><span class="lab">時間</span><input id="vdA" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="効果を始める秒" style="width:72px"><span>〜</span><input id="vdB" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="効果を終える秒（0＝最後まで）" style="width:72px"><span class="note" style="margin:0">秒（終わり0＝最後まで）</span></div>
+    <div class="row"><button id="vdSetA">いまの位置を始めに</button><button id="vdSetB">いまの位置を終わりに</button></div>
+    <div class="row"><span class="lab">なめらかに</span><input id="vdRamp" type="range" min="0" max="3" step="0.1" value="0.5" aria-label="入りと出の、効果が徐々に強まる・弱まる秒数"></div>
+    <div class="row"><span class="lab">場所</span><button id="vdPick" aria-label="動画の上を指でなぞって四角を選ぶ">✋ 四角をなぞって選ぶ</button><button id="vdAll">全体にする</button></div>
+    <div class="row"><span class="lab">左</span><input id="vdX" type="range" min="0" max="100" step="1" value="0" aria-label="場所の左端（%）"></div>
+    <div class="row"><span class="lab">上</span><input id="vdY" type="range" min="0" max="100" step="1" value="0" aria-label="場所の上端（%）"></div>
+    <div class="row"><span class="lab">幅</span><input id="vdW" type="range" min="1" max="100" step="1" value="100" aria-label="場所の幅（%）"></div>
+    <div class="row"><span class="lab">高さ</span><input id="vdH" type="range" min="1" max="100" step="1" value="100" aria-label="場所の高さ（%）"></div>
+    </div>
+    <div class="grp"><div class="gh">色を重ねる（色シート）</div>
+    <div class="row"><span class="lab">色</span><input id="vdCc" type="color" value="#0000ff" aria-label="重ねる色"><button class="pk" data-for="vdCc" aria-label="スポイト">💧</button><select id="vdCm" aria-label="重ね方"><option value="lighten">比較（明）：黒をその色に</option><option value="screen">スクリーン：明るく</option><option value="multiply">乗算：暗く</option><option value="overlay">オーバーレイ</option><option value="soft-light">ソフトライト</option><option value="color">色（色相と彩度だけ）</option><option value="hue">色相</option><option value="darken">比較（暗）</option><option value="source-over">通常（上から塗る）</option></select></div>
+    <div class="row"><span class="lab">濃さ</span><input id="vdCa" type="range" min="0" max="100" step="1" value="0" aria-label="色を重ねる濃さ（0＝なし）"></div>
+    </div>
+    <div class="grp"><div class="gh">色の調整</div>
+    <div class="row"><span class="lab">明るさ</span><input id="vdBr" type="range" min="0" max="200" step="1" value="100" data-snap="100" aria-label="明るさ（100＝そのまま）"></div>
+    <div class="row"><span class="lab">コントラスト</span><input id="vdCt" type="range" min="0" max="200" step="1" value="100" data-snap="100" aria-label="コントラスト（100＝そのまま）"></div>
+    <div class="row"><span class="lab">彩度</span><input id="vdSa" type="range" min="0" max="300" step="1" value="100" data-snap="100" aria-label="彩度（100＝そのまま）"></div>
+    <div class="row"><span class="lab">色相</span><input id="vdHu" type="range" min="-180" max="180" step="1" value="0" data-snap="0" aria-label="色相の回転（度）"></div>
+    </div>
+    <div class="grp"><div class="gh">歪み</div>
+    <div class="row"><select id="vdWt" aria-label="歪みの種類"><option value="none">なし</option><option value="wh">波（横にゆれる）</option><option value="wv">波（縦にゆれる）</option><option value="ww">水面（ゆらゆら）</option><option value="bulge">膨らみ（マイナスでへこみ）</option><option value="swirl">渦</option></select></div>
+    <div class="row"><span class="lab">強さ</span><input id="vdWs" type="range" min="-100" max="100" step="1" value="30" data-snap="0" aria-label="歪みの強さ"></div>
+    <div class="row"><span class="lab">波の数</span><input id="vdWf" type="range" min="1" max="30" step="1" value="6" aria-label="波の数（波・水面だけ）"></div>
+    <div class="row"><span class="lab">ゆれる速さ</span><input id="vdWp" type="range" min="0" max="5" step="0.1" value="0.5" aria-label="波が動く速さ（波・水面だけ。0＝止める）"></div>
+    </div>
+    <div class="grp"><div class="gh">書き出し（動画と同じ長さ、実時間でかかります）</div>
+    <div class="row"><span class="lab">範囲</span><input id="vdExS" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="書き出しの開始（秒）" style="width:72px"><span>〜</span><input id="vdExE" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="書き出しの終わり（秒。0＝最後まで）" style="width:72px"><span class="note" style="margin:0">秒</span></div>
+    <div class="row"><label><input id="vdSnd" type="checkbox" checked> 音声を入れる</label></div>
+    <div class="row"><button id="vdExGo">⏺ 動画を書き出す</button><span id="vdExTx" class="note" style="margin:0"></span></div>
+    <div class="note" id="vdExNote">書き出し中は、この画面を開いたままにしてください（別のタブやアプリに切り替えると、描画が止まります）。</div>
+    <div id="vdOut"></div>
     </div>
   </div>
 
@@ -1400,6 +1445,7 @@ function paintFrame(){
   scnOver();
   if(drawOnly)return;   /* 統合の描画（226-merge.js）：背景・補助表示は描かない */
   vwGrid();   /* ピクセルの格子（画面だけ。台帳Z-238） */
+  if(typeof vdOutline==='function')vdOutline();   /* 動画タブ：効果をかける四角の枠（画面だけ。2470-video.js） */
   drawBrushRing();paPreview();rtOverlay();selOverlay();sizeHintDraw();
   if(tgt&&!(tgt.att&&byId(tgt.to)))drawRangeBox();
 }
@@ -4662,6 +4708,7 @@ function drawBG(){
   else if(BG.m==='grad'){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,BG.c);g.addColorStop(.62,BG.c);g.addColorStop(.62,BG.c2);g.addColorStop(1,BG.c2);ctx.fillStyle=g;ctx.fillRect(-m,-m,W+2*m,H+2*m)}
   else if(sp){ctx.filter='none';ctx.clearRect(-m,-m,W+2*m,H+2*m)}   /* 透明（PNGのみ）：紙の中は、外の色を塗らずに透けさせる */
   ctx.restore();
+  if(typeof vdDraw==='function')vdDraw();   /* 動画タブ：背景の上・絵の下に動画（と効果）を描く（2470-video.js） */
   if(sp&&(Z.x>0||Z.y>0||Z.x+W*Z.s<W||Z.y+H*Z.s<H)){   /* 紙の縁が見えている時だけ、細い縁取り */
     ctx.setTransform(dpr,0,0,dpr,0,0);ctx.save();ctx.lineWidth=1/dpr;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.strokeRect(Z.x,Z.y,W*Z.s,H*Z.s);ctx.restore()}
 }
@@ -7005,7 +7052,7 @@ function noObjUi(on){
   $('pexp').disabled=on;$('pxf').disabled=on;   /* 「このオブジェクトだけ保存」は背景・出力タブにある（台帳Z-235）。絵が無い時は押せない */
   const cur=(document.querySelector('.tab.on')||{dataset:{}}).dataset.tab;
   if(on&&!was){
-    if(cur!=='bg'&&cur!=='ph'){noObjAuto=true;setTab('bg')}   /* 物理タブはオブジェクト0個でも使える（装置トレーで一から組み立てる。台帳Z-210）。Undoなどで0個になっても、物理タブからは動かさない */
+    if(cur!=='bg'&&cur!=='ph'&&cur!=='vd'){noObjAuto=true;setTab('bg')}   /* 物理タブはオブジェクト0個でも使える（装置トレーで一から組み立てる。台帳Z-210）。Undoなどで0個になっても、物理タブからは動かさない */
   }else if(!on&&was&&noObjAuto){noObjAuto=false;if(document.querySelector('.tab.on')&&document.querySelector('.tab.on').dataset.tab==='bg')setTab('pl')}
   if(on)crdHide();
 }
@@ -9399,7 +9446,8 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('man').hidden)manClose()}
      キャンバスの1pxが画面の VW.SHARP px以上に見えるほど拡大した時だけ、ふつうの絵（歪み・ぼかし・マスクなし）の、絵の1pxが画面の2px以上になる所を、補間せずに四角いピクセルのまま描く（img()の中のvwSharp）。ふだんの拡大・縮小は今までどおりなめらか。
    ・設定（VW）は作品・Undo・保存に入れない。localStorage（am_view）にだけ覚える。
    ・書き出しを足す・描画の経路を足す時：画面専用の描画は vwSplit() を見て、書き出し・録画・統合では描かない。 */
-const vwSplit=()=>!hk&&!MGR&&!drawOnly&&!mr&&!gf;
+let vwNoSplit=false;   /* 動画タブの書き出し中だけtrue（2470-video.js。録画と同じく、紙の全体を描く） */
+const vwSplit=()=>!hk&&!MGR&&!drawOnly&&!mr&&!gf&&!vwNoSplit;
 /* 紙の1px（キャンバスのpx）が、画面で何px（CSS px）に見えるか */
 const vwCell=()=>Math.min(W*Z.s/(DOC.w||W),H*Z.s/(DOC.h||H));
 /* 拡大の上限。1pxが画面の16pxになる倍率（12〜160倍。自動サイズ＝1px＝画面の枠の1pxなら16倍）。今の拡大がそれを超えている時は、今の拡大を上限とする（急に縮まない） */
@@ -9473,6 +9521,7 @@ const TBX_TOOLS=[
   {id:'pl',ico:'✥',lab:'配置',tab:'pl'},
   {id:'add',ico:'＋',lab:'画像',act:'add'},
   {id:'ph',ico:'🌍',lab:'物理',tab:'ph'},
+  {id:'vd',ico:'📹',lab:'動画',tab:'vd'},
   {id:'adj',ico:'🎨',lab:'色調',full:'色調整',tab:'adj'},
   {id:'pt',ico:'✂️',lab:'切抜',full:'切り抜き',tab:'pt'},
   {id:'clone',ico:'🩹',lab:'修整',tab:'dr',tool:'clone'},
@@ -9660,6 +9709,345 @@ if(typeof ResizeObserver==='function')[$('tbxQ'),$('tbx')].forEach(e=>new Resize
 new MutationObserver(()=>tbxFill()).observe(document.body,{attributes:true,attributeFilter:['class']});
 addEventListener('resize',()=>{tbxApplyPos();tbxFill()});
 uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxApplyCol();tbxApplyDet();tbxRender();uiApply();tbxApplyPos();
+/* ===== 動画タブ（台帳Z-44の再開。2026-11-04、ユーザー依頼：5〜6分の動画の一部だけに色・歪みをかけたい） =====
+   ・読み込んだ動画は、ビューワーの背景の上・絵の下に出る（drawBG の最後で vdDraw）。上にお絵かき・動き・物理を重ねられる。
+   ・効果は「時間（開始〜終了）」と「場所（動画の枠に対する四角）」を決めて、そこだけにかける。複数持てる（VD.fx）。
+     色シート（色を重ねる＝合成モード）・色の調整（明るさ・コントラスト・彩度・色相）・歪み（波・水面・膨らみ・渦）。
+     時間の端はなめらかに入る・出る（ramp）。
+   ・色だけの効果は、Canvasの標準機能（ctx.filter・合成モード）で動画をそのまま描くので速い（画像用の色調整エンジンは通さない＝動画専用。ユーザー承認：2026-11-04）。
+     歪みは作業用の小さいCanvasにCPUで計算する（GPUだけに頼らない）。細かさの上限＝VD.cap（画面）・VD.capExp（書き出し）。
+   ・書き出しは実時間（動画と同じ長さ。録画＝captureStream＋MediaRecorder。音声は動画から取る）。再生位置（時間）で効果が決まるので、コマが落ちても長さと効果の時間はずれない。
+     書き出し中は、紙の全体を描く（vwNoSplit）・拡大を等倍にする・キャンバスをDOCの大きさにする（hk）。終わったら元へ戻す。
+   ・UIの一時状態：作品・Undo・保存には入れない（動画ファイルも効果の設定も、今回は保存しない＝台帳Z-44の残り）。
+   ・動画が読み込まれていない間は vdDraw・vdOutline は何もしない（既存の動作は変わらない）。 */
+const VD={ok:false,url:'',name:'',fx:[],cur:0,pick:false,drag:null,rec:null,ac:null,exp:false,cap:640,capExp:1024,MAXFX:8,outUrl:''};
+TT.vd=()=>'move';
+const vdV=document.createElement('video');
+vdV.playsInline=true;vdV.setAttribute('playsinline','');vdV.preload='auto';
+vdV.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1';
+document.body.appendChild(vdV);
+
+const vdFmt=s=>{s=Math.max(0,+s||0);return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')};
+const vdCl=(v,a,b)=>v<a?a:v>b?b:v;
+function vdNewFx(n){return{name:'効果'+n,on:true,a:0,b:0,ramp:.5,x:0,y:0,w:1,h:1,cc:'#0000ff',cm:'lighten',ca:0,br:100,ct:100,sa:100,hu:0,wt:'none',ws:30,wf:6,wp:.5}}
+VD.fx=[vdNewFx(1)];
+const vdCur=()=>VD.fx[VD.cur];
+
+/* ---- 動画の置き方：紙（W×H）の中に縦横比を保って収める。座標は紙の座標（drawBGの変換の中） ---- */
+function vdGeom(){
+  const vw=vdV.videoWidth,vh=vdV.videoHeight;if(!(vw>0&&vh>0))return null;
+  const k=Math.min(W/vw,H/vh),w=vw*k,h=vh*k;
+  return{vw,vh,x:(W-w)/2,y:(H-h)/2,w,h};
+}
+/* 効果の強さの倍率（0〜1）：時間の外は0、端は ramp 秒かけて変わる */
+function vdFactor(f,t){
+  if(!f.on)return 0;
+  const d=vdV.duration||0,b=f.b>0?Math.min(f.b,d):d;
+  if(t<f.a||t>b)return 0;
+  /* 動画の最初・最後に接している端は、なめらかにしない（最初のコマから効果が見える）。中の端だけ ramp 秒かけて変わる */
+  const i=f.a>0&&f.ramp>0?(t-f.a)/f.ramp:1,o=b<d-.01&&f.ramp>0?(b-t)/f.ramp:1;
+  return vdCl(Math.min(i,o),0,1);
+}
+function vdRegion(f){
+  const x=vdCl(f.x,0,.99),y=vdCl(f.y,0,.99);
+  return{x,y,w:vdCl(f.w,.01,1-x),h:vdCl(f.h,.01,1-y)};
+}
+
+/* ---- 描く ---- */
+function vdDraw(){
+  if(!VD.ok||vdV.readyState<2)return;
+  const g=vdGeom();if(!g)return;
+  const t=vdV.currentTime;
+  ctx.save();
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';if(FILT)ctx.filter='none';
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(vdV,g.x,g.y,g.w,g.h);
+  for(const f of VD.fx){const k=vdFactor(f,t);if(k>.001)vdApply(f,k,t,g)}
+  ctx.restore();
+}
+function vdSheet(f,k,x,y,w,h,c){   /* 色を重ねる（cは描く先。既定は画面のctx） */
+  if(!(f.ca>0))return;
+  c=c||ctx;c.save();c.beginPath();c.rect(x,y,w,h);c.clip();
+  c.globalCompositeOperation=f.cm;c.globalAlpha=Math.min(1,f.ca/100*k);c.fillStyle=f.cc;c.fillRect(x,y,w,h);c.restore();
+}
+function vdFilter(f,k){
+  const L=(a,b)=>a+(b-a)*k;
+  return 'brightness('+L(100,f.br)/100+') contrast('+L(100,f.ct)/100+') saturate('+L(100,f.sa)/100+') hue-rotate('+L(0,f.hu)+'deg)';
+}
+function vdApply(f,k,t,g){
+  const R=vdRegion(f),rx=g.x+R.x*g.w,ry=g.y+R.y*g.h,rw=R.w*g.w,rh=R.h*g.h,sx=R.x*g.vw,sy=R.y*g.vh,sw=R.w*g.vw,sh=R.h*g.vh;
+  const adj=FILT&&(f.br!==100||f.ct!==100||f.sa!==100||f.hu!==0),flt=adj?vdFilter(f,k):'none';
+  if(f.wt==='none'||!f.ws){   /* 色だけ：そのまま描く（速い） */
+    if(adj){ctx.save();ctx.beginPath();ctx.rect(rx,ry,rw,rh);ctx.clip();ctx.filter=flt;ctx.drawImage(vdV,sx,sy,sw,sh,rx,ry,rw,rh);ctx.restore()}
+    vdSheet(f,k,rx,ry,rw,rh);
+    return;
+  }
+  vdWarp(f,k,t,{rx,ry,rw,rh,sx,sy,sw,sh,flt});
+}
+
+/* ---- 歪み：作業用の小さいCanvasに、色を付けてから、1画素ずつ引き直す ---- */
+const VDW={a:document.createElement('canvas'),b:document.createElement('canvas'),dst:null};
+VDW.ga=VDW.a.getContext('2d',{willReadFrequently:true});VDW.gb=VDW.b.getContext('2d');
+function vdWarp(f,k,t,r){
+  const cap=VD.exp?VD.capExp:VD.cap,sc=Math.min(1,cap/Math.max(r.sw,r.sh));
+  const cw=Math.max(8,Math.round(r.sw*sc)),ch=Math.max(8,Math.round(r.sh*sc));
+  if(VDW.a.width!==cw||VDW.a.height!==ch){VDW.a.width=VDW.b.width=cw;VDW.a.height=VDW.b.height=ch;VDW.dst=null}
+  const g=VDW.ga;
+  g.globalCompositeOperation='source-over';g.globalAlpha=1;g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+  if(FILT)g.filter=r.flt;
+  g.drawImage(vdV,r.sx,r.sy,r.sw,r.sh,0,0,cw,ch);
+  if(FILT)g.filter='none';
+  vdSheet(f,k,0,0,cw,ch,g);
+  const src=g.getImageData(0,0,cw,ch);
+  if(!VDW.dst)VDW.dst=new ImageData(cw,ch);
+  vdRemap(src.data,VDW.dst.data,cw,ch,f,k,t);
+  VDW.gb.putImageData(VDW.dst,0,0);
+  ctx.drawImage(VDW.b,r.rx,r.ry,r.rw,r.rh);
+}
+function vdRemap(sd,dd,w,h,f,k,t){
+  const A=f.ws/100*k,ph=f.wp*t,fr=f.wf,TAU=Math.PI*2,W1=w-1,H1=h-1,ty=f.wt;
+  const px=(fx,fy,o)=>{   /* 双一次補間（端は端の色で延ばす） */
+    if(fx<0)fx=0;else if(fx>W1)fx=W1;if(fy<0)fy=0;else if(fy>H1)fy=H1;
+    const x0=fx|0,y0=fy|0,x1=x0<W1?x0+1:x0,y1=y0<H1?y0+1:y0,ax=fx-x0,ay=fy-y0;
+    const i00=(y0*w+x0)<<2,i10=(y0*w+x1)<<2,i01=(y1*w+x0)<<2,i11=(y1*w+x1)<<2;
+    const a00=(1-ax)*(1-ay),a10=ax*(1-ay),a01=(1-ax)*ay,a11=ax*ay;
+    dd[o]=sd[i00]*a00+sd[i10]*a10+sd[i01]*a01+sd[i11]*a11;
+    dd[o+1]=sd[i00+1]*a00+sd[i10+1]*a10+sd[i01+1]*a01+sd[i11+1]*a11;
+    dd[o+2]=sd[i00+2]*a00+sd[i10+2]*a10+sd[i01+2]*a01+sd[i11+2]*a11;
+    dd[o+3]=255;
+  };
+  if(ty==='wh'){   /* 横にゆれる：行ごとに横へずらす */
+    const amp=A*w*.06;
+    for(let y=0;y<h;y++){const off=amp*Math.sin(TAU*(fr*y/h+ph));let o=y*w*4;for(let x=0;x<w;x++,o+=4)px(x+off,y,o)}
+  }else if(ty==='wv'){   /* 縦にゆれる：列ごとに縦へずらす */
+    const amp=A*h*.06,oy=new Float32Array(w);
+    for(let x=0;x<w;x++)oy[x]=amp*Math.sin(TAU*(fr*x/w+ph));
+    for(let y=0;y<h;y++){let o=y*w*4;for(let x=0;x<w;x++,o+=4)px(x,y+oy[x],o)}
+  }else if(ty==='ww'){   /* 水面：横と縦を別の位相でゆらす */
+    const amp=A*Math.min(w,h)*.04,ox=new Float32Array(h),oy=new Float32Array(w);
+    for(let y=0;y<h;y++)ox[y]=amp*Math.sin(TAU*(fr*y/h+ph));
+    for(let x=0;x<w;x++)oy[x]=amp*Math.sin(TAU*(fr*x/w+ph*1.31+.37));
+    for(let y=0;y<h;y++){let o=y*w*4;for(let x=0;x<w;x++,o+=4)px(x+ox[y],y+oy[x],o)}
+  }else{   /* 膨らみ・へこみ／渦：中心から楕円の中だけ */
+    const cx=w/2,cy=h/2,bul=ty==='bulge',e=A>=0?1+2*A:1/(1-2*A),ang=A*TAU;
+    for(let y=0;y<h;y++){
+      const ny=(y+.5-cy)/cy;let o=y*w*4;
+      for(let x=0;x<w;x++,o+=4){
+        const nx=(x+.5-cx)/cx,r2=nx*nx+ny*ny;
+        if(r2>=1||r2<1e-9){px(x,y,o);continue}
+        if(bul){const q=Math.pow(Math.sqrt(r2),e-1);px(cx+nx*q*cx-.5,cy+ny*q*cy-.5,o)}
+        else{const r=Math.sqrt(r2),a=ang*(1-r)*(1-r),c=Math.cos(a),s=Math.sin(a);px(cx+(nx*c-ny*s)*cx-.5,cy+(nx*s+ny*c)*cy-.5,o)}
+      }
+    }
+  }
+}
+
+/* ---- 効果をかける四角の枠（動画タブを開いている間の、画面だけ。絵の上に描く） ---- */
+function vdOutline(){
+  if(!VD.ok||!vwSplit())return;
+  const tab=document.querySelector('.tab.on');if(!tab||tab.dataset.tab!=='vd')return;
+  const g=vdGeom(),f=vdCur();if(!g||!f)return;
+  const R=vdRegion(f),s=Z.s||1;
+  ctx.save();ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
+  const x=g.x+R.x*g.w,y=g.y+R.y*g.h,w=R.w*g.w,h=R.h*g.h;
+  ctx.lineWidth=3/s;ctx.strokeStyle='rgba(0,0,0,.65)';ctx.strokeRect(x,y,w,h);
+  ctx.lineWidth=1.5/s;ctx.setLineDash([6/s,5/s]);ctx.strokeStyle='#fff';ctx.strokeRect(x,y,w,h);
+  ctx.restore();
+}
+
+/* ---- 読み込み・再生 ---- */
+$('vdFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vdLoad(f)};
+function vdLoad(f){
+  vdStopExport(true);vdV.pause();
+  if(VD.url)URL.revokeObjectURL(VD.url);
+  VD.ok=false;VD.name=f.name;VD.url=URL.createObjectURL(f);
+  vdV.src=VD.url;vdV.load();
+  $('vdInfo').textContent='読み込み中…';
+}
+function vdMeta(){
+  const d=vdV.duration;
+  if(!isFinite(d)){   /* 長さの情報が無い動画（録画したWebMなど）：最後まで一度飛ばして長さを知る */
+    const h=()=>{if(isFinite(vdV.duration)){vdV.removeEventListener('durationchange',h);vdV.currentTime=0;vdMeta()}};
+    vdV.addEventListener('durationchange',h);vdV.currentTime=1e7;return;
+  }
+  VD.ok=true;
+  $('vdExS').value=0;$('vdExE').value=d.toFixed(1);
+  try{vdV.currentTime=.001}catch(_){}
+  $('vdInfo').textContent=VD.name+'：'+vdV.videoWidth+'×'+vdV.videoHeight+' px・'+vdFmt(d)+'。キャンバスの大きさが動画と違うと余白（背景の色）が出ます。';
+  vdUi();note('動画を読み込みました（'+vdFmt(d)+'）');
+}
+vdV.onloadedmetadata=vdMeta;
+vdV.onerror=()=>{VD.ok=false;$('vdInfo').textContent='この動画は読み込めませんでした（この端末が対応していない形式かもしれません。MP4（H.264）かWebMで試してください）。'};
+vdV.onplay=vdV.onpause=vdV.onended=()=>{$('vdPlay').textContent=vdV.paused?'▶ 再生':'⏸ 一時停止'};
+$('vdPlay').onclick=()=>{
+  if(!VD.ok){note('先に動画を読み込んでください');return}
+  vdAudio();
+  if(vdV.paused){if(vdV.ended||vdV.currentTime>=vdV.duration-.05)vdV.currentTime=0;vdV.play().catch(()=>note('再生できませんでした'))}
+  else vdV.pause();
+};
+$('vdBack').onclick=()=>{if(VD.ok)vdV.currentTime=0};
+$('vdSeek').oninput=e=>{if(VD.ok)vdV.currentTime=e.target.value/1000*vdV.duration};
+$('vdRm').onclick=()=>{
+  vdStopExport(true);vdV.pause();vdV.removeAttribute('src');vdV.load();
+  if(VD.url)URL.revokeObjectURL(VD.url);
+  VD.url='';VD.ok=false;$('vdInfo').textContent='動画を外しました。';vdUi();
+};
+$('vdFit').onclick=()=>{const g=vdGeom();if(!g){note('先に動画を読み込んでください');return}setCanvasSize(g.vw,g.vh);vdUi()};
+setInterval(()=>{   /* 再生位置の表示 */
+  const d=VD.ok?vdV.duration:0,t=VD.ok?vdV.currentTime:0;
+  $('vdTime').textContent=vdFmt(t)+' / '+vdFmt(d);
+  const s=$('vdSeek');if(document.activeElement!==s&&d>0)s.value=Math.round(t/d*1000);
+  vdSizeNote();
+},150);
+
+/* ---- 音声（書き出しに入れるため、動画の音をWeb Audio経由にする。初回の再生・書き出しの操作の時に作る） ---- */
+function vdAudio(){
+  if(!VD.ac&&!VD.acFail){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(AC){const ac=new AC(),src=ac.createMediaElementSource(vdV),gain=ac.createGain(),dest=ac.createMediaStreamDestination();src.connect(gain);gain.connect(ac.destination);VD.ac={ac,src,gain,dest}}
+      else VD.acFail=true;
+    }catch(_){VD.ac=null;VD.acFail=true}
+  }
+  if(VD.ac&&VD.ac.ac.state==='suspended')VD.ac.ac.resume();
+  return VD.ac;
+}
+
+/* ---- 効果の編集 ---- */
+const VD_IN=[['vdA','a',1],['vdB','b',1],['vdRamp','ramp',1],['vdX','x',.01],['vdY','y',.01],['vdW','w',.01],['vdH','h',.01],['vdCa','ca',1],['vdBr','br',1],['vdCt','ct',1],['vdSa','sa',1],['vdHu','hu',1],['vdWs','ws',1],['vdWf','wf',1],['vdWp','wp',1]];
+VD_IN.forEach(([id,key,sc])=>{
+  const el=$(id),on=()=>{const f=vdCur();let v=parseFloat(el.value);if(!isFinite(v))return;f[key]=v*sc;if(key.length===1&&'xywh'.includes(key))vdFixRegion(f);vdUi(el)};
+  el.addEventListener('input',on);el.addEventListener('change',on);
+});
+function vdFixRegion(f){const R=vdRegion(f);f.x=R.x;f.y=R.y;f.w=R.w;f.h=R.h}
+$('vdCc').addEventListener('input',e=>{vdCur().cc=e.target.value});
+$('vdCm').onchange=e=>{vdCur().cm=e.target.value};
+$('vdWt').onchange=e=>{vdCur().wt=e.target.value};
+$('vdFxOn').onchange=e=>{vdCur().on=e.target.checked;vdUi()};
+$('vdFxSel').onchange=e=>{VD.cur=+e.target.value;vdUi()};
+$('vdFxAdd').onclick=()=>{if(VD.fx.length>=VD.MAXFX){note('効果は '+VD.MAXFX+' 個までです');return}VD.fx.push(vdNewFx(VD.fx.length+1));VD.cur=VD.fx.length-1;vdUi()};
+$('vdFxDel').onclick=()=>{if(VD.fx.length>1){VD.fx.splice(VD.cur,1);VD.cur=Math.min(VD.cur,VD.fx.length-1)}else VD.fx[0]=vdNewFx(1);vdUi()};
+$('vdSetA').onclick=()=>{if(!VD.ok)return;vdCur().a=+vdV.currentTime.toFixed(2);vdUi()};
+$('vdSetB').onclick=()=>{if(!VD.ok)return;vdCur().b=+vdV.currentTime.toFixed(2);vdUi()};
+$('vdAll').onclick=()=>{const f=vdCur();f.x=f.y=0;f.w=f.h=1;vdUi()};
+$('vdPick').onclick=()=>{
+  if(!VD.ok){note('先に動画を読み込んでください');return}
+  VD.pick=!VD.pick;vdUi();
+  if(VD.pick)note('動画の上を、指（マウス）でなぞって四角を選んでください');
+};
+/* 入力欄を今の効果に合わせる（keep＝いま触っている欄は書き換えない） */
+function vdUi(keep){
+  const f=vdCur();
+  for(const[id,key,sc]of VD_IN){const el=$(id);if(el===keep||document.activeElement===el)continue;el.value=Math.round(f[key]/sc*1000)/1000;if(el._n)el._n.value=el.value}
+  $('vdCc').value=f.cc;$('vdCm').value=f.cm;$('vdWt').value=f.wt;$('vdFxOn').checked=f.on;
+  const sel=$('vdFxSel');sel.innerHTML='';
+  VD.fx.forEach((x,i)=>{const o=document.createElement('option');o.value=i;o.textContent=x.name+'（'+vdFmt(x.a)+'〜'+(x.b>0?vdFmt(x.b):'最後')+(x.on?'':'・使わない')+'）';sel.appendChild(o)});
+  sel.value=VD.cur;
+  $('vdPick').classList.toggle('on',VD.pick);
+  $('vdPlay').textContent=vdV.paused?'▶ 再生':'⏸ 一時停止';
+  vdSizeNote();
+}
+/* 場所を指でなぞって選ぶ（動画タブで✋を押した時だけ。キャンバスのpointerより先に受け、アプリ側の操作には渡さない） */
+function vdPaper(e){const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width),py=(e.clientY-r.top)*(H/r.height);return{x:(px-Z.x)/Z.s,y:(py-Z.y)/Z.s}}
+function vdFrac(p,g){return{x:vdCl((p.x-g.x)/g.w,0,1),y:vdCl((p.y-g.y)/g.h,0,1)}}
+window.addEventListener('pointerdown',e=>{
+  if(!VD.pick||e.target!==cv||!e.isPrimary)return;
+  const g=vdGeom();if(!g)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  VD.drag={id:e.pointerId,u:vdFrac(vdPaper(e),g)};
+  try{cv.setPointerCapture(e.pointerId)}catch(_){}
+},true);
+window.addEventListener('pointermove',e=>{
+  const d=VD.drag;if(!d||e.pointerId!==d.id)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  const g=vdGeom();if(!g)return;
+  const u=vdFrac(vdPaper(e),g),f=vdCur();
+  f.x=Math.min(d.u.x,u.x);f.y=Math.min(d.u.y,u.y);f.w=Math.max(.01,Math.abs(u.x-d.u.x));f.h=Math.max(.01,Math.abs(u.y-d.u.y));
+  vdUi();
+},true);
+const vdDragEnd=e=>{
+  const d=VD.drag;if(!d||e.pointerId!==d.id)return;
+  e.preventDefault();e.stopImmediatePropagation();VD.drag=null;VD.pick=false;vdUi();
+  const R=vdRegion(vdCur());note('場所を決めました（幅'+Math.round(R.w*100)+'%・高さ'+Math.round(R.h*100)+'%）。数字でも直せます');
+};
+window.addEventListener('pointerup',vdDragEnd,true);
+window.addEventListener('pointercancel',vdDragEnd,true);
+
+/* ---- 書き出し（実時間） ---- */
+function vdOutSize(){
+  const hk0=DOC.w>0?Math.min(1,Math.sqrt(8.3e6/(DOC.w*DOC.h))):0;
+  return DOC.w>0?[Math.round(DOC.w*hk0),Math.round(DOC.h*hk0)]:[Math.round((W||0)*(dpr||1)),Math.round((H||0)*(dpr||1))];
+}
+function vdSizeNote(){
+  if(VD.rec)return;
+  const[w,h]=vdOutSize(),g=vdGeom();let s='書き出す大きさ：'+w+'×'+h+' px。書き出し中は、この画面を開いたままにしてください（別のタブやアプリに切り替えると、描画が止まります）。';
+  if(g&&Math.abs(w/h-g.vw/g.vh)>.02)s+=' 動画と縦横比が違うので余白が入ります（「📐 キャンバスを動画の大きさにする」で合わせられます）。';
+  else if(g&&DOC.w===0)s+=' 画面の枠の大きさで出ます。元の画質で出すには「📐 キャンバスを動画の大きさにする」を押してください。';
+  const n=$('vdExNote');if(n.textContent!==s)n.textContent=s;
+}
+const vdSeekTo=t=>new Promise(res=>{
+  if(Math.abs(vdV.currentTime-t)<.02)return res();
+  const h=()=>{vdV.removeEventListener('seeked',h);res()};
+  vdV.addEventListener('seeked',h);vdV.currentTime=t;setTimeout(h,4000);
+});
+$('vdExGo').onclick=()=>vdExport();
+async function vdExport(){
+  if(VD.rec){vdStopExport();return}
+  if(!VD.ok){note('先に動画を読み込んでください');return}
+  if(typeof mr!=='undefined'&&mr){note('先に、背景・出力タブの録画を止めてください');return}
+  if(!cv.captureStream||!window.MediaRecorder){$('vdExTx').textContent='この端末は録画に未対応です';return}
+  const d=vdV.duration,a=Math.max(0,+$('vdExS').value||0);let b=+$('vdExE').value||d;b=Math.min(b,d);
+  if(!(b>a+.1)){note('書き出しの範囲を確かめてください');return}
+  vdV.pause();
+  const R={a,b,chunks:[],zbak:{s:Z.s,x:Z.x,y:Z.y},timer:0,wl:null,done:false,abort:false,mr:null,snd:false};VD.rec=R;
+  Z.s=1;Z.x=0;Z.y=0;vwNoSplit=true;VD.exp=true;
+  hk=DOC.w>0?Math.min(1,Math.sqrt(8.3e6/(DOC.w*DOC.h))):0;fit();
+  $('vdExGo').textContent='⏹ 書き出しを止める';$('vdExTx').textContent='準備中…';
+  try{
+    await vdSeekTo(a);
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    if(R.done)return;
+    const A=$('vdSnd').checked?vdAudio():null,stream=cv.captureStream(30);
+    if(A){A.src.connect(A.dest);A.gain.gain.value=0;const tr=A.dest.stream.getAudioTracks()[0];if(tr){stream.addTrack(tr);R.snd=true}}
+    const mt=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'].find(m=>MediaRecorder.isTypeSupported(m))||'';
+    R.mr=new MediaRecorder(stream,Object.assign(mt?{mimeType:mt}:{},{videoBitsPerSecond:10e6,audioBitsPerSecond:128e3}));
+    R.mr.ondataavailable=e=>{if(e.data&&e.data.size)R.chunks.push(e.data)};
+    R.mr.onstop=vdFinish;
+    try{if(navigator.wakeLock)R.wl=await navigator.wakeLock.request('screen')}catch(_){}
+    R.mr.start(1000);
+    await vdV.play();
+    R.timer=setInterval(()=>{
+      const t=vdV.currentTime;
+      $('vdExTx').textContent=(document.hidden?'画面が隠れています！戻ってください　':'録画中 ')+vdFmt(t-a)+' / '+vdFmt(b-a)+'（'+Math.round(vdCl((t-a)/(b-a),0,1)*100)+'%）';
+      if(t>=b-.03||vdV.ended)vdStopExport();
+    },250);
+  }catch(err){
+    note('書き出しを始められませんでした');vdStopExport(true);
+  }
+}
+function vdStopExport(abort){
+  const R=VD.rec;if(!R)return;
+  R.abort=!!abort;clearInterval(R.timer);vdV.pause();
+  if(R.mr&&R.mr.state!=='inactive'){try{R.mr.stop();return}catch(_){}}
+  vdFinish();
+}
+function vdFinish(){
+  const R=VD.rec;if(!R||R.done)return;R.done=true;
+  const A=VD.ac;if(A){try{A.src.disconnect(A.dest)}catch(_){}A.gain.gain.value=1}
+  Z.s=R.zbak.s;Z.x=R.zbak.x;Z.y=R.zbak.y;vwNoSplit=false;VD.exp=false;hk=0;fit();
+  try{if(R.wl)R.wl.release()}catch(_){}
+  VD.rec=null;$('vdExGo').textContent='⏺ 動画を書き出す';
+  if(R.abort||!R.chunks.length){$('vdExTx').textContent=R.abort?'中止しました':'書き出せませんでした';return}
+  const t=(R.mr&&R.mr.mimeType)||'video/webm',blob=new Blob(R.chunks,{type:t}),ext=t.includes('mp4')?'mp4':'webm';
+  if(VD.outUrl)URL.revokeObjectURL(VD.outUrl);
+  VD.outUrl=URL.createObjectURL(blob);
+  const o=$('vdOut');o.innerHTML='';
+  const v=document.createElement('video');v.src=VD.outUrl;v.controls=true;v.playsInline=true;v.style.cssText='max-width:100%;border-radius:12px;margin-top:8px;display:block';
+  const l=document.createElement('a');l.href=VD.outUrl;l.download='action-maker-video.'+ext;l.textContent='⬇ 保存（'+ext+'・'+(blob.size/1048576).toFixed(1)+'MB'+(R.snd?'・音声あり':'')+'）';l.className='file';l.style.cssText='display:inline-block;margin-top:6px';
+  o.append(v,l);
+  $('vdExTx').textContent='書き出しました';
+}
+vdUi();
 /* ===== 自由帳（台帳Z-221）。起動時の状態を決めるので、manifestの最後に置く =====
    起動時の既定＝「自由帳」：A4縦・150dpi（白紙の既定と同じ）の白紙1枚が紙いっぱいにあり、ペンが選ばれ、ペンの補正が弱くオンの状態。
    ・作品ファイルを開いた時・「復元」を押した時は、その作品が優先（ここは起動時の1回だけ）。起動時は自動保存（am_auto）を上書きしない（dirtyProjを立てない）。

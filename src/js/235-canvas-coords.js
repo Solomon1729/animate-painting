@@ -51,7 +51,7 @@ function noObjUi(on){
   $('pexp').disabled=on;$('pxf').disabled=on;   /* 「このオブジェクトだけ保存」は背景・出力タブにある（台帳Z-235）。絵が無い時は押せない */
   const cur=(document.querySelector('.tab.on')||{dataset:{}}).dataset.tab;
   if(on&&!was){
-    if(cur!=='bg'&&cur!=='ph'){noObjAuto=true;setTab('bg')}   /* 物理タブはオブジェクト0個でも使える（装置トレーで一から組み立てる。台帳Z-210）。Undoなどで0個になっても、物理タブからは動かさない */
+    if(cur!=='bg'&&cur!=='ph'&&cur!=='vd'){noObjAuto=true;setTab('bg')}   /* 物理タブはオブジェクト0個でも使える（装置トレーで一から組み立てる。台帳Z-210）。Undoなどで0個になっても、物理タブからは動かさない */
   }else if(!on&&was&&noObjAuto){noObjAuto=false;if(document.querySelector('.tab.on')&&document.querySelector('.tab.on').dataset.tab==='bg')setTab('pl')}
   if(on)crdHide();
 }
