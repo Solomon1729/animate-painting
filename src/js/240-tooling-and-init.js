@@ -68,7 +68,15 @@ async function addImages(files){
     if(k===0&&AC.length===0&&$('fitcv').checked&&fitCanvasToImage(im)){
       add(null,im,{name:nm,size:Math.max(W,H)/S0,fx:.5,fy:.5});k++;continue;
     }
-    /* 見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
+    /* 原寸で置く（既定。台帳Z-251）：画像のpxをそのままキャンバス上のpxにして、見ている画面の中心へ。キャンバスより大きい画像は、キャンバスを広げる（235-canvas-coords.js の impPlace） */
+    const iw=im.naturalWidth||im.width||0,ih=im.naturalHeight||im.height||0;
+    if(IMP.mode==='orig'&&iw>0&&ih>0){
+      const pl=impPlace(iw,ih,k===0&&AC.length===0),vc=vis(),hx=Math.min(.5,pl.bw/2/W),hy=Math.min(.5,pl.bh/2/H);
+      add(null,im,{name:nm,size:pl.size,fx:cl((vc.cx-Z.x)/Z.s/W+k*.06,hx,1-hx),fy:cl((vc.cy-Z.y)/Z.s/H+k*.06,hy,1-hy)});k++;
+      if(pl.msg)note(pl.msg);
+      continue;
+    }
+    /* 縮めて置く（従来。設定で選んだ時）：見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
     const vc=vis();   /* 見えている範囲の中央に置く（窓の下に隠れない。台帳Z-115） */
     add(null,im,{name:nm,size:2,fx:cl((vc.cx-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((vc.cy-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
   }

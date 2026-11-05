@@ -1,7 +1,7 @@
 
 /* ペン・消しゴム(選んだ画像に直接描き込む)・文字 */
-const PENCAP=4096,UNDO_CANVAS_CAP=256*1024*1024;
-function workDims(l,cap=PENCAP){
+/* 上限はLIM（01-limits.js）：pen＝ペン等の作業の長辺px（0＝縮めない）、undo＝Undo履歴のMB */
+function workDims(l,cap=limOr('pen')){
   const im=l.img,iw=im.naturalWidth||im.width||512,ih=im.naturalHeight||im.height||512,long=Math.max(iw,ih);
   const L=Math.max(512,Math.min(cap,Math.round(long))),k=L/long;
   return{w:Math.max(1,Math.round(iw*k)),h:Math.max(1,Math.round(ih*k))};
@@ -29,8 +29,12 @@ function ensureBase(l){
   const d=l._bd=workDims(l),c=allocCanvas(d.w,d.h,'ペン');
   const im=l.img,iw=im.naturalWidth||im.width||1,ih=im.naturalHeight||im.height||1,k=Math.min(c.width/iw,c.height/ih);
   c.getContext('2d').drawImage(im,(c.width-iw*k)/2,(c.height-ih*k)/2,iw*k,ih*k);
-  l._bw=c.width;l._bh=c.height;l.base=c;return c;
+  l._bw=c.width;l._bh=c.height;l.base=c;
+  /* 縮んだ時は、必ず知らせる（台帳Z-252。黙って縮めない）。続けて何枚も起こる時は、4秒に1回 */
+  if(k<.999&&Date.now()-penNoted>4000){penNoted=Date.now();note('大きい絵（'+iw+'×'+ih+' px）なので、編集のために '+c.width+'×'+c.height+' px に縮めました（上限 '+(LIM.pen>0?LIM.pen+' px':'なし')+'。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。編集しないかぎり、元の絵はそのままです）',12000)}
+  return c;
 }
+let penNoted=0;
 const bumpBP=(l,b,p)=>{if(b)l.bsv=(l.bsv||0)+1;if(p)l.pnv=(l.pnv||0)+1};
 function recompose(l,rect){
   const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512;

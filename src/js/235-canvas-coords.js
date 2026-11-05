@@ -2,15 +2,15 @@
 /* ===== キャンバスの大きさ・座標の表示・オブジェクト0個の表示（台帳Z-96〜Z-98） ===== */
 
 /* ---- キャンバスの大きさ（px）。DOC（00-bootstrap.js）に持つ。0＝自動 ---- */
-const CV_MIN=16,CV_MAX=8192;
-/* 大きさを決める。w・hが無効なら自動に戻す。大きすぎる時は縦横比を保って縮める（長辺CV_MAX・総画素EXPORT_MAXPXまで）。
+const CV_MIN=16;   /* 上限（長辺・総画素）はLIM.cv・LIM.exp（01-limits.js。設定で変えられる） */
+/* 大きさを決める。w・hが無効なら自動に戻す。大きすぎる時は縦横比を保って縮める（長辺LIM.cv・総画素LIM.expまで。0＝制限なし）。
    保存・Undoは呼ぶ側が先にpushUndo（操作窓の押下では自動で入る）。戻り値＝実際に決まった[w,h]（自動なら[0,0]）。 */
 function setCanvasSize(w,h){
   w=Math.round(+w);h=Math.round(+h);
   if(!(w>0&&h>0)){DOC.w=DOC.h=0}
   else{
-    const k=Math.min(1,CV_MAX/Math.max(w,h),Math.sqrt(EXPORT_MAXPX/(w*h)));
-    if(k<1){w=Math.round(w*k);h=Math.round(h*k);note('大きすぎるので、縦横比を保って '+w+'×'+h+' px に縮めました（上限：長辺'+CV_MAX+'px・合計2500万画素）')}
+    const k=Math.min(1,limOr('cv')/Math.max(w,h),Math.sqrt(limOr('exp')/(w*h)));
+    if(k<1){w=Math.round(w*k);h=Math.round(h*k);note('大きすぎるので、縦横比を保って '+w+'×'+h+' px に縮めました（上限：長辺'+LIM.cv+'px・合計'+Math.round(LIM.exp/1e4)+'万画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000)}
     DOC.w=Math.max(CV_MIN,w);DOC.h=Math.max(CV_MIN,h);
   }
   fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}dirtyProj=true;canvasUi();
@@ -33,6 +33,25 @@ function fitCanvasToImage(im){
   const w=im&&(im.naturalWidth||im.width),h=im&&(im.naturalHeight||im.height);
   if(!(w>0&&h>0))return false;
   setCanvasSize(w,h);return true;
+}
+/* ---- 画像を置く大きさ（台帳Z-251。2026-11-05）----
+   原寸（既定）＝画像のpxを、そのままキャンバス上のpxにして置く。キャンバスより大きい画像は、キャンバス側を広げる（縦横比を保つ。オブジェクトが0個の時の最初の1枚は、画像と同じ大きさにする）。
+   縮める（従来）＝長辺を「キャンバスの短辺の約52%」にして置く（大きい写真は、キャンバス上では小さいpxになる）。どちらでも、元の絵のデータは変えない。
+   端末に覚える（am_import。作品・Undo・保存には入れない）。キャンバスの上限（LIM.cv・LIM.exp）に収まらない時だけ、その中に収まるよう縮めて置き、知らせる。 */
+const IMP={mode:'orig'};
+try{if(localStorage.getItem('am_import')==='fit')IMP.mode='fit'}catch(_){}
+{const e=$('impm');if(e){e.value=IMP.mode;e.onchange=()=>{IMP.mode=e.value==='fit'?'fit':'orig';try{localStorage.setItem('am_import',IMP.mode)}catch(_){}}}}
+/* 原寸で置く計画：必要ならキャンバスを広げ（呼ぶ側が先にpushUndo）、置く大きさ（size）と、紙の上の幅・高さ（bw,bh。Wの単位）・知らせる文を返す */
+function impPlace(iw,ih,first){
+  const cw=DOC.w||W,ch=DOC.h||H;let msg='';
+  if(iw>cw+.5||ih>ch+.5){
+    if(first)setCanvasSize(iw,ih);
+    else{const f=Math.max(iw/cw,ih/ch);setCanvasSize(Math.round(cw*f),Math.round(ch*f))}
+    msg='キャンバスを '+DOC.w+'×'+DOC.h+' px に広げました（画像を原寸で置くため。置き方は、背景・出力タブの「⚙ 動作」で変えられます）';
+  }
+  const sc=W/(DOC.w||W);let bw=iw*sc,bh=ih*sc;
+  if(bw>W+.01||bh>H+.01){const f=Math.min(W/bw,H/bh);bw*=f;bh*=f;msg='画像がキャンバスの上限（長辺'+LIM.cv+'px・合計'+Math.round(LIM.exp/1e4)+'万画素）に収まらないので、キャンバスを上限まで広げ、画像はその中に収まるよう縮めて置きました（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。元の絵のデータは変わりません）'}
+  return{size:Math.max(bw,bh)/S0,bw,bh,msg};
 }
 $('cvsb').onclick=()=>{setTab('bg');document.body.classList.contains('tpc')&&$('tc').click();$('cvsz').scrollIntoView({block:'center'})};
 

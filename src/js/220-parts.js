@@ -2,8 +2,7 @@
 /* ===== パーツのコピー／切り取り／貼り付け ===== */
 const CL=[];
 /* 切り出し用のCanvasを作る。o.adj＝色調整・質感を反映した絵を使う（単体保存・コピー・切り取り・複製。既定は元画像。「ぼかしを統合」は元画像に焼くので反映してはいけない：二重がけになる）。
-   o.full＝縮小しない原寸（上限EXPORT_MAXPX画素）。既定は長辺512〜1600pxに揃える（パーツ用）。 */
-const EXPORT_MAXPX=25e6;
+   o.full＝縮小しない原寸（上限LIM.exp画素）。既定は長辺512〜1600pxに揃える（パーツ用）。 */
 /* 範囲マスク（sm・bm：正方形MR×MR。絵はその中央にレターボックスされている）を、絵の矩形W×Hに合わせてgへ描く（台帳Z-103）。
    正方形のマスクをそのままW×Hに引き伸ばすと、縦長・横長の絵で範囲がずれる（全体を囲んで切り取っても、上下や左右が取り残されていた）。
    square＝W×Hが正方形の枠（歪み後のwo。枠＝マスクの範囲そのもの）の時はそのまま重ねる。 */
@@ -55,7 +54,7 @@ function boxCv(l,o){
   else{
     /* o.L＝長辺をこの画素数にする（切り取り・コピー用。ペン層base/penと同じ解像度で作り、穴とパーツの解像度を揃える。台帳Z-144③） */
     let L=o.L?Math.max(1,Math.round(o.L)):o.full?Math.round(Math.max(iw,ih)):Math.min(1600,Math.max(512,Math.round(Math.max(iw,ih))));
-    if(o.full&&iw*ih>EXPORT_MAXPX)L=Math.max(1,Math.floor(L*Math.sqrt(EXPORT_MAXPX/(iw*ih))));
+    if(o.full&&iw*ih>limOr('exp'))L=Math.max(1,Math.floor(L*Math.sqrt(limOr('exp')/(iw*ih))));
     const k=L/Math.max(iw,ih);W=Math.max(1,Math.round(iw*k));H=Math.max(1,Math.round(ih*k));dw=W;dh=H}
   let c;
   if(o.full){c=allocCanvas(W,H,'書き出し',true);if(c.width!==W){const k2=c.width/W;W=c.width;H=c.height;dw*=k2;dh*=k2}}
@@ -137,7 +136,7 @@ function renderTray(){
     im.src=th.toDataURL();im.alt='';b.title='タップで貼り付け（'+k.src+'より）';b.setAttribute('aria-label','切り抜きを貼り付け');b.append(im);b.onclick=()=>pasteClip(i);t.appendChild(b)});
 }
 $('pcopy').onclick=()=>takePart(false);$('pcut').onclick=()=>takePart(true);$('pdup').onclick=()=>{fillSel('sm','#ff5d8f');takePart(false,{noAuto:true});pasteClip(0,{off:true,noUndo:true})};
-/* このオブジェクトだけ保存（台帳Z-80で強化）：色調整・質感・ぼかし込み／原寸（上限EXPORT_MAXPX画素）／PNGまたはPDF。透明な余白は切り詰める */
+/* このオブジェクトだけ保存（台帳Z-80で強化）：色調整・質感・ぼかし込み／原寸（上限LIM.exp画素）／PNGまたはPDF。透明な余白は切り詰める */
 $('pexp').onclick=async()=>{
   const l=sel;if(!l)return;
   const oldLvl=lvl,oh=adjHQ;let r;lvl=0;adjHQ=true;

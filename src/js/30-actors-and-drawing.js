@@ -11,10 +11,10 @@ function addSpecial(k){
 /* ===== 白紙の大きさ（台帳Z-117・Z-126）=====
    「＋白紙」が足す紙の大きさ。紙の規格（mm・縦長の幅×高さ）と解像度（dpi）は別で、スロット（#blsz）は紙の大きさだけを持つ。既定はA4・150dpi。
    Bは日本のJIS B判（B4＝257×364mm）。「正方形 512」は従来の白紙。「px」は幅×高さを直接指定。
-   上限：長辺PENCAP（ペンの作業解像度。これを超えると使い始めで縮む）と、総画素BLK_MAXPX（メモリ・Undoの保護）。超えたら縦横比を保って縮め、知らせる。
+   上限：長辺LIM.pen（ペンの作業解像度。これを超えると使い始めで縮む）と、総画素LIM.blk（メモリ・Undoの保護）。どちらも設定で変えられる（01-limits.js。0＝縮めない）。超えたら縦横比を保って縮め、知らせる。
    UIの一時状態（BLS）。作品・Undo・保存には入れない（できた白紙のpxは、絵そのものに入る）。 */
 const PAPER={A1:[594,841],A2:[420,594],A3:[297,420],A4:[210,297],A5:[148,210],A6:[105,148],B1:[728,1030],B2:[515,728],B3:[364,515],B4:[257,364],B5:[182,257],B6:[128,182]};
-const BLK_MAXPX=8e6,BLK_MIN=8;
+const BLK_MIN=8;   /* 上限はLIM.pen・LIM.blk（01-limits.js） */
 const BLS={p:'A4',land:false,dpi:150,w:1024,h:1024};
 function blankDims(){
   let w,h;
@@ -22,7 +22,7 @@ function blankDims(){
   else if(BLS.p==='px'){w=BLS.w;h=BLS.h}
   else{const m=PAPER[BLS.p]||PAPER.A4;w=m[0]/25.4*BLS.dpi;h=m[1]/25.4*BLS.dpi;if(BLS.land)[w,h]=[h,w]}
   w=Math.max(BLK_MIN,Math.round(w)||0);h=Math.max(BLK_MIN,Math.round(h)||0);
-  const k=Math.min(1,PENCAP/Math.max(w,h),Math.sqrt(BLK_MAXPX/(w*h)));
+  const k=Math.min(1,limOr('pen')/Math.max(w,h),Math.sqrt(limOr('blk')/(w*h)));
   if(k<1)return{w:Math.max(BLK_MIN,Math.round(w*k)),h:Math.max(BLK_MIN,Math.round(h*k)),cut:true};
   return{w,h,cut:false};
 }
@@ -34,7 +34,7 @@ function addBlank(){
   a.cv.width=d.w;a.cv.height=d.h;   /* 足したばかりの透明な絵なので、大きさを変えても失うものはない */
   if(BLS.p!=='sq')a.name='白紙'+a.id+' '+(BLS.p==='px'?d.w+'×'+d.h:BLS.p+(BLS.land?'（横）':''));
   BLK.a=a;
-  if(d.cut)note('大きすぎるので '+d.w+'×'+d.h+' px に縮めました（上限：長辺'+PENCAP+'px・合計'+BLK_MAXPX/1e6+'百万画素）');
+  if(d.cut)note('大きすぎるので '+d.w+'×'+d.h+' px に縮めました（上限：長辺'+LIM.pen+'px・合計'+LIM.blk/1e6+'百万画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);
   return a}
 addEventListener('pointerdown',()=>{BLK.a=null},true);addEventListener('keydown',()=>{BLK.a=null},true);
 function drawBlankHint(l,S){

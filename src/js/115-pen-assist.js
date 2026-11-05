@@ -27,17 +27,25 @@ function paResample(p,n){
   }
   return o;
 }
-/* 直線。**始点（最初に触れた点）は動かさない**（2026-10-11ユーザー指摘）：始点Aを通る直線のうち、点列の二乗距離が最小のもの＝Aまわりの二次モーメントの主軸。
-   終点は、指の終点を線へ落とした位置。ぐるぐる回って終点が始点の近くに戻った時は、線が点に縮まないよう、いちばん遠くへ伸びた位置までにする */
+/* 直線。**始点（最初に触れた点）と終点（指のいる位置）を結ぶ線分**にする（2026-11-05ユーザー指摘：「100%にしても、指から少し遅れた中間のような所へ線が引かれる」）。
+   以前は、点列全体の二次モーメントの主軸（＝手の動きの平均の向き）の線へ、終点を落としていた。手が少し曲がる・初めに迷うと、向きが指の向きからずれ、300pxで20〜30pxも終点が指から離れた。
+   ・形の似かた（rms）は、従来どおり「始点を通る最小二乗の直線」からの二乗平均のずれ（強さの許容の目盛りが変わらない）。描く位置だけを、始点→終点の線分にする。
+   ・終点＝指の最後の位置。ただし、ぐるぐる回って指が始点の近く（いちばん遠くへ伸びた長さの半分未満）へ戻った時は、線が点に縮まないよう、いちばん遠い点を終点にする。
+   ・点iの行き先＝その点を線分へ落とした位置。強さsで元の点と混ぜると、「線へ近づく」だけで、線に沿った位置は変わらない（弱い補正でも、指の動きと合う）。
+   ・始点・終点の点は、どちらも動かない（始点＝2026-10-11ユーザー指摘、終点＝今回）。 */
 function paFitLine(P){
-  const n=P.length,A=P[0];
-  let sxx=0,sxy=0,syy=0;for(const q of P){const dx=q.x-A.x,dy=q.y-A.y;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy}
-  const th=.5*Math.atan2(2*sxy,sxx-syy);let ux=Math.cos(th),uy=Math.sin(th);
-  let sum=0;for(const q of P)sum+=(q.x-A.x)*ux+(q.y-A.y)*uy;
-  if(sum<0){ux=-ux;uy=-uy}  /* 点列の大半がある側を向ける */
-  let mx=0,e=0;for(const q of P){const t=(q.x-A.x)*ux+(q.y-A.y)*uy,d=-(q.x-A.x)*uy+(q.y-A.y)*ux;if(t>mx)mx=t;e+=d*d}
-  const B=P[n-1];let te=(B.x-A.x)*ux+(B.y-A.y)*uy;if(te<.25*mx)te=mx;
-  return{rms:Math.sqrt(e/n),F:P.map(q=>({x:A.x+ux*te*q.t,y:A.y+uy*te*q.t}))};
+  const n=P.length,A=P[0],B=P[n-1];
+  let sxx=0,sxy=0,syy=0,ext=0,far=B;
+  for(const q of P){const dx=q.x-A.x,dy=q.y-A.y;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy;const d=Math.hypot(dx,dy);if(d>ext){ext=d;far=q}}
+  /* 形の似かた：始点を通る最小二乗の直線（主軸）からのずれ */
+  const th=.5*Math.atan2(2*sxy,sxx-syy),wx=Math.cos(th),wy=Math.sin(th);let e=0;
+  for(const q of P){const d=-(q.x-A.x)*wy+(q.y-A.y)*wx;e+=d*d}
+  /* 描く線分：始点→終点 */
+  let E=B;if(Math.hypot(B.x-A.x,B.y-A.y)<.5*ext)E=far;
+  const dx=E.x-A.x,dy=E.y-A.y,len=Math.hypot(dx,dy);
+  if(!(len>1e-6))return{rms:Math.sqrt(e/n),F:P.map(()=>({x:A.x,y:A.y}))};
+  const ux=dx/len,uy=dy/len;
+  return{rms:Math.sqrt(e/n),F:P.map(q=>{const t=Math.min(len,Math.max(0,(q.x-A.x)*ux+(q.y-A.y)*uy));return{x:A.x+ux*t,y:A.y+uy*t}})};
 }
 /* 円・円弧。**始点を通る円**（始点は動かさない）で、中心は代数的な最小二乗（Kåsa法の始点固定版：始点を原点にすると、中心cについて線形になる）。
    ほぼ直線（半径が極端に大きい）なら null。始点と終点が近く、ほぼ一周していれば閉じた円にする */
@@ -94,13 +102,17 @@ function paFitBez(P,cubic){
 function paShape(raw,Ls,Cs,K){
   const L=paLen(raw);
   if(raw.length<3||L<10)return{out:raw,kind:'raw',s:0};
-  const n=Math.max(12,Math.min(160,Math.round(L/3))),R=paResample(raw,n),sL=Ls/100,sC=Cs/100;
+  /* 形の似かたの目盛り（ずれ÷N）：Nは、道のり。ただし、同じ所を何度も回る（ぐるぐる・往復）時に、道のりが長いほど「似ている」と判定されないよう、
+     広がり（外接の対角線）の2.2倍までで止める（1周の円で道のり≒対角線の2.2倍なので、1回で描いた形の判定は従来どおり）。2026-11-05 */
+  let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(const q of raw){if(q.x<x0)x0=q.x;if(q.x>x1)x1=q.x;if(q.y<y0)y0=q.y;if(q.y>y1)y1=q.y}
+  const NL=Math.max(1,Math.min(L,2.2*Math.hypot(x1-x0,y1-y0)));
+  const n=Math.max(12,Math.min(400,Math.round(L/3))),R=paResample(raw,n),sL=Ls/100,sC=Cs/100;
   const tolL=s=>s>=1?Infinity:.008+.12*s*s,tolC=s=>s>=1?Infinity:.006+.10*s*s;  /* ブレ（二乗平均の距離÷線の長さ）の許容 */
   const cand=[];
-  if(sL>0){const f=paFitLine(R);f.kind='line';f.s=sL;f.nrm=f.rms/L;f.ok=f.nrm<=tolL(sL);f.score=f.nrm/(.15+sL);cand.push(f)}
-  if(sC>0){const f=K==='arc'?paFitArc(R,L):paFitBez(R,K==='cubic');if(f){f.kind=K;f.s=sC;f.nrm=f.rms/L;f.ok=f.nrm<=tolC(sC);f.score=2*f.nrm/(.15+sC);cand.push(f)}}
+  if(sL>0){const f=paFitLine(R);f.kind='line';f.s=sL;f.nrm=f.rms/NL;f.ok=f.nrm<=tolL(sL);f.score=f.nrm/(.15+sL);cand.push(f)}
+  if(sC>0){const f=K==='arc'?paFitArc(R,L):paFitBez(R,K==='cubic');if(f){f.kind=K;f.s=sC;f.nrm=f.rms/NL;f.ok=f.nrm<=tolC(sC);f.score=2*f.nrm/(.15+sC);cand.push(f)}}
   const c=cand.filter(f=>f.ok).sort((a,b)=>a.score-b.score)[0];
-  if(!c)return{out:R.map(q=>({x:q.x,y:q.y})),kind:'raw',s:0};
+  if(!c)return{out:raw,kind:'raw',s:0};   /* どれにも似ていない＝生のまま（間引かない。以前は弧長で間引き直していて、速い手の角が丸まった） */
   const a=c.s;
   return{out:R.map((q,i)=>({x:q.x*(1-a)+c.F[i].x*a,y:q.y*(1-a)+c.F[i].y*a})),kind:c.kind,s:a,nrm:c.nrm};
 }
@@ -155,7 +167,10 @@ function paRasterPreview(l,o){
   if(P.length===1)g.lineTo(P[0].x,P[0].y);else for(let i=1;i<P.length;i++)g.lineTo(P[i].x,P[i].y);
   g.stroke();
   const S=S0*l.size,m=Math.max(bw,bh);
-  ctx.save();ctx.setTransform(l.M);ctx.scale(S/m,S/m);ctx.translate(x0-bw/2,y0-bh/2);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  ctx.save();ctx.setTransform(l.M);
+  /* 絵の1pxが画面の2px以上に見える拡大（ピクセル表示。台帳Z-238）では、確定後の絵は補間せず四角いピクセルで出る。仮表示も同じにする（2026-11-05。しないと、拡大して引いた線が、離した瞬間に角ばって見える） */
+  ctx.imageSmoothingEnabled=!vwSharp({width:bw},bw*S/m);
+  ctx.scale(S/m,S/m);ctx.translate(x0-bw/2,y0-bh/2);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
   ctx.drawImage(_paSc,0,0,rw,rh,0,0,rw,rh);ctx.restore();
   return true;
 }
