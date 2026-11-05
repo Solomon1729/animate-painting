@@ -108,3 +108,38 @@ WINX.add({id:'man',el:$('man'),min:{w:220,h:160},edge:7,handle:'.lyhd',
   reset:()=>{MANW.g=null;manwSave();manwApply()}});
 manwApply();addEventListener('resize',manwApply);
 new MutationObserver(()=>manwApply()).observe($('man'),{attributes:true,attributeFilter:['hidden']});
+
+/* ---- レイヤーとオブジェクトの一覧の窓（#lypop。台帳Z-262）：つかんで動かす・縁で大きさを変える。動かすまでは、今まで通りボタンの下に出る。位置・大きさは端末に覚える（am_win の lyp） ---- */
+const LYW={g:null};
+try{const q=JSON.parse(localStorage.getItem('am_win')||'null');if(q&&q.lyp&&q.lyp.w>0)LYW.g=q.lyp}catch(_){}
+function lywApply(){
+  const e=$('lypop'),g=LYW.g;if(!e||!g||e.hidden)return false;
+  const w=cl(g.w,200,innerWidth-4),h=cl(g.h,120,innerHeight-4),x=cl(g.x,40-w,innerWidth-40),y=cl(g.y,0,innerHeight-30);
+  e.style.left=x+'px';e.style.top=y+'px';e.style.width=w+'px';e.style.height=h+'px';e.style.maxHeight='none';return true}
+function lywSave(){try{const q=JSON.parse(localStorage.getItem('am_win')||'null')||{};if(LYW.g)q.lyp=LYW.g;else delete q.lyp;localStorage.setItem('am_win',JSON.stringify(q))}catch(_){}}
+WINX.add({id:'lyp',el:$('lypop'),min:{w:240,h:160},edge:7,handle:'.lyhd',
+  on:()=>!$('lypop').hidden,
+  rect:()=>{const r=$('lypop').getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height}},
+  set:g=>{LYW.g={x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)};lywApply()},
+  save:lywSave,
+  reset:()=>{LYW.g=null;lywSave();const e=$('lypop');['width','height','maxHeight'].forEach(k=>e.style[k]='');lyPlace()}});
+addEventListener('resize',()=>{if(LYW.g)lywApply()});
+
+/* ---- 窓の中の「上下の高さを変える持ち手」（台帳Z-262）：ドラッグ・矢印キー・ダブルクリック（元に戻す）。大きさは端末に覚える（am_pane）。
+   使い方：paneGrab(持ち手の要素,{host:CSS変数を置く要素, name:'--変数名', key:'覚える名前', measure:()=>いまの高さ(px), min:最小}) ・高さは、host の CSS変数で決める作りにしておく */
+function paneGrab(bar,o){
+  if(!bar)return;const PK='am_pane';let d=null;
+  const load=()=>{try{return JSON.parse(localStorage.getItem(PK)||'{}')||{}}catch(_){return{}}};
+  const store=v=>{try{const q=load();if(v>0)q[o.key]=v;else delete q[o.key];localStorage.setItem(PK,JSON.stringify(q))}catch(_){}};
+  const cur=()=>parseInt(o.host.style.getPropertyValue(o.name))||0;
+  const set=v=>{if(v>0)o.host.style.setProperty(o.name,Math.round(v)+'px');else o.host.style.removeProperty(o.name)};
+  const lim=v=>cl(v,o.min||100,Math.max(300,innerHeight*3));
+  set(load()[o.key]);bar.style.touchAction='none';
+  bar.addEventListener('pointerdown',e=>{if(e.button>0)return;d={id:e.pointerId,y:e.clientY,h:o.measure()};try{bar.setPointerCapture(e.pointerId)}catch(_){}bar.classList.add('drag');e.preventDefault()});
+  bar.addEventListener('pointermove',e=>{if(d&&e.pointerId===d.id)set(lim(d.h+e.clientY-d.y))});
+  const end=e=>{if(d&&e.pointerId===d.id){d=null;bar.classList.remove('drag');store(cur())}};
+  bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
+  bar.addEventListener('dblclick',()=>{set(0);store(0)});
+  bar.addEventListener('keydown',e=>{
+    if(e.key!=='ArrowUp'&&e.key!=='ArrowDown')return;
+    set(lim(o.measure()+(e.key==='ArrowDown'?1:-1)*(e.shiftKey?64:24)));store(cur());e.preventDefault();e.stopPropagation()})}

@@ -139,6 +139,98 @@ with sync_playwright() as pw:
     pg.mouse.move(sp['x'] + sp['width'] / 2, sp['y'] + sp['height'] / 2); pg.mouse.down(); pg.mouse.move(sp['x'] + 160, sp['y'] + sp['height'] / 2, steps=5); pg.mouse.up(); pg.wait_for_timeout(200)
     w1 = pg.locator('#cmpSide').bounding_box()['width']
     chk('境目をドラッグして、一覧の広さを変えられる', w1 > w0 + 100, (w0, w1))
+    # ---- 2026-11-06：一覧をコンパクトに・縁で伸縮・置き場所をドラッグ・絵の境目と入れ替え ----
+    css = lambda sel, prop: pg.evaluate("([s,p])=>getComputedStyle(document.querySelector(s))[p]", [sel, prop])
+    chk('境目にカーソルを乗せると、左右の伸縮カーソルになる（横長の画面）', css('#cmpSplit', 'cursor') == 'ew-resize', css('#cmpSplit', 'cursor'))
+    pg.dblclick('#cmpSplit', position={'x': 3, 'y': 100}); pg.wait_for_timeout(200)
+    wd = pg.locator('#cmpSide').bounding_box()['width']
+    chk('境目をダブルクリックで、一覧が元の（コンパクトな）広さに戻る', 150 <= wd <= 290, wd)
+    pg.focus('#cmpSplit'); pg.keyboard.press('ArrowRight'); pg.wait_for_timeout(100)
+    w2 = pg.locator('#cmpSide').bounding_box()['width']
+    chk('境目に矢印キーを送ると、一覧が広がる（→）', w2 > wd + 15, (wd, w2))
+    pg.keyboard.press('ArrowLeft'); pg.keyboard.press('ArrowLeft'); pg.wait_for_timeout(100)
+    w3 = pg.locator('#cmpSide').bounding_box()['width']
+    chk('矢印キー（←）で、一覧が狭まる', w3 < w2 - 15, (w2, w3))
+    # 置き場所：⠿をつかんで縁へ
+    pg.click('#cmpClr'); pg.wait_for_timeout(100)
+    for i in range(4): pg.evaluate("(i)=>document.querySelectorAll('.cmpth')[i].click()", i)
+    pg.wait_for_timeout(500)
+    def pill_to(fx, fy):
+        pb = pg.locator('#cmpPill').bounding_box(); mb = pg.locator('#cmpMain').bounding_box()
+        pg.mouse.move(pb['x'] + pb['width'] / 2, pb['y'] + pb['height'] / 2); pg.mouse.down()
+        pg.mouse.move(mb['x'] + mb['width'] * fx, mb['y'] + mb['height'] * fy, steps=8)
+        shown = pg.evaluate("()=>!document.getElementById('cmpZone').hidden")
+        pg.mouse.up(); pg.wait_for_timeout(300); return shown
+    dock = lambda: pg.evaluate("()=>document.getElementById('cmpMain').dataset.dock")
+    bx = lambda sel: pg.locator(sel).bounding_box()
+    shown = pill_to(.5, .97)
+    chk('⠿を下の縁へつかんで動かすと、置き場所の枠が出て、一覧が下に移る', shown and dock() == 'bottom' and bx('#cmpSide')['y'] > bx('#cmpView')['y'], (shown, dock()))
+    pg.focus('#cmpSplit')
+    chk('下に置いた時は、境目に上下の伸縮カーソル', css('#cmpSplit', 'cursor') == 'ns-resize', css('#cmpSplit', 'cursor'))
+    h0 = bx('#cmpSide')['height']; sp = bx('#cmpSplit')
+    pg.mouse.move(sp['x'] + sp['width'] / 2, sp['y'] + sp['height'] / 2); pg.mouse.down(); pg.mouse.move(sp['x'] + sp['width'] / 2, sp['y'] - 90, steps=6); pg.mouse.up(); pg.wait_for_timeout(200)
+    h1 = bx('#cmpSide')['height']
+    chk('下に置いた一覧は、境目を上へ引くと高くなる（境目が指についてくる）', h1 > h0 + 60, (h0, h1))
+    shown = pill_to(.5, .03)
+    chk('上の縁へ動かすと、一覧が上に移る', dock() == 'top' and bx('#cmpSide')['y'] < bx('#cmpView')['y'], dock())
+    shown = pill_to(.97, .5)
+    chk('右の縁へ動かすと、一覧が右に移る', dock() == 'right' and bx('#cmpSide')['x'] > bx('#cmpView')['x'], dock())
+    pg.reload(); pg.wait_for_timeout(800); pg.evaluate("()=>modeSet('cons3')"); pg.wait_for_timeout(300)
+    chk('置き場所は、読み直しても覚えている', dock() == 'right', dock())
+    pg.click('#cmpPill'); pg.wait_for_timeout(200)
+    chk('⠿を動かさずに押すと、置き場所が順に変わる（右→下）', dock() == 'bottom', dock())
+    shown = pill_to(.03, .5)
+    chk('左の縁へ動かすと、一覧が左に戻る', dock() == 'left' and bx('#cmpSide')['x'] < bx('#cmpView')['x'], dock())
+    # 絵の境目・入れ替え
+    pg.set_input_files('#cmpFile', files); pg.wait_for_timeout(1500)
+    pg.click('#cmpClr'); pg.wait_for_timeout(100)
+    for i in range(4): pg.evaluate("(i)=>document.querySelectorAll('.cmpth')[i].click()", i)
+    pg.wait_for_timeout(600)
+    chk('4枚の見比べに、絵の境目が2本ある（縦1・横1）', pg.locator('.cmpdv').count() == 2, pg.locator('.cmpdv').count())
+    chk('絵の境目は、左右・上下の伸縮カーソル', css('.cmpdv[data-kind=v]', 'cursor') == 'col-resize' and css('.cmpdv[data-kind=h]', 'cursor') == 'row-resize')
+    a0, b0 = bx('.cmpt >> nth=0')['width'], bx('.cmpt >> nth=1')['width']
+    dv = bx('.cmpdv[data-kind=v]')
+    pg.mouse.move(dv['x'] + dv['width'] / 2, dv['y'] + 40); pg.mouse.down(); pg.mouse.move(dv['x'] + dv['width'] / 2 + 140, dv['y'] + 40, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
+    a1, b1 = bx('.cmpt >> nth=0')['width'], bx('.cmpt >> nth=1')['width']
+    chk('縦の境目をつかんで動かすと、左の絵が大きく・右の絵が小さくなる', a1 > a0 + 100 and b1 < b0 - 100, (round(a0), round(a1), round(b0), round(b1)))
+    chk('大きくした絵の中身も、描き直されている（キャンバスの幅が絵に合う）', pg.evaluate("()=>{const t=document.querySelector('.cmpt .cmpcv'),c=t.querySelector('canvas');return Math.abs(c.getBoundingClientRect().width-t.getBoundingClientRect().width)<2}"))
+    h0, hb0 = bx('.cmpt >> nth=0')['height'], bx('.cmpt >> nth=2')['height']
+    dh = bx('.cmpdv[data-kind=h]')
+    pg.mouse.move(dh['x'] + 80, dh['y'] + dh['height'] / 2); pg.mouse.down(); pg.mouse.move(dh['x'] + 80, dh['y'] + dh['height'] / 2 - 80, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
+    h1, hb1 = bx('.cmpt >> nth=0')['height'], bx('.cmpt >> nth=2')['height']
+    chk('横の境目を上へ動かすと、上の絵が小さく・下の絵が大きくなる', h1 < h0 - 50 and hb1 > hb0 + 50, (round(h0), round(h1), round(hb0), round(hb1)))
+    pg.mouse.dblclick(dh['x'] + 80, bx('.cmpdv[data-kind=h]')['y'] + 9); pg.wait_for_timeout(300)
+    h2 = bx('.cmpt >> nth=0')['height']; hb2 = bx('.cmpt >> nth=2')['height']
+    chk('境目をダブルクリックすると、均等に戻る', abs(h2 - hb2) < 4, (round(h2), round(hb2)))
+    ids0 = pg.evaluate("()=>[...document.querySelectorAll('.cmpt')].map(e=>+e.dataset.id)")
+    hd = bx('.cmpt >> nth=0 >> .cmpth2'); tg = bx('.cmpt >> nth=3')
+    pg.mouse.move(hd['x'] + 40, hd['y'] + hd['height'] / 2); pg.mouse.down(); pg.mouse.move(tg['x'] + tg['width'] / 2, tg['y'] + tg['height'] / 2, steps=8)
+    hl = pg.evaluate("()=>!!document.querySelector('.cmpt.dropt')")
+    pg.mouse.up(); pg.wait_for_timeout(300)
+    ids1 = pg.evaluate("()=>[...document.querySelectorAll('.cmpt')].map(e=>+e.dataset.id)")
+    chk('絵のヘッダーをつかんで、ほかの絵の上で離すと、位置が入れ替わる（移す先に枠が出る）', hl and ids1[0] == ids0[3] and ids1[3] == ids0[0] and ids1[1] == ids0[1], (hl, ids0, ids1))
+    pg.click('.cmpt >> nth=0 >> .mk button[data-m=o]'); pg.wait_for_timeout(150)
+    ids2 = pg.evaluate("()=>[...document.querySelectorAll('.cmpt')].map(e=>+e.dataset.id)")
+    chk('ヘッダーの印のボタンは、押しても並びが変わらない', ids2 == ids1, ids2)
+    pg.click('.cmpt >> nth=0 >> .mk button[data-m=o]'); pg.wait_for_timeout(100)
+    # 古い版の保存（既定の大きさ）は、引き継がない
+    pg.evaluate("()=>{const q=JSON.parse(localStorage.getItem('am_cmp')||'{}');q.v=1;q.size={w:300,h:260};q.thumb=110;q.dock='top';localStorage.setItem('am_cmp',JSON.stringify(q))}")
+    pg.reload(); pg.wait_for_timeout(800); pg.evaluate("()=>modeSet('cons3')"); pg.wait_for_timeout(300)
+    pg.set_input_files('#cmpFile', files); pg.wait_for_timeout(1200)
+    chk('旧版の保存（一覧の幅300など）は引き継がず、コンパクトな既定になる', pg.locator('#cmpSide').bounding_box()['width'] < 290 and pg.evaluate("()=>document.getElementById('cmpTh').value")=='80' and pg.evaluate("()=>document.getElementById('cmpMain').dataset.dock")=='left', (pg.locator('#cmpSide').bounding_box()['width'], pg.evaluate("()=>document.getElementById('cmpTh').value")))
+    # スマホの幅：見比べの枠が、画面の半分以上
+    ctx2 = br.new_context(viewport={'width': 390, 'height': 780}, has_touch=True, is_mobile=True); pg2 = ctx2.new_page(); errs2 = []; pg2.on('pageerror', lambda e: errs2.append(str(e)[:200]))
+    pg2.goto('file://' + F + '?ui=win&start=sample'); pg2.wait_for_timeout(800); pg2.evaluate("()=>localStorage.removeItem('am_cmp')"); pg2.reload(); pg2.wait_for_timeout(800)
+    pg2.evaluate("()=>modeSet('cons3')"); pg2.wait_for_timeout(300); pg2.set_input_files('#cmpFile', files); pg2.wait_for_timeout(2000)
+    for i in range(4): pg2.evaluate("(i)=>document.querySelectorAll('.cmpth')[i].click()", i)
+    pg2.wait_for_timeout(600)
+    g = pg2.evaluate("()=>{const r=s=>document.querySelector(s).getBoundingClientRect();return {main:r('#cmpMain').height,side:r('#cmpSide').height,view:r('#cmpView').height,bar:r('.cmpbar').height,dock:document.getElementById('cmpMain').dataset.dock}}")
+    chk('スマホの幅：見比べの枠が、見比べ全体の65%以上（一覧は小さい）', g['view'] >= g['main'] * .65 and g['side'] <= g['main'] * .25, g)
+    chk('スマホの幅：ボタンの列は1行に収まる（縦をつぶさない）', g['bar'] < 60, g['bar'])
+    nar = pg2.evaluate("()=>{const t=document.querySelector('.cmpt');return {n:t.dataset.n,dm:getComputedStyle(t.querySelector('.dm')).display,btn:[...t.querySelectorAll('.mk button')].every(b=>b.getBoundingClientRect().right<=t.getBoundingClientRect().right+1)}}")
+    chk('スマホの幅：狭い枠でも、印のボタン4つが枠からはみ出さない', nar['btn'] and nar['dm'] == 'none', nar)
+    pg2.touchscreen.tap(195, 400); pg2.wait_for_timeout(100)
+    chk('スマホの幅：ページエラーなし', not errs2, errs2[:3]); ctx2.close()
     # 読み直しで印が戻る
     pg.reload(); pg.wait_for_timeout(800); pg.evaluate("()=>modeSet('cons3')"); pg.wait_for_timeout(300)
     pg.set_input_files('#cmpFile', files); pg.wait_for_timeout(2500)

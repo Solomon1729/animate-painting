@@ -18,7 +18,8 @@ function moveObjAt(a,y,k){
   else if(k2<rest.length)AC.splice(AC.indexOf(rest[k2])+1,0,a);   /* rest[k2]のすぐ手前（ACでは後ろ）へ */
   else AC.splice(AC.indexOf(rest[rest.length-1]),0,a);            /* そのレイヤーでいちばん奥へ */
   dirtyProj=true;chips();return true}
-function lyPlace(){const b=$('lyopen');if(!b||lyPop.hidden)return;const r=b.getBoundingClientRect(),w=lyPop.offsetWidth,h=lyPop.offsetHeight;
+function lyPlace(){const b=$('lyopen');if(!b||lyPop.hidden)return;if(lywApply())return;   /* 動かした・大きさを変えた窓は、その位置のまま（2471-winx.js） */
+  const r=b.getBoundingClientRect(),w=lyPop.offsetWidth,h=lyPop.offsetHeight;
   let y=r.bottom+6;if(y+h>innerHeight-8)y=Math.max(8,r.top-h-6);lyPop.style.left=Math.min(Math.max(8,r.left),Math.max(8,innerWidth-w-8))+'px';lyPop.style.top=y+'px'}
 function lyToggle(open){lyPop.hidden=open===undefined?!lyPop.hidden:!open;if(!lyPop.hidden)layUi()}
 /* ドラッグで並べ替え：行の上ではなく、入れる場所（行と行のすき間）に点線を出す（台帳Z-99）。
@@ -96,4 +97,4 @@ $('lyphx').onchange=e=>{physHideEx=e.target.checked;dirtyProj=true};
 $('lyx').onclick=()=>lyToggle(false);
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!lyPop.hidden)lyToggle(false)});
 addEventListener('resize',lyPlace);
-addEventListener('pointerdown',e=>{if(lyPop.hidden)return;const t=e.target;if(lyPop.contains(t)||t.closest('#lyopen')||t.id==='cv')return;lyToggle(false)},true);
+addEventListener('pointerdown',e=>{if(lyPop.hidden)return;const t=e.target;if(lyPop.contains(t)||t.closest('#lyopen')||t.closest('.wzg')||t.id==='cv')return;lyToggle(false)},true);
