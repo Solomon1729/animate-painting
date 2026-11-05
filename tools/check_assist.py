@@ -253,6 +253,38 @@ def run(p):
     dmax = max(abs(a - b) for a, b in zip(ca, cb))
     chk('仮表示と確定後が同じ見た目（6倍拡大・粗いペン層。線を横切る画素列の差が小さい。最大差%d）' % dmax, dmax <= 25 and len(ca) == len(cb) and len(ca) > 60, dmax)
     pg.evaluate("undo();Z.s=1;Z.x=0;Z.y=0;pw=8"); pg.wait_for_timeout(80)
+    # 直線100%：終点は、指の位置のまま（2026-11-05ユーザー指摘「100%でも、指から少し遅れた中間の所へ線が引かれる」）。手が弓なり・終わりで曲がっても
+    setpa(pg, 100, 0, 'quad')
+    for nm, f in (('弓なり', lambda t: (cx0 - 80 + 160 * t, cy0 + 25 * math.sin(math.pi * t))),
+                  ('終わりで上へ曲がる', lambda t: (cx0 - 80 + 160 * t, cy0 - (40 * (t - .8) / .2 if t > .8 else 0))),
+                  ('初めに迷う', lambda t: (cx0 - 80 + 160 * t, cy0 + (22 * (1 - t / .15) if t < .15 else 6 * t)))):
+        pts = [f(i / 50) for i in range(51)]
+        pg.mouse.move(*pts[0]); pg.mouse.down()
+        for q in pts[1:]: pg.mouse.move(*q)
+        pg.wait_for_timeout(120)
+        o = pg.evaluate("PS&&PS.out?{k:PS.kind,a:PS.out[0],b:PS.out[PS.out.length-1],n:PS.pts.length}:null")
+        pg.mouse.up(); pg.wait_for_timeout(80)
+        fa, fb = qs(*pts[0]), qs(*pts[-1])
+        e0 = math.hypot(o['a']['x'] - fa[0], o['a']['y'] - fa[1]); e1 = math.hypot(o['b']['x'] - fb[0], o['b']['y'] - fb[1])
+        chk('直線100%%（%s）：仮表示の始点・終点が、指の位置のまま（ずれ %.2f／%.2f px）' % (nm, e0, e1), o['k'] == 'line' and e0 < .5 and e1 < .5, o)
+        e2 = pg.evaluate("""([qx,qy])=>{const l=sel,c=l.pen;if(!c)return -1;const p=penXY(l,{x:qx,y:qy},c.width,c.height);return c.getContext('2d').getImageData(Math.round(p.x),Math.round(p.y),1,1).data[3]}""", list(fb))
+        chk('直線100%%（%s）：確定後も、指を離した位置にインクがある' % nm, e2 > 200, e2)
+        pg.evaluate("undo()"); pg.wait_for_timeout(60)
+    # ぐるぐる（5周）・往復を、弱い直線補正（50%）で：直線扱いにしない＝生のまま（始点も終点も指のまま、点も減らさない）
+    setpa(pg, 50, 0, 'quad')
+    for nm, f, n in (('5周の円', lambda t: (cx0 + 55 * math.cos(t * 10 * math.pi + .3), cy0 + 55 * math.sin(t * 10 * math.pi + .3)), 300),
+                     ('大きな8の字を3回', lambda t: (cx0 + 60 * math.sin(t * 6 * math.pi), cy0 + 40 * math.sin(t * 12 * math.pi)), 300)):
+        pts = [f(i / n) for i in range(n + 1)]
+        pg.mouse.move(*pts[0]); pg.mouse.down()
+        for q in pts[1:]: pg.mouse.move(*q)
+        pg.wait_for_timeout(150)
+        o = pg.evaluate("PS&&PS.out?{k:PS.kind,a:PS.out[0],b:PS.out[PS.out.length-1],n:PS.out.length,m:PS.pts.length}:null")
+        pg.mouse.up(); pg.wait_for_timeout(80)
+        fa, fb = qs(*pts[0]), qs(*pts[-1])
+        e0 = math.hypot(o['a']['x'] - fa[0], o['a']['y'] - fa[1]); e1 = math.hypot(o['b']['x'] - fb[0], o['b']['y'] - fb[1])
+        chk('直線50%%：%sは直線にされず、生のまま（種類 %s・点 %d→%d・始点ずれ %.2f・終点ずれ %.2f）' % (nm, o['k'], o['m'], o['n'], e0, e1), o['k'] == 'raw' and o['n'] == o['m'] and e0 < .5 and e1 < .5, o)
+        pg.evaluate("undo()"); pg.wait_for_timeout(60)
+    setpa(pg, 0, 0)
     # 非正方形の画像（横長800×400・縦長300×600）：ペン先が指の位置に出る。補正オフ・オンの両方
     for dims in ((800, 400), (300, 600)):
         pg.evaluate("""([w,h])=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#8cf';g.fillRect(0,0,w,h);setImg(sel,c);sel.size=1.6;sel.fx=.5;sel.fy=.5;Z.s=1;Z.x=0;Z.y=0}""", list(dims))

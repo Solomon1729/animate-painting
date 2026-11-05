@@ -443,3 +443,43 @@ body.wzdrag,body.wzdrag *{-webkit-user-select:none!important;user-select:none!im
 @media (pointer:coarse){.wzg{width:30px;height:30px;font-size:22px;opacity:.7}}
 html body.ubox.tbxd.tbxdf #tp{left:var(--tdx,0px);top:var(--tdy,0px);right:auto;bottom:auto;width:var(--tdw,320px);height:var(--tdh,240px);max-width:none;max-height:none;margin:0;border-radius:calc(var(--rk,1)*14px)}
 body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;background:color-mix(in srgb,var(--pane) 92%,transparent);-webkit-user-select:none;user-select:none}
+/* 台帳Z-251：コンソール3（画像の見比べ。2472-compare.js）。右の20pxは、コンソール共通の空き（.cons） */
+.csbody:has([data-lab="cmp"]:not([hidden])){overflow:hidden;padding:6px}
+.csbody>div[data-lab="cmp"]{flex:1;min-height:0;gap:6px}
+.cmp{display:flex;flex-direction:column;min-height:0;flex:1}
+.cmpbar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;flex:0 0 auto}
+.cmpbar button,.cmpbar select{padding:3px 8px;min-height:30px;font-size:12px}.cmpbar button.on{background:var(--acc);color:#fff}
+.cmpsp{flex:1 1 8px}.cmpn{font-size:12px;min-width:2em}.cmpz{display:flex;align-items:center;gap:3px;font-size:12px}.cmpz input{width:80px}
+.cmpmain{flex:1;min-height:0;display:flex;flex-direction:column}
+.cmpmain.cmprow{flex-direction:row}
+.cmpside{flex:0 0 var(--cmph,260px);min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;order:2}
+.cmpmain.cmprow .cmpside{flex:0 0 var(--cmpw,300px);order:0}
+.cmpmain.noside .cmpside,.cmpmain.noside .cmpsplit{display:none}
+.cmpsplit{flex:0 0 8px;background:color-mix(in srgb,var(--line) 40%,transparent);cursor:ns-resize;border-radius:4px;order:1;margin:2px 0}
+.cmpmain.cmprow .cmpsplit{cursor:ew-resize;margin:0 2px}
+.cmpview{flex:1;min-height:0;min-width:0;position:relative;display:flex;order:3}
+.cmpmain.cmprow .cmpview{order:2}
+.cmpgrid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cmpt,110px),1fr));gap:4px;align-content:start;padding:2px;overscroll-behavior:contain}
+.cmpth{position:relative;background:var(--pane);border:2px solid transparent;border-radius:6px;overflow:hidden;cursor:pointer;-webkit-user-select:none;user-select:none}
+.cmpth::before{content:"";display:block;padding-top:100%}   /* 正方形（aspect-ratioは、高さの決まった格子で行が縮むので使わない） */
+.cmpth img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
+.cmpth.sel{border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 40%,transparent)}
+.cmpth.err{opacity:.4}
+.cmpbd{position:absolute;right:2px;top:1px;font-size:15px;line-height:1;text-shadow:0 0 3px #fff,0 0 3px #fff}
+.cmpth[data-m="o"] .cmpbd{color:#1a9c4b}.cmpth[data-m="x"] .cmpbd{color:#d33}.cmpth[data-m="s"] .cmpbd{color:#e8a800}.cmpth[data-m="h"] .cmpbd{color:#37c}
+.cmpnm{position:absolute;left:0;right:0;bottom:0;font-size:10px;line-height:1.3;padding:0 3px;background:color-mix(in srgb,var(--pane) 80%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmpnone{grid-column:1/-1;padding:18px 8px;font-size:12px;opacity:.7;text-align:center}
+.cmptiles{flex:1;min-width:0;min-height:0;display:grid;gap:4px;grid-auto-rows:minmax(0,1fr)}
+.cmpempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;line-height:1.7;opacity:.75;padding:10px;pointer-events:none}
+.cmpempty[hidden]{display:none}
+.cmpt{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--pane);border:2px solid var(--line);border-radius:8px;overflow:hidden}
+.cmpt.focus{border-color:var(--acc)}
+.cmpt[data-m="o"]{border-color:#1a9c4b}.cmpt[data-m="x"]{border-color:#d33;opacity:.82}.cmpt[data-m="s"]{border-color:#e8a800}.cmpt[data-m="h"]{border-color:#37c}
+.cmpth2{display:flex;align-items:center;gap:6px;padding:2px 4px;font-size:11px;flex:0 0 auto;min-height:26px}
+.cmpth2 .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cmpth2 .dm,.cmpth2 .zp{opacity:.7;white-space:nowrap}
+.cmpth2 .mk{display:flex;gap:2px}.cmpth2 .mk button{padding:0 6px;min-height:22px;min-width:26px;font-size:13px;line-height:1}.cmpth2 .mk button.on{background:var(--acc);color:#fff}
+.cmpcv{position:relative;flex:1;min-height:0;background:repeating-conic-gradient(#8883 0 25%,transparent 0 50%) 0 0/14px 14px;cursor:grab}
+.cmpcv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cmpst{margin:0;flex:0 0 auto}
+@media (pointer:coarse){.cmpbar button,.cmpbar select{min-height:38px}.cmpth2 .mk button{min-height:32px;min-width:34px}.cmpsplit{flex-basis:14px}}
+

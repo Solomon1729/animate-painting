@@ -8,6 +8,7 @@
 | `src/styles.css` | アプリ全体のCSS |
 | `src/document-before-script.html` | CSS終了タグから `<script>` 開始タグまでのHTML本体・UI要素 |
 | `src/js/00-bootstrap.js` | DOM取得、Canvas、共通定数、`emo` |
+| `src/js/01-limits.js` | **上限の設定**（台帳Z-253）：`LIM`（描画・ブロック・テクスチャ・ピン・取り消し・キャンバス・書き出し）、`limOr(k)`（0＝無制限）、`limSave`、⚙動作の入力欄と「既定に戻す」。保存先`am_limits` |
 | `src/js/10-motion.js` | 動き定義 `K`/`WN`/`WV`、アクター初期状態、`add`、統合の描画用の一時変数`drawOnly`・`MGR`（台帳Z-157） |
 | `src/js/20-adjustments.js` | 色調整・質感 `ensureAdj`/`ensureLF`、`adjSource`、`adjUi`、`lfUi`、**仮表示の解像度の自動調整`adjPrevCap`・出力バッファ`adjOut`・色調整の核`adjColorGen(S,p,…)`（読み取り元と書き込み先を分けた。台帳Z-236）** |
 | `src/js/30-actors-and-drawing.js` | 画像設定、特殊アクター、配置・描画 `fit`/`img`/`draw`、白紙の大きさ`BLS`/`blankDims`/`addBlank`・範囲表示`drawBlankHint`（台帳Z-117・Z-118・Z-126）、削除時の参照外し`unlinkRefs`、統合の描画に合わせた`fit`/`img`/`draw`の分岐（`MGR`・`drawOnly`。台帳Z-157） |
@@ -30,7 +31,7 @@
 | `src/js/100-background-and-export.js` | 背景 `BG`、録画・通常書き出し |
 | `src/js/110-pen-and-text.js` | ペン `base`/`pen`、画面→ペン層の位置対応`penXY`（台帳Z-124）、文字、調整・質感UIイベント |
 | `src/js/112-imgops.js` | 画素処理の部品`IO`（Canvas・状態に触れない純粋関数。**ジャギー修正`IO.jaggy`/`IO.jaggyScale`＝台帳Z-180**）：箱ぼかし・ガウス`IO.box`/`IO.gauss`、ガイデッドフィルタ`IO.guided`、押し引き法の穴埋め`IO.pushPull`・その核`IO.pullPush`（小さい絵で広げて拡大する穴埋め用）、高速ガイデッドフィルタ（4チャンネル）`IO.guidedRGBA`（台帳Z-156）、粒状ノイズ`IO.noise`、自動選択の連結成長`IO.flood`（Lab・メドイド色）、輪郭の強さ`IO.edge`、最短経路`IO.dijkstra`・再開できる最短経路`IO.liveWire`（台帳Z-151）、外周の頂点列化`IO.trace`・間引き`IO.dp`（台帳Z-86・Z-87・Z-138・Z-142・Z-145） |
-| `src/js/115-pen-assist.js` | ペンの補正（台帳Z-108）：点列の当てはめ（直線`paFitLine`・円弧`paFitArc`・始点終点固定のベジェ`paFitBez`、形の選択`paShape`）、なぞり中の仮表示`paPreview`（ペン層の解像度で描く`paRasterPreview`）、離した時に一度だけ描く`paCommit`。始点は固定。`PA`（強さ・曲線の種類）、`paOn()`（0なら従来経路） |
+| `src/js/115-pen-assist.js` | ペンの補正（台帳Z-108）：点列の当てはめ（直線`paFitLine`・円弧`paFitArc`・始点終点固定のベジェ`paFitBez`、形の選択`paShape`）、なぞり中の仮表示`paPreview`（ペン層の解像度で描く`paRasterPreview`）、離した時に一度だけ描く`paCommit`。始点は固定、直線の終点は指の位置（台帳Z-257）。`PA`（強さ・曲線の種類）、`paOn()`（0なら従来経路） |
 | `src/js/120-warp.js` | 歪みの処理・焼き込み、歪み用定数`WBC`、ブラシのメッシュ`wbDab`/`meshWarp`/`warpInc`、ピン`pinPass`、ブラシ操作`wbDown`/`wbMove`/`drawBrushRing` |
 | `src/js/130-gif.js` | GIFエンコーダ、GIF/テキスト/ぼかしイベント |
 | `src/js/140-controls.js` | スライダーの±ボタンと数値入力、縦距離スクラブ・吸着`scrubBind`（台帳Z-88） |
@@ -62,6 +63,8 @@
 | `src/js/2467-manual.js` | **サイズの表示とマニュアル**（台帳Z-235）：オブジェクト／レイヤーのキャンバス上の大きさ・元の絵のpx（`objCvPx`/`imgPx`/`layRange`。配置タブ`#szinfo`・「レイヤーとオブジェクト」一覧`#lycv`・`small.sub`・`span.sz`。`sizeTick`がloopから250msごとに更新。表示だけで作品・Undo・保存に入れない）と、🎬メニュー最下部の「📖 マニュアル」`#mMan`（ダイアログ`#man`。ページは表`MANPAGES`に1項目足すだけ。今は「サイズについて」。大きさの決まり方が変わったらこのページも直す） |
 | `src/js/2468-view-grid.js` | **ビューワーの見た目：キャンバスの外の色・ピクセルの格子・ピクセルまでの拡大**（台帳Z-237・Z-238）：`vwSplit`（画面に出す時だけ塗り分け。書き出し・録画・GIF・統合は従来どおり）・`vwCell`（キャンバス1pxの画面での大きさ）・`zMax`（拡大の上限）・`vwGrid`（格子）・`vwSharp`（`img()`が補間を切る条件）・設定`VW`（`100-background-and-export.js`。localStorage `am_view`）。👁メニューの「ピクセル・背景」。検査＝`tools/check_pixel_view.py`。 |
 | `src/js/2470-video.js` | **動画タブ**（台帳Z-44・Z-250。2026-11-04）：動画をビューワーの背景の上・絵の下に出し、時間（開始〜終了・なめらかな端）と場所（動画の枠に対する四角）を決めて、そこだけに色シート（合成モード）・色の調整（明るさ・コントラスト・彩度・色相）・歪み（波・水面・膨らみ・渦）をかける。`VD`（状態）・`vdDraw`（`drawBG`の最後から）・`vdApply`・`vdWarp`／`vdRemap`（歪みはCPU）・`vdOutline`（`paintFrame`の格子の次）・`vdExport`（実時間の録画＋音声）。タブ`data-t="vd"`・ツールボックスの📹。検査＝`tools/check_video.js`。 |
+| `src/js/2471-winx.js` | **窓の縁伸縮・移動**（台帳Z-255）：`WINX`（縁・角のカーソル＝`data-wz`、ドラッグ移動、◢、位置と大きさの保存）。`#tbx`・詳細の`#tp`・`#man`を登録 |
+| `src/js/2472-compare.js` | **コンソール3＝画像の見比べ**（台帳Z-256）：約100枚の読み込み・サムネ・複数選択・並べて拡大（共通の拡大位置）・印・CSV。`CONSOLE.reg({id:'cmp'})` |
 | `src/js/247-freebook.js` | **自由帳**（台帳Z-221。起動状態を決めるので**manifestの最後**）：`startMode`（`?start=sample`／端末の設定`am_start`／既定は自由帳）・`startFree`・`startSample`・`toObject`（描いた絵をオブジェクトにする。既存の`makeClip`・`clipToObj`）・入口カード`#startcard`。 |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 

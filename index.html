@@ -451,6 +451,46 @@ body.wzdrag,body.wzdrag *{-webkit-user-select:none!important;user-select:none!im
 @media (pointer:coarse){.wzg{width:30px;height:30px;font-size:22px;opacity:.7}}
 html body.ubox.tbxd.tbxdf #tp{left:var(--tdx,0px);top:var(--tdy,0px);right:auto;bottom:auto;width:var(--tdw,320px);height:var(--tdh,240px);max-width:none;max-height:none;margin:0;border-radius:calc(var(--rk,1)*14px)}
 body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;background:color-mix(in srgb,var(--pane) 92%,transparent);-webkit-user-select:none;user-select:none}
+/* 台帳Z-251：コンソール3（画像の見比べ。2472-compare.js）。右の20pxは、コンソール共通の空き（.cons） */
+.csbody:has([data-lab="cmp"]:not([hidden])){overflow:hidden;padding:6px}
+.csbody>div[data-lab="cmp"]{flex:1;min-height:0;gap:6px}
+.cmp{display:flex;flex-direction:column;min-height:0;flex:1}
+.cmpbar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;flex:0 0 auto}
+.cmpbar button,.cmpbar select{padding:3px 8px;min-height:30px;font-size:12px}.cmpbar button.on{background:var(--acc);color:#fff}
+.cmpsp{flex:1 1 8px}.cmpn{font-size:12px;min-width:2em}.cmpz{display:flex;align-items:center;gap:3px;font-size:12px}.cmpz input{width:80px}
+.cmpmain{flex:1;min-height:0;display:flex;flex-direction:column}
+.cmpmain.cmprow{flex-direction:row}
+.cmpside{flex:0 0 var(--cmph,260px);min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;order:2}
+.cmpmain.cmprow .cmpside{flex:0 0 var(--cmpw,300px);order:0}
+.cmpmain.noside .cmpside,.cmpmain.noside .cmpsplit{display:none}
+.cmpsplit{flex:0 0 8px;background:color-mix(in srgb,var(--line) 40%,transparent);cursor:ns-resize;border-radius:4px;order:1;margin:2px 0}
+.cmpmain.cmprow .cmpsplit{cursor:ew-resize;margin:0 2px}
+.cmpview{flex:1;min-height:0;min-width:0;position:relative;display:flex;order:3}
+.cmpmain.cmprow .cmpview{order:2}
+.cmpgrid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cmpt,110px),1fr));gap:4px;align-content:start;padding:2px;overscroll-behavior:contain}
+.cmpth{position:relative;background:var(--pane);border:2px solid transparent;border-radius:6px;overflow:hidden;cursor:pointer;-webkit-user-select:none;user-select:none}
+.cmpth::before{content:"";display:block;padding-top:100%}   /* 正方形（aspect-ratioは、高さの決まった格子で行が縮むので使わない） */
+.cmpth img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
+.cmpth.sel{border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 40%,transparent)}
+.cmpth.err{opacity:.4}
+.cmpbd{position:absolute;right:2px;top:1px;font-size:15px;line-height:1;text-shadow:0 0 3px #fff,0 0 3px #fff}
+.cmpth[data-m="o"] .cmpbd{color:#1a9c4b}.cmpth[data-m="x"] .cmpbd{color:#d33}.cmpth[data-m="s"] .cmpbd{color:#e8a800}.cmpth[data-m="h"] .cmpbd{color:#37c}
+.cmpnm{position:absolute;left:0;right:0;bottom:0;font-size:10px;line-height:1.3;padding:0 3px;background:color-mix(in srgb,var(--pane) 80%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmpnone{grid-column:1/-1;padding:18px 8px;font-size:12px;opacity:.7;text-align:center}
+.cmptiles{flex:1;min-width:0;min-height:0;display:grid;gap:4px;grid-auto-rows:minmax(0,1fr)}
+.cmpempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;line-height:1.7;opacity:.75;padding:10px;pointer-events:none}
+.cmpempty[hidden]{display:none}
+.cmpt{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--pane);border:2px solid var(--line);border-radius:8px;overflow:hidden}
+.cmpt.focus{border-color:var(--acc)}
+.cmpt[data-m="o"]{border-color:#1a9c4b}.cmpt[data-m="x"]{border-color:#d33;opacity:.82}.cmpt[data-m="s"]{border-color:#e8a800}.cmpt[data-m="h"]{border-color:#37c}
+.cmpth2{display:flex;align-items:center;gap:6px;padding:2px 4px;font-size:11px;flex:0 0 auto;min-height:26px}
+.cmpth2 .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cmpth2 .dm,.cmpth2 .zp{opacity:.7;white-space:nowrap}
+.cmpth2 .mk{display:flex;gap:2px}.cmpth2 .mk button{padding:0 6px;min-height:22px;min-width:26px;font-size:13px;line-height:1}.cmpth2 .mk button.on{background:var(--acc);color:#fff}
+.cmpcv{position:relative;flex:1;min-height:0;background:repeating-conic-gradient(#8883 0 25%,transparent 0 50%) 0 0/14px 14px;cursor:grab}
+.cmpcv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cmpst{margin:0;flex:0 0 auto}
+@media (pointer:coarse){.cmpbar button,.cmpbar select{min-height:38px}.cmpth2 .mk button{min-height:32px;min-width:34px}.cmpsplit{flex-basis:14px}}
+
 </style>
 </head>
 <body>
@@ -5228,17 +5268,25 @@ function paResample(p,n){
   }
   return o;
 }
-/* 直線。**始点（最初に触れた点）は動かさない**（2026-10-11ユーザー指摘）：始点Aを通る直線のうち、点列の二乗距離が最小のもの＝Aまわりの二次モーメントの主軸。
-   終点は、指の終点を線へ落とした位置。ぐるぐる回って終点が始点の近くに戻った時は、線が点に縮まないよう、いちばん遠くへ伸びた位置までにする */
+/* 直線。**始点（最初に触れた点）と終点（指のいる位置）を結ぶ線分**にする（2026-11-05ユーザー指摘：「100%にしても、指から少し遅れた中間のような所へ線が引かれる」）。
+   以前は、点列全体の二次モーメントの主軸（＝手の動きの平均の向き）の線へ、終点を落としていた。手が少し曲がる・初めに迷うと、向きが指の向きからずれ、300pxで20〜30pxも終点が指から離れた。
+   ・形の似かた（rms）は、従来どおり「始点を通る最小二乗の直線」からの二乗平均のずれ（強さの許容の目盛りが変わらない）。描く位置だけを、始点→終点の線分にする。
+   ・終点＝指の最後の位置。ただし、ぐるぐる回って指が始点の近く（いちばん遠くへ伸びた長さの半分未満）へ戻った時は、線が点に縮まないよう、いちばん遠い点を終点にする。
+   ・点iの行き先＝その点を線分へ落とした位置。強さsで元の点と混ぜると、「線へ近づく」だけで、線に沿った位置は変わらない（弱い補正でも、指の動きと合う）。
+   ・始点・終点の点は、どちらも動かない（始点＝2026-10-11ユーザー指摘、終点＝今回）。 */
 function paFitLine(P){
-  const n=P.length,A=P[0];
-  let sxx=0,sxy=0,syy=0;for(const q of P){const dx=q.x-A.x,dy=q.y-A.y;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy}
-  const th=.5*Math.atan2(2*sxy,sxx-syy);let ux=Math.cos(th),uy=Math.sin(th);
-  let sum=0;for(const q of P)sum+=(q.x-A.x)*ux+(q.y-A.y)*uy;
-  if(sum<0){ux=-ux;uy=-uy}  /* 点列の大半がある側を向ける */
-  let mx=0,e=0;for(const q of P){const t=(q.x-A.x)*ux+(q.y-A.y)*uy,d=-(q.x-A.x)*uy+(q.y-A.y)*ux;if(t>mx)mx=t;e+=d*d}
-  const B=P[n-1];let te=(B.x-A.x)*ux+(B.y-A.y)*uy;if(te<.25*mx)te=mx;
-  return{rms:Math.sqrt(e/n),F:P.map(q=>({x:A.x+ux*te*q.t,y:A.y+uy*te*q.t}))};
+  const n=P.length,A=P[0],B=P[n-1];
+  let sxx=0,sxy=0,syy=0,ext=0,far=B;
+  for(const q of P){const dx=q.x-A.x,dy=q.y-A.y;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy;const d=Math.hypot(dx,dy);if(d>ext){ext=d;far=q}}
+  /* 形の似かた：始点を通る最小二乗の直線（主軸）からのずれ */
+  const th=.5*Math.atan2(2*sxy,sxx-syy),wx=Math.cos(th),wy=Math.sin(th);let e=0;
+  for(const q of P){const d=-(q.x-A.x)*wy+(q.y-A.y)*wx;e+=d*d}
+  /* 描く線分：始点→終点 */
+  let E=B;if(Math.hypot(B.x-A.x,B.y-A.y)<.5*ext)E=far;
+  const dx=E.x-A.x,dy=E.y-A.y,len=Math.hypot(dx,dy);
+  if(!(len>1e-6))return{rms:Math.sqrt(e/n),F:P.map(()=>({x:A.x,y:A.y}))};
+  const ux=dx/len,uy=dy/len;
+  return{rms:Math.sqrt(e/n),F:P.map(q=>{const t=Math.min(len,Math.max(0,(q.x-A.x)*ux+(q.y-A.y)*uy));return{x:A.x+ux*t,y:A.y+uy*t}})};
 }
 /* 円・円弧。**始点を通る円**（始点は動かさない）で、中心は代数的な最小二乗（Kåsa法の始点固定版：始点を原点にすると、中心cについて線形になる）。
    ほぼ直線（半径が極端に大きい）なら null。始点と終点が近く、ほぼ一周していれば閉じた円にする */
@@ -5295,13 +5343,17 @@ function paFitBez(P,cubic){
 function paShape(raw,Ls,Cs,K){
   const L=paLen(raw);
   if(raw.length<3||L<10)return{out:raw,kind:'raw',s:0};
-  const n=Math.max(12,Math.min(160,Math.round(L/3))),R=paResample(raw,n),sL=Ls/100,sC=Cs/100;
+  /* 形の似かたの目盛り（ずれ÷N）：Nは、道のり。ただし、同じ所を何度も回る（ぐるぐる・往復）時に、道のりが長いほど「似ている」と判定されないよう、
+     広がり（外接の対角線）の2.2倍までで止める（1周の円で道のり≒対角線の2.2倍なので、1回で描いた形の判定は従来どおり）。2026-11-05 */
+  let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;for(const q of raw){if(q.x<x0)x0=q.x;if(q.x>x1)x1=q.x;if(q.y<y0)y0=q.y;if(q.y>y1)y1=q.y}
+  const NL=Math.max(1,Math.min(L,2.2*Math.hypot(x1-x0,y1-y0)));
+  const n=Math.max(12,Math.min(400,Math.round(L/3))),R=paResample(raw,n),sL=Ls/100,sC=Cs/100;
   const tolL=s=>s>=1?Infinity:.008+.12*s*s,tolC=s=>s>=1?Infinity:.006+.10*s*s;  /* ブレ（二乗平均の距離÷線の長さ）の許容 */
   const cand=[];
-  if(sL>0){const f=paFitLine(R);f.kind='line';f.s=sL;f.nrm=f.rms/L;f.ok=f.nrm<=tolL(sL);f.score=f.nrm/(.15+sL);cand.push(f)}
-  if(sC>0){const f=K==='arc'?paFitArc(R,L):paFitBez(R,K==='cubic');if(f){f.kind=K;f.s=sC;f.nrm=f.rms/L;f.ok=f.nrm<=tolC(sC);f.score=2*f.nrm/(.15+sC);cand.push(f)}}
+  if(sL>0){const f=paFitLine(R);f.kind='line';f.s=sL;f.nrm=f.rms/NL;f.ok=f.nrm<=tolL(sL);f.score=f.nrm/(.15+sL);cand.push(f)}
+  if(sC>0){const f=K==='arc'?paFitArc(R,L):paFitBez(R,K==='cubic');if(f){f.kind=K;f.s=sC;f.nrm=f.rms/NL;f.ok=f.nrm<=tolC(sC);f.score=2*f.nrm/(.15+sC);cand.push(f)}}
   const c=cand.filter(f=>f.ok).sort((a,b)=>a.score-b.score)[0];
-  if(!c)return{out:R.map(q=>({x:q.x,y:q.y})),kind:'raw',s:0};
+  if(!c)return{out:raw,kind:'raw',s:0};   /* どれにも似ていない＝生のまま（間引かない。以前は弧長で間引き直していて、速い手の角が丸まった） */
   const a=c.s;
   return{out:R.map((q,i)=>({x:q.x*(1-a)+c.F[i].x*a,y:q.y*(1-a)+c.F[i].y*a})),kind:c.kind,s:a,nrm:c.nrm};
 }
@@ -5356,7 +5408,10 @@ function paRasterPreview(l,o){
   if(P.length===1)g.lineTo(P[0].x,P[0].y);else for(let i=1;i<P.length;i++)g.lineTo(P[i].x,P[i].y);
   g.stroke();
   const S=S0*l.size,m=Math.max(bw,bh);
-  ctx.save();ctx.setTransform(l.M);ctx.scale(S/m,S/m);ctx.translate(x0-bw/2,y0-bh/2);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  ctx.save();ctx.setTransform(l.M);
+  /* 絵の1pxが画面の2px以上に見える拡大（ピクセル表示。台帳Z-238）では、確定後の絵は補間せず四角いピクセルで出る。仮表示も同じにする（2026-11-05。しないと、拡大して引いた線が、離した瞬間に角ばって見える） */
+  ctx.imageSmoothingEnabled=!vwSharp({width:bw},bw*S/m);
+  ctx.scale(S/m,S/m);ctx.translate(x0-bw/2,y0-bh/2);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
   ctx.drawImage(_paSc,0,0,rw,rh,0,0,rw,rh);ctx.restore();
   return true;
 }
@@ -8519,7 +8574,8 @@ const MODES=[
   {id:'phys',ico:'🌍',name:'物理',note:'編集画面の「物理」タブへ移ります。独立したモードにはしていません（台帳Z-205）。',open(){
     document.body.classList.contains('tpc')&&$('tc').click();setTab('ph')}},
   {id:'cons1',con:true,ico:'📝',name:'コンソール1（メモ帳）',note:'本体の作品に触れずに使うメモ帳です（txtの読み込み・出力、PDFの出力）。',open(){CONSOLE.open('memo')}},
-  {id:'cons2',con:true,ico:'🧩',name:'コンソール2（ビジュアルプログラミング）',note:'本体の作品に触れずに試す、ビジュアルプログラミングの試作です（動く画面とソースコードが対応して見えます）。',open(){CONSOLE.open('vp')}}
+  {id:'cons2',con:true,ico:'🧩',name:'コンソール2（ビジュアルプログラミング）',note:'本体の作品に触れずに試す、ビジュアルプログラミングの試作です（動く画面とソースコードが対応して見えます）。',open(){CONSOLE.open('vp')}},
+  {id:'cons3',con:true,ico:'🔍',name:'コンソール3（画像の見比べ）',note:'100枚ほどの画像を読み込み、数枚を素早く選んで大きく拡大し、印をつけながら見比べます（本体の作品には触れません）。',open(){CONSOLE.open('cmp')}}
 ];
 const MODE={cur:'edit',pull:56,ratio:1.6};
 
@@ -9544,6 +9600,23 @@ const MANPAGES=[
 <h4>遅いと感じたら</h4>
 <ul>
 <li>画面の下に出る注意の文には、どの設定で変えられるかを必ず書いています。注意が出ない所で遅い時は、不具合の可能性があるので、教えてください。</li>
+</ul>`},
+  {id:'cmp',title:'画像の見比べ（コンソール3）',
+   html:()=>
+`<p>たくさんの画像（100枚ほど）を読み込んで、数枚をすばやく選び、大きく拡大して見比べながら印をつけるための画面です。画面の右の縁から中央へなぞり、モード一覧から「コンソール3（画像の見比べ）」を選びます。画像は縮めずに扱い、拡大は元のpxまで行えます。</p>
+<h4>流れ</h4>
+<ul>
+<li><b>読み込み</b>：画像を選ぶ、または画面にドラッグ＆ドロップ。一覧の小さな絵（サムネ）は順に作られるので、すぐ操作できます。</li>
+<li><b>選ぶ</b>：一覧の絵を押すと選択。何枚でも選べ、選んだ絵が並んで大きく出ます（たくさん同時に出すと重くなるので、その時は注意が出ます）。</li>
+<li><b>拡大</b>：ホイール／ピンチで拡大、ドラッグで移動。「同期」がオンなら、並んだ絵が同じ場所・同じ倍率で動くので、同じ部分を見比べられます。スペースキーで元のpx（等倍）。ダブルクリックでその絵だけを大きく。</li>
+<li><b>印</b>：○採用／✕外す／★いちばん／？迷い。キーボードは O・X・S・H（消すのは 0）。同じ場所の目印（📍）も付けられます。</li>
+<li><b>続き</b>：Nで次の組、Pで前の組。一覧は印で絞り込めます。</li>
+<li><b>書き出し</b>：印の一覧をCSVで保存、または一覧をコピー。</li>
+</ul>
+<h4>遅いと感じたら</h4>
+<ul>
+<li>同時に出す枚数を減らす。元の大きな画像は最大12枚までメモリに置き、古いものから外します（選んだ絵は残します）。</li>
+<li>キーボードの操作は、この画面を開いている間だけ効きます。</li>
 </ul>`}
 ];
 let manCur=MANPAGES[0].id;
@@ -10497,6 +10570,323 @@ WINX.add({id:'man',el:$('man'),min:{w:220,h:160},edge:7,handle:'.lyhd',
   reset:()=>{MANW.g=null;manwSave();manwApply()}});
 manwApply();addEventListener('resize',manwApply);
 new MutationObserver(()=>manwApply()).observe($('man'),{attributes:true,attributeFilter:['hidden']});
+/* ===== コンソール3：画像の見比べ（台帳Z-251。2026-11-05。ユーザー依頼：100枚ほど読み込み、数枚を素早く選んで大きく拡大し、印をつけながら高速で見比べる。拡大が要） =====
+   本体の作品（snap／ser／loadProj）・Undo（US）・AC・LAYERS・DOCには一切触れない。ここで読んだ画像・印は、作品・元に戻す・保存に入らない（印だけ、同じ画像を読み直した時のために端末に覚える）。
+   ・画像：📂（複数）／📁（フォルダごと）／ドラッグして置く。枚数の制限はない。小さな絵（サムネイル）は、読み込みながら順に作る（同時に3枚。進み具合を表示）。
+     大きく見る元の絵は、選んだ時に読み、使わなくなったものは古い順に手放す（メモリ節約。選んでいる絵は手放さない）。
+   ・選ぶ：サムネイルを、マウスはなぞるだけで次々に選ぶ（最初に押した絵が選ばれていなければ「選ぶ」、選ばれていれば「外す」）。Shift＋押すと範囲。指は、タップで入り切り。
+     「✋なぞって選ぶ」を入れると、指でもなぞって選べる（その間は一覧を指でスクロールできない）。選ぶと、すぐ右（縦長の画面では上）の見比べの欄に、大きく並ぶ。
+   ・見比べ：選んだ絵が、枚数に合わせた並びで大きく出る。ホイール／ピンチで拡大・縮小（押した所を中心に）、ドラッグで動かす。🔗同期（初め：オン）のあいだは、すべての絵が、同じ場所・同じ倍率で一緒に動く
+     （絵の大きさが違っても、絵に対する割合で合わせる）。倍率は、元の絵の1画素＝画面の1画素を100%として出す。ピクセルが見える倍率では、補間をやめて、1画素ずつ見せる。倍率の上限・下限は設けない（極端な値だけ、計算の都合で止める）。
+   ・印：各絵の上の ○（採用）✕（外す）★（いちばん）？（迷い）。キーボードは O・X・S・H（消すのは 0）。同じ場所の目印（📍。Shiftを押して押す／📍モードで押す）は、すべての絵の同じ場所に出る（細部の見比べ用）。
+   ・速く進む：N／P（または▶▶／◀◀）で、いま選んでいる枚数と同じだけ、次の（前の）絵の組を選び直す。F（またはダブルクリック）で1枚だけ大きく。Gで一覧を隠す。Lで同期の切り替え。Spaceで、全体↔等倍。←→で、見ている絵を移す。
+   ・印の保存：📥でCSV（名前・印・幅・高さ）、📋でコピー。印は、名前＋大きさ＋更新日時で覚え、同じ画像を読み直すと戻る（端末のlocalStorage am_cmp）。
+   ・UIの一時状態：作品・Undo・保存には入れない。 */
+(()=>{
+const CM={items:[],sel:new Set(),marks:{},pins:[],sync:true,v:{z:1,fx:.5,fy:.5},tiles:new Map(),focus:0,single:0,anchor:0,filter:'all',touchSel:false,pinMode:false,pixel:'auto',
+  cache:new Map(),q:[],busy:0,total:0,done:0,seq:0,hover:0,size:{w:300,h:260},thumb:110,drag:null,delT:0,rf:0};
+const MK={o:'○',x:'✕',s:'★',h:'？'},MKN={o:'採用',x:'外す',s:'いちばん',h:'迷い'};
+const LSK='am_cmp';
+try{const q=JSON.parse(localStorage.getItem(LSK)||'null');if(q&&typeof q==='object'){
+  if(q.marks&&typeof q.marks==='object')for(const k in q.marks)if(MK[q.marks[k]])CM.marks[k]=q.marks[k];
+  if(q.size&&q.size.w>0&&q.size.h>0)CM.size=q.size;if(q.thumb>=60&&q.thumb<=400)CM.thumb=q.thumb;if(q.sync===false)CM.sync=false;if(q.pixel==='on'||q.pixel==='off')CM.pixel=q.pixel}}catch(_){}
+const save=()=>{try{localStorage.setItem(LSK,JSON.stringify({v:1,marks:CM.marks,size:CM.size,thumb:CM.thumb,sync:CM.sync,pixel:CM.pixel}))}catch(_){}};
+const E=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const byId=id=>CM.items.find(i=>i.id===id);
+const fp=f=>f.name+'|'+f.size+'|'+f.lastModified;
+let R={};   /* 要素 */
+
+/* ---- 読み込み ---- */
+function addFiles(fl){
+  const have=new Set(CM.items.map(i=>i.key));let n=0,dup=0,bad=0;
+  for(const f of fl){
+    if(!/^image\//.test(f.type)&&!/\.(png|jpe?g|webp|gif|bmp|avif|heic|heif|tiff?)$/i.test(f.name)){bad++;continue}
+    const key=fp(f);if(have.has(key)){dup++;continue}have.add(key);
+    const it={id:++CM.seq,file:f,name:(f.webkitRelativePath||f.name),key,w:0,h:0,url:'',err:false};CM.items.push(it);CM.q.push(it);n++;CM.total++}
+  CM.items.sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));
+  renderGrid();pump();
+  const m=[];if(dup)m.push(dup+'枚は、もう入っているので飛ばしました');if(bad)m.push(bad+'個は、画像ではないので飛ばしました');
+  if(m.length)note(m.join('。'),6000);
+  status()}
+async function mkThumb(it){
+  try{
+    const bm=await createImageBitmap(it.file);it.w=bm.width;it.h=bm.height;
+    const k=Math.min(1,420/Math.max(it.w,it.h)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(it.w*k));c.height=Math.max(1,Math.round(it.h*k));
+    c.getContext('2d').drawImage(bm,0,0,c.width,c.height);bm.close();
+    const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.82));it.url=URL.createObjectURL(b||it.file)}
+  catch(_){it.err=true}}
+function pump(){
+  while(CM.busy<3&&CM.q.length){
+    const it=CM.q.shift();CM.busy++;
+    mkThumb(it).then(()=>{CM.busy--;CM.done++;thUi(it);status();pump()})}}
+/* 元の絵（大きく見る用）。選んだ時に読む。使い終わったものは、古い順に手放す */
+function getFull(it){
+  let e=CM.cache.get(it.id);
+  if(e){CM.cache.delete(it.id);CM.cache.set(it.id,e);return e.p}
+  e={p:createImageBitmap(it.file).then(b=>{e.bm=b;return b})};CM.cache.set(it.id,e);return e.p}
+function evict(){
+  if(CM.cache.size<=12)return;
+  for(const[id,e]of CM.cache){if(CM.cache.size<=12)break;if(CM.sel.has(id))continue;CM.cache.delete(id);if(e.bm)try{e.bm.close()}catch(_){}else e.p.then(b=>{try{b.close()}catch(_){}})}}
+
+/* ---- 一覧（サムネイル） ---- */
+const vis=()=>CM.items.filter(i=>CM.filter==='all'?true:CM.filter==='none'?!CM.marks[i.key]:CM.marks[i.key]===CM.filter);
+function renderGrid(){
+  const g=R.grid;g.textContent='';const L=vis();
+  for(const it of L){
+    const d=E('div','cmpth');d.dataset.id=it.id;d.setAttribute('role','option');d.title=it.name;
+    const im=E('img');im.alt='';im.draggable=false;im.loading='lazy';if(it.url)im.src=it.url;d.append(im,E('span','cmpbd'),E('span','cmpnm',it.name.replace(/^.*\//,'')));
+    g.append(d)}
+  if(!L.length){g.append(E('div','cmpnone',CM.items.length?'この絞り込みに合う絵はありません':'ここに、画像を読み込みます（📂・📁・ドラッグして置く）'))}
+  for(const it of L)thUi(it);
+  selUi()}
+function thUi(it){
+  const d=R.grid.querySelector('.cmpth[data-id="'+it.id+'"]');if(!d)return;
+  const im=d.firstChild;if(it.url&&im.getAttribute('src')!==it.url)im.src=it.url;
+  d.classList.toggle('err',!!it.err);d.classList.toggle('sel',CM.sel.has(it.id));
+  const m=CM.marks[it.key];d.dataset.m=m||'';d.querySelector('.cmpbd').textContent=m?MK[m]:''}
+function selUi(){
+  R.grid.querySelectorAll('.cmpth').forEach(d=>{const id=+d.dataset.id;d.classList.toggle('sel',CM.sel.has(id));d.setAttribute('aria-selected',CM.sel.has(id)?'true':'false')})}
+function status(){
+  const c={o:0,x:0,s:0,h:0};let un=0;for(const it of CM.items){const m=CM.marks[it.key];if(m)c[m]++;else un++}
+  const p=CM.done<CM.total?'　絵を準備中 '+CM.done+'/'+CM.total:'';
+  R.st.textContent='全'+CM.items.length+'枚　選択 '+CM.sel.size+'枚　○'+c.o+'　✕'+c.x+'　★'+c.s+'　？'+c.h+'　未判定'+un+p+(CM.sel.size>12?'　（たくさん同時に出すと、重くなります）':'')}
+
+/* ---- 選ぶ ---- */
+function setSel(id,on){if(on===CM.sel.has(id))return false;if(on)CM.sel.add(id);else CM.sel.delete(id);return true}
+function selChanged(){selUi();status();if(CM.single&&!CM.sel.has(CM.single))CM.single=0;if(!CM.sel.has(CM.focus))CM.focus=firstSel();schedule()}
+const orderSel=()=>CM.items.filter(i=>CM.sel.has(i.id));
+const firstSel=()=>{const l=orderSel();return l.length?l[0].id:0};
+function rangeSel(a,b){const L=vis(),i=L.findIndex(x=>x.id===a),j=L.findIndex(x=>x.id===b);if(i<0||j<0)return;const[lo,hi]=i<j?[i,j]:[j,i];for(let k=lo;k<=hi;k++)CM.sel.add(L[k].id)}
+function thFromPoint(x,y){const e=document.elementFromPoint(x,y),t=e&&e.closest&&e.closest('.cmpth');return t&&R.grid.contains(t)?+t.dataset.id:0}
+function gridBind(){
+  const g=R.grid;
+  g.addEventListener('pointerdown',e=>{
+    const id=e.target.closest&&e.target.closest('.cmpth')?+e.target.closest('.cmpth').dataset.id:0;if(!id||e.button>0)return;
+    if(e.pointerType!=='mouse'&&!CM.touchSel)return;   /* 指：タップはclickで受ける（一覧のスクロールを妨げない） */
+    e.preventDefault();
+    if(e.shiftKey&&CM.anchor){rangeSel(CM.anchor,id);CM.drag=null}
+    else{const on=!CM.sel.has(id);CM.drag={id:e.pointerId,on};setSel(id,on);CM.anchor=id}
+    selChanged();try{g.setPointerCapture(e.pointerId)}catch(_){}});
+  g.addEventListener('pointermove',e=>{
+    const d=CM.drag;if(!d||e.pointerId!==d.id)return;
+    const id=thFromPoint(e.clientX,e.clientY);if(id&&setSel(id,d.on)){CM.anchor=id;selChanged()}});
+  const end=e=>{if(CM.drag&&e.pointerId===CM.drag.id)CM.drag=null};
+  g.addEventListener('pointerup',end);g.addEventListener('pointercancel',end);
+  g.addEventListener('click',e=>{
+    if(e.pointerType==='mouse'&&e.detail>0)return;   /* マウスは、押した時に済んでいる */
+    const t=e.target.closest&&e.target.closest('.cmpth');if(!t)return;const id=+t.dataset.id;
+    if(e.shiftKey&&CM.anchor)rangeSel(CM.anchor,id);else setSel(id,!CM.sel.has(id));CM.anchor=id;selChanged()});
+  g.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('cmpth')){e.preventDefault();e.target.click()}});
+}
+/* 組送り：いま選んでいる枚数（無ければ3）と同じだけ、次（前）の絵を選び直す */
+function nextSet(dir){
+  const L=vis();if(!L.length)return;const n=Math.max(1,CM.sel.size||3),ix=L.map((x,i)=>CM.sel.has(x.id)?i:-1).filter(i=>i>=0);
+  let s;if(dir>0){const last=ix.length?ix[ix.length-1]:-1;s=last+1;if(s>=L.length){note('いちばん後ろです',2500);return}}
+  else{const first=ix.length?ix[0]:L.length;s=first-n;if(first<=0){note('いちばん前です',2500);return}s=Math.max(0,s)}
+  CM.sel.clear();for(let k=s;k<Math.min(L.length,s+n);k++)CM.sel.add(L[k].id);
+  CM.anchor=L[s].id;selChanged();
+  const d=R.grid.querySelector('.cmpth[data-id="'+L[s].id+'"]');if(d&&d.scrollIntoView)d.scrollIntoView({block:'nearest'})}
+
+/* ---- 見比べ ---- */
+let rafId=0;function schedule(){if(rafId)return;rafId=requestAnimationFrame(()=>{rafId=0;renderTiles()})}
+function cols(n,W,H){
+  let best=1,bd=1e9;for(let c=1;c<=n;c++){const r=Math.ceil(n/c),a=(W/c)/(H/r),d=Math.abs(Math.log(a/1.35));if(d<bd){bd=d;best=c}}return best}
+function renderTiles(){
+  const v=R.view,sel=orderSel(),list=CM.single?sel.filter(i=>i.id===CM.single):sel;
+  const keep=new Set(list.map(i=>i.id));
+  for(const[id,t]of CM.tiles)if(!keep.has(id)){t.ro.disconnect();t.el.remove();CM.tiles.delete(id)}
+  R.empty.hidden=list.length>0;
+  const W=v.clientWidth||600,H=v.clientHeight||400,c=cols(Math.max(1,list.length),W,H);
+  R.tiles.style.gridTemplateColumns='repeat('+c+',minmax(0,1fr))';
+  for(const it of list){
+    let t=CM.tiles.get(it.id);if(!t){t=mkTile(it);CM.tiles.set(it.id,t)}
+    R.tiles.append(t.el);   /* 並びを、一覧の順に合わせる */
+    tileUi(t)}
+  evict()}
+function mkTile(it){
+  const el=E('div','cmpt');el.dataset.id=it.id;
+  const hd=E('div','cmpth2'),nm=E('b','nm',it.name.replace(/^.*\//,'')),dm=E('span','dm',it.w?it.w+'×'+it.h:''),zp=E('span','zp'),mk=E('span','mk');
+  for(const k of Object.keys(MK)){const b=E('button',null,MK[k]);b.type='button';b.dataset.m=k;b.setAttribute('aria-label',MKN[k]+'の印をつける（キー '+k.toUpperCase()+'）');b.title=MKN[k]+'（'+k.toUpperCase()+'）';mk.append(b)}
+  hd.append(nm,dm,zp,mk);
+  const body=E('div','cmpcv'),cv=E('canvas');body.append(cv);el.append(hd,body);
+  const t={it,el,cv,body,nm,dm,zp,w:0,h:0,bm:null,v:{z:1,fx:.5,fy:.5},k:1};
+  t.ro=new ResizeObserver(()=>{const dpr=devicePixelRatio||1;t.w=body.clientWidth;t.h=body.clientHeight;cv.width=Math.max(1,Math.round(t.w*dpr));cv.height=Math.max(1,Math.round(t.h*dpr));draw(t)});t.ro.observe(body);
+  getFull(it).then(bm=>{t.bm=bm;if(!it.w){it.w=bm.width;it.h=bm.height}dm.textContent=it.w+'×'+it.h;draw(t)}).catch(()=>{it.err=true;dm.textContent='読めません'});
+  tileBind(t);return t}
+function tileUi(t){
+  t.el.classList.toggle('focus',CM.focus===t.it.id);
+  const m=CM.marks[t.it.key]||'';t.el.dataset.m=m;
+  t.el.querySelectorAll('.mk button').forEach(b=>b.classList.toggle('on',b.dataset.m===m))}
+const VW=t=>CM.sync?CM.v:t.v;
+const fitS=t=>t.it.w&&t.w?Math.min(t.w/t.it.w,t.h/t.it.h):1;
+const scaleOf=t=>fitS(t)*VW(t).z*t.k;
+function draw(t){
+  if(!t.bm||!t.w||!t.h)return;
+  const c=t.cv,g=c.getContext('2d'),dpr=devicePixelRatio||1,iw=t.it.w,ih=t.it.h,v=VW(t),s=scaleOf(t);
+  g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,c.width,c.height);g.setTransform(dpr,0,0,dpr,0,0);
+  g.imageSmoothingEnabled=!(CM.pixel==='on'||(CM.pixel==='auto'&&s*dpr>=3));g.imageSmoothingQuality='high';
+  g.drawImage(t.bm,t.w/2-v.fx*iw*s,t.h/2-v.fy*ih*s,iw*s,ih*s);
+  for(const p of CM.pins){
+    const x=t.w/2+(p.x-v.fx)*iw*s,y=t.h/2+(p.y-v.fy)*ih*s;
+    g.lineWidth=3;g.strokeStyle='rgba(255,255,255,.95)';g.beginPath();g.arc(x,y,10,0,6.2832);g.stroke();
+    g.lineWidth=1.5;g.strokeStyle='#e0245e';g.beginPath();g.arc(x,y,10,0,6.2832);g.stroke();
+    g.beginPath();g.moveTo(x-4,y);g.lineTo(x+4,y);g.moveTo(x,y-4);g.lineTo(x,y+4);g.stroke()}
+  const pct=Math.round(s*dpr*100);t.zp.textContent=(pct>=1000?Math.round(pct/100)+'×':pct+'%')}
+function drawAll(){for(const t of CM.tiles.values())draw(t)}
+/* 拡大・移動。同期中は、全部の絵が同じ割合の場所・倍率で動く */
+const SMAX=1000;   /* 1画素＝画面1000画素（計算の都合の止め。実用の上限ではない） */
+function zoomAt(t,f,px,py){
+  const v=VW(t),s0=scaleOf(t);let s1=s0*f;s1=Math.max(1e-4,Math.min(SMAX,s1));f=s1/s0;
+  const iw=t.it.w,ih=t.it.h,ox=px-t.w/2,oy=py-t.h/2,u=v.fx*iw+ox/s0,w=v.fy*ih+oy/s0;
+  v.z*=f;const s=scaleOf(t);v.fx=cl01((u-ox/s)/iw);v.fy=cl01((w-oy/s)/ih);
+  if(CM.sync)for(const o of CM.tiles.values())if(o.k*fitS(o)*v.z>SMAX)o.k=SMAX/(fitS(o)*v.z);
+  drawAll()}
+const cl01=x=>x<0?0:x>1?1:x;
+function panBy(t,dx,dy){const v=VW(t),s=scaleOf(t);v.fx=cl01(v.fx-dx/(s*t.it.w));v.fy=cl01(v.fy-dy/(s*t.it.h));CM.sync?drawAll():draw(t)}
+function fitAll(){CM.v={z:1,fx:.5,fy:.5};for(const t of CM.tiles.values()){t.v={z:1,fx:.5,fy:.5};t.k=1}drawAll()}
+function actual(){   /* 等倍：元の絵の1画素＝画面の1画素（100%）。位置は変えない */
+  const dpr=devicePixelRatio||1;CM.v.z=1;for(const t of CM.tiles.values()){t.v.z=1;t.k=1/(dpr*fitS(t))}drawAll()}
+function isActual(){const dpr=devicePixelRatio||1;for(const t of CM.tiles.values())if(Math.abs(scaleOf(t)*dpr-1)>.02)return false;return CM.tiles.size>0}
+function toggleActual(){if(isActual())fitAll();else actual()}
+function tileBind(t){
+  const body=t.body,P=new Map();let g=null;
+  body.style.touchAction='none';
+  body.addEventListener('wheel',e=>{e.preventDefault();const r=body.getBoundingClientRect();zoomAt(t,Math.exp(-e.deltaY*(e.ctrlKey?.01:.0016)),e.clientX-r.left,e.clientY-r.top);CM.focus=t.it.id;focusUi()},{passive:false});
+  body.addEventListener('pointerdown',e=>{
+    if(e.button>0)return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});try{body.setPointerCapture(e.pointerId)}catch(_){}
+    CM.focus=t.it.id;focusUi();
+    if(P.size===1)g={moved:0,sx:e.clientX,sy:e.clientY,shift:e.shiftKey};
+    else if(P.size===2){const[a,b]=[...P.values()];g={pinch:true,d:Math.hypot(a.x-b.x,a.y-b.y)||1,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,moved:99}}});
+  body.addEventListener('pointermove',e=>{
+    const p=P.get(e.pointerId);if(!p||!g)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+    if(g.pinch&&P.size>=2){const[a,b]=[...P.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,r=body.getBoundingClientRect();
+      panBy(t,cx-g.cx,cy-g.cy);zoomAt(t,d/g.d,cx-r.left,cy-r.top);g.d=d;g.cx=cx;g.cy=cy;return}
+    g.moved=Math.max(g.moved,Math.hypot(e.clientX-g.sx,e.clientY-g.sy));
+    if(g.moved>=4)panBy(t,dx,dy)});
+  const up=e=>{
+    if(!P.has(e.pointerId))return;P.delete(e.pointerId);
+    if(g&&!g.pinch&&g.moved<4&&P.size===0&&e.type==='pointerup'){   /* 動かさずに離した＝押した（目印） */
+      if(CM.pinMode||g.shift||e.shiftKey){const r=body.getBoundingClientRect();addPin(t,e.clientX-r.left,e.clientY-r.top)}}
+    if(P.size===0)g=null};
+  body.addEventListener('pointerup',up);body.addEventListener('pointercancel',up);
+  body.addEventListener('dblclick',()=>{CM.single=CM.single?0:t.it.id;schedule()});
+  t.el.querySelector('.mk').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setMark(t.it.id,b.dataset.m)});
+  t.el.addEventListener('pointerenter',()=>{CM.hover=t.it.id});t.el.addEventListener('pointerleave',()=>{if(CM.hover===t.it.id)CM.hover=0});
+}
+function addPin(t,px,py){
+  const v=VW(t),s=scaleOf(t),x=v.fx+(px-t.w/2)/(s*t.it.w),y=v.fy+(py-t.h/2)/(s*t.it.h);
+  if(x<0||x>1||y<0||y>1)return;
+  const k=CM.pins.findIndex(p=>Math.hypot((p.x-x)*t.it.w*s,(p.y-y)*t.it.h*s)<14);
+  if(k>=0)CM.pins.splice(k,1);else CM.pins.push({x,y});
+  drawAll();R.pins.textContent='📍'+CM.pins.length}
+function focusUi(){for(const t of CM.tiles.values())t.el.classList.toggle('focus',CM.focus===t.it.id)}
+function setMark(id,m){
+  const it=byId(id);if(!it)return;
+  if(!m||CM.marks[it.key]===m)delete CM.marks[it.key];else CM.marks[it.key]=m;   /* 同じ印をもう一度＝外す */
+  save();thUi(it);const t=CM.tiles.get(id);if(t)tileUi(t);status();
+  if(CM.filter!=='all'){/* 絞り込み中は、外れた絵が一覧から消える */const d=R.grid.querySelector('.cmpth[data-id="'+id+'"]');if(d&&!vis().some(x=>x.id===id))d.remove()}}
+function target(){return CM.hover||CM.focus||firstSel()}
+function moveFocus(d){const l=orderSel();if(!l.length)return;let i=l.findIndex(x=>x.id===CM.focus);i=i<0?0:(i+d+l.length)%l.length;CM.focus=l[i].id;focusUi()}
+
+/* ---- 書き出し ---- */
+function listText(sep){
+  const rows=[['名前','印','幅','高さ']];for(const it of CM.items){const m=CM.marks[it.key];rows.push([it.name,m?MK[m]+MKN[m]:'',it.w||'',it.h||''])}
+  return rows.map(r=>r.map(c=>sep===','?'"'+String(c).replace(/"/g,'""')+'"':c).join(sep)).join('\r\n')}
+function saveCsv(){
+  if(!CM.items.length){note('先に画像を読み込んでください');return}
+  const b=new Blob(['﻿'+listText(',')],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='見比べの印.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  note('印の一覧を、CSVで保存しました（'+CM.items.length+'枚）')}
+async function copyList(){
+  if(!CM.items.length){note('先に画像を読み込んでください');return}
+  try{await navigator.clipboard.writeText(listText('\t'));note('印の一覧を、コピーしました（表計算に貼り付けられます）')}catch(_){note('コピーできませんでした。📥でCSVにしてください')}}
+
+/* ---- 画面を作る ---- */
+function mount(el){
+  el.classList.add('cmp');
+  el.innerHTML='<div class="cmpbar">'
+    +'<button type="button" id="cmpAdd" aria-label="画像を読み込む（複数まとめて選べます）">📂 画像</button>'
+    +'<button type="button" id="cmpDir" aria-label="フォルダごと読み込む">📁 フォルダ</button>'
+    +'<select id="cmpFlt" aria-label="一覧を、印で絞り込む"><option value="all">すべて</option><option value="none">未判定</option><option value="o">○ 採用</option><option value="x">✕ 外す</option><option value="s">★ いちばん</option><option value="h">？ 迷い</option></select>'
+    +'<button type="button" id="cmpPrev" aria-label="前の組を選ぶ（キー P）">◀◀</button><button type="button" id="cmpNext" aria-label="次の組を選ぶ（キー N）。いま選んでいる枚数と同じだけ">▶▶ 次の組</button>'
+    +'<button type="button" id="cmpAll" aria-label="見えている絵を全部選ぶ（Ctrl+A）">全選択</button><button type="button" id="cmpClr" aria-label="選びを外す（Delete）">選び解除</button>'
+    +'<button type="button" id="cmpTs" aria-label="指でなぞって選ぶ（入れている間は、一覧を指でスクロールできません）">✋なぞって選ぶ</button>'
+    +'<span class="cmpsp"></span>'
+    +'<button type="button" id="cmpSync" aria-label="拡大・移動を、全部の絵で一緒にする（キー L）">🔗 同期</button><button type="button" id="cmpFit" aria-label="全体を見る">全体</button><button type="button" id="cmpAct" aria-label="等倍（元の絵の1画素＝画面の1画素。キー Space）">等倍</button>'
+    +'<button type="button" id="cmpPx" aria-label="拡大した時の1画素ずつの表示（自動／いつも／しない）">画素：自動</button>'
+    +'<button type="button" id="cmpPin" aria-label="同じ場所の目印を置く（入れている間は、押すと置く。Shift+押すでも置けます。キー M）">📍 目印</button><span class="cmpn" id="cmpPins"></span>'
+    +'<button type="button" id="cmpHide" aria-label="一覧を隠す／出す（キー G）">▤ 一覧</button>'
+    +'<button type="button" id="cmpCsv" aria-label="印の一覧をCSVで保存">📥</button><button type="button" id="cmpCp" aria-label="印の一覧をコピー">📋</button>'
+    +'<label class="cmpz" aria-label="一覧の絵の大きさ">▢<input type="range" id="cmpTh" min="60" max="300" step="10"></label></div>'
+    +'<div class="cmpmain" id="cmpMain"><div class="cmpside" id="cmpSide"><div class="cmpgrid" id="cmpGrid" role="listbox" aria-multiselectable="true" aria-label="読み込んだ絵の一覧"></div></div>'
+    +'<div class="cmpsplit" id="cmpSplit" aria-label="一覧と見比べの境目（ドラッグで広さを変える）" role="separator"></div>'
+    +'<div class="cmpview" id="cmpView"><div class="cmptiles" id="cmpTiles"></div><div class="cmpempty" id="cmpEmpty">一覧から、見比べたい絵を選んでください（マウスはなぞるだけ。指はタップ）。<br>選ぶと、ここに大きく並びます。<br><small>ホイール／ピンチで拡大、ドラッグで動かす。O・X・S・H で印。N／P で次の組。</small></div></div></div>'
+    +'<div class="note cmpst" id="cmpSt" aria-live="polite"></div>'
+    +'<input type="file" id="cmpFile" accept="image/*" multiple hidden><input type="file" id="cmpDirF" webkitdirectory multiple hidden>';
+  const q=id=>el.querySelector('#'+id);
+  R={bar:el.querySelector('.cmpbar'),grid:q('cmpGrid'),view:q('cmpView'),tiles:q('cmpTiles'),empty:q('cmpEmpty'),st:q('cmpSt'),pins:q('cmpPins'),side:q('cmpSide'),main:q('cmpMain'),split:q('cmpSplit'),el};
+  q('cmpAdd').onclick=()=>{q('cmpFile').value='';q('cmpFile').click()};q('cmpDir').onclick=()=>{q('cmpDirF').value='';q('cmpDirF').click()};
+  q('cmpFile').onchange=e=>addFiles([...e.target.files]);q('cmpDirF').onchange=e=>addFiles([...e.target.files]);
+  q('cmpFlt').onchange=e=>{CM.filter=e.target.value;renderGrid()};
+  q('cmpNext').onclick=()=>nextSet(1);q('cmpPrev').onclick=()=>nextSet(-1);
+  q('cmpAll').onclick=()=>{for(const it of vis())CM.sel.add(it.id);selChanged()};q('cmpClr').onclick=()=>{CM.sel.clear();selChanged()};
+  q('cmpTs').onclick=()=>{CM.touchSel=!CM.touchSel;q('cmpTs').classList.toggle('on',CM.touchSel);R.grid.style.touchAction=CM.touchSel?'none':''};
+  const syncUi=()=>{q('cmpSync').classList.toggle('on',CM.sync);q('cmpSync').setAttribute('aria-pressed',CM.sync?'true':'false')};
+  q('cmpSync').onclick=()=>toggleSync();
+  q('cmpFit').onclick=fitAll;q('cmpAct').onclick=actual;
+  const pxUi=()=>{q('cmpPx').textContent='画素：'+(CM.pixel==='auto'?'自動':CM.pixel==='on'?'いつも':'しない')};
+  q('cmpPx').onclick=()=>{CM.pixel=CM.pixel==='auto'?'on':CM.pixel==='on'?'off':'auto';pxUi();save();drawAll()};
+  q('cmpPin').onclick=()=>{CM.pinMode=!CM.pinMode;q('cmpPin').classList.toggle('on',CM.pinMode)};
+  q('cmpHide').onclick=()=>toggleSide();q('cmpCsv').onclick=saveCsv;q('cmpCp').onclick=copyList;
+  q('cmpTh').value=CM.thumb;R.grid.style.setProperty('--cmpt',CM.thumb+'px');q('cmpTh').oninput=e=>{CM.thumb=+e.target.value;R.grid.style.setProperty('--cmpt',CM.thumb+'px')};q('cmpTh').onchange=save;
+  syncUi();pxUi();R.syncUi=syncUi;
+  gridBind();splitBind();
+  new ResizeObserver(()=>{layout();schedule()}).observe(R.main);
+  el.addEventListener('dragover',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files'))e.preventDefault()});
+  el.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){e.preventDefault();addFiles([...e.dataTransfer.files])}});
+  layout();renderGrid();status();
+}
+function toggleSync(on){
+  const n=on===undefined?!CM.sync:on;if(n===CM.sync)return;
+  if(n){const t=CM.tiles.get(CM.focus)||CM.tiles.values().next().value;if(t)CM.v={...t.v}}
+  else for(const t of CM.tiles.values())t.v={...CM.v};
+  CM.sync=n;R.syncUi();save();drawAll()}
+function toggleSide(){R.main.classList.toggle('noside');layout();schedule()}
+/* 一覧と見比べの境目：横長の画面では左右、縦長では上下。ドラッグで広さを変える（端末に覚える） */
+const wide=()=>R.main.clientWidth>=640;
+function layout(){
+  const w=wide();R.main.classList.toggle('cmprow',w);
+  R.main.style.setProperty('--cmpw',cl(CM.size.w,120,Math.max(160,R.main.clientWidth-160))+'px');
+  R.main.style.setProperty('--cmph',cl(CM.size.h,90,Math.max(120,R.main.clientHeight-140))+'px')}
+function splitBind(){
+  const s=R.split;let d=null;s.style.touchAction='none';
+  s.addEventListener('pointerdown',e=>{d={id:e.pointerId,x:e.clientX,y:e.clientY,w:R.side.getBoundingClientRect().width,h:R.side.getBoundingClientRect().height};try{s.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+  s.addEventListener('pointermove',e=>{if(!d||e.pointerId!==d.id)return;if(wide())CM.size.w=Math.round(d.w+(e.clientX-d.x));else CM.size.h=Math.round(d.h+(e.clientY-d.y));layout()});
+  const end=e=>{if(d&&e.pointerId===d.id){d=null;save()}};s.addEventListener('pointerup',end);s.addEventListener('pointercancel',end);
+  s.addEventListener('dblclick',()=>{CM.size={w:300,h:260};layout();save()})}
+
+/* ---- キーボード（見比べを開いている間だけ） ---- */
+addEventListener('keydown',e=>{
+  if(!CONSOLE.isOpen()||CONSOLE.cur!=='cmp'||modeIsOpen()||e.altKey)return;
+  const tg=e.target;if(tg&&(/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)&&tg.type!=='range'&&tg.type!=='button'||tg.isContentEditable))return;
+  const k=e.key.toLowerCase();let h=true;
+  if((e.ctrlKey||e.metaKey)){if(k==='a'){for(const it of vis())CM.sel.add(it.id);selChanged()}else h=false}
+  else if(k==='o'||k==='x'||k==='s'||k==='h'){const id=target();if(id)setMark(id,k);else h=false}
+  else if(k==='0'||k==='backspace'){const id=target();if(id)setMark(id,'');else h=false}
+  else if(k==='n'||k==='pagedown')nextSet(1);
+  else if(k==='p'||k==='pageup')nextSet(-1);
+  else if(k==='f'){if(CM.single)CM.single=0;else CM.single=target();schedule()}
+  else if(k==='g')toggleSide();
+  else if(k==='l')toggleSync();
+  else if(k==='m'){R.el.querySelector('#cmpPin').click()}
+  else if(k===' ')toggleActual();
+  else if(k==='arrowright')moveFocus(1);
+  else if(k==='arrowleft')moveFocus(-1);
+  else if(k==='delete'){CM.sel.clear();selChanged()}
+  else h=false;
+  if(h){e.preventDefault();e.stopImmediatePropagation()}},true);
+
+CONSOLE.reg({id:'cmp',no:3,mode:'cons3',ico:'🔍',name:'画像の見比べ',mount,enter(){layout();renderTiles();status()},leave(){}});
+})();
 /* ===== 自由帳（台帳Z-221）。起動時の状態を決めるので、manifestの最後に置く =====
    起動時の既定＝「自由帳」：A4縦・150dpi（白紙の既定と同じ）の白紙1枚が紙いっぱいにあり、ペンが選ばれ、ペンの補正が弱くオンの状態。
    ・作品ファイルを開いた時・「復元」を押した時は、その作品が優先（ここは起動時の1回だけ）。起動時は自動保存（am_auto）を上書きしない（dirtyProjを立てない）。

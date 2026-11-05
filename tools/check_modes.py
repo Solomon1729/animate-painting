@@ -217,8 +217,8 @@ with sync_playwright() as p:
     pg.wait_for_timeout(250)
     chk('右の縁から中央へ十分に横引きすると出る', pg.evaluate(OPEN) is True)
     li = pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdi')].map(b=>[b.dataset.mode,b.disabled,b.getAttribute('aria-current')])")
-    chk('4つ：編集（いま）・物理・コンソール1（メモ帳）・コンソール2（ビジュアルプログラミング）。全部押せる',
-        [x[0] for x in li] == ['edit', 'phys', 'cons1', 'cons2'] and li[0][2] == 'true' and all(x[1] is False for x in li), li)
+    chk('5つ：編集（いま）・物理・コンソール1（メモ帳）・コンソール2（ビジュアルプログラミング）・コンソール3（画像の見比べ）。全部押せる',
+        [x[0] for x in li] == ['edit', 'phys', 'cons1', 'cons2', 'cons3'] and li[0][2] == 'true' and all(x[1] is False for x in li), li)
     nm = pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdi b')].map(b=>b.textContent)")
     chk('名前は「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」', 'コンソール1（メモ帳）' in nm[2] and 'コンソール2（ビジュアルプログラミング）' in nm[3], nm)
     pg.keyboard.press('Escape')
