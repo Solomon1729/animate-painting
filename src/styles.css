@@ -358,7 +358,7 @@ body.ubox.tbxr #tbx{left:auto;right:6px}
 #tbxHd{display:flex;gap:2px}
 #tbx #tbxCol{flex:1 1 auto;min-width:0;min-height:18px;padding:0;font-size:10px;line-height:1}
 /* 道具は横に2列（縦に長くならない）。#tbxMain・#tbxRestの箱は消して、道具とすぐ後ろの「▾」を同じ格子に並べる（5つ＋▾＝3段ちょうど） */
-#tbxBody{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+#tbxBody{display:grid;grid-template-columns:repeat(var(--tbxc,2),1fr);gap:3px}
 #tbxBody>.tbcol{display:contents}#tbxBody>.tbcol[hidden]{display:none}
 #tbxBody>:is(#tbxObj,#tbxFt){grid-column:1/-1}
 body.ubox.tbxc #tbxBody{display:none}
@@ -431,3 +431,15 @@ body.ubox #tp .grp.alt{background:transparent}
 #mnv,#mna{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:14px}
 #mnv::after{content:"補助"}#mna::after{content:"設定"}
 #mnv::after,#mna::after{font-size:8px;line-height:1;font-weight:700;letter-spacing:0;opacity:.85}
+/* 台帳Z-254：窓の縁の伸び縮み（2471-winx.js）。縁に重ねたマウスのカーソル（子の要素のcursorにも勝つよう !important）・指用の持ち手◢・
+   ツールボックスの列の数（--tbxc）・動かした詳細の枠（body.tbxdf。--tdx/--tdy/--tdw/--tdh）・見出し（#tbxD）の固定 */
+[data-wz="ns-resize"],[data-wz="ns-resize"] *{cursor:ns-resize!important}
+[data-wz="ew-resize"],[data-wz="ew-resize"] *{cursor:ew-resize!important}
+[data-wz="nesw-resize"],[data-wz="nesw-resize"] *{cursor:nesw-resize!important}
+[data-wz="nwse-resize"],[data-wz="nwse-resize"] *{cursor:nwse-resize!important}
+body.wzdrag,body.wzdrag *{-webkit-user-select:none!important;user-select:none!important}
+.wzg{position:fixed;z-index:400;width:18px;height:18px;display:flex;align-items:flex-end;justify-content:flex-end;font-size:13px;line-height:.8;color:var(--ink);opacity:.55;cursor:nwse-resize;touch-action:none;-webkit-user-select:none;user-select:none;text-shadow:0 0 3px var(--pane)}
+.wzg:hover{opacity:1}.wzg[hidden]{display:none}
+@media (pointer:coarse){.wzg{width:30px;height:30px;font-size:22px;opacity:.7}}
+html body.ubox.tbxd.tbxdf #tp{left:var(--tdx,0px);top:var(--tdy,0px);right:auto;bottom:auto;width:var(--tdw,320px);height:var(--tdh,240px);max-width:none;max-height:none;margin:0;border-radius:calc(var(--rk,1)*14px)}
+body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;background:color-mix(in srgb,var(--pane) 92%,transparent);-webkit-user-select:none;user-select:none}

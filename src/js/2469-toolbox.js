@@ -83,7 +83,7 @@ function tbxOpen(id){
   if(document.body.classList.contains('tbxd')&&TBX.det===id){tbxClose();return}
   tbxTap(id);TBX.det=id;document.body.classList.add('tbxd');tbxSync()}
 function tbxClose(){TBX.det=null;document.body.classList.remove('tbxd');tbxSync();tbxFill()}
-function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';delete TBX.x.pos;tbxSave();tbxApplySide();tbxApplyPos()}
+function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';delete TBX.x.pos;delete TBX.x.size;delete TBX.x.det;tbxSave();tbxApplySide();tbxApplySize();tbxApplyDetWin();tbxApplyPos()}
 /* 位置：列をドラッグして、画面のどこへでも動かせる。画面に対する割合で覚える（向きを変えても画面の中に残る）。無い時は端（左。右も選べる） */
 function tbxApplyPos(){
   const t=$('tbx'),p=TBX.x.pos;if(!t)return;
@@ -91,6 +91,19 @@ function tbxApplyPos(){
   const w=t.offsetWidth||58,h=t.offsetHeight||60;
   const x=Math.max(2,Math.min(innerWidth-w-2,p.fx*innerWidth)),y=Math.max(2,Math.min(innerHeight-Math.min(h,40)-2,p.fy*innerHeight));
   t.style.left=x+'px';t.style.top=y+'px';t.style.right='auto';tbxLayout()}
+/* 大きさ（台帳Z-254。2471-winx.jsが縁のドラッグで変える）：TBX.x.size={w,h}（h＝0は自動）。幅から、道具を並べる列の数（--tbxc）を決める。無い時は、今までの幅（列2つ） */
+function tbxApplySize(){
+  const t=$('tbx');if(!t)return;const s=TBX.x.size;
+  if(!s||!(s.w>0)){t.style.width=t.style.height='';t.style.removeProperty('--tbxc');return}
+  const w=Math.max(56,Math.min(Math.round(s.w),innerWidth-4)),cell=matchMedia('(pointer:coarse)').matches?52:45;
+  t.style.width=w+'px';t.style.height=s.h>0?Math.max(56,Math.min(Math.round(s.h),innerHeight-4))+'px':'';
+  t.style.setProperty('--tbxc',Math.max(1,Math.min(12,Math.floor((w-1)/(cell+3)))))}
+/* 詳細の枠（#tp）をユーザーが動かした・大きさを変えた時の位置（TBX.x.det={x,y,w,h}）。無い時は、今までどおり画面の下端 */
+function tbxApplyDetWin(){
+  const d=TBX.x.det,B=document.body,R=document.documentElement.style,ks=['--tdx','--tdy','--tdw','--tdh'];
+  if(!d||!(d.w>0)){B.classList.remove('tbxdf');ks.forEach(k=>R.removeProperty(k));return}
+  const w=Math.max(180,Math.min(d.w,innerWidth-4)),h=Math.max(100,Math.min(d.h,innerHeight-4)),x=Math.max(40-w,Math.min(d.x,innerWidth-40)),y=Math.max(0,Math.min(d.y,innerHeight-30));
+  R.setProperty('--tdx',x+'px');R.setProperty('--tdy',y+'px');R.setProperty('--tdw',w+'px');R.setProperty('--tdh',h+'px');B.classList.add('tbxdf')}
 function tbxApplyCol(){document.body.classList.toggle('tbxc',!!TBX.x.col);$('tbxCol').textContent=TBX.x.col?'▾':'▴';$('tbxCol').setAttribute('aria-label',TBX.x.col?'ツールボックスを広げる':'ツールボックスを小さくたたむ')}
 /* 詳細（⚙）の出る場所：既定は画面の下端に小さめ。「横」を選ぶと、列のとなりに重ねる（body.tbxds。端末に覚える） */
 function tbxApplyDet(){const s=TBX.x.dpos==='s',b=$('tbxDp');document.body.classList.toggle('tbxds',s);b.textContent='詳細：'+(s?'横':'下');b.setAttribute('aria-label','詳細設定の出る場所：'+(s?'列のとなり':'画面の下')+'。押すと切り替える')}
@@ -202,5 +215,5 @@ $('tbxDx').onclick=tbxClose;
 document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{b.onclick=()=>uiSet(b.dataset.ui)});
 if(typeof ResizeObserver==='function')[$('tbxQ'),$('tbx')].forEach(e=>new ResizeObserver(()=>{tbxFill();tbxLayout()}).observe(e));
 new MutationObserver(()=>tbxFill()).observe(document.body,{attributes:true,attributeFilter:['class']});
-addEventListener('resize',()=>{tbxApplyPos();tbxFill()});
-uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxApplyCol();tbxApplyDet();tbxRender();uiApply();tbxApplyPos();
+addEventListener('resize',()=>{tbxApplySize();tbxApplyDetWin();tbxApplyPos();tbxFill()});
+uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxApplyCol();tbxApplyDet();tbxRender();uiApply();tbxApplySize();tbxApplyDetWin();tbxApplyPos();

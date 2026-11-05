@@ -366,7 +366,7 @@ body.ubox.tbxr #tbx{left:auto;right:6px}
 #tbxHd{display:flex;gap:2px}
 #tbx #tbxCol{flex:1 1 auto;min-width:0;min-height:18px;padding:0;font-size:10px;line-height:1}
 /* 道具は横に2列（縦に長くならない）。#tbxMain・#tbxRestの箱は消して、道具とすぐ後ろの「▾」を同じ格子に並べる（5つ＋▾＝3段ちょうど） */
-#tbxBody{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+#tbxBody{display:grid;grid-template-columns:repeat(var(--tbxc,2),1fr);gap:3px}
 #tbxBody>.tbcol{display:contents}#tbxBody>.tbcol[hidden]{display:none}
 #tbxBody>:is(#tbxObj,#tbxFt){grid-column:1/-1}
 body.ubox.tbxc #tbxBody{display:none}
@@ -439,6 +439,18 @@ body.ubox #tp .grp.alt{background:transparent}
 #mnv,#mna{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:14px}
 #mnv::after{content:"補助"}#mna::after{content:"設定"}
 #mnv::after,#mna::after{font-size:8px;line-height:1;font-weight:700;letter-spacing:0;opacity:.85}
+/* 台帳Z-254：窓の縁の伸び縮み（2471-winx.js）。縁に重ねたマウスのカーソル（子の要素のcursorにも勝つよう !important）・指用の持ち手◢・
+   ツールボックスの列の数（--tbxc）・動かした詳細の枠（body.tbxdf。--tdx/--tdy/--tdw/--tdh）・見出し（#tbxD）の固定 */
+[data-wz="ns-resize"],[data-wz="ns-resize"] *{cursor:ns-resize!important}
+[data-wz="ew-resize"],[data-wz="ew-resize"] *{cursor:ew-resize!important}
+[data-wz="nesw-resize"],[data-wz="nesw-resize"] *{cursor:nesw-resize!important}
+[data-wz="nwse-resize"],[data-wz="nwse-resize"] *{cursor:nwse-resize!important}
+body.wzdrag,body.wzdrag *{-webkit-user-select:none!important;user-select:none!important}
+.wzg{position:fixed;z-index:400;width:18px;height:18px;display:flex;align-items:flex-end;justify-content:flex-end;font-size:13px;line-height:.8;color:var(--ink);opacity:.55;cursor:nwse-resize;touch-action:none;-webkit-user-select:none;user-select:none;text-shadow:0 0 3px var(--pane)}
+.wzg:hover{opacity:1}.wzg[hidden]{display:none}
+@media (pointer:coarse){.wzg{width:30px;height:30px;font-size:22px;opacity:.7}}
+html body.ubox.tbxd.tbxdf #tp{left:var(--tdx,0px);top:var(--tdy,0px);right:auto;bottom:auto;width:var(--tdw,320px);height:var(--tdh,240px);max-width:none;max-height:none;margin:0;border-radius:calc(var(--rk,1)*14px)}
+body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;background:color-mix(in srgb,var(--pane) 92%,transparent);-webkit-user-select:none;user-select:none}
 </style>
 </head>
 <body>
@@ -507,7 +519,7 @@ body.ubox #tp .grp.alt{background:transparent}
 </div>
 <div id="tbxQ" hidden></div>
 <div class="tbxfly" id="tbxEd" hidden>
-  <button type="button" id="tbxSide" aria-label="ツールボックスを初期の位置へ戻す（左と右を交互に）">⇄ 位置を戻す</button>
+  <button type="button" id="tbxSide" aria-label="ツールボックスと詳細の枠を、初めの位置・大きさへ戻す（左と右を交互に）">⇄ 位置・大きさを戻す</button>
   <button type="button" id="tbxDp" aria-label="詳細設定の出る場所：画面の下。押すと切り替える">詳細：下</button>
   <label class="tbxa" style="flex:1 1 100%;display:flex;align-items:center;gap:6px"><span class="lab">濃さ</span><input type="range" id="tbxA" min="15" max="100" step="5" value="40" style="flex:1" aria-label="ツールボックスの濃さ（左ほど透けて、後ろの絵が見える）"><b class="v" id="tbxAv" style="min-width:2.6em;text-align:right">40%</b></label>
   <button type="button" id="tbxRs" aria-label="道具の並びを初期に戻す">初期に戻す</button><button type="button" id="tbxEx" aria-label="並べ替えを終える">終わる</button>
@@ -9707,7 +9719,7 @@ function tbxOpen(id){
   if(document.body.classList.contains('tbxd')&&TBX.det===id){tbxClose();return}
   tbxTap(id);TBX.det=id;document.body.classList.add('tbxd');tbxSync()}
 function tbxClose(){TBX.det=null;document.body.classList.remove('tbxd');tbxSync();tbxFill()}
-function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';delete TBX.x.pos;tbxSave();tbxApplySide();tbxApplyPos()}
+function tbxSide(){TBX.x.side=TBX.x.side==='r'?'l':'r';delete TBX.x.pos;delete TBX.x.size;delete TBX.x.det;tbxSave();tbxApplySide();tbxApplySize();tbxApplyDetWin();tbxApplyPos()}
 /* 位置：列をドラッグして、画面のどこへでも動かせる。画面に対する割合で覚える（向きを変えても画面の中に残る）。無い時は端（左。右も選べる） */
 function tbxApplyPos(){
   const t=$('tbx'),p=TBX.x.pos;if(!t)return;
@@ -9715,6 +9727,19 @@ function tbxApplyPos(){
   const w=t.offsetWidth||58,h=t.offsetHeight||60;
   const x=Math.max(2,Math.min(innerWidth-w-2,p.fx*innerWidth)),y=Math.max(2,Math.min(innerHeight-Math.min(h,40)-2,p.fy*innerHeight));
   t.style.left=x+'px';t.style.top=y+'px';t.style.right='auto';tbxLayout()}
+/* 大きさ（台帳Z-254。2471-winx.jsが縁のドラッグで変える）：TBX.x.size={w,h}（h＝0は自動）。幅から、道具を並べる列の数（--tbxc）を決める。無い時は、今までの幅（列2つ） */
+function tbxApplySize(){
+  const t=$('tbx');if(!t)return;const s=TBX.x.size;
+  if(!s||!(s.w>0)){t.style.width=t.style.height='';t.style.removeProperty('--tbxc');return}
+  const w=Math.max(56,Math.min(Math.round(s.w),innerWidth-4)),cell=matchMedia('(pointer:coarse)').matches?52:45;
+  t.style.width=w+'px';t.style.height=s.h>0?Math.max(56,Math.min(Math.round(s.h),innerHeight-4))+'px':'';
+  t.style.setProperty('--tbxc',Math.max(1,Math.min(12,Math.floor((w-1)/(cell+3)))))}
+/* 詳細の枠（#tp）をユーザーが動かした・大きさを変えた時の位置（TBX.x.det={x,y,w,h}）。無い時は、今までどおり画面の下端 */
+function tbxApplyDetWin(){
+  const d=TBX.x.det,B=document.body,R=document.documentElement.style,ks=['--tdx','--tdy','--tdw','--tdh'];
+  if(!d||!(d.w>0)){B.classList.remove('tbxdf');ks.forEach(k=>R.removeProperty(k));return}
+  const w=Math.max(180,Math.min(d.w,innerWidth-4)),h=Math.max(100,Math.min(d.h,innerHeight-4)),x=Math.max(40-w,Math.min(d.x,innerWidth-40)),y=Math.max(0,Math.min(d.y,innerHeight-30));
+  R.setProperty('--tdx',x+'px');R.setProperty('--tdy',y+'px');R.setProperty('--tdw',w+'px');R.setProperty('--tdh',h+'px');B.classList.add('tbxdf')}
 function tbxApplyCol(){document.body.classList.toggle('tbxc',!!TBX.x.col);$('tbxCol').textContent=TBX.x.col?'▾':'▴';$('tbxCol').setAttribute('aria-label',TBX.x.col?'ツールボックスを広げる':'ツールボックスを小さくたたむ')}
 /* 詳細（⚙）の出る場所：既定は画面の下端に小さめ。「横」を選ぶと、列のとなりに重ねる（body.tbxds。端末に覚える） */
 function tbxApplyDet(){const s=TBX.x.dpos==='s',b=$('tbxDp');document.body.classList.toggle('tbxds',s);b.textContent='詳細：'+(s?'横':'下');b.setAttribute('aria-label','詳細設定の出る場所：'+(s?'列のとなり':'画面の下')+'。押すと切り替える')}
@@ -9826,8 +9851,8 @@ $('tbxDx').onclick=tbxClose;
 document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{b.onclick=()=>uiSet(b.dataset.ui)});
 if(typeof ResizeObserver==='function')[$('tbxQ'),$('tbx')].forEach(e=>new ResizeObserver(()=>{tbxFill();tbxLayout()}).observe(e));
 new MutationObserver(()=>tbxFill()).observe(document.body,{attributes:true,attributeFilter:['class']});
-addEventListener('resize',()=>{tbxApplyPos();tbxFill()});
-uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxApplyCol();tbxApplyDet();tbxRender();uiApply();tbxApplyPos();
+addEventListener('resize',()=>{tbxApplySize();tbxApplyDetWin();tbxApplyPos();tbxFill()});
+uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxApplyCol();tbxApplyDet();tbxRender();uiApply();tbxApplySize();tbxApplyDetWin();tbxApplyPos();
 /* ===== 動画タブ（台帳Z-44の再開。2026-11-04、ユーザー依頼：5〜6分の動画の一部だけに色・歪みをかけたい） =====
    ・読み込んだ動画は、ビューワーの背景の上・絵の下に出る（drawBG の最後で vdDraw）。上にお絵かき・動き・物理を重ねられる。
    ・効果は「時間（開始〜終了）」と「場所（動画の枠に対する四角）」を決めて、そこだけにかける。複数持てる（VD.fx）。
@@ -10362,6 +10387,116 @@ function vdFinish(){
   $('vdExTx').textContent='書き出しました';
 }
 vdUi();
+/* ===== 窓の縁で大きさを変える・つかんで動かす部品（台帳Z-254。2026-11-05） =====
+   ユーザー指定：大きさ・位置を自由に決めたい窓は、①つかんで（指でも）動かせる ②縁にマウスを重ねると、Windowsと同じ伸び縮みのカーソルに変わる ③幅と高さを、バーではなく、縁のドラッグで自由に変えられる。
+   この部品は、position:fixedの窓（el）を1つ登録すると、次を付ける（登録は WINX.add）：
+   ・縁（マウス：7px。四隅は16px）：重ねるとカーソルが変わり（el の data-wz 属性＋styles.css の [data-wz=…]）、ドラッグで大きさが変わる。西・北の縁なら、反対側の辺を動かさず、位置も動く。
+   ・四隅の右下に、小さな「◢」の持ち手（指用。#wzg…）：指は「重ねる」ができないので、見える持ち手をつかんで引く。
+   ・つかむ所（handle＝セレクタ。ボタン・入力欄は除く）：4px動かすと窓が動く。ダブルクリックで、初めの大きさ・位置へ戻す（reset）。
+   ・窓の側が決めるもの（登録の引数）：on()＝いま使える窓か、rect()＝いまの{x,y,w,h}、set(g,z)＝大きさ・位置を入れる（z＝'m'移動／'n','se'など動かした縁）、
+     save()＝覚える、reset()＝初めに戻す、min＝最小の大きさ。窓ごとの置き場所（端末のlocalStorage）は、窓の側（ツールボックス＝am_tbx、マニュアル＝am_win）が持つ。
+   ・UIの一時状態：作品・Undo・保存には入れない。画面の外へは出さない（掴める所が残る）。 */
+const WZ_CUR={n:'ns-resize',s:'ns-resize',e:'ew-resize',w:'ew-resize',ne:'nesw-resize',sw:'nesw-resize',nw:'nwse-resize',se:'nwse-resize'};
+const WINX={list:[],drag:null,
+  add(o){
+    o.min=o.min||{w:120,h:80};o.edge=o.edge||7;o.id=o.id||('wz'+WINX.list.length);
+    const g=document.createElement('div');g.className='wzg';g.id='wzg_'+o.id;g.textContent='◢';g.hidden=true;g.setAttribute('aria-label','大きさを変える（ドラッグ）');g.title='大きさを変える（ドラッグ）';
+    document.body.appendChild(g);o.grip=g;WINX.list.push(o);
+    g.addEventListener('pointerdown',e=>{if(e.button>0||!o.on())return;WINX.start(o,'se',e)});
+    const el=o.el;
+    el.addEventListener('pointerdown',e=>{
+      if(e.button>0||!o.on()||e.target.closest('.wzg'))return;
+      const z=WINX.zone(o,e);
+      if(z){WINX.start(o,z,e);return}
+      if(o.handle&&e.target.closest(o.handle)&&!e.target.closest('button,input,select,textarea,label,a,summary'))WINX.start(o,'m',e,true);
+    },true);
+    el.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&!e.buttons&&!WINX.drag)WINX.cursor(o,o.on()?WINX.zone(o,e):'')});
+    el.addEventListener('pointerleave',()=>WINX.cursor(o,''));
+    if(o.handle&&o.reset)el.addEventListener('dblclick',e=>{if(o.on()&&e.target.closest(o.handle)&&!e.target.closest('button,input,select,textarea,label,a,summary')){o.reset();WINX.place()}});
+    return o},
+  /* 押した所が、縁・四隅のどれか（''＝どれでもない）。窓の外へ2pxまでは縁とみなす */
+  zone(o,e){
+    const r=o.rect(),t=o.edge,c=Math.max(2*t,16),x0=e.clientX-r.x,x1=r.x+r.w-e.clientX,y0=e.clientY-r.y,y1=r.y+r.h-e.clientY;
+    if(x0<-2||x1<-2||y0<-2||y1<-2)return'';
+    const h=x0<=t?'w':x1<=t?'e':'',v=y0<=t?'n':y1<=t?'s':'';
+    if(h&&v)return v+h;
+    if(h)return y0<=c?'n'+h:y1<=c?'s'+h:h;
+    if(v)return x0<=c?v+'w':x1<=c?v+'e':v;
+    return''},
+  cursor(o,z){const c=z?WZ_CUR[z]||'':'';if(o.cur===c)return;o.cur=c;if(c)o.el.setAttribute('data-wz',c);else o.el.removeAttribute('data-wz')},
+  start(o,z,e,deferred){
+    e.preventDefault();e.stopImmediatePropagation();
+    WINX.drag={o,z,id:e.pointerId,sx:e.clientX,sy:e.clientY,r:o.rect(),on:!deferred,moved:false};
+    document.body.classList.add('wzdrag');
+    if(!deferred&&e.pointerType==='mouse')WINX.cursor(o,z);
+  },
+  calc(d,e){
+    const o=d.o,z=d.z,r=d.r,dx=e.clientX-d.sx,dy=e.clientY-d.sy,VW=innerWidth,VH=innerHeight,M=o.min;let x=r.x,y=r.y,w=r.w,h=r.h;
+    if(z==='m'){x=cl(r.x+dx,40-r.w,VW-40);y=cl(r.y+dy,0,VH-30);return{x,y,w,h}}
+    if(z.includes('e'))w=cl(r.w+dx,M.w,VW-r.x);
+    if(z.includes('w'))w=cl(r.w-dx,M.w,r.x+r.w);
+    if(z.includes('s'))h=cl(r.h+dy,M.h,VH-r.y);
+    if(z.includes('n'))h=cl(r.h-dy,M.h,r.y+r.h);
+    if(z.includes('w'))x=r.x+r.w-w;if(z.includes('n'))y=r.y+r.h-h;
+    return{x,y,w,h}},
+  place(){   /* 指用の持ち手（◢）を、窓の右下の角に合わせる。見えない・使えない窓の分は隠す */
+    for(const o of WINX.list){
+      const g=o.grip;let show=false;
+      try{show=o.on()&&o.el.getClientRects().length>0}catch(_){}
+      if(!show){if(!g.hidden)g.hidden=true;continue}
+      const r=o.rect(),s=g.offsetWidth||20;
+      let x=r.x+r.w-s+3,y=r.y+r.h-s+3;x=cl(x,0,innerWidth-s);y=cl(y,0,innerHeight-s);
+      g.hidden=false;g.style.left=Math.round(x)+'px';g.style.top=Math.round(y)+'px'}}
+};
+addEventListener('pointermove',e=>{
+  const d=WINX.drag;if(!d||e.pointerId!==d.id)return;
+  if(!d.on){if(Math.hypot(e.clientX-d.sx,e.clientY-d.sy)<4)return;d.on=true}
+  e.preventDefault();d.moved=true;
+  d.o.set(WINX.calc(d,e),d.z);WINX.place()},true);
+const wzEnd=e=>{
+  const d=WINX.drag;if(!d||e.pointerId!==d.id)return;
+  WINX.drag=null;document.body.classList.remove('wzdrag');WINX.cursor(d.o,'');
+  if(d.moved){d.o.save&&d.o.save();WINX.place()}};
+addEventListener('pointerup',wzEnd,true);addEventListener('pointercancel',wzEnd,true);
+setInterval(()=>{if(!WINX.drag)WINX.place()},250);
+addEventListener('resize',()=>WINX.place());
+
+/* ---- ツールボックス（#tbx）：幅・高さを縁で変える。幅＝道具の列の数（広げるほど、横に並ぶ）、高さ＝見える範囲（足りない分は枠の中でスクロール）。移動は今までどおり、枠のどこをドラッグしてもよい ---- */
+WINX.add({id:'tbx',el:$('tbx'),min:{w:56,h:56},edge:7,
+  on:()=>document.body.classList.contains('ubox')&&!document.body.classList.contains('tbxc')&&!TBX.edit,
+  rect:()=>{const r=$('tbx').getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height}},
+  set:(g,z)=>{
+    const s=TBX.x.size&&TBX.x.size.w>0?TBX.x.size:{w:0,h:0};
+    s.w=Math.round(g.w);if(/[ns]/.test(z))s.h=Math.round(g.h);TBX.x.size=s;
+    TBX.x.pos={fx:g.x/innerWidth,fy:g.y/innerHeight};tbxApplySize();tbxApplyPos()},
+  save:()=>tbxSave(),
+  reset:()=>{delete TBX.x.size;tbxSave();tbxApplySize();tbxApplyPos()}});
+
+/* ---- 詳細の枠（#tp。⚙で開いた時）：初めは画面の下端。縁をドラッグすると大きさが変わり、見出し（#tbxD）をドラッグすると動く。ダブルクリックで下端へ戻る ---- */
+WINX.add({id:'tbxd',el:$('tp'),min:{w:180,h:100},edge:7,handle:'#tbxD',
+  on:()=>document.body.classList.contains('ubox')&&document.body.classList.contains('tbxd'),
+  rect:()=>{const r=$('tp').getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height}},
+  set:g=>{TBX.x.det={x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)};tbxApplyDetWin()},
+  save:()=>tbxSave(),
+  reset:()=>{delete TBX.x.det;tbxSave();tbxApplyDetWin()}});
+
+/* ---- マニュアル（#man）：初めは画面の中央。縁で大きさ、見出しで移動。端末に覚える（am_win） ---- */
+const MANW={g:null};
+try{const q=JSON.parse(localStorage.getItem('am_win')||'null');if(q&&q.man&&q.man.w>0)MANW.g=q.man}catch(_){}
+function manwApply(){
+  const e=$('man'),g=MANW.g;if(!e)return;
+  if(!g){['left','top','width','height','maxHeight','transform'].forEach(k=>e.style[k]='');return}
+  const w=cl(g.w,200,innerWidth-4),h=cl(g.h,120,innerHeight-4),x=cl(g.x,40-w,innerWidth-40),y=cl(g.y,0,innerHeight-30);
+  e.style.transform='none';e.style.left=x+'px';e.style.top=y+'px';e.style.width=w+'px';e.style.height=h+'px';e.style.maxHeight='none'}
+function manwSave(){try{const q=JSON.parse(localStorage.getItem('am_win')||'null')||{};if(MANW.g)q.man=MANW.g;else delete q.man;localStorage.setItem('am_win',JSON.stringify(q))}catch(_){}}
+WINX.add({id:'man',el:$('man'),min:{w:220,h:160},edge:7,handle:'.lyhd',
+  on:()=>!$('man').hidden,
+  rect:()=>{const r=$('man').getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height}},
+  set:g=>{MANW.g={x:Math.round(g.x),y:Math.round(g.y),w:Math.round(g.w),h:Math.round(g.h)};manwApply()},
+  save:manwSave,
+  reset:()=>{MANW.g=null;manwSave();manwApply()}});
+manwApply();addEventListener('resize',manwApply);
+new MutationObserver(()=>manwApply()).observe($('man'),{attributes:true,attributeFilter:['hidden']});
 /* ===== 自由帳（台帳Z-221）。起動時の状態を決めるので、manifestの最後に置く =====
    起動時の既定＝「自由帳」：A4縦・150dpi（白紙の既定と同じ）の白紙1枚が紙いっぱいにあり、ペンが選ばれ、ペンの補正が弱くオンの状態。
    ・作品ファイルを開いた時・「復元」を押した時は、その作品が優先（ここは起動時の1回だけ）。起動時は自動保存（am_auto）を上書きしない（dirtyProjを立てない）。
