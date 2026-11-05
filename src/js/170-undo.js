@@ -40,8 +40,11 @@ try{UVW.on=localStorage.getItem('am_undoview')==='1'}catch(_){}
 {const e=$('uvw');if(e){e.checked=UVW.on;e.onchange=()=>{UVW.on=e.checked;try{localStorage.setItem('am_undoview',UVW.on?'1':'0')}catch(_){}}}}
 function snapBytes(sn){const px=c=>c?c.width*c.height*4:0;return sn.acs.reduce((n,a)=>n+px(a.cv)+px(a.base)+px(a.pen)+(a.dm?a.dm.d.byteLength:0),0)}
 function historyBytes(){let n=0;for(const s of US)n+=snapBytes(s);for(const s of RS)n+=snapBytes(s);return n}
+let undoNoted=false;   /* 履歴を消した知らせは、1回だけ（毎回出さない） */
 function trimHistory(){
-  while(historyBytes()>UNDO_CANVAS_CAP&&(US.length+RS.length)>1){
+  const cap=LIM.undo>0?LIM.undo*1048576:Infinity;
+  while(historyBytes()>cap&&(US.length+RS.length)>1){
+    if(!undoNoted){undoNoted=true;note('操作の履歴が '+LIM.undo+' MB を超えたので、古いものから消えます（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000)}
     let arr=US,idx=0,min=Infinity;
     for(const [i,s] of US.entries())if((s._uh||0)<min){min=s._uh||0;arr=US;idx=i}
     for(const [i,s] of RS.entries())if((s._uh||0)<min){min=s._uh||0;arr=RS;idx=i}

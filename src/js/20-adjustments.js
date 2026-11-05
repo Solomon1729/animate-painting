@@ -9,7 +9,7 @@ const EDIT_CFG={
   tiers:[512,768,1024,1536,2048,3072,4096], // 表示に必要な解像度を、この階層に丸める
   settleMs:220,                        // 操作が止まってから、仕上げ計算を始めるまでの待ち
   pumpMs:9,                            // 仕上げ計算に1フレームで使う時間
-  maxPx:12e6,                          // これを超える画素数では質感を省く
+  /* （質感・統合を計算する画素の上限は、LIM.tex＝01-limits.js。設定で変えられる） */
   epsMax:.25,epsMin:.004,              // 輪郭の保護 0→epsMax（箱型に近い）／100→epsMin（輪郭を強く保つ）
   gk:1.4,                              // ガイデッドフィルタ半径の補正（旧：箱型2回がけと同じ広がりにする）
   tx:{sharp:{r:.5,g:1.2,mw:0},texture:{r:1.2,g:1.5,mw:0},structure:{r:3.5,g:1,mw:.5},clarity:{r:8,g:1,mw:1},ambience:{r:30,g:.9,mw:1}}
@@ -99,9 +99,11 @@ function* guidedGen(L,w,h,r,eps,tmp,mI,mII,A,Bb){
   yield*boxGen(Bb,mII,w,h,r,tmp,1);
   for(let i=0;i<N;i++)mII[i]=mI[i]*L[i]+mII[i];
 }
+let txNoted=0;   /* 質感を省いた知らせを出した時刻（連続で出さない） */
 /* 質感・局所。s＝この階層の縮小率、uF＝実寸画像から決めた基準（階層が違っても見た目の広がりを揃える） */
 function* txGen(p,w,h,f,MK,s,uF,pool){
-  const on=LFK.filter(k=>Math.abs(f[k].amount)>.0001),N=w*h;if(!on.length||N>EDIT_CFG.maxPx)return;
+  const on=LFK.filter(k=>Math.abs(f[k].amount)>.0001),N=w*h;if(!on.length)return;
+  if(N>limOr('tex')){if(Date.now()-txNoted>20000){txNoted=Date.now();note('画像が大きい（'+Math.round(N/1e6)+'メガ画素）ので、質感を省いて表示しています（上限 '+Math.round(LIM.tex/1e6)+'メガ画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000)}return}
   const Lc=pool('Lc',N),dl=pool('dl',N),tmp=pool('tmp',N),mI=pool('mI',N),mII=pool('mII',N),A=pool('A',N),Bb=pool('B',N);
   dl.fill(0,0,N);let mean=0,cnt=0,am=0;
   for(let i=0,j=0;i<N;i++,j+=4){const l=(.2126*p[j]+.7152*p[j+1]+.0722*p[j+2])*.00392157;Lc[i]=l;if(p[j+3]){mean+=l;cnt++}}

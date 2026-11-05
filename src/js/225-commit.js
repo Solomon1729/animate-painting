@@ -61,7 +61,7 @@ function cmPlace(l,o){
   const i=LAYERS.indexOf(layOf(l)),id=Math.max(...LAYERS.map(y=>y.id))+1,nm='調整：'+(l.name||'').slice(0,12);
   LAYERS.splice(i+1,0,{id,name:nm,visible:true,locked:false});o.layerId=id;AC.push(o);dirtyProj=true;return nm;
 }
-const cmTooBig=(l,tex)=>{const[iw,ih]=cmDims(l.img);if(tex&&iw*ih>EDIT_CFG.maxPx){note('この画像は大きすぎて質感を焼き込めません（上限'+Math.round(EDIT_CFG.maxPx/1e6)+'メガ画素）。質感をリセットするか、色調整だけで確定してください');return true}return false};
+const cmTooBig=(l,tex)=>{const[iw,ih]=cmDims(l.img);if(tex&&iw*ih>limOr('tex')){note('この画像は大きすぎて質感を焼き込めません（上限'+Math.round(LIM.tex/1e6)+'メガ画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）。質感をリセットするか、色調整だけで確定してください',12000);return true}return false};
 
 /* ---- 確定 ---- */
 async function cmCommit(){

@@ -2,8 +2,8 @@
    画面に出す絵は、元画像 → ブラシのメッシュ（l.dm）→ ピン の順に歪ませる（逆写像）。 */
 let wskip=1,warpRaw=false,warpBakeR=0;const WM=.3,WX=1+2*WM,WD0=()=>({r:.25,a:.6,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5}),WDS={};
 /* 歪みまわりの定数（1か所に集約）。tiers＝静止した歪みの作業解像度の段階、cap＝その上限、idleMs＝手が止まってから上げるまでの待ち、
-   pinMax＝ピンの上限、dq＝メッシュの量子化(1/dq)、dn＝メッシュの格子数、spacing＝ブラシの打点間隔（半径に対する比） */
-const WBC={tiers:[1100,1536,2048,3072],cap:2048,bake:3200,idleMs:300,pinMax:24,dq:16384,dn:512,spacing:.14};   /* bake＝書き出し・焼き込みの時の上限（画面向けのcapより細かい） */
+   dq＝メッシュの量子化(1/dq)、dn＝メッシュの格子数、spacing＝ブラシの打点間隔（半径に対する比） */
+const WBC={tiers:[1100,1536,2048,3072],cap:2048,bake:3200,idleMs:300,dq:16384,dn:512,spacing:.14};   /* bake＝書き出し・焼き込みの時の上限（画面向けのcapより細かい） */
 /* 歪みの設定は種類（タッチ／膨らみ／凹み／膨らみ↔凹み／螺旋）ごとに別々に持つ（2026-10-06ユーザー指定）。切り替えても、それぞれの値が残る */
 const wdc=()=>WDS[wt]||(WDS[wt]=Object.assign(WD0(),{a:wt==='s'?180:wt==='bn'?-.6:.6}));
 const LVCAP=[1100,480,260];
@@ -89,9 +89,10 @@ function startWarp(q,l){
     const near=l.pins.filter(pp=>pp.t==='p').find(pp=>Math.hypot(pp.x-c.u,pp.y-c.v)<pp.r*.9);
     if(near){l.ps=l.pins.indexOf(near);l.wd=true;wg={l,p:near,u:c.u,v:c.v,mv:false};renderPins();return}
   }
-  if(l.pins.length>=WBC.pinMax){note('動く歪み（ピン）は'+WBC.pinMax+'個までです。不要なものを削除してください');return}
   const D=wdc(),p={t:wt==='bp'||wt==='bn'?'b':wt,x:c.u,y:c.v,r:D.r,a:wt==='p'?1:wt==='bp'?Math.abs(D.a):wt==='bn'?-Math.abs(D.a):D.a,vx:0,vy:0,b:D.b,hz:D.hz,w:D.w,ma:D.ma,md:D.md,mw:D.mw,sf:D.sf,ph:0};
   l.pins.push(p);l.ps=l.pins.length-1;l.wd=true;wg={l,p,u:c.u,v:c.v};wTouch=performance.now();renderPins();
+  /* 数の制限はない。多いと重くなるので、LIM.pins個を超えたら注意だけ出す（0＝出さない） */
+  if(LIM.pins>0&&l.pins.length>LIM.pins)note('動く歪み（ピン）が '+l.pins.length+' 個になりました。多いと重くなることがあります（この注意を出す数は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。数の制限はありません）',9000);
 }
 function wmove(q){
   const{l,p,u,v}=wg,c=loc(l,q);wTouch=performance.now();

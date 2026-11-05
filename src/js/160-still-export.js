@@ -2,8 +2,8 @@
 /* ===== 静止画(高解像度) ===== */
 function snapImg(){
   let k=+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
-  /* 画素が大きすぎる時は倍率を下げる（上限EXPORT_MAXPX。台帳Z-98） */
-  if(bw*bh*k*k>EXPORT_MAXPX){const k2=Math.max(1,Math.floor(Math.sqrt(EXPORT_MAXPX/(bw*bh))));if(k2<k){note('画素が大きすぎるので、倍率を'+k2+'×に下げて保存します');k=k2}}
+  /* 画素が大きすぎる時は倍率を下げる（上限LIM.exp。0＝制限なし。台帳Z-98） */
+  if(bw*bh*k*k>limOr('exp')){const k2=Math.max(1,Math.floor(Math.sqrt(limOr('exp')/(bw*bh))));if(k2<k){note('画素が大きすぎる（上限 '+Math.round(LIM.exp/1e4)+'万画素）ので、倍率を'+k2+'×に下げて保存します（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);k=k2}}
   hk=k;adjHQ=true;fit();
   try{
     paintFrame();

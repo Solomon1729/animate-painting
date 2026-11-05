@@ -5,6 +5,7 @@
     "styles.css",
     "document-before-script.html",
     "js/00-bootstrap.js",
+    "js/01-limits.js",
     "js/10-motion.js",
     "js/20-adjustments.js",
     "js/30-actors-and-drawing.js",
@@ -55,7 +56,6 @@
     "js/244-modes.js",
     "js/245-console.js",
     "js/246-memo.js",
-    
     "js/2466-vp-lab.js",
     "js/2467-manual.js",
     "js/2468-view-grid.js",

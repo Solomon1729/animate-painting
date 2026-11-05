@@ -34,6 +34,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-variant-
 h1{font-size:var(--h1,20px);font-weight:var(--fw,900);margin:4px 0 10px}
 #wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--pane);touch-action:none}   /* 紙の外の余白（枠「大」で窓を下げた時）に触れても、ページのスクロール・引っ張り更新に回さない（台帳Z-115）。メニュー（.cmenu）は自前のスクロール領域なので影響しない */
 canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* 動画タブの枠：縁に重ねたマウスのカーソル（2470-video.js の vdCursor。物理のカーソル指定とぶつからないよう !important） */
+#cv[data-vdc="ew-resize"]{cursor:ew-resize!important}#cv[data-vdc="ns-resize"]{cursor:ns-resize!important}#cv[data-vdc="nwse-resize"]{cursor:nwse-resize!important}#cv[data-vdc="nesw-resize"]{cursor:nesw-resize!important}#cv[data-vdc="move"]{cursor:move!important}#cv[data-vdc="crosshair"]{cursor:crosshair!important}
 /* キャンバス上のボタン：拡大縮小3つ（左上・常時）＋メニュー2つ（右上）。メニューは押した時だけ開く（ホバー演出なし） */
 .cbar{position:absolute;top:8px;z-index:5;display:flex;gap:6px}#cz{left:8px}#cm{right:8px}
 .cbar button{min-width:32px;height:32px;padding:0 6px;font-size:15px;font-weight:var(--fw,900);background:var(--pane);opacity:.86;border-radius:calc(var(--rk,1)*10px);line-height:1}
@@ -802,6 +804,12 @@ body.ubox #tp .grp.alt{background:transparent}
     <div class="grp"><div class="gh">動画を読み込む</div>
     <div class="row"><label class="file">📂 動画を選ぶ<input id="vdFile" type="file" accept="video/*"></label><button id="vdRm" aria-label="読み込んだ動画を外す">外す</button></div>
     <div class="row"><button id="vdBack" aria-label="最初に戻す">⏮</button><button id="vdPlay" aria-label="再生・一時停止">▶ 再生</button><span id="vdTime" class="note" style="margin:0">0:00 / 0:00</span></div>
+    <div class="row"><span class="lab">速さ</span><button class="vdr" data-r="0.1" aria-label="再生の速さを0.1倍にする">×0.1</button><button class="vdr" data-r="0.25" aria-label="再生の速さを0.25倍にする">×0.25</button><button class="vdr" data-r="0.5" aria-label="再生の速さを0.5倍にする">×0.5</button><button class="vdr" data-r="1" aria-label="再生の速さを等倍にする">×1</button><input id="vdRate" class="num" type="number" step="0.05" inputmode="decimal" value="1" aria-label="再生の速さ（倍。1＝等倍。小さいほどスロー）" style="width:68px"></div>
+    <div class="row"><span class="lab">コマ送り</span><button id="vdStM10" aria-label="10コマ戻る">⏪10</button><button id="vdStM1" aria-label="1コマ戻る">◀1</button><button id="vdStP1" aria-label="1コマ進む">1▶</button><button id="vdStP10" aria-label="10コマ進む">10⏩</button></div>
+    <div class="row"><span id="vdFrame" class="note" style="margin:0">コマ - / -</span></div>
+    <div class="row"><span class="lab">1秒のコマ数</span><input id="vdFps" class="num" type="number" step="0.001" inputmode="decimal" value="30" aria-label="動画の1秒あたりのコマ数。コマ送りと、コマ番号の指定に使う" style="width:84px"><span id="vdFpsNote" class="note" style="margin:0"></span></div>
+    <div class="row"><button id="vdGrab" aria-label="いまのコマを絵（オブジェクト）にして、動画の上に重ねる">📸 このコマを絵にして重ねる</button></div>
+    <div class="note">コマ送り：動画タブを開いている間は、キーボードの ← → でも1コマ、Shift＋← → で10コマ動きます。「絵にして重ねる」と、そのコマを原寸の絵として取り込み、ペン・修整・色調整などで直せます（動画の同じ位置に重なります）。</div>
     <div class="row"><input id="vdSeek" data-e="1" type="range" min="0" max="1000" value="0" aria-label="再生位置" style="flex:1;min-width:0"></div>
     <div class="row"><button id="vdFit" aria-label="キャンバスの大きさを動画の大きさ（px）に合わせる">📐 キャンバスを動画の大きさにする</button></div>
     <div class="note" id="vdInfo">動画はビューワーの背景として出ます。上にお絵かき・動き・物理を重ねられます。動画ファイルは作品ファイルには入りません（開き直したら選び直してください）。</div>
@@ -811,8 +819,12 @@ body.ubox #tp .grp.alt{background:transparent}
     <div class="row"><label><input id="vdFxOn" type="checkbox" checked> この効果を使う</label></div>
     <div class="row"><span class="lab">時間</span><input id="vdA" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="効果を始める秒" style="width:72px"><span>〜</span><input id="vdB" class="num" type="number" min="0" step="0.1" inputmode="decimal" aria-label="効果を終える秒（0＝最後まで）" style="width:72px"><span class="note" style="margin:0">秒（終わり0＝最後まで）</span></div>
     <div class="row"><button id="vdSetA">いまの位置を始めに</button><button id="vdSetB">いまの位置を終わりに</button></div>
+    <div class="row"><span class="lab">コマで指定</span><input id="vdFa" class="num" type="number" step="1" inputmode="numeric" aria-label="効果を始めるコマ番号（1から）" style="width:72px"><span>〜</span><input id="vdFb" class="num" type="number" step="1" inputmode="numeric" aria-label="効果を終えるコマ番号（そのコマまで。0＝最後まで）" style="width:72px"><button id="vdOne" aria-label="いま見ているコマ1つだけに効果をかける">このコマだけ</button></div>
     <div class="row"><span class="lab">なめらかに</span><input id="vdRamp" type="range" min="0" max="3" step="0.1" value="0.5" aria-label="入りと出の、効果が徐々に強まる・弱まる秒数"></div>
     <div class="row"><span class="lab">場所</span><button id="vdPick" aria-label="動画の上を指でなぞって四角を選ぶ">✋ 四角をなぞって選ぶ</button><button id="vdAll">全体にする</button></div>
+    <div class="row"><span class="lab">形</span><select id="vdShape" aria-label="効果をかける枠の形"><option value="rect">四角</option><option value="ellipse">円・楕円</option></select><button id="vdCirc" aria-label="枠を、縦と横が同じ長さ（画素）の円にする">正円にする</button></div>
+    <div class="row"><label><input id="vdDirect" type="checkbox" checked> 動画の上で、枠をドラッグして動かす・縁をドラッグして伸ばす</label></div>
+    <div class="note">枠の中をドラッグすると動き、縁や四隅をドラッグすると、幅・高さを変えられます（マウスを縁に乗せると、伸ばせるカーソルになります）。下のバーや数字でも変えられます。</div>
     <div class="row"><span class="lab">左</span><input id="vdX" type="range" min="0" max="100" step="1" value="0" aria-label="場所の左端（%）"></div>
     <div class="row"><span class="lab">上</span><input id="vdY" type="range" min="0" max="100" step="1" value="0" aria-label="場所の上端（%）"></div>
     <div class="row"><span class="lab">幅</span><input id="vdW" type="range" min="1" max="100" step="1" value="100" aria-label="場所の幅（%）"></div>
@@ -878,6 +890,23 @@ body.ubox #tp .grp.alt{background:transparent}
     <div class="row"><span class="lab">処理の軽さ</span><select id="qs" aria-label="処理の軽さ"><option value="auto">自動</option><option value="0">高品質</option><option value="1">標準</option><option value="2">軽い</option></select><span id="qtx" class="note" style="margin:0"></span></div>
     <div class="row"><label class="opt"><input type="checkbox" id="uvw" aria-label="元に戻す・やり直すで、ビューワーの拡大・位置も、その操作を始めた時の状態に戻す">元に戻す・やり直すで、ビューワーの位置も戻す</label></div>
     <div class="note">オフ（既定）：元に戻す・やり直すをしても、今見ているビューワーの拡大・位置は動きません。オンにすると、その操作をした時に見ていた拡大・位置へ戻ります（ビューワー固定🔒中は動きません）。</div>
+    <div class="row"><span class="lab">画像を置く大きさ</span><select id="impm" aria-label="画像を追加した時の、置く大きさ"><option value="orig">原寸（キャンバスより大きい時は、キャンバスを広げる）</option><option value="fit">キャンバスの約半分に縮めて置く（従来）</option></select></div>
+    <div class="note">原寸：画像のpxをそのまま使います。キャンバスより大きければキャンバスを広げ、広げたことを知らせます。縮める方式でも、元の絵のデータは変わりません。</div>
+    <div class="row"><span class="lab">動画の効果の数</span><input id="vdWarnN" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動画の効果の数。これを超えたら注意を出す（0＝注意を出さない）" style="width:64px"><span class="note" style="margin:0">個を超えたら注意（0＝出さない）。数の制限はありません</span></div>
+    <div class="row"><span class="lab">動画の歪みの細かさ</span><input id="vdCapS" class="num" type="number" min="0" step="10" inputmode="numeric" aria-label="動画の歪みを計算する細かさ（長辺のpx。0＝動画そのまま）" style="width:72px"><span class="note" style="margin:0">px（画面）</span><input id="vdCapE" class="num" type="number" min="0" step="10" inputmode="numeric" aria-label="書き出しの時の、動画の歪みを計算する細かさ（長辺のpx。0＝動画そのまま）" style="width:72px"><span class="note" style="margin:0">px（書き出し）</span></div>
+    <div class="row"><span class="lab">動画の書き出しの上限</span><input id="vdExMax" class="num" type="number" min="0" step="100000" inputmode="numeric" aria-label="動画を書き出す時の、総画素数の上限（0＝縮めない）" style="width:96px"><span class="note" style="margin:0">画素（既定 8300000＝4K相当。0＝縮めない）</span></div>
+    <div class="note">キャンバスの画素がこれを超えると、動画の書き出しは縮みます。縮む時は、書き出しの欄に注意が出ます。大きくすると、録画できない端末があります。</div>
+    <div class="note">動画の歪みは、長辺をこのpxにして計算してから拡大して重ねます。大きいほど細かく、重くなります。0＝動画そのままの細かさ（とても重いことがあります）。遅い時は、🎬メニューの「マニュアル」の「遅い場合の対処・上限」を見てください。</div>
+    <h4 style="margin:10px 0 4px;font-size:13px">上限の設定</h4>
+    <div class="note">容量や速さのために、次の上限があります。超えた時は、必ず注意を出します。大きくするほど、重くなったり、端末が止まったりすることがあります（くわしくは、🎬メニューの「マニュアル」の「遅い場合の対処・上限」）。</div>
+    <div class="row"><span class="lab">キャンバスの長辺の上限</span><input id="limCv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="キャンバスの長辺の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px。既定 8192。0＝制限なし</span></div>
+    <div class="row"><span class="lab">キャンバス・書き出しの総画素の上限</span><input id="limExp" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="キャンバス・書き出しの総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 25000000。0＝制限なし</span></div>
+    <div class="row"><span class="lab">ペンなどで編集する細かさの上限</span><input id="limPen" class="num" type="number" min="0" step="256" inputmode="numeric" aria-label="ペンなどで編集する細かさの上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px（長辺）。既定 4096。これより大きい絵は、ペン・修整・色調整などを使い始める時に縮みます。0＝縮めない</span></div>
+    <div class="row"><span class="lab">白紙の総画素の上限</span><input id="limBlk" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="白紙の総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 8000000。0＝制限なし</span></div>
+    <div class="row"><span class="lab">質感・統合を計算する画素の上限</span><input id="limTex" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="質感・統合を計算する画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 12000000。超えると質感を省きます。0＝制限なし</span></div>
+    <div class="row"><span class="lab">動く歪み（ピン）の注意を出す数</span><input id="limPins" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動く歪み（ピン）の注意を出す数（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個。既定 24。超えても足せます（注意だけ）。0＝出さない</span></div>
+    <div class="row"><span class="lab">操作の履歴（元に戻す）の上限</span><input id="limUndo" class="num" type="number" min="0" step="16" inputmode="numeric" aria-label="操作の履歴（元に戻す）の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">MB。既定 256。超えると古い履歴から消えます。0＝制限なし</span></div>
+    <div class="row"><button id="limReset" type="button">上限の設定を初めの値に戻す</button></div>
     </details>
   </div>
   </div>
@@ -933,6 +962,24 @@ let W,H,dpr,S0;
 const DOC={w:0,h:0};
 const E=x=>x*x*(3-2*x),cl=(v,a,b)=>Math.min(Math.max(v,a),b);
 function emo(t){const c=document.createElement('canvas');c.width=c.height=320;const g=c.getContext('2d');g.font='272px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,160,176);return c}
+/* ===== 上限の設定（台帳Z-252。2026-11-05） =====
+   方針（ユーザー指定）：意味のない上限は作らない。容量・速さのために上限が要る時は、「超えたら注意を出す＋小さな説明＋設定で変えられる＋マニュアルに書く」の4つをそろえる。
+   絵を勝手に縮めたり、操作の境目を黙って設けたりしない。ここは、既にあった上限を、設定で変えられるようにまとめたもの（0＝制限なし）。
+   ・LIM（端末に覚える am_limits。作品・Undo・保存には入れない）。入れ物は、背景・出力タブの「⚙ 動作」の「上限の設定」。
+   ・limOr(k)＝使う側が見る値（0なら Infinity）。使う所：ペン等の作業の細かさ pen（110・30）／白紙 blk（30）／質感・統合 tex（20・225・226）／
+     動く歪み pins（120。超えたら注意だけ。止めない）／Undoの履歴 undo（170。MB）／キャンバス cv・exp（235・160・220）。
+   ・ブラウザ自身の上限（Canvasの1辺の最大・総画素）は、ここでは変えられない。大きくしすぎると、真っ白になったり落ちたりする端末がある（マニュアル「遅い場合の対処・上限」）。 */
+const LIM={pen:4096,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6};
+const LIM_D=Object.assign({},LIM);
+try{const q=JSON.parse(localStorage.getItem('am_limits')||'null');if(q&&typeof q==='object')for(const k in LIM)if(q[k]!==undefined&&q[k]!==null&&q[k]!==''&&Number.isFinite(+q[k])&&+q[k]>=0)LIM[k]=+q[k]}catch(_){}
+const limOr=k=>LIM[k]>0?LIM[k]:Infinity;
+function limSave(){try{localStorage.setItem('am_limits',JSON.stringify(LIM))}catch(_){}}
+[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp']].forEach(([id,k])=>{
+  const e=$(id);if(!e)return;e.value=LIM[k];
+  const on=()=>{const v=parseFloat(e.value);if(!(v>=0))return;LIM[k]=Math.round(v);limSave()};
+  e.addEventListener('input',on);e.addEventListener('change',on);
+});
+{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
 
 /* 動きの基本: 往復(方向つき)・回転・のび縮み × 波形。全波形は -1〜+1 */
 const K=[['m','往復',4,.05],['r','回転',360,5],['s','のび縮み',.5,.02]];
@@ -974,7 +1021,7 @@ const EDIT_CFG={
   tiers:[512,768,1024,1536,2048,3072,4096], // 表示に必要な解像度を、この階層に丸める
   settleMs:220,                        // 操作が止まってから、仕上げ計算を始めるまでの待ち
   pumpMs:9,                            // 仕上げ計算に1フレームで使う時間
-  maxPx:12e6,                          // これを超える画素数では質感を省く
+  /* （質感・統合を計算する画素の上限は、LIM.tex＝01-limits.js。設定で変えられる） */
   epsMax:.25,epsMin:.004,              // 輪郭の保護 0→epsMax（箱型に近い）／100→epsMin（輪郭を強く保つ）
   gk:1.4,                              // ガイデッドフィルタ半径の補正（旧：箱型2回がけと同じ広がりにする）
   tx:{sharp:{r:.5,g:1.2,mw:0},texture:{r:1.2,g:1.5,mw:0},structure:{r:3.5,g:1,mw:.5},clarity:{r:8,g:1,mw:1},ambience:{r:30,g:.9,mw:1}}
@@ -1064,9 +1111,11 @@ function* guidedGen(L,w,h,r,eps,tmp,mI,mII,A,Bb){
   yield*boxGen(Bb,mII,w,h,r,tmp,1);
   for(let i=0;i<N;i++)mII[i]=mI[i]*L[i]+mII[i];
 }
+let txNoted=0;   /* 質感を省いた知らせを出した時刻（連続で出さない） */
 /* 質感・局所。s＝この階層の縮小率、uF＝実寸画像から決めた基準（階層が違っても見た目の広がりを揃える） */
 function* txGen(p,w,h,f,MK,s,uF,pool){
-  const on=LFK.filter(k=>Math.abs(f[k].amount)>.0001),N=w*h;if(!on.length||N>EDIT_CFG.maxPx)return;
+  const on=LFK.filter(k=>Math.abs(f[k].amount)>.0001),N=w*h;if(!on.length)return;
+  if(N>limOr('tex')){if(Date.now()-txNoted>20000){txNoted=Date.now();note('画像が大きい（'+Math.round(N/1e6)+'メガ画素）ので、質感を省いて表示しています（上限 '+Math.round(LIM.tex/1e6)+'メガ画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000)}return}
   const Lc=pool('Lc',N),dl=pool('dl',N),tmp=pool('tmp',N),mI=pool('mI',N),mII=pool('mII',N),A=pool('A',N),Bb=pool('B',N);
   dl.fill(0,0,N);let mean=0,cnt=0,am=0;
   for(let i=0,j=0;i<N;i++,j+=4){const l=(.2126*p[j]+.7152*p[j+1]+.0722*p[j+2])*.00392157;Lc[i]=l;if(p[j+3]){mean+=l;cnt++}}
@@ -1254,10 +1303,10 @@ function addSpecial(k){
 /* ===== 白紙の大きさ（台帳Z-117・Z-126）=====
    「＋白紙」が足す紙の大きさ。紙の規格（mm・縦長の幅×高さ）と解像度（dpi）は別で、スロット（#blsz）は紙の大きさだけを持つ。既定はA4・150dpi。
    Bは日本のJIS B判（B4＝257×364mm）。「正方形 512」は従来の白紙。「px」は幅×高さを直接指定。
-   上限：長辺PENCAP（ペンの作業解像度。これを超えると使い始めで縮む）と、総画素BLK_MAXPX（メモリ・Undoの保護）。超えたら縦横比を保って縮め、知らせる。
+   上限：長辺LIM.pen（ペンの作業解像度。これを超えると使い始めで縮む）と、総画素LIM.blk（メモリ・Undoの保護）。どちらも設定で変えられる（01-limits.js。0＝縮めない）。超えたら縦横比を保って縮め、知らせる。
    UIの一時状態（BLS）。作品・Undo・保存には入れない（できた白紙のpxは、絵そのものに入る）。 */
 const PAPER={A1:[594,841],A2:[420,594],A3:[297,420],A4:[210,297],A5:[148,210],A6:[105,148],B1:[728,1030],B2:[515,728],B3:[364,515],B4:[257,364],B5:[182,257],B6:[128,182]};
-const BLK_MAXPX=8e6,BLK_MIN=8;
+const BLK_MIN=8;   /* 上限はLIM.pen・LIM.blk（01-limits.js） */
 const BLS={p:'A4',land:false,dpi:150,w:1024,h:1024};
 function blankDims(){
   let w,h;
@@ -1265,7 +1314,7 @@ function blankDims(){
   else if(BLS.p==='px'){w=BLS.w;h=BLS.h}
   else{const m=PAPER[BLS.p]||PAPER.A4;w=m[0]/25.4*BLS.dpi;h=m[1]/25.4*BLS.dpi;if(BLS.land)[w,h]=[h,w]}
   w=Math.max(BLK_MIN,Math.round(w)||0);h=Math.max(BLK_MIN,Math.round(h)||0);
-  const k=Math.min(1,PENCAP/Math.max(w,h),Math.sqrt(BLK_MAXPX/(w*h)));
+  const k=Math.min(1,limOr('pen')/Math.max(w,h),Math.sqrt(limOr('blk')/(w*h)));
   if(k<1)return{w:Math.max(BLK_MIN,Math.round(w*k)),h:Math.max(BLK_MIN,Math.round(h*k)),cut:true};
   return{w,h,cut:false};
 }
@@ -1277,7 +1326,7 @@ function addBlank(){
   a.cv.width=d.w;a.cv.height=d.h;   /* 足したばかりの透明な絵なので、大きさを変えても失うものはない */
   if(BLS.p!=='sq')a.name='白紙'+a.id+' '+(BLS.p==='px'?d.w+'×'+d.h:BLS.p+(BLS.land?'（横）':''));
   BLK.a=a;
-  if(d.cut)note('大きすぎるので '+d.w+'×'+d.h+' px に縮めました（上限：長辺'+PENCAP+'px・合計'+BLK_MAXPX/1e6+'百万画素）');
+  if(d.cut)note('大きすぎるので '+d.w+'×'+d.h+' px に縮めました（上限：長辺'+LIM.pen+'px・合計'+LIM.blk/1e6+'百万画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);
   return a}
 addEventListener('pointerdown',()=>{BLK.a=null},true);addEventListener('keydown',()=>{BLK.a=null},true);
 function drawBlankHint(l,S){
@@ -4741,8 +4790,8 @@ $('rec').onclick=()=>{
 $('rc2').onclick=()=>$('rec').click();
 
 /* ペン・消しゴム(選んだ画像に直接描き込む)・文字 */
-const PENCAP=4096,UNDO_CANVAS_CAP=256*1024*1024;
-function workDims(l,cap=PENCAP){
+/* 上限はLIM（01-limits.js）：pen＝ペン等の作業の長辺px（0＝縮めない）、undo＝Undo履歴のMB */
+function workDims(l,cap=limOr('pen')){
   const im=l.img,iw=im.naturalWidth||im.width||512,ih=im.naturalHeight||im.height||512,long=Math.max(iw,ih);
   const L=Math.max(512,Math.min(cap,Math.round(long))),k=L/long;
   return{w:Math.max(1,Math.round(iw*k)),h:Math.max(1,Math.round(ih*k))};
@@ -4770,8 +4819,12 @@ function ensureBase(l){
   const d=l._bd=workDims(l),c=allocCanvas(d.w,d.h,'ペン');
   const im=l.img,iw=im.naturalWidth||im.width||1,ih=im.naturalHeight||im.height||1,k=Math.min(c.width/iw,c.height/ih);
   c.getContext('2d').drawImage(im,(c.width-iw*k)/2,(c.height-ih*k)/2,iw*k,ih*k);
-  l._bw=c.width;l._bh=c.height;l.base=c;return c;
+  l._bw=c.width;l._bh=c.height;l.base=c;
+  /* 縮んだ時は、必ず知らせる（台帳Z-252。黙って縮めない）。続けて何枚も起こる時は、4秒に1回 */
+  if(k<.999&&Date.now()-penNoted>4000){penNoted=Date.now();note('大きい絵（'+iw+'×'+ih+' px）なので、編集のために '+c.width+'×'+c.height+' px に縮めました（上限 '+(LIM.pen>0?LIM.pen+' px':'なし')+'。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。編集しないかぎり、元の絵はそのままです）',12000)}
+  return c;
 }
+let penNoted=0;
 const bumpBP=(l,b,p)=>{if(b)l.bsv=(l.bsv||0)+1;if(p)l.pnv=(l.pnv||0)+1};
 function recompose(l,rect){
   const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512;
@@ -5315,8 +5368,8 @@ $('paL').oninput=e=>{PA.L=+e.target.value};$('paC').oninput=e=>{PA.C=+e.target.v
    画面に出す絵は、元画像 → ブラシのメッシュ（l.dm）→ ピン の順に歪ませる（逆写像）。 */
 let wskip=1,warpRaw=false,warpBakeR=0;const WM=.3,WX=1+2*WM,WD0=()=>({r:.25,a:.6,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5}),WDS={};
 /* 歪みまわりの定数（1か所に集約）。tiers＝静止した歪みの作業解像度の段階、cap＝その上限、idleMs＝手が止まってから上げるまでの待ち、
-   pinMax＝ピンの上限、dq＝メッシュの量子化(1/dq)、dn＝メッシュの格子数、spacing＝ブラシの打点間隔（半径に対する比） */
-const WBC={tiers:[1100,1536,2048,3072],cap:2048,bake:3200,idleMs:300,pinMax:24,dq:16384,dn:512,spacing:.14};   /* bake＝書き出し・焼き込みの時の上限（画面向けのcapより細かい） */
+   dq＝メッシュの量子化(1/dq)、dn＝メッシュの格子数、spacing＝ブラシの打点間隔（半径に対する比） */
+const WBC={tiers:[1100,1536,2048,3072],cap:2048,bake:3200,idleMs:300,dq:16384,dn:512,spacing:.14};   /* bake＝書き出し・焼き込みの時の上限（画面向けのcapより細かい） */
 /* 歪みの設定は種類（タッチ／膨らみ／凹み／膨らみ↔凹み／螺旋）ごとに別々に持つ（2026-10-06ユーザー指定）。切り替えても、それぞれの値が残る */
 const wdc=()=>WDS[wt]||(WDS[wt]=Object.assign(WD0(),{a:wt==='s'?180:wt==='bn'?-.6:.6}));
 const LVCAP=[1100,480,260];
@@ -5402,9 +5455,10 @@ function startWarp(q,l){
     const near=l.pins.filter(pp=>pp.t==='p').find(pp=>Math.hypot(pp.x-c.u,pp.y-c.v)<pp.r*.9);
     if(near){l.ps=l.pins.indexOf(near);l.wd=true;wg={l,p:near,u:c.u,v:c.v,mv:false};renderPins();return}
   }
-  if(l.pins.length>=WBC.pinMax){note('動く歪み（ピン）は'+WBC.pinMax+'個までです。不要なものを削除してください');return}
   const D=wdc(),p={t:wt==='bp'||wt==='bn'?'b':wt,x:c.u,y:c.v,r:D.r,a:wt==='p'?1:wt==='bp'?Math.abs(D.a):wt==='bn'?-Math.abs(D.a):D.a,vx:0,vy:0,b:D.b,hz:D.hz,w:D.w,ma:D.ma,md:D.md,mw:D.mw,sf:D.sf,ph:0};
   l.pins.push(p);l.ps=l.pins.length-1;l.wd=true;wg={l,p,u:c.u,v:c.v};wTouch=performance.now();renderPins();
+  /* 数の制限はない。多いと重くなるので、LIM.pins個を超えたら注意だけ出す（0＝出さない） */
+  if(LIM.pins>0&&l.pins.length>LIM.pins)note('動く歪み（ピン）が '+l.pins.length+' 個になりました。多いと重くなることがあります（この注意を出す数は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。数の制限はありません）',9000);
 }
 function wmove(q){
   const{l,p,u,v}=wg,c=loc(l,q);wTouch=performance.now();
@@ -5843,8 +5897,8 @@ $('bmc').onclick=()=>{if(sel.bm)sel.bm.getContext('2d').clearRect(0,0,MR,MR);sel
 /* ===== 静止画(高解像度) ===== */
 function snapImg(){
   let k=+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
-  /* 画素が大きすぎる時は倍率を下げる（上限EXPORT_MAXPX。台帳Z-98） */
-  if(bw*bh*k*k>EXPORT_MAXPX){const k2=Math.max(1,Math.floor(Math.sqrt(EXPORT_MAXPX/(bw*bh))));if(k2<k){note('画素が大きすぎるので、倍率を'+k2+'×に下げて保存します');k=k2}}
+  /* 画素が大きすぎる時は倍率を下げる（上限LIM.exp。0＝制限なし。台帳Z-98） */
+  if(bw*bh*k*k>limOr('exp')){const k2=Math.max(1,Math.floor(Math.sqrt(limOr('exp')/(bw*bh))));if(k2<k){note('画素が大きすぎる（上限 '+Math.round(LIM.exp/1e4)+'万画素）ので、倍率を'+k2+'×に下げて保存します（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);k=k2}}
   hk=k;adjHQ=true;fit();
   try{
     paintFrame();
@@ -5942,8 +5996,11 @@ try{UVW.on=localStorage.getItem('am_undoview')==='1'}catch(_){}
 {const e=$('uvw');if(e){e.checked=UVW.on;e.onchange=()=>{UVW.on=e.checked;try{localStorage.setItem('am_undoview',UVW.on?'1':'0')}catch(_){}}}}
 function snapBytes(sn){const px=c=>c?c.width*c.height*4:0;return sn.acs.reduce((n,a)=>n+px(a.cv)+px(a.base)+px(a.pen)+(a.dm?a.dm.d.byteLength:0),0)}
 function historyBytes(){let n=0;for(const s of US)n+=snapBytes(s);for(const s of RS)n+=snapBytes(s);return n}
+let undoNoted=false;   /* 履歴を消した知らせは、1回だけ（毎回出さない） */
 function trimHistory(){
-  while(historyBytes()>UNDO_CANVAS_CAP&&(US.length+RS.length)>1){
+  const cap=LIM.undo>0?LIM.undo*1048576:Infinity;
+  while(historyBytes()>cap&&(US.length+RS.length)>1){
+    if(!undoNoted){undoNoted=true;note('操作の履歴が '+LIM.undo+' MB を超えたので、古いものから消えます（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000)}
     let arr=US,idx=0,min=Infinity;
     for(const [i,s] of US.entries())if((s._uh||0)<min){min=s._uh||0;arr=US;idx=i}
     for(const [i,s] of RS.entries())if((s._uh||0)<min){min=s._uh||0;arr=RS;idx=i}
@@ -6149,8 +6206,7 @@ $('qs').onchange=e=>{wq=e.target.value;if(wq!=='auto')setLvl(+wq);else $('qtx').
 /* ===== パーツのコピー／切り取り／貼り付け ===== */
 const CL=[];
 /* 切り出し用のCanvasを作る。o.adj＝色調整・質感を反映した絵を使う（単体保存・コピー・切り取り・複製。既定は元画像。「ぼかしを統合」は元画像に焼くので反映してはいけない：二重がけになる）。
-   o.full＝縮小しない原寸（上限EXPORT_MAXPX画素）。既定は長辺512〜1600pxに揃える（パーツ用）。 */
-const EXPORT_MAXPX=25e6;
+   o.full＝縮小しない原寸（上限LIM.exp画素）。既定は長辺512〜1600pxに揃える（パーツ用）。 */
 /* 範囲マスク（sm・bm：正方形MR×MR。絵はその中央にレターボックスされている）を、絵の矩形W×Hに合わせてgへ描く（台帳Z-103）。
    正方形のマスクをそのままW×Hに引き伸ばすと、縦長・横長の絵で範囲がずれる（全体を囲んで切り取っても、上下や左右が取り残されていた）。
    square＝W×Hが正方形の枠（歪み後のwo。枠＝マスクの範囲そのもの）の時はそのまま重ねる。 */
@@ -6202,7 +6258,7 @@ function boxCv(l,o){
   else{
     /* o.L＝長辺をこの画素数にする（切り取り・コピー用。ペン層base/penと同じ解像度で作り、穴とパーツの解像度を揃える。台帳Z-144③） */
     let L=o.L?Math.max(1,Math.round(o.L)):o.full?Math.round(Math.max(iw,ih)):Math.min(1600,Math.max(512,Math.round(Math.max(iw,ih))));
-    if(o.full&&iw*ih>EXPORT_MAXPX)L=Math.max(1,Math.floor(L*Math.sqrt(EXPORT_MAXPX/(iw*ih))));
+    if(o.full&&iw*ih>limOr('exp'))L=Math.max(1,Math.floor(L*Math.sqrt(limOr('exp')/(iw*ih))));
     const k=L/Math.max(iw,ih);W=Math.max(1,Math.round(iw*k));H=Math.max(1,Math.round(ih*k));dw=W;dh=H}
   let c;
   if(o.full){c=allocCanvas(W,H,'書き出し',true);if(c.width!==W){const k2=c.width/W;W=c.width;H=c.height;dw*=k2;dh*=k2}}
@@ -6284,7 +6340,7 @@ function renderTray(){
     im.src=th.toDataURL();im.alt='';b.title='タップで貼り付け（'+k.src+'より）';b.setAttribute('aria-label','切り抜きを貼り付け');b.append(im);b.onclick=()=>pasteClip(i);t.appendChild(b)});
 }
 $('pcopy').onclick=()=>takePart(false);$('pcut').onclick=()=>takePart(true);$('pdup').onclick=()=>{fillSel('sm','#ff5d8f');takePart(false,{noAuto:true});pasteClip(0,{off:true,noUndo:true})};
-/* このオブジェクトだけ保存（台帳Z-80で強化）：色調整・質感・ぼかし込み／原寸（上限EXPORT_MAXPX画素）／PNGまたはPDF。透明な余白は切り詰める */
+/* このオブジェクトだけ保存（台帳Z-80で強化）：色調整・質感・ぼかし込み／原寸（上限LIM.exp画素）／PNGまたはPDF。透明な余白は切り詰める */
 $('pexp').onclick=async()=>{
   const l=sel;if(!l)return;
   const oldLvl=lvl,oh=adjHQ;let r;lvl=0;adjHQ=true;
@@ -6800,7 +6856,7 @@ function cmPlace(l,o){
   const i=LAYERS.indexOf(layOf(l)),id=Math.max(...LAYERS.map(y=>y.id))+1,nm='調整：'+(l.name||'').slice(0,12);
   LAYERS.splice(i+1,0,{id,name:nm,visible:true,locked:false});o.layerId=id;AC.push(o);dirtyProj=true;return nm;
 }
-const cmTooBig=(l,tex)=>{const[iw,ih]=cmDims(l.img);if(tex&&iw*ih>EDIT_CFG.maxPx){note('この画像は大きすぎて質感を焼き込めません（上限'+Math.round(EDIT_CFG.maxPx/1e6)+'メガ画素）。質感をリセットするか、色調整だけで確定してください');return true}return false};
+const cmTooBig=(l,tex)=>{const[iw,ih]=cmDims(l.img);if(tex&&iw*ih>limOr('tex')){note('この画像は大きすぎて質感を焼き込めません（上限'+Math.round(LIM.tex/1e6)+'メガ画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）。質感をリセットするか、色調整だけで確定してください',12000);return true}return false};
 
 /* ---- 確定 ---- */
 async function cmCommit(){
@@ -6898,7 +6954,7 @@ $('cmL').onclick=()=>{cmWithL=!cmWithL;cmUi()};
    ・何を：「レイヤー内を統合」＝今のレイヤーの、表示中のオブジェクトすべて／「下のレイヤーと統合」＝今のレイヤーとその1つ下／「表示中を全部統合」＝表示中のレイヤーすべて。
      くっついたオブジェクト（親と子。att）は絵の上で一体なので、必ずひとまとまりで入れる（片方だけだと、子だけ残って親の位置に取り残される）。非表示のものは対象外（そのまま残る）。
    ・どう：実際の描画（paintFrame→draw）を、動きの無い姿で、対象だけ（drawOnly）・背景なし・透明な紙に描いて、そのまま1枚の画像にする。だから、位置・大きさ・向き・歪み・ぼかし・マスク・色調整・質感・重なり順は、
-     見えている通りになる。描く先の大きさ・倍率（MGR）は、対象の外接の範囲と、元画像の細かさ（いちばん細かいもの）から決める（上限EDIT_CFG.maxPx・長辺8192）。範囲が絵の外へはみ出した部分も残す。
+     見えている通りになる。描く先の大きさ・倍率（MGR）は、対象の外接の範囲と、元画像の細かさ（いちばん細かいもの）から決める（上限LIM.tex・長辺8192）。範囲が絵の外へはみ出した部分も残す。
    ・描く間だけ、書き出し（snapImg）と同じ仕組みで、画面のCanvas（cv）を借りる（hk・adjHQ・fit）。Z（ズーム・パン）は一時的に「統合の範囲が左上に来る」値にして、終わったら戻す。
    ・結果：新しいオブジェクト（名前「統合n」）。動き・物理・歪みの設定・マスクは持たない（絵に焼き込まれる）。置き場所＝対象のうち、いちばん手前だった物の順位。元のオブジェクトは消える（取り消しは「元に戻す」）。
      統合で空になったレイヤーは消す。
@@ -6936,7 +6992,7 @@ function mgRender(mem){
     }
     if(!(x1>x0&&y1>y0))throw new Error('範囲が決まりません');
     const wU=x1-x0,hU=y1-y0;
-    const d=Math.max(.02,Math.min(Math.max(1,dens),Math.sqrt(EDIT_CFG.maxPx/(wU*hU)),MG_SIDE/Math.max(wU,hU)));
+    const d=Math.max(.02,Math.min(Math.max(1,dens),Math.sqrt(limOr('tex')/(wU*hU)),MG_SIDE/Math.max(wU,hU)));
     const w=Math.max(1,Math.ceil(wU*d)),h=Math.max(1,Math.ceil(hU*d));
     /* ② 描く：歪みのあるものは、描く細かさに合わせた作業解像度で焼き直す（wbakeと同じ仕組み。上限3200） */
     if(wr)warpBakeR=Math.min(3200,Math.max(512,Math.round(wr*d)));
@@ -7003,15 +7059,15 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&pickFor){pickFor=null;pickin
 /* ===== キャンバスの大きさ・座標の表示・オブジェクト0個の表示（台帳Z-96〜Z-98） ===== */
 
 /* ---- キャンバスの大きさ（px）。DOC（00-bootstrap.js）に持つ。0＝自動 ---- */
-const CV_MIN=16,CV_MAX=8192;
-/* 大きさを決める。w・hが無効なら自動に戻す。大きすぎる時は縦横比を保って縮める（長辺CV_MAX・総画素EXPORT_MAXPXまで）。
+const CV_MIN=16;   /* 上限（長辺・総画素）はLIM.cv・LIM.exp（01-limits.js。設定で変えられる） */
+/* 大きさを決める。w・hが無効なら自動に戻す。大きすぎる時は縦横比を保って縮める（長辺LIM.cv・総画素LIM.expまで。0＝制限なし）。
    保存・Undoは呼ぶ側が先にpushUndo（操作窓の押下では自動で入る）。戻り値＝実際に決まった[w,h]（自動なら[0,0]）。 */
 function setCanvasSize(w,h){
   w=Math.round(+w);h=Math.round(+h);
   if(!(w>0&&h>0)){DOC.w=DOC.h=0}
   else{
-    const k=Math.min(1,CV_MAX/Math.max(w,h),Math.sqrt(EXPORT_MAXPX/(w*h)));
-    if(k<1){w=Math.round(w*k);h=Math.round(h*k);note('大きすぎるので、縦横比を保って '+w+'×'+h+' px に縮めました（上限：長辺'+CV_MAX+'px・合計2500万画素）')}
+    const k=Math.min(1,limOr('cv')/Math.max(w,h),Math.sqrt(limOr('exp')/(w*h)));
+    if(k<1){w=Math.round(w*k);h=Math.round(h*k);note('大きすぎるので、縦横比を保って '+w+'×'+h+' px に縮めました（上限：長辺'+LIM.cv+'px・合計'+Math.round(LIM.exp/1e4)+'万画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000)}
     DOC.w=Math.max(CV_MIN,w);DOC.h=Math.max(CV_MIN,h);
   }
   fit(true);if(!vLock){Z.s=1;Z.x=Z.y=0}dirtyProj=true;canvasUi();
@@ -7034,6 +7090,25 @@ function fitCanvasToImage(im){
   const w=im&&(im.naturalWidth||im.width),h=im&&(im.naturalHeight||im.height);
   if(!(w>0&&h>0))return false;
   setCanvasSize(w,h);return true;
+}
+/* ---- 画像を置く大きさ（台帳Z-251。2026-11-05）----
+   原寸（既定）＝画像のpxを、そのままキャンバス上のpxにして置く。キャンバスより大きい画像は、キャンバス側を広げる（縦横比を保つ。オブジェクトが0個の時の最初の1枚は、画像と同じ大きさにする）。
+   縮める（従来）＝長辺を「キャンバスの短辺の約52%」にして置く（大きい写真は、キャンバス上では小さいpxになる）。どちらでも、元の絵のデータは変えない。
+   端末に覚える（am_import。作品・Undo・保存には入れない）。キャンバスの上限（LIM.cv・LIM.exp）に収まらない時だけ、その中に収まるよう縮めて置き、知らせる。 */
+const IMP={mode:'orig'};
+try{if(localStorage.getItem('am_import')==='fit')IMP.mode='fit'}catch(_){}
+{const e=$('impm');if(e){e.value=IMP.mode;e.onchange=()=>{IMP.mode=e.value==='fit'?'fit':'orig';try{localStorage.setItem('am_import',IMP.mode)}catch(_){}}}}
+/* 原寸で置く計画：必要ならキャンバスを広げ（呼ぶ側が先にpushUndo）、置く大きさ（size）と、紙の上の幅・高さ（bw,bh。Wの単位）・知らせる文を返す */
+function impPlace(iw,ih,first){
+  const cw=DOC.w||W,ch=DOC.h||H;let msg='';
+  if(iw>cw+.5||ih>ch+.5){
+    if(first)setCanvasSize(iw,ih);
+    else{const f=Math.max(iw/cw,ih/ch);setCanvasSize(Math.round(cw*f),Math.round(ch*f))}
+    msg='キャンバスを '+DOC.w+'×'+DOC.h+' px に広げました（画像を原寸で置くため。置き方は、背景・出力タブの「⚙ 動作」で変えられます）';
+  }
+  const sc=W/(DOC.w||W);let bw=iw*sc,bh=ih*sc;
+  if(bw>W+.01||bh>H+.01){const f=Math.min(W/bw,H/bh);bw*=f;bh*=f;msg='画像がキャンバスの上限（長辺'+LIM.cv+'px・合計'+Math.round(LIM.exp/1e4)+'万画素）に収まらないので、キャンバスを上限まで広げ、画像はその中に収まるよう縮めて置きました（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。元の絵のデータは変わりません）'}
+  return{size:Math.max(bw,bh)/S0,bw,bh,msg};
 }
 $('cvsb').onclick=()=>{setTab('bg');document.body.classList.contains('tpc')&&$('tc').click();$('cvsz').scrollIntoView({block:'center'})};
 
@@ -7881,7 +7956,15 @@ async function addImages(files){
     if(k===0&&AC.length===0&&$('fitcv').checked&&fitCanvasToImage(im)){
       add(null,im,{name:nm,size:Math.max(W,H)/S0,fx:.5,fy:.5});k++;continue;
     }
-    /* 見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
+    /* 原寸で置く（既定。台帳Z-251）：画像のpxをそのままキャンバス上のpxにして、見ている画面の中心へ。キャンバスより大きい画像は、キャンバスを広げる（235-canvas-coords.js の impPlace） */
+    const iw=im.naturalWidth||im.width||0,ih=im.naturalHeight||im.height||0;
+    if(IMP.mode==='orig'&&iw>0&&ih>0){
+      const pl=impPlace(iw,ih,k===0&&AC.length===0),vc=vis(),hx=Math.min(.5,pl.bw/2/W),hy=Math.min(.5,pl.bh/2/H);
+      add(null,im,{name:nm,size:pl.size,fx:cl((vc.cx-Z.x)/Z.s/W+k*.06,hx,1-hx),fy:cl((vc.cy-Z.y)/Z.s/H+k*.06,hy,1-hy)});k++;
+      if(pl.msg)note(pl.msg);
+      continue;
+    }
+    /* 縮めて置く（従来。設定で選んだ時）：見ている画面の中心に、絵文字(1)の約2倍の大きさで置く。複数枚は少しずつずらす */
     const vc=vis();   /* 見えている範囲の中央に置く（窓の下に隠れない。台帳Z-115） */
     add(null,im,{name:nm,size:2,fx:cl((vc.cx-Z.x)/Z.s/W+k*.06,.08,.92),fy:cl((vc.cy-Z.y)/Z.s/H+k*.06,.08,.92)});k++;
   }
@@ -9389,9 +9472,10 @@ const MANPAGES=[
 `<p><b>「キャンバスの大きさ」と「置いた絵の大きさ」は、別々に決まります。ぶつかる（衝突する）ことはありません。</b>どちらを変えても、もう一方の絵のデータは書き換わりません。</p>
 <h4>3つの大きさ</h4>
 <ul>
-<li><b>キャンバスの大きさ</b>（背景・出力タブの「キャンバス」）：作品全体の紙の大きさ（px）です。静止画の書き出しの「1×」がこのpxで、2×・3×はその倍です。座標の表示もこのpxで測ります。決めない間（自動）は、画面の枠に合わせます。幅・高さは16〜8192 px、合計2500万画素までで、超えると縦横比を保って縮めます。</li>
+<li><b>キャンバスの大きさ</b>（背景・出力タブの「キャンバス」）：作品全体の紙の大きさ（px）です。静止画の書き出しの「1×」がこのpxで、2×・3×はその倍です。座標の表示もこのpxで測ります。決めない間（自動）は、画面の枠に合わせます。幅・高さは16 px以上です。長辺8192 px・合計2500万画素を超える時だけ、縦横比を保って縮めて知らせます（この上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。0＝制限なし。くわしくは「遅い場合の対処・上限」）。</li>
 <li><b>絵の元の大きさ</b>：読み込んだ画像そのもののpx（例：4000×3000）です。「＋白紙」は、そこで選んだ紙の大きさのpxです。キャンバスを変えても、この元のデータは縮んだり切れたりしません。</li>
-<li><b>キャンバス上での絵の大きさ</b>（配置タブの「大きさ」＝倍率）：絵は縦横比を保ったまま、<b>長いほうの辺が「キャンバスの短い辺の26% × 大きさ」</b>になります。たとえばキャンバスが1080×1080なら、×1.00で約281 px、画像を追加した時の最初の大きさ（×2.00）で約562 pxです。</li>
+<li><b>キャンバス上での絵の大きさ</b>（配置タブの「大きさ」＝倍率）：絵は縦横比を保ったまま、<b>長いほうの辺が「キャンバスの短い辺の26% × 大きさ」</b>になります。たとえばキャンバスが1080×1080なら、×1.00で約281 pxです。</li>
+<li><b>画像を読み込んだ時の置き方</b>（背景・出力タブの「⚙ 動作」の「画像を読み込む時の置き方」）：初めは<b>「原寸」</b>で、画像のpxのまま置きます（大きさの数字は、そのpxになるように決まります）。<b>キャンバスより大きい画像を入れた時は、キャンバスのほうを広げます</b>（広げたことと、新しいpxを知らせます）。「キャンバスに収める」を選ぶと、旧来のように、キャンバスの約半分の大きさに縮めて置きます。どちらでも、元の絵のデータは変わりません。キャンバスの上限（長辺8192 px・合計2500万画素。設定で変えられます）に収まらない時だけ、その中に収まる大きさで置いて、知らせます。</li>
 </ul>
 <h4>ぶつからない理由</h4>
 <ul>
@@ -9402,10 +9486,11 @@ const MANPAGES=[
 <h4>書き出しの細かさ</h4>
 <ul>
 <li>静止画は、キャンバスのpx×倍率の大きさに、絵の元のデータから描き直します。元の絵がキャンバス上の大きさより小さいと、引き伸ばされて粗く見えます。細かく出したい時は、元の絵が大きいものを使うか、倍率（2×・3×）を上げます。</li>
-<li>ペン・修整・統合などを使うと、長辺が4096 pxを超える絵は、使い始めに4096 px以内へ縮みます（編集しないかぎり元のままです）。</li>
+<li>ペン・修整・統合などを使うと、長辺が4096 pxを超える絵は、使い始めに4096 px以内へ縮みます（編集しないかぎり元のままです）。縮んだ時は必ず知らせます。この4096 pxは、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます（0＝縮めない）。</li>
 </ul>
 <h4>キャンバスを絵に合わせる</h4>
 <ul>
+<li>画像を原寸で置く設定（初め）では、キャンバスより大きい画像を入れると、自動でキャンバスが広がります。</li>
 <li>オブジェクトが0個のとき、「＋画像」の横の「1枚目：キャンバスを画像に合わせる」を入れて最初の1枚を追加すると、キャンバスがその画像のpxになり、画像がキャンバスいっぱいに置かれます。</li>
 <li>背景・出力タブの「選んだ絵に合わせる」は、選んでいる絵の元のpxにキャンバスを合わせます。</li>
 </ul>
@@ -9413,6 +9498,40 @@ const MANPAGES=[
 <ul>
 <li>配置タブの「大きさ」の下：選んでいる絵の「元の絵／キャンバス上／キャンバス」のpx。</li>
 <li>「レイヤーとオブジェクト」の一覧：いちばん上にキャンバスのpx、各オブジェクトの下に「元の絵 ○×○ px／キャンバス上 ○×○ px」、各レイヤーの右にその絵が占める範囲（動き・物理を含めない目安）。</li>
+</ul>`},
+  {id:'slow',title:'遅い場合の対処・上限',
+   live:()=>{const L=LIM,f=v=>v>0?String(v):'なし（制限なし）';return '上限の設定（いまの値）\nキャンバス 長辺 '+f(L.cv)+' px／総画素 '+f(L.exp)+'\nペン等の編集 長辺 '+f(L.pen)+' px／白紙 総画素 '+f(L.blk)+'\n質感・統合 総画素 '+f(L.tex)+'／ピンの注意 '+(L.pins>0?L.pins+' 個':'出さない')+'／履歴 '+(L.undo>0?L.undo+' MB':'なし')+'\n動画：効果の注意 '+(VD.warn>0?VD.warn+' 個':'出さない')+'／歪みの細かさ 画面 '+f(VD.cap)+' px・書き出し '+f(VD.capExp)+' px／書き出しの上限 '+f(VD.exMax)+' 画素'},
+   html:()=>
+`<p><b>このアプリは、絵や動画を勝手に劣化させたり、操作に境目を作ったりしない方針です。</b>容量や速さのために上限が要る所は、①超えたら注意を出す　②小さく説明する　③背景・出力タブの「⚙ 動作」で変えられる　④このページに書く、の4つをそろえます。数の制限そのもの（効果は何個まで、など）は設けていません。</p>
+<h4>遅い・重い時にまず試すこと</h4>
+<ul>
+<li>背景・出力タブの「処理の軽さ」を「軽い」にする（「自動」は、動きのある歪みが重い時に、自分で下げます）。</li>
+<li>動画：効果を減らす、または効果の「入」を切る。「歪み」の種類をやめて色だけにする（歪みは1画素ずつ計算するため、いちばん重い）。「動画の歪みの細かさ」（画面）を小さくする。重い間は、動画の再生の速さを遅くしても、書き出しは×1の実時間で進みます。</li>
+<li>キャンバスを小さくする。大きいキャンバス・大きい画像ほど、描き直しに時間がかかります。</li>
+<li>使っていない絵・レイヤーを消す、または非表示にする。ほかのタブやアプリを閉じる。</li>
+<li>それでも足りない時は、下の上限を小さくすると、メモリを節約できます（Undoの履歴・質感など）。</li>
+</ul>
+<h4>上限の一覧（すべて「⚙ 動作」で変えられます。0＝制限なし）</h4>
+<ul>
+<li><b>キャンバスの長辺 8192 px／総画素 2500万</b>：超える大きさを指定すると、縦横比を保って縮め、注意を出します。静止画の書き出しも、総画素がこれを超えると倍率を下げて保存し、注意を出します。</li>
+<li><b>ペン・修整・色調整などで編集する細かさ 長辺4096 px</b>：これより大きい絵は、編集を使い始める時に縮み、注意を出します（編集しないかぎり、元の絵のデータはそのままです）。</li>
+<li><b>白紙の総画素 800万</b>：超えると縮めて作り、注意を出します。</li>
+<li><b>質感・統合を計算する総画素 1200万</b>：超えると、質感を省いて表示し、注意を出します。確定で質感を焼き込めない時も、注意を出します。</li>
+<li><b>動く歪み（ピン）24個</b>：これは「数の制限」ではなく、「超えると重くなることがある」という注意を出す数です。超えても足せます。</li>
+<li><b>操作の履歴（元に戻す）256 MB</b>：超えると、古い履歴から消えます（初めて消える時に、注意を1回出します）。</li>
+<li><b>動画の効果の数</b>：制限はありません。「効果の注意を出す数」（初めは8）を超えると、注意が出ます。</li>
+<li><b>動画の歪みの細かさ（画面 640 px／書き出し 1024 px）</b>：動画の歪みは、長辺をこのpxにして計算してから拡大して重ねます。小さいほど速く、荒くなります。0＝動画そのままの細かさ（とても重いことがあります）。書き出しは、画面より細かい値が初めに入っています。</li>
+<li><b>動画の書き出しの上限 8300000 画素（4K相当）</b>：キャンバスの総画素がこれを超えると、書き出しは縮みます。縮む時は、書き出しの欄に注意が出ます。大きくすると、録画できない端末があります。</li>
+</ul>
+<h4>変えられない上限（ブラウザや端末の決まり）</h4>
+<ul>
+<li>Canvasの大きさには、ブラウザごとの上限があります（おおよそ、1辺が1万6千〜3万px、総画素が1億〜2億7千万。iPhone・iPadのSafariは、総画素が約1600万まで）。「⚙ 動作」の上限をこれ以上にすると、絵が真っ白になったり、アプリが止まったりすることがあります。大きすぎて作れなかった時は、自動で小さい大きさで作り直す所もあります。</li>
+<li>動画の書き出しは、実時間の録画です（4秒の動画は約4秒かかる）。書き出しの間は、この画面を開いたままにします。再生の速さ（スロー）は、書き出しの間だけ×1になります。</li>
+<li>動く歪み・物理・動画の効果は、描き直しのたびに計算されるので、数が増えるほど、1コマに使う時間が増えます。</li>
+</ul>
+<h4>遅いと感じたら</h4>
+<ul>
+<li>画面の下に出る注意の文には、どの設定で変えられるかを必ず書いています。注意が出ない所で遅い時は、不具合の可能性があるので、教えてください。</li>
 </ul>`}
 ];
 let manCur=MANPAGES[0].id;
@@ -9719,8 +9838,14 @@ uiInit();tbxLoad();tbxApplyAlpha();tbxApplySide();tbxApplyCol();tbxApplyDet();tb
    ・書き出しは実時間（動画と同じ長さ。録画＝captureStream＋MediaRecorder。音声は動画から取る）。再生位置（時間）で効果が決まるので、コマが落ちても長さと効果の時間はずれない。
      書き出し中は、紙の全体を描く（vwNoSplit）・拡大を等倍にする・キャンバスをDOCの大きさにする（hk）。終わったら元へ戻す。
    ・UIの一時状態：作品・Undo・保存には入れない（動画ファイルも効果の設定も、今回は保存しない＝台帳Z-44の残り）。
-   ・動画が読み込まれていない間は vdDraw・vdOutline は何もしない（既存の動作は変わらない）。 */
-const VD={ok:false,url:'',name:'',fx:[],cur:0,pick:false,drag:null,rec:null,ac:null,exp:false,cap:640,capExp:1024,MAXFX:8,outUrl:''};
+   ・動画が読み込まれていない間は vdDraw・vdOutline は何もしない（既存の動作は変わらない）。
+   ・2026-11-05（台帳Z-251〜Z-254）：①効果の数の上限を撤廃（VD.warn＝注意を出す数だけ。設定）②歪みの細かさの上限（VD.cap・VD.capExp）を設定で変えられる（0＝動画そのまま）
+     ③スロー再生（再生の速さ。書き出しの間だけ×1）④コマ送り・コマ番号で時間を指定・「このコマだけ」・いまのコマを絵にして重ねる（1秒のコマ数VD.fpsは、再生中に自動で測る。手で直せる）
+     ⑤枠の形に円・楕円（f.sh）⑥枠を動画の上で直接ドラッグ（中＝移動、縁・四隅＝伸縮。マウスは縁でカーソルが変わる）。 */
+const VD={ok:false,url:'',name:'',fx:[],cur:0,pick:false,drag:null,dm:null,cc:'',rec:null,ac:null,exp:false,cap:640,capExp:1024,warn:8,exMax:8300000,rate:1,fps:30,fpsAuto:true,direct:true,outUrl:''};
+/* 重さの設定（背景・出力タブの⚙動作。端末に覚える am_vdset。作品・Undo・保存には入れない）。0以上の数だけ受ける */
+try{const q=JSON.parse(localStorage.getItem('am_vdset')||'null');if(q&&typeof q==='object'){const n=(v,d)=>(Number.isFinite(+v)&&+v>=0&&v!==null&&v!=='')?+v:d;VD.cap=n(q.cap,640);VD.capExp=n(q.capExp,1024);VD.warn=n(q.warn,8);VD.exMax=n(q.exMax,8300000)}}catch(_){}
+function vdSetSave(){try{localStorage.setItem('am_vdset',JSON.stringify({cap:VD.cap,capExp:VD.capExp,warn:VD.warn,exMax:VD.exMax}))}catch(_){}}
 TT.vd=()=>'move';
 const vdV=document.createElement('video');
 vdV.playsInline=true;vdV.setAttribute('playsinline','');vdV.preload='auto';
@@ -9729,7 +9854,7 @@ document.body.appendChild(vdV);
 
 const vdFmt=s=>{s=Math.max(0,+s||0);return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')};
 const vdCl=(v,a,b)=>v<a?a:v>b?b:v;
-function vdNewFx(n){return{name:'効果'+n,on:true,a:0,b:0,ramp:.5,x:0,y:0,w:1,h:1,cc:'#0000ff',cm:'lighten',ca:0,br:100,ct:100,sa:100,hu:0,wt:'none',ws:30,wf:6,wp:.5}}
+function vdNewFx(n){return{name:'効果'+n,on:true,a:0,b:0,ramp:.5,x:0,y:0,w:1,h:1,sh:'rect',cc:'#0000ff',cm:'lighten',ca:0,br:100,ct:100,sa:100,hu:0,wt:'none',ws:30,wf:6,wp:.5}}
 VD.fx=[vdNewFx(1)];
 const vdCur=()=>VD.fx[VD.cur];
 
@@ -9753,6 +9878,9 @@ function vdRegion(f){
   return{x,y,w:vdCl(f.w,.01,1-x),h:vdCl(f.h,.01,1-y)};
 }
 
+/* 枠の形の経路（rect＝四角／ellipse＝枠に内接する楕円。縦横が同じ画素なら正円） */
+function vdShapePath(c,sh,x,y,w,h){c.beginPath();if(sh==='ellipse')c.ellipse(x+w/2,y+h/2,Math.max(.01,w/2),Math.max(.01,h/2),0,0,Math.PI*2);else c.rect(x,y,w,h)}
+
 /* ---- 描く ---- */
 function vdDraw(){
   if(!VD.ok||vdV.readyState<2)return;
@@ -9767,7 +9895,7 @@ function vdDraw(){
 }
 function vdSheet(f,k,x,y,w,h,c){   /* 色を重ねる（cは描く先。既定は画面のctx） */
   if(!(f.ca>0))return;
-  c=c||ctx;c.save();c.beginPath();c.rect(x,y,w,h);c.clip();
+  c=c||ctx;c.save();vdShapePath(c,f.sh,x,y,w,h);c.clip();
   c.globalCompositeOperation=f.cm;c.globalAlpha=Math.min(1,f.ca/100*k);c.fillStyle=f.cc;c.fillRect(x,y,w,h);c.restore();
 }
 function vdFilter(f,k){
@@ -9778,7 +9906,7 @@ function vdApply(f,k,t,g){
   const R=vdRegion(f),rx=g.x+R.x*g.w,ry=g.y+R.y*g.h,rw=R.w*g.w,rh=R.h*g.h,sx=R.x*g.vw,sy=R.y*g.vh,sw=R.w*g.vw,sh=R.h*g.vh;
   const adj=FILT&&(f.br!==100||f.ct!==100||f.sa!==100||f.hu!==0),flt=adj?vdFilter(f,k):'none';
   if(f.wt==='none'||!f.ws){   /* 色だけ：そのまま描く（速い） */
-    if(adj){ctx.save();ctx.beginPath();ctx.rect(rx,ry,rw,rh);ctx.clip();ctx.filter=flt;ctx.drawImage(vdV,sx,sy,sw,sh,rx,ry,rw,rh);ctx.restore()}
+    if(adj){ctx.save();vdShapePath(ctx,f.sh,rx,ry,rw,rh);ctx.clip();ctx.filter=flt;ctx.drawImage(vdV,sx,sy,sw,sh,rx,ry,rw,rh);ctx.restore()}
     vdSheet(f,k,rx,ry,rw,rh);
     return;
   }
@@ -9789,7 +9917,7 @@ function vdApply(f,k,t,g){
 const VDW={a:document.createElement('canvas'),b:document.createElement('canvas'),dst:null};
 VDW.ga=VDW.a.getContext('2d',{willReadFrequently:true});VDW.gb=VDW.b.getContext('2d');
 function vdWarp(f,k,t,r){
-  const cap=VD.exp?VD.capExp:VD.cap,sc=Math.min(1,cap/Math.max(r.sw,r.sh));
+  const cap=VD.exp?VD.capExp:VD.cap,sc=cap>0?Math.min(1,cap/Math.max(r.sw,r.sh)):1;
   const cw=Math.max(8,Math.round(r.sw*sc)),ch=Math.max(8,Math.round(r.sh*sc));
   if(VDW.a.width!==cw||VDW.a.height!==ch){VDW.a.width=VDW.b.width=cw;VDW.a.height=VDW.b.height=ch;VDW.dst=null}
   const g=VDW.ga;
@@ -9802,7 +9930,8 @@ function vdWarp(f,k,t,r){
   if(!VDW.dst)VDW.dst=new ImageData(cw,ch);
   vdRemap(src.data,VDW.dst.data,cw,ch,f,k,t);
   VDW.gb.putImageData(VDW.dst,0,0);
-  ctx.drawImage(VDW.b,r.rx,r.ry,r.rw,r.rh);
+  ctx.save();if(f.sh==='ellipse'){vdShapePath(ctx,f.sh,r.rx,r.ry,r.rw,r.rh);ctx.clip()}
+  ctx.drawImage(VDW.b,r.rx,r.ry,r.rw,r.rh);ctx.restore();
 }
 function vdRemap(sd,dd,w,h,f,k,t){
   const A=f.ws/100*k,ph=f.wp*t,fr=f.wf,TAU=Math.PI*2,W1=w-1,H1=h-1,ty=f.wt;
@@ -9842,26 +9971,34 @@ function vdRemap(sd,dd,w,h,f,k,t){
   }
 }
 
-/* ---- 効果をかける四角の枠（動画タブを開いている間の、画面だけ。絵の上に描く） ---- */
+/* ---- 効果をかける枠（動画タブを開いている間の、画面だけ。絵の上に描く）。形は四角／楕円。直接操作できる間は、四隅と縁の真ん中につまみを出す ---- */
+function vdTabOn(){const t=document.querySelector('.tab.on');return !!t&&t.dataset.tab==='vd'}
 function vdOutline(){
-  if(!VD.ok||!vwSplit())return;
-  const tab=document.querySelector('.tab.on');if(!tab||tab.dataset.tab!=='vd')return;
+  if(!VD.ok||!vwSplit()||!vdTabOn())return;
   const g=vdGeom(),f=vdCur();if(!g||!f)return;
   const R=vdRegion(f),s=Z.s||1;
   ctx.save();ctx.setTransform(dpr*Z.s,0,0,dpr*Z.s,dpr*Z.x,dpr*Z.y);
   const x=g.x+R.x*g.w,y=g.y+R.y*g.h,w=R.w*g.w,h=R.h*g.h;
-  ctx.lineWidth=3/s;ctx.strokeStyle='rgba(0,0,0,.65)';ctx.strokeRect(x,y,w,h);
-  ctx.lineWidth=1.5/s;ctx.setLineDash([6/s,5/s]);ctx.strokeStyle='#fff';ctx.strokeRect(x,y,w,h);
+  ctx.lineWidth=3/s;ctx.strokeStyle='rgba(0,0,0,.65)';vdShapePath(ctx,f.sh,x,y,w,h);ctx.stroke();
+  ctx.lineWidth=1.5/s;ctx.setLineDash([6/s,5/s]);ctx.strokeStyle='#fff';vdShapePath(ctx,f.sh,x,y,w,h);ctx.stroke();ctx.setLineDash([]);
+  if(vdDirectOn()){
+    if(f.sh==='ellipse'){ctx.lineWidth=1/s;ctx.setLineDash([3/s,4/s]);ctx.strokeStyle='rgba(255,255,255,.75)';ctx.strokeRect(x,y,w,h);ctx.setLineDash([])}
+    const hs=(VD.touch?8:5)/s;
+    for(const[px,py]of[[x,y],[x+w/2,y],[x+w,y],[x,y+h/2],[x+w,y+h/2],[x,y+h],[x+w/2,y+h],[x+w,y+h]]){
+      ctx.fillStyle='#fff';ctx.fillRect(px-hs,py-hs,2*hs,2*hs);ctx.lineWidth=1.5/s;ctx.strokeStyle='#000';ctx.strokeRect(px-hs,py-hs,2*hs,2*hs)}
+  }
   ctx.restore();
 }
 
 /* ---- 読み込み・再生 ---- */
 $('vdFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vdLoad(f)};
 function vdLoad(f){
+  if(VD.probeStop)VD.probeStop(true);
   vdStopExport(true);vdV.pause();
   if(VD.url)URL.revokeObjectURL(VD.url);
   VD.ok=false;VD.name=f.name;VD.url=URL.createObjectURL(f);
-  vdV.src=VD.url;vdV.load();
+  VD.fpsAuto=true;VD.fps=30;
+  vdV.src=VD.url;vdV.load();vdV.defaultPlaybackRate=VD.rate;vdV.playbackRate=VD.rate;
   $('vdInfo').textContent='読み込み中…';
 }
 function vdMeta(){
@@ -9875,6 +10012,7 @@ function vdMeta(){
   try{vdV.currentTime=.001}catch(_){}
   $('vdInfo').textContent=VD.name+'：'+vdV.videoWidth+'×'+vdV.videoHeight+' px・'+vdFmt(d)+'。キャンバスの大きさが動画と違うと余白（背景の色）が出ます。';
   vdUi();note('動画を読み込みました（'+vdFmt(d)+'）');
+  setTimeout(vdProbeRun,80);   /* 1秒のコマ数を測る（短く無音で流す） */
 }
 vdV.onloadedmetadata=vdMeta;
 vdV.onerror=()=>{VD.ok=false;$('vdInfo').textContent='この動画は読み込めませんでした（この端末が対応していない形式かもしれません。MP4（H.264）かWebMで試してください）。'};
@@ -9896,9 +10034,100 @@ $('vdFit').onclick=()=>{const g=vdGeom();if(!g){note('先に動画を読み込�
 setInterval(()=>{   /* 再生位置の表示 */
   const d=VD.ok?vdV.duration:0,t=VD.ok?vdV.currentTime:0;
   $('vdTime').textContent=vdFmt(t)+' / '+vdFmt(d);
+  vdFrameUi();
   const s=$('vdSeek');if(document.activeElement!==s&&d>0)s.value=Math.round(t/d*1000);
   vdSizeNote();
 },150);
+
+/* ---- 再生の速さ（スロー）・コマ送り・コマ番号・いまのコマを絵にする（台帳Z-252・Z-253） ----
+   速さ：vdV.playbackRate（ブラウザが対応する範囲。使えない値は知らせて戻す）。書き出しの間だけ×1にして、終わったら戻す（vdExport／vdFinish）。
+   コマ：番号は0始まりの内部値、画面は1から。コマ送りは、そのコマの真ん中の時刻へ移る（境目だと隣のコマが出ることがあるため）。1秒のコマ数VD.fpsは、
+   最初に無音で短く流して測り（requestVideoFrameCallbackの時刻の間隔の中央値。対応しない端末は30）、手で直すと自動をやめる。 */
+function vdSetRate(r){
+  r=+r;if(!(r>0&&isFinite(r))){note('速さは、0より大きい数で入れてください（1＝等倍）');vdUi();return}
+  try{vdV.defaultPlaybackRate=r;vdV.playbackRate=r;try{vdV.preservesPitch=true}catch(_){}VD.rate=r}
+  catch(_){note('この速さ（'+r+'倍）は、このブラウザでは使えません');try{vdV.playbackRate=VD.rate}catch(__){}}
+  vdUi();
+}
+document.querySelectorAll('.vdr').forEach(b=>b.onclick=()=>vdSetRate(b.dataset.r));
+$('vdRate').addEventListener('change',e=>vdSetRate(e.target.value));
+const vdFr=t=>Math.floor(Math.max(0,t)*VD.fps+1e-4);
+function vdFrameUi(){
+  const e=$('vdFrame');if(!e)return;
+  const d=VD.ok?vdV.duration:0,t=VD.ok?vdV.currentTime:0,n=Math.max(1,Math.round(d*VD.fps));
+  const s=VD.ok?'コマ '+(Math.min(vdFr(t),n-1)+1)+' / '+n+'（'+t.toFixed(3)+' 秒）':'コマ - / -';
+  if(e.textContent!==s)e.textContent=s;
+}
+function vdStep(n){
+  if(!VD.ok){note('先に動画を読み込んでください');return}
+  vdV.pause();
+  const last=Math.max(0,Math.round((vdV.duration||0)*VD.fps)-1),j=Math.min(last,Math.max(0,vdFr(vdV.currentTime)+n));
+  vdV.currentTime=(j+.5)/VD.fps;
+}
+[['vdStM10',-10],['vdStM1',-1],['vdStP1',1],['vdStP10',10]].forEach(([id,n])=>$(id).onclick=()=>vdStep(n));
+addEventListener('keydown',e=>{
+  if(!VD.ok||e.ctrlKey||e.metaKey||e.altKey||(e.key!=='ArrowRight'&&e.key!=='ArrowLeft'))return;
+  const tg=e.target;if(tg&&(/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)||tg.isContentEditable))return;
+  if(!vdTabOn()||(typeof CONSOLE!=='undefined'&&CONSOLE.isOpen&&CONSOLE.isOpen()))return;
+  vdStep((e.key==='ArrowRight'?1:-1)*(e.shiftKey?10:1));e.preventDefault();
+});
+const VD_COMMON=[24000/1001,24,25,30000/1001,30,48,50,60000/1001,60];
+/* 時刻はミリ秒に丸められている（WebMなど）ので、間隔の中央値ではなく、最初から最後までの平均で測る。
+   途中で飛んだ所（間隔が中央値の1.5倍より長い）は、その分を数えない。よく使う値に1.5%以内なら、その値に合わせる */
+function vdFpsFrom(ts){
+  if(!VD.fpsAuto||ts.length<4)return;
+  const d=[];for(let i=1;i<ts.length;i++){const x=ts[i]-ts[i-1];if(x>1e-4)d.push(x)}
+  if(d.length<3)return;
+  const m=d.slice().sort((a,b)=>a-b)[d.length>>1],ok=d.filter(x=>x<m*1.5&&x>m*.5);
+  if(ok.length<3)return;
+  let f=ok.length/ok.reduce((a,b)=>a+b,0),best=null;
+  for(const c of VD_COMMON)if(Math.abs(f-c)<c*.015&&(best===null||Math.abs(f-c)<Math.abs(f-best)))best=c;
+  if(best!==null)f=best;
+  VD.fps=Math.round(f*1000)/1000;VD.fpsMeasured=true;
+}
+/* 1秒のコマ数を測る：同じ動画を、画面の外に置いた別のvideo要素で、無音のまま1秒ほど流して測る。
+   見ている動画（vdV）には触らない（再生位置・音・書き出しの邪魔にならない）。対応しない端末・間に合わない時は、30のまま */
+function vdProbeRun(){
+  if(!VD.ok||!VD.url||!vdV.requestVideoFrameCallback)return;
+  if(VD.probeStop)VD.probeStop(true);
+  const url=VD.url,ts=[],v=document.createElement('video');let done=false,tm=0;
+  v.muted=true;v.playsInline=true;v.preload='auto';v.setAttribute('aria-hidden','true');
+  v.style.cssText='position:fixed;left:-9px;top:-9px;width:2px;height:2px;opacity:0;pointer-events:none';
+  const fin=quit=>{
+    if(done)return;done=true;clearTimeout(tm);VD.probeStop=null;
+    try{v.pause();v.removeAttribute('src');v.load()}catch(_){}v.remove();
+    if(quit!==true&&VD.url===url){vdFpsFrom(ts);vdUi()}
+  };
+  VD.probeStop=fin;
+  const cb=(n,md)=>{if(done)return;ts.push(md.mediaTime);if(ts.length>=31)fin();else v.requestVideoFrameCallback(cb)};
+  v.requestVideoFrameCallback(cb);
+  document.body.appendChild(v);v.src=url;
+  v.play().then(()=>{tm=setTimeout(fin,2500)}).catch(()=>fin());
+}
+$('vdFps').addEventListener('change',e=>{const v=+e.target.value;if(!(v>0&&isFinite(v))){note('1秒のコマ数は、0より大きい数で入れてください');vdUi();return}VD.fps=v;VD.fpsAuto=false;vdUi()});
+$('vdFa').addEventListener('change',e=>{const v=parseFloat(e.target.value);if(!isFinite(v))return;vdCur().a=Math.max(0,(Math.round(v)-1)/VD.fps);vdUi()});
+$('vdFb').addEventListener('change',e=>{const v=parseFloat(e.target.value);if(!isFinite(v))return;vdCur().b=v>0?Math.round(v)/VD.fps:0;vdUi()});
+$('vdOne').onclick=()=>{
+  if(!VD.ok){note('先に動画を読み込んでください');return}
+  const f=vdCur(),i=vdFr(vdV.currentTime);f.a=i/VD.fps;f.b=(i+1)/VD.fps;f.ramp=0;vdUi();
+  note('コマ '+(i+1)+' だけに効果をかけます（なめらかさは0にしました）');
+};
+$('vdGrab').onclick=()=>{
+  if(!VD.ok){note('先に動画を読み込んでください');return}
+  vdV.pause();const g=vdGeom();if(!g)return;
+  const c=document.createElement('canvas');c.width=g.vw;c.height=g.vh;
+  try{c.getContext('2d').drawImage(vdV,0,0,g.vw,g.vh)}catch(_){note('このコマを取り込めませんでした');return}
+  pushUndo();
+  add(null,c,{name:'コマ'+(vdFr(vdV.currentTime)+1),size:Math.max(g.w,g.h)/S0,fx:(g.x+g.w/2)/W,fy:(g.y+g.h/2)/H});
+  note('このコマを絵（オブジェクト）にして、動画の同じ位置に重ねました。ペン・修整・色調整などで直せます');
+};
+
+/* ---- 重さの設定（背景・出力タブの⚙動作）。0以上の数。変えたら端末に覚える ---- */
+[['vdWarnN','warn'],['vdCapS','cap'],['vdCapE','capExp'],['vdExMax','exMax']].forEach(([id,k])=>{
+  const e=$(id);if(!e)return;e.value=VD[k];
+  const on=()=>{const v=parseFloat(e.value);if(!(v>=0))return;VD[k]=Math.round(v);vdSetSave();VDW.dst=null;if(typeof vdSizeNote==='function')vdSizeNote()};
+  e.addEventListener('input',on);e.addEventListener('change',on);
+});
 
 /* ---- 音声（書き出しに入れるため、動画の音をWeb Audio経由にする。初回の再生・書き出しの操作の時に作る） ---- */
 function vdAudio(){
@@ -9923,9 +10152,19 @@ function vdFixRegion(f){const R=vdRegion(f);f.x=R.x;f.y=R.y;f.w=R.w;f.h=R.h}
 $('vdCc').addEventListener('input',e=>{vdCur().cc=e.target.value});
 $('vdCm').onchange=e=>{vdCur().cm=e.target.value};
 $('vdWt').onchange=e=>{vdCur().wt=e.target.value};
+$('vdShape').onchange=e=>{vdCur().sh=e.target.value==='ellipse'?'ellipse':'rect'};
+$('vdCirc').onclick=()=>{   /* 縦と横が同じ画素の円：短いほうに合わせ、いまの中心を保つ */
+  const g=vdGeom();if(!g){note('先に動画を読み込んでください');return}
+  const f=vdCur(),R=vdRegion(f),d=Math.min(R.w*g.vw,R.h*g.vh),cx=R.x+R.w/2,cy=R.y+R.h/2;
+  f.w=d/g.vw;f.h=d/g.vh;f.x=vdCl(cx-f.w/2,0,1-f.w);f.y=vdCl(cy-f.h/2,0,1-f.h);f.sh='ellipse';vdUi();
+};
+$('vdDirect').onchange=e=>{VD.direct=e.target.checked;vdUi()};
 $('vdFxOn').onchange=e=>{vdCur().on=e.target.checked;vdUi()};
 $('vdFxSel').onchange=e=>{VD.cur=+e.target.value;vdUi()};
-$('vdFxAdd').onclick=()=>{if(VD.fx.length>=VD.MAXFX){note('効果は '+VD.MAXFX+' 個までです');return}VD.fx.push(vdNewFx(VD.fx.length+1));VD.cur=VD.fx.length-1;vdUi()};
+$('vdFxAdd').onclick=()=>{
+  VD.fx.push(vdNewFx(VD.fx.length+1));VD.cur=VD.fx.length-1;vdUi();
+  if(VD.warn>0&&VD.fx.length>VD.warn)note('効果が '+VD.fx.length+' 個になりました。多いと重くなることがあります（この注意を出す数は、背景・出力タブの「⚙ 動作」で変えられます。数の制限はありません）');
+};
 $('vdFxDel').onclick=()=>{if(VD.fx.length>1){VD.fx.splice(VD.cur,1);VD.cur=Math.min(VD.cur,VD.fx.length-1)}else VD.fx[0]=vdNewFx(1);vdUi()};
 $('vdSetA').onclick=()=>{if(!VD.ok)return;vdCur().a=+vdV.currentTime.toFixed(2);vdUi()};
 $('vdSetB').onclick=()=>{if(!VD.ok)return;vdCur().b=+vdV.currentTime.toFixed(2);vdUi()};
@@ -9939,7 +10178,14 @@ $('vdPick').onclick=()=>{
 function vdUi(keep){
   const f=vdCur();
   for(const[id,key,sc]of VD_IN){const el=$(id);if(el===keep||document.activeElement===el)continue;el.value=Math.round(f[key]/sc*1000)/1000;if(el._n)el._n.value=el.value}
-  $('vdCc').value=f.cc;$('vdCm').value=f.cm;$('vdWt').value=f.wt;$('vdFxOn').checked=f.on;
+  $('vdCc').value=f.cc;$('vdCm').value=f.cm;$('vdWt').value=f.wt;$('vdFxOn').checked=f.on;$('vdShape').value=f.sh==='ellipse'?'ellipse':'rect';
+  {const fa=$('vdFa'),fb=$('vdFb'),fp=$('vdFps'),rt=$('vdRate'),ae=document.activeElement;
+   if(ae!==fa)fa.value=Math.floor(f.a*VD.fps+1e-4)+1;if(ae!==fb)fb.value=f.b>0?Math.round(f.b*VD.fps):0;
+   if(ae!==fp)fp.value=VD.fps;if(ae!==rt)rt.value=VD.rate;
+   $('vdFpsNote').textContent=VD.fpsAuto?(VD.fpsMeasured?'再生して測りました':'仮に30コマ/秒として扱っています（再生すると測ります）'):'手で決めた値です';
+   $('vdDirect').checked=VD.direct;
+   document.querySelectorAll('.vdr').forEach(b=>b.classList.toggle('on',Math.abs(+b.dataset.r-VD.rate)<1e-9))}
+  vdFrameUi();
   const sel=$('vdFxSel');sel.innerHTML='';
   VD.fx.forEach((x,i)=>{const o=document.createElement('option');o.value=i;o.textContent=x.name+'（'+vdFmt(x.a)+'〜'+(x.b>0?vdFmt(x.b):'最後')+(x.on?'':'・使わない')+'）';sel.appendChild(o)});
   sel.value=VD.cur;
@@ -9947,42 +10193,107 @@ function vdUi(keep){
   $('vdPlay').textContent=vdV.paused?'▶ 再生':'⏸ 一時停止';
   vdSizeNote();
 }
-/* 場所を指でなぞって選ぶ（動画タブで✋を押した時だけ。キャンバスのpointerより先に受け、アプリ側の操作には渡さない） */
+/* 場所を決める：①✋でなぞって新しい四角を選ぶ（VD.pick）②いまの枠を直接ドラッグ（中＝移動、縁・四隅＝伸縮。マウスは縁でカーソルが変わる）。
+   どちらも、キャンバスのpointerより先に受け（window・capture）、アプリ側の操作（絵の移動など）には渡さない。③の範囲外はアプリ側へ通す。 */
 function vdPaper(e){const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width),py=(e.clientY-r.top)*(H/r.height);return{x:(px-Z.x)/Z.s,y:(py-Z.y)/Z.s}}
 function vdFrac(p,g){return{x:vdCl((p.x-g.x)/g.w,0,1),y:vdCl((p.y-g.y)/g.h,0,1)}}
+const vdDirectOn=()=>VD.direct&&VD.ok&&!VD.rec&&vdTabOn();
+/* カーソル：キャンバスの data-vdc 属性で出す（styles.css の #cv[data-vdc=…]）。変わった時だけ書く */
+function vdCursor(c){c=c||'';if(VD.cc===c)return;VD.cc=c;if(c)cv.setAttribute('data-vdc',c);else cv.removeAttribute('data-vdc')}
+const VD_CUR={nw:'nwse-resize',se:'nwse-resize',ne:'nesw-resize',sw:'nesw-resize',n:'ns-resize',s:'ns-resize',e:'ew-resize',w:'ew-resize',m:'move'};
+/* 押した所が、枠のどこか：四隅・四辺（縁から数px以内）＝伸縮／枠の中＝移動／外＝''。許容は、指なら広く（画面上の長さで測る） */
+function vdHit(e,g,f){
+  const p=vdPaper(e),R=vdRegion(f),x=g.x+R.x*g.w,y=g.y+R.y*g.h,w=R.w*g.w,h=R.h*g.h;
+  const sc=(Z.s||1)*((cv.getBoundingClientRect().width/W)||1),touch=e.pointerType!=='mouse',tol=(touch?18:9)/sc;
+  if(p.x<x-tol||p.x>x+w+tol||p.y<y-tol||p.y>y+h+tol)return'';
+  const tx=Math.min(tol,w/3),ty=Math.min(tol,h/3);
+  const L=Math.abs(p.x-x)<=tx,Rr=Math.abs(p.x-(x+w))<=tx,T=Math.abs(p.y-y)<=ty,B=Math.abs(p.y-(y+h))<=ty;
+  const inX=p.x>=x&&p.x<=x+w,inY=p.y>=y&&p.y<=y+h;
+  if(L||Rr||T||B){
+    const v=T?'n':B?'s':'',hh=L?'w':Rr?'e':'';
+    if(v||hh)return v+hh;
+  }
+  if(inX&&inY){
+    if(f.sh==='ellipse'){const dx=(p.x-(x+w/2))/(w/2),dy=(p.y-(y+h/2))/(h/2);if(dx*dx+dy*dy>1)return''}
+    return'm';
+  }
+  return'';
+}
 window.addEventListener('pointerdown',e=>{
-  if(!VD.pick||e.target!==cv||!e.isPrimary)return;
+  if(e.target!==cv||!e.isPrimary)return;
+  VD.touch=e.pointerType!=='mouse';
   const g=vdGeom();if(!g)return;
+  if(VD.pick){
+    e.preventDefault();e.stopImmediatePropagation();
+    VD.drag={id:e.pointerId,u:vdFrac(vdPaper(e),g)};
+    try{cv.setPointerCapture(e.pointerId)}catch(_){}
+    return;
+  }
+  if(!vdDirectOn())return;
+  const f=vdCur(),h=vdHit(e,g,f);if(!h)return;
   e.preventDefault();e.stopImmediatePropagation();
-  VD.drag={id:e.pointerId,u:vdFrac(vdPaper(e),g)};
+  const R=vdRegion(f);
+  VD.dm={id:e.pointerId,h,u0:vdFrac(vdPaper(e),g),r0:{x:R.x,y:R.y,w:R.w,h:R.h}};
   try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  if(e.pointerType==='mouse')vdCursor(VD_CUR[h]);
 },true);
 window.addEventListener('pointermove',e=>{
-  const d=VD.drag;if(!d||e.pointerId!==d.id)return;
-  e.preventDefault();e.stopImmediatePropagation();
-  const g=vdGeom();if(!g)return;
-  const u=vdFrac(vdPaper(e),g),f=vdCur();
-  f.x=Math.min(d.u.x,u.x);f.y=Math.min(d.u.y,u.y);f.w=Math.max(.01,Math.abs(u.x-d.u.x));f.h=Math.max(.01,Math.abs(u.y-d.u.y));
-  vdUi();
+  const d=VD.drag,m=VD.dm;
+  if(d&&e.pointerId===d.id){
+    e.preventDefault();e.stopImmediatePropagation();
+    const g=vdGeom();if(!g)return;
+    const u=vdFrac(vdPaper(e),g),f=vdCur();
+    f.x=Math.min(d.u.x,u.x);f.y=Math.min(d.u.y,u.y);f.w=Math.max(.01,Math.abs(u.x-d.u.x));f.h=Math.max(.01,Math.abs(u.y-d.u.y));
+    vdUi();return;
+  }
+  if(m&&e.pointerId===m.id){
+    e.preventDefault();e.stopImmediatePropagation();
+    const g=vdGeom();if(!g)return;
+    const u=vdFrac(vdPaper(e),g),f=vdCur(),r=m.r0,dx=u.x-m.u0.x,dy=u.y-m.u0.y,MIN=.01;
+    if(m.h==='m'){f.x=vdCl(r.x+dx,0,1-r.w);f.y=vdCl(r.y+dy,0,1-r.h);f.w=r.w;f.h=r.h}
+    else{
+      let x0=r.x,x1=r.x+r.w,y0=r.y,y1=r.y+r.h;
+      if(m.h.includes('w'))x0=vdCl(r.x+dx,0,x1-MIN);
+      if(m.h.includes('e'))x1=vdCl(r.x+r.w+dx,x0+MIN,1);
+      if(m.h.includes('n'))y0=vdCl(r.y+dy,0,y1-MIN);
+      if(m.h.includes('s'))y1=vdCl(r.y+r.h+dy,y0+MIN,1);
+      f.x=x0;f.y=y0;f.w=x1-x0;f.h=y1-y0;
+    }
+    vdUi();return;
+  }
+  /* マウスを重ねただけの時：縁の上では、伸ばせるカーソルにする（Windowsと同じ）。変わった時だけ書く */
+  if(e.pointerType!=='mouse'||e.buttons)return;
+  let c='';
+  if(e.target===cv){
+    if(VD.pick&&VD.ok)c='crosshair';
+    else if(vdDirectOn()){const g=vdGeom();if(g)c=VD_CUR[vdHit(e,g,vdCur())]||''}
+  }
+  vdCursor(c);
 },true);
 const vdDragEnd=e=>{
-  const d=VD.drag;if(!d||e.pointerId!==d.id)return;
+  const d=VD.drag,m=VD.dm;
+  if(m&&e.pointerId===m.id){e.preventDefault();e.stopImmediatePropagation();VD.dm=null;vdUi();return}
+  if(!d||e.pointerId!==d.id)return;
   e.preventDefault();e.stopImmediatePropagation();VD.drag=null;VD.pick=false;vdUi();
-  const R=vdRegion(vdCur());note('場所を決めました（幅'+Math.round(R.w*100)+'%・高さ'+Math.round(R.h*100)+'%）。数字でも直せます');
+  const R=vdRegion(vdCur());note('場所を決めました（幅'+Math.round(R.w*100)+'%・高さ'+Math.round(R.h*100)+'%）。枠は、ドラッグでも、数字でも直せます');
 };
 window.addEventListener('pointerup',vdDragEnd,true);
 window.addEventListener('pointercancel',vdDragEnd,true);
 
 /* ---- 書き出し（実時間） ---- */
+/* 書き出しの縮み：キャンバスの総画素が VD.exMax（既定830万＝4K相当。0＝縮めない）を超えると、その分だけ縮めて録画する（端末が録画できないほど大きい時の備え）。
+   縮める時は、書き出しの欄に必ず知らせる（vdSizeNote）。設定は、背景・出力タブの⚙動作 */
+function vdExK(){return DOC.w>0&&VD.exMax>0?Math.min(1,Math.sqrt(VD.exMax/(DOC.w*DOC.h))):DOC.w>0?1:0}
 function vdOutSize(){
-  const hk0=DOC.w>0?Math.min(1,Math.sqrt(8.3e6/(DOC.w*DOC.h))):0;
+  const hk0=vdExK();
   return DOC.w>0?[Math.round(DOC.w*hk0),Math.round(DOC.h*hk0)]:[Math.round((W||0)*(dpr||1)),Math.round((H||0)*(dpr||1))];
 }
 function vdSizeNote(){
   if(VD.rec)return;
-  const[w,h]=vdOutSize(),g=vdGeom();let s='書き出す大きさ：'+w+'×'+h+' px。書き出し中は、この画面を開いたままにしてください（別のタブやアプリに切り替えると、描画が止まります）。';
+  const[w,h]=vdOutSize(),g=vdGeom();let s='書き出す大きさ：'+w+'×'+h+' px。書き出し中は、この画面を開いたままにしてください（別のタブやアプリに切り替えると、描画が止まります）。書き出しの間は、再生の速さを×1にします。';
   if(g&&Math.abs(w/h-g.vw/g.vh)>.02)s+=' 動画と縦横比が違うので余白が入ります（「📐 キャンバスを動画の大きさにする」で合わせられます）。';
   else if(g&&DOC.w===0)s+=' 画面の枠の大きさで出ます。元の画質で出すには「📐 キャンバスを動画の大きさにする」を押してください。';
+  if(DOC.w>0&&vdExK()<1)s+=' 【注意】キャンバスが '+DOC.w+'×'+DOC.h+' px と大きいので、書き出しは縮みます（上限 '+Math.round(VD.exMax/1e4)+'万画素）。縮めたくない時は、背景・出力タブの「⚙ 動作」の「動画の書き出しの上限」を大きく（0＝縮めない）してください。大きいと、録画できない端末があります。';
   const n=$('vdExNote');if(n.textContent!==s)n.textContent=s;
 }
 const vdSeekTo=t=>new Promise(res=>{
@@ -9998,10 +10309,12 @@ async function vdExport(){
   if(!cv.captureStream||!window.MediaRecorder){$('vdExTx').textContent='この端末は録画に未対応です';return}
   const d=vdV.duration,a=Math.max(0,+$('vdExS').value||0);let b=+$('vdExE').value||d;b=Math.min(b,d);
   if(!(b>a+.1)){note('書き出しの範囲を確かめてください');return}
+  if(VD.probeStop)VD.probeStop(true);
   vdV.pause();
+  try{vdV.defaultPlaybackRate=1;vdV.playbackRate=1}catch(_){}   /* 実時間の録画なので、書き出しの間だけ×1（終わったら元の速さへ。vdFinish） */
   const R={a,b,chunks:[],zbak:{s:Z.s,x:Z.x,y:Z.y},timer:0,wl:null,done:false,abort:false,mr:null,snd:false};VD.rec=R;
   Z.s=1;Z.x=0;Z.y=0;vwNoSplit=true;VD.exp=true;
-  hk=DOC.w>0?Math.min(1,Math.sqrt(8.3e6/(DOC.w*DOC.h))):0;fit();
+  hk=vdExK();fit();
   $('vdExGo').textContent='⏹ 書き出しを止める';$('vdExTx').textContent='準備中…';
   try{
     await vdSeekTo(a);
@@ -10034,6 +10347,7 @@ function vdStopExport(abort){
 function vdFinish(){
   const R=VD.rec;if(!R||R.done)return;R.done=true;
   const A=VD.ac;if(A){try{A.src.disconnect(A.dest)}catch(_){}A.gain.gain.value=1}
+  try{vdV.defaultPlaybackRate=VD.rate;vdV.playbackRate=VD.rate}catch(_){}
   Z.s=R.zbak.s;Z.x=R.zbak.x;Z.y=R.zbak.y;vwNoSplit=false;VD.exp=false;hk=0;fit();
   try{if(R.wl)R.wl.release()}catch(_){}
   VD.rec=null;$('vdExGo').textContent='⏺ 動画を書き出す';
