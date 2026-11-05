@@ -557,10 +557,10 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
       +'<section class="vpcol"><div class="vpbar"><b>ビューワー</b>'
       +'<span class="vpseg" role="group" aria-label="ビューワーの使い方"><button type="button" id="vpRun" class="on" aria-pressed="true" aria-label="部品を、実際に動かす">▶ 動かす</button><button type="button" id="vpInsp" aria-pressed="false" aria-label="部品を押すと、その部品が出てくるソースの行が光る（部品は動かない）">🔍 調べる</button></span>'
       +'<button type="button" id="vpReset" aria-label="見本のソースに戻す（書き換えたソースと、保存した文字は消える）">↺ 見本に戻す</button></div>'
-      +'<div class="vpview" id="vpView"></div><div class="note vpinfo" id="vpInfo"></div></section>'
+      +'<div class="vpview" id="vpView"></div><div class="vpgrab" id="vpGrabV" role="separator" tabindex="0" aria-label="ビューワーの高さ。ドラッグで変える（矢印キーでも変えられます。ダブルクリックで元の高さ）" title="ドラッグで、ビューワーの高さを変える（ダブルクリックで元に戻す）"></div><div class="note vpinfo" id="vpInfo"></div></section>'
       +'<section class="vpcol"><div class="vpbar"><b>ソースコード</b><span class="note" style="margin:0">HTML・CSS・JavaScript（動いているものそのまま）</span>'
       +'<button type="button" id="vpEdit" aria-label="ソースコードを書き換える">✎ 編集</button><button type="button" id="vpApply" hidden aria-label="書き換えたソースコードを反映する">✔ 反映</button><button type="button" id="vpCancel" hidden aria-label="書き換えをやめる">✕ やめる</button></div>'
-      +'<div class="note" id="vpMsg" style="margin:0" hidden></div><div class="vpscript vpcode" id="vpScript"></div><div class="vplog note" id="vpLog"></div></section></div>';
+      +'<div class="note" id="vpMsg" style="margin:0" hidden></div><div class="vpscript vpcode" id="vpScript"></div><div class="vpgrab" id="vpGrabS" role="separator" tabindex="0" aria-label="ソースの欄の高さ。ドラッグで変える（矢印キーでも変えられます。ダブルクリックで元の高さ）" title="ドラッグで、ソースの欄の高さを変える（ダブルクリックで元に戻す）"></div><div class="vplog note" id="vpLog"></div></section></div>';
     vplLoadSrc();vplRun();vplCode();vplInfo();
     vplQ('#vpStText').onclick=()=>vplStart('text');vplQ('#vpStPaint').onclick=()=>vplStart('paint');vplQ('#vpSave').onclick=vplExport;
     vplQ('#vpFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vplImportFile(f)};
@@ -572,6 +572,8 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
     const sc=vplQ('#vpScript');
     sc.addEventListener('click',e=>{const d=e.target.closest('.vpl');if(d)vplSelLine(+d.dataset.n)});
     sc.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('vpl')){e.preventDefault();vplSelLine(+e.target.dataset.n)}});
+    paneGrab(vplQ('#vpGrabV'),{host:el,name:'--vpfh',key:'vpfh',measure:()=>vplQ('#vpFrame')?vplQ('#vpFrame').offsetHeight:340,min:120});
+    paneGrab(vplQ('#vpGrabS'),{host:el,name:'--vpsh',key:'vpsh',measure:()=>vplQ('#vpScript').offsetHeight,min:100});
     armTips(el);
   }
 });
