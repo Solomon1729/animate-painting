@@ -364,6 +364,31 @@ def g_drag(p):
     pg.mouse.move(R[src]['x'] - 40, R[src]['y']); pg.mouse.down(); pg.mouse.move(R[src]['x'] - 40, R[src]['y'] + 8, steps=3); pg.mouse.move(R[tgt]['x'] - 40, R[tgt]['bottom'] + 1, steps=8)
     chk('マウスのドラッグでも点線が出る', line() is not None, line())
     pg.mouse.up(); pg.wait_for_timeout(200); chk('マウスで離すと入る', order() != before, order())
+    # 長い一覧：端に近づくと、自動でスクロールする（Z-113）
+    pg.evaluate("""(()=>{while(AC.length>0){sel=AC[0];del()}
+      LAYERS.length=0;LAYERS.push({id:1,name:'A',visible:true,locked:false},{id:2,name:'B',visible:true,locked:false});curLid=1;
+      for(let i=1;i<=40;i++){const a=add();a.name='n'+(i<10?'0':'')+i;a.layerId=1}
+      setSel(AC[0]);lyToggle(true);layUi()})()"""); pg.wait_for_timeout(400)
+    sc = lambda: pg.evaluate("document.getElementById('lypop').scrollTop")
+    mx = lambda: pg.evaluate("(()=>{const e=document.getElementById('lypop');return e.scrollHeight-e.clientHeight})()")
+    chk('40行の一覧は、窓より長い（スクロールが要る）', mx() > 100, mx())
+    pr = pg.evaluate("(()=>{const b=document.getElementById('lypop').getBoundingClientRect();return {l:b.left,r:b.right,t:b.top,b:b.bottom}})()")
+    R = rows(); top = [i for i, r in enumerate(R) if r['k'] == 'o' and r['top'] > pr['t'] + 40][0]; r0 = R[top]; x = r0['x'] - 40
+    s0 = sc()
+    s.touch('touchStart', x, r0['y']); pg.wait_for_timeout(450)
+    for k in range(1, 6): s.touch('touchMove', x, r0['y'] + (pr['b'] - 12 - r0['y']) * k / 5); pg.wait_for_timeout(30)
+    pg.wait_for_timeout(900)
+    s1 = sc()
+    chk('並べ替えのドラッグで、窓の下端に近づくと、自動で下へスクロールする', s1 > s0 + 60, (s0, s1))
+    chk('スクロールしながらも、点線が出ている', line() is not None, line())
+    pg.wait_for_timeout(700); s2 = sc()
+    chk('指を止めたままでも、スクロールが続く（端に着くまで）', s2 > s1 or s2 >= mx() - 2, (s1, s2))
+    for k in range(1, 4): s.touch('touchMove', x, pr['t'] + 14 + (pr['b'] - pr['t']) * .5 * (1 - k / 3)); pg.wait_for_timeout(30)
+    pg.wait_for_timeout(700); s3 = sc()
+    chk('上端に近づくと、上へスクロールする', s3 < s2 - 30, (s2, s3))
+    s.touch('touchEnd'); pg.wait_for_timeout(300)
+    s4 = sc(); pg.wait_for_timeout(500)
+    chk('離すと、スクロールは止まる', sc() == s4, (s4, sc()))
     chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
 
 
