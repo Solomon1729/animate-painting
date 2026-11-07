@@ -14,6 +14,7 @@
    ・印の保存：CSV（名前・印・幅・高さ）／コピー。印は、名前＋大きさ＋更新日時で覚え、同じ画像を読み直すと戻る（端末のlocalStorage am_cmp）。
    ・同じ場所の目印（📍。Shiftを押して押す／📍モードで押す）は、すべての絵の同じ場所に出る（細部の見比べ用）。
    ・速く進む：N／P（または前の○枚／次の○枚）で、いま選んでいる枚数と同じだけ、次の（前の）絵の組を選び直す。F（またはダブルクリック）で1枚だけ大きく。Gで一覧を隠す。Lで同期の切り替え。Spaceで、全体↔等倍。←→で、見ている絵を移す。D＝ペン、E＝消しゴム、Ctrl+Z＝書き込みを1つ戻す。
+   ・（2026-11-08：絵の欄を最優先に。コンソール共通の見出しを畳み、上の列を短い字の1段に、絵ごとの印は絵の上に重ね、ペンの操作列は絵の上に浮かせて動かせるようにした。機能は何も取り除いていない）
    ・UIの一時状態：作品・Undo・保存には入れない。 */
 (()=>{
 const CM={items:[],sel:new Set(),marks:{},ink:{},undo:[],pen:{on:false,erase:false,c:'#e0245e',w:4,show:true},pins:[],sync:true,v:{z:1,fx:.5,fy:.5},tiles:new Map(),focus:0,single:0,anchor:0,filter:'all',touchSel:false,pinMode:false,pixel:'auto',
@@ -91,10 +92,11 @@ function selUi(){
 function status(){
   const c={o:0,x:0,s:0,h:0};let un=0;for(const it of CM.items){const m=CM.marks[it.key];if(m)c[m]++;else un++}
   const n=CM.items.length,pend=CM.items.filter(i=>!i.url&&!i.err).length,sl=CM.sel.size,ink=CM.items.filter(i=>(CM.ink[i.key]||[]).length).length;
-  if(R.count){const a=R.count.firstChild,b=R.count.lastChild;a.textContent=!n?'':sl+'枚を選択中';b.textContent=!n?'':'全'+n+'枚'+(pend?'・準備中 '+(n-pend)+'/'+n:'')+(sl>12?'・多いと重くなります':'')}
+  if(R.count){const a=R.count.firstChild,b=R.count.lastChild,tx=!n?'':sl+'枚を選択中・全'+n+'枚'+(pend?'・準備中 '+(n-pend)+'/'+n:'')+(sl>12?'・多いと重くなります':'');   /* 見える字は短く（選んだ枚数／全部の枚数）。くわしい文は、長押し・読み上げ用 */
+    a.textContent=!n?'':sl+'/'+n;b.textContent=!n?'':pend?'準備中 '+(n-pend)+'/'+n:sl>12?'多いと重い':'';R.count.title=tx;R.count.setAttribute('aria-label',tx)}
   R.st.textContent='全'+n+'枚　選択'+sl+'枚　○'+c.o+'　✕'+c.x+'　★'+c.s+'　？'+c.h+'　印なし'+un+'　書き込みあり'+ink+'枚';
   if(R.chips)R.chips.querySelectorAll('.cmpchip').forEach(b=>{const f=b.dataset.f;b.querySelector('.n').textContent=f==='all'?n:f==='none'?un:c[f];b.setAttribute('aria-pressed',CM.filter===f?'true':'false')});
-  const k=Math.max(1,sl||3);if(R.prev){R.prev.textContent='‹ 前の'+k+'枚';R.next.textContent='次の'+k+'枚 ›';R.clr.disabled=!sl}
+  const k=Math.max(1,sl||3);if(R.prev){R.prev.textContent='‹ '+k+'枚';R.next.textContent=k+'枚 ›';R.prev.title=R.prev.ariaLabel='前の'+k+'枚を選ぶ（P）';R.next.title=R.next.ariaLabel='次の'+k+'枚を選ぶ（N）';R.clr.disabled=!sl}
   if(R.main)R.main.dataset.empty=n?'':'1';if(R.view&&R.el.querySelector('#cmpPen'))penUi()}
 
 /* ---- 選ぶ ---- */
@@ -171,7 +173,7 @@ function nextSet(dir){
 /* ---- 見比べ ---- */
 let rafId=0;function schedule(){if(rafId)return;rafId=requestAnimationFrame(()=>{rafId=0;renderTiles()})}
 function cols(n,W,H){
-  const mc=Math.max(1,Math.floor((W+6)/146));   /* 1列は、印のボタン4つが収まる幅（約140px）以上にする */
+  const mc=Math.max(1,Math.floor((W+6)/160));   /* 1列は、絵の上に重ねる印のボタン4つが収まる幅（約150px）以上にする */
   let best=1,bd=1e9;for(let c=1;c<=Math.min(n,mc);c++){const r=Math.ceil(n/c),a=(W/c)/(H/r),d=Math.abs(Math.log(a/1.35));if(d<bd){bd=d;best=c}}return best}
 function renderTiles(){
   const v=R.stage,sel=orderSel(),list0=CM.single?sel.filter(i=>i.id===CM.single):sel,list=tileOrder(list0);
@@ -353,7 +355,7 @@ function penUi(){
   q('#cmpCols').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',(!p.erase&&x.dataset.c===p.c)?'true':'false'));
   q('#cmpPenW').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.w===p.w?'true':'false'));
   const er=q('#cmpEras');er.classList.toggle('on',p.erase);er.setAttribute('aria-pressed',p.erase?'true':'false');
-  const sh=q('#cmpInkShow');sh.textContent=p.show?'書き込みを隠す':'書き込みを出す';sh.setAttribute('aria-pressed',p.show?'false':'true');
+  const sh=q('#cmpInkShow');sh.textContent=p.show?'隠す':'出す';sh.title=sh.ariaLabel=p.show?'書き込みを、一時的に隠す':'書き込みを、もう一度出す';sh.setAttribute('aria-pressed',p.show?'false':'true');
   q('#cmpUndoInk').disabled=!CM.undo.length;
   /* 「書き込みを消す」は、押せなくしない（消す絵が無い・書き込みが無い時は、押した時に知らせる） */}
 function tileBind(t){
@@ -461,10 +463,11 @@ function mount(el){
   el.classList.add('cmp');
   el.innerHTML=`
 <div class="cmptop">
-  <button type="button" id="cmpAdd" class="cmpbtn prim" aria-label="画像を追加（まとめて選べます）">＋ 画像を追加</button>
+  <button type="button" id="cmpBack" class="cmpbtn sm" aria-label="コンソールを閉じて、本体へ戻る" title="コンソールを閉じて、本体へ戻る">← 本体へ戻る</button>
+  <button type="button" id="cmpAdd" class="cmpbtn sm prim" aria-label="画像を追加（まとめて選べます）" title="画像を追加（まとめて選べます）">＋ 追加</button>
   <span class="cmpcount" id="cmpCount" aria-live="polite"><b></b><small></small></span>
-  <button type="button" id="cmpClr" class="cmpbtn" aria-label="選択を解除（Delete）">選択を解除</button>
-  <button type="button" id="cmpMore" class="cmpbtn ico" aria-haspopup="dialog" aria-expanded="false" aria-label="その他の操作" title="その他の操作">⋯</button>
+  <button type="button" id="cmpClr" class="cmpbtn sm" aria-label="選択を解除（Delete）" title="選択を解除（Delete）">解除</button>
+  <button type="button" id="cmpMore" class="cmpbtn sm ico" aria-haspopup="dialog" aria-expanded="false" aria-label="その他の操作" title="その他の操作">⋯</button>
 </div>
 <div class="cmpmain" id="cmpMain">
   <div class="cmpside" id="cmpSide">
@@ -476,9 +479,9 @@ function mount(el){
   <div class="cmpview" id="cmpView">
     <div class="cmpvbar" id="cmpVBar">
       <div class="cmppager">
-        <button type="button" id="cmpHide" class="cmpbtn sm" aria-pressed="true" aria-label="一覧を隠す／出す（キー G）" title="一覧を隠す／出す（G）">▤ 一覧</button>
-        <button type="button" id="cmpPrev" class="cmpbtn sm" aria-label="前の組を選ぶ（キー P）">‹ 前の3枚</button>
-        <button type="button" id="cmpNext" class="cmpbtn sm" aria-label="次の組を選ぶ（キー N）">次の3枚 ›</button>
+        <button type="button" id="cmpHide" class="cmpbtn sm" aria-pressed="true" aria-label="一覧を隠す／出す（キー G）" title="一覧を隠す／出す（G）">▤</button>
+        <button type="button" id="cmpPrev" class="cmpbtn sm" aria-label="前の3枚を選ぶ（キー P）" title="前の3枚を選ぶ（P）">‹ 3枚</button>
+        <button type="button" id="cmpNext" class="cmpbtn sm" aria-label="次の3枚を選ぶ（キー N）" title="次の3枚を選ぶ（N）">3枚 ›</button>
       </div>
       <div class="cmptools">
         <button type="button" id="cmpPen" class="cmpbtn sm" aria-pressed="false" aria-label="ペン：絵の上に書き込む（キー D）" title="絵の上に、指やマウスで書き込む（D）">✎ ペン</button>
@@ -488,7 +491,7 @@ function mount(el){
       </div>
     </div>
     <div class="cmppinbar" id="cmpPinBar" hidden><span id="cmpPins">📍0</span><span id="cmpPinMode"></span><span class="cmpsp"></span><button type="button" id="cmpPinOff" class="cmpbtn sm">やめる</button><button type="button" id="cmpPinClr" class="cmpbtn sm">ピンを消す</button></div>
-    <div class="cmppenbar" id="cmpPenBar" hidden>
+    <div class="cmppenbar" id="cmpPenBar" hidden title="空いている所をつかんで、動かせます">
       <div class="cmprow1">
         <div class="cmpcols" id="cmpCols" role="group" aria-label="ペンの色">${PCOL.map(([c,n])=>`<button type="button" class="cmpcol" data-c="${c}" style="--c:${c}" aria-pressed="false" aria-label="${n}" title="${n}"></button>`).join('')}</div>
         <div class="cmpseg" id="cmpPenW" role="group" aria-label="ペンの太さ">${PW.map(([w,n])=>`<button type="button" data-w="${w}" aria-pressed="false">${n}</button>`).join('')}</div>
@@ -496,8 +499,8 @@ function mount(el){
       <div class="cmprow2">
         <button type="button" id="cmpEras" class="cmpbtn sm" aria-pressed="false" aria-label="消しゴム（キー E）。なぞった線を消します" title="なぞった線を消す（E）">消しゴム</button>
         <button type="button" id="cmpUndoInk" class="cmpbtn sm" aria-label="書き込みを1つ戻す（Ctrl+Z）" title="書き込みを1つ戻す（Ctrl+Z）">↩ 戻す</button>
-        <button type="button" id="cmpInkClr" class="cmpbtn sm" title="いま見ている絵（青い枠）の書き込みを、全部消す">書き込みを消す</button>
-        <button type="button" id="cmpInkShow" class="cmpbtn sm" aria-pressed="false" title="書き込みを、一時的に隠す／出す">書き込みを隠す</button>
+        <button type="button" id="cmpInkClr" class="cmpbtn sm" aria-label="いま見ている絵（青い枠）の書き込みを、全部消す" title="いま見ている絵（青い枠）の書き込みを、全部消す">全部消す</button>
+        <button type="button" id="cmpInkShow" class="cmpbtn sm" aria-pressed="false" aria-label="書き込みを、一時的に隠す／出す" title="書き込みを、一時的に隠す／出す">隠す</button>
       </div>
     </div>
     <div class="cmpstage" id="cmpStage">
@@ -572,6 +575,8 @@ function mount(el){
   q('cmpDockSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;CM.dock=b.dataset.d;dockUi();layout();schedule();save()};
   q('cmpTh').value=CM.thumb;q('cmpTh').oninput=e=>{CM.thumb=+e.target.value;cellUi()};q('cmpTh').onchange=save;
   q('cmpMore').onclick=()=>menuOpen();q('cmpMenuX').onclick=()=>menuOpen(false);R.bk.onclick=()=>menuOpen(false);
+  q('cmpBack').onclick=()=>{const x=document.getElementById('csx');if(x)x.click()};   /* コンソールの見出しは、見比べでは畳む。戻る操作は、ここに置く */
+  penBarBind();
   R.menu.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.hasAttribute('data-close'))menuOpen(false)});
   q('cmpPen').onclick=()=>penSet();
   q('cmpCols').onclick=e=>{const b=e.target.closest('button');if(!b)return;CM.pen.c=b.dataset.c;CM.pen.erase=false;penUi();save()};
@@ -581,11 +586,30 @@ function mount(el){
   q('cmpInkShow').onclick=()=>{CM.pen.show=!CM.pen.show;penUi();drawAll()};
   syncUi();pxUi();dockUi();pinUi();penUi();R.syncUi=syncUi;
   gridBind();splitBind();
-  new ResizeObserver(()=>{layout();cellUi();schedule()}).observe(R.main);new ResizeObserver(()=>{placeDivs();cellUi()}).observe(R.tiles);new ResizeObserver(()=>cellUi()).observe(R.grid);
+  new ResizeObserver(()=>{layout();cellUi();schedule();penPlace()}).observe(R.main);new ResizeObserver(()=>{placeDivs();cellUi()}).observe(R.tiles);new ResizeObserver(()=>cellUi()).observe(R.grid);
   el.addEventListener('dragover',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files'))e.preventDefault()});
   el.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){e.preventDefault();addFiles([...e.dataTransfer.files])}});
   layout();renderGrid();status();
 }
+/* ペンの操作列は、見比べの絵の上に浮かせる（出しても、絵の欄は縮まない）。空いている所をつかむと、好きな場所へ動かせる（位置は一時的。端末には覚えない） */
+let penPos=null;
+function penPlace(){
+  const bar=R&&R.el&&R.el.querySelector('#cmpPenBar'),v=R&&R.view;if(!bar||!v||!penPos||bar.hidden)return;
+  const vw=v.clientWidth,vh=v.clientHeight,bw=bar.offsetWidth,bh=bar.offsetHeight;
+  penPos.l=Math.max(0,Math.min(Math.max(0,vw-bw),penPos.l));penPos.t=Math.max(0,Math.min(Math.max(0,vh-bh),penPos.t));
+  bar.style.left=penPos.l+'px';bar.style.top=penPos.t+'px';bar.style.bottom='auto'}
+function penBarBind(){
+  const bar=R.el.querySelector('#cmpPenBar');let d=null;
+  bar.style.touchAction='none';
+  bar.addEventListener('pointerdown',e=>{
+    if(e.button>0||e.target.closest('button'))return;
+    const b=bar.getBoundingClientRect(),v=R.view.getBoundingClientRect();
+    penPos={l:b.left-v.left,t:b.top-v.top};d={id:e.pointerId,x:e.clientX,y:e.clientY,l:penPos.l,t:penPos.t};
+    try{bar.setPointerCapture(e.pointerId)}catch(_){}bar.classList.add('drag');e.preventDefault();e.stopPropagation()});
+  bar.addEventListener('pointermove',e=>{if(!d||e.pointerId!==d.id)return;penPos={l:d.l+e.clientX-d.x,t:d.t+e.clientY-d.y};penPlace()});
+  const end=e=>{if(d&&e.pointerId===d.id){d=null;bar.classList.remove('drag')}};
+  bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
+  bar.addEventListener('dblclick',e=>{if(e.target.closest('button'))return;penPos=null;bar.style.left=bar.style.top=bar.style.bottom=''})}   /* ダブルクリックで、元の場所（下）へ */
 function toggleSync(on){
   const n=on===undefined?!CM.sync:on;if(n===CM.sync)return;
   if(n){const t=CM.tiles.get(CM.focus)||CM.tiles.values().next().value;if(t)CM.v={...t.v}}
@@ -600,7 +624,7 @@ function layout(){
   const d=dockOf(),row=d==='left'||d==='right',m=R.main,W=m.clientWidth,H=m.clientHeight;
   m.dataset.dock=d;
   if(row)m.style.setProperty('--cmpw',cl(CM.size.w||cl(Math.round(W*.24),220,300),140,Math.max(160,W-160))+'px');
-  else m.style.setProperty('--cmph',cl(CM.size.h||cl(Math.round(H*.3),150,240),84,Math.max(110,H-150))+'px')}
+  else m.style.setProperty('--cmph',cl(CM.size.h||cl(Math.round(H*.2),112,160),84,Math.max(110,H-150))+'px')}   /* 一覧の初めの高さは小さく（見比べの絵が主役）。ひろげたい時は、境目をつかむ */
 function splitBind(){
   const s=R.split,pill=R.pill;let d=null,dd=null;s.style.touchAction='none';pill.style.touchAction='none';
   const dirOf=()=>({left:[1,0],right:[-1,0],top:[0,1],bottom:[0,-1]})[dockOf()];
