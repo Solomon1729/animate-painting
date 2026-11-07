@@ -452,58 +452,147 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
 .csbody:has([data-lab="cmp"]:not([hidden])){overflow:hidden;padding:6px}
 .csbody>div[data-lab="cmp"]{flex:1;min-height:0;gap:6px}
 .cmp{display:flex;flex-direction:column;min-height:0;flex:1}
-.cmpbar{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:4px;align-items:center;flex:0 0 auto;padding-bottom:2px;scrollbar-width:thin}.cmpbar>*{flex:0 0 auto;white-space:nowrap}   /* 1行に収め、はみ出したら横にスクロール（縦をつぶさない） */
 #cons[data-cmp] .cshd .note{display:none}   /* 見比べでは、縦を広く使うため、見出しの説明は出さない */
-.cmpbar button,.cmpbar select{padding:3px 8px;min-height:30px;font-size:12px}.cmpbar button.on{background:var(--acc);color:#fff}
-.cmpsp{flex:1 1 8px}.cmpn{font-size:12px;min-width:2em}.cmpz{display:flex;align-items:center;gap:3px;font-size:12px}.cmpz input{width:80px}
+/* ---- 画像の見比べ（コンソール3）。スマホ（指）を最優先：ボタンは44px・折り返す・隠れない。色はテーマの変数 ---- */
+.cmp{--cr:12px;--sh:0 1px 2px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.08);gap:8px;font-size:14px}
+.cmp button{touch-action:manipulation}
+.cmpbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:14px;line-height:1.2;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cmpbtn:hover{border-color:var(--acc)}.cmpbtn:active{transform:scale(.97)}
+.cmpbtn:disabled{opacity:.4;cursor:default;transform:none;border-color:var(--line)}
+.cmpbtn.prim{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.cmpbtn.big{min-height:48px;padding:0 22px;font-size:16px}
+.cmpbtn.ico{width:44px;padding:0;font-size:20px;line-height:1}
+.cmpbtn.sm{min-height:36px;padding:0 11px;font-size:13px}
+.cmpbtn.on,.cmpbtn[aria-pressed=true].tg{background:color-mix(in srgb,var(--acc) 16%,var(--pane));border-color:var(--acc);color:var(--ink)}
+.cmpbtn.lt{background:transparent;border-color:rgba(255,255,255,.5);color:#fff}
+.cmpbtn:focus-visible,.cmpchip:focus-visible,.cmpseg button:focus-visible,.cmpth:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.cmptop{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.cmpcount{flex:1 1 0;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.cmpcount b{font-size:14px;font-weight:600}
+.cmpcount small{font-size:11.5px;opacity:.7}
+.cmpsp{flex:1 1 8px}
+.cmpsr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* 一覧の置き場所 data-dock＝top／bottom／left／right。一覧と見比べの間に境目（cmpsplit）があり、つかんで広さを変えられる */
 .cmpmain{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
 .cmpmain[data-dock=left],.cmpmain[data-dock=right]{flex-direction:row}
-.cmpside{flex:0 0 var(--cmph,120px);min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;order:1}
-.cmpmain[data-dock=left] .cmpside,.cmpmain[data-dock=right] .cmpside{flex:0 0 var(--cmpw,200px)}
-.cmpmain.noside .cmpside,.cmpmain.noside .cmpsplit{display:none}
-.cmpsplit{flex:0 0 12px;order:2;position:relative;background:color-mix(in srgb,var(--line) 55%,transparent);border-radius:6px;margin:2px 0;cursor:ns-resize;touch-action:none;outline-offset:1px}
-.cmpsplit::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}   /* 触れる範囲を、見た目より広く */
-.cmpmain[data-dock=left] .cmpsplit,.cmpmain[data-dock=right] .cmpsplit{cursor:ew-resize;margin:0 2px}
-.cmpmain[data-dock=left] .cmpsplit::before,.cmpmain[data-dock=right] .cmpsplit::before{top:0;bottom:0;left:-9px;right:-9px}
-.cmpsplit:hover,.cmpsplit:focus-visible,.cmpsplit.drag{background:var(--acc)}
-.cmppill{position:absolute;left:10px;top:50%;transform:translateY(-50%);   /* 境目の端に置く（真ん中は、広さを変えるために空けておく） */
-width:54px;height:24px;padding:0;min-height:0;border-radius:12px;font-size:14px;line-height:1;cursor:grab;touch-action:none;background:var(--pane);border:1px solid var(--line);z-index:2}
+.cmpside{flex:0 0 var(--cmph,150px);min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;order:1;background:var(--pane);border:1px solid var(--line);border-radius:var(--cr);box-shadow:var(--sh)}
+.cmpmain[data-dock=left] .cmpside,.cmpmain[data-dock=right] .cmpside{flex:0 0 var(--cmpw,240px)}
+.cmpmain.noside .cmpside,.cmpmain.noside .cmpsplit,.cmpmain[data-empty="1"] .cmpside,.cmpmain[data-empty="1"] .cmpsplit{display:none}
+.cmpsplit{flex:0 0 26px;order:2;position:relative;cursor:ns-resize;touch-action:none}
+.cmpsplit::before{content:"";position:absolute;left:0;right:0;top:-6px;bottom:-6px}   /* 触れる範囲を、見た目より広く */
+.cmpsplit::after{content:"";position:absolute;left:50%;top:50%;width:48px;height:5px;margin:-2.5px 0 0 -24px;border-radius:3px;background:var(--line);transition:background .12s}
+.cmpmain[data-dock=left] .cmpsplit,.cmpmain[data-dock=right] .cmpsplit{cursor:ew-resize}
+.cmpmain[data-dock=left] .cmpsplit::before,.cmpmain[data-dock=right] .cmpsplit::before{top:0;bottom:0;left:-6px;right:-6px}
+.cmpmain[data-dock=left] .cmpsplit::after,.cmpmain[data-dock=right] .cmpsplit::after{width:5px;height:48px;margin:-24px 0 0 -2.5px}
+.cmpsplit:hover::after,.cmpsplit:focus-visible::after,.cmpsplit.drag::after{background:var(--acc)}
+.cmpsplit:focus-visible{outline:none}
+.cmppill{position:absolute;left:2px;top:50%;transform:translateY(-50%);width:40px;height:22px;padding:0;min-height:0;border-radius:13px;font-size:13px;line-height:1;cursor:grab;touch-action:none;background:var(--pane);color:var(--ink);border:1px solid var(--line);box-shadow:var(--sh);z-index:2}
 .cmppill:active{cursor:grabbing}
-.cmpmain[data-dock=left] .cmppill,.cmpmain[data-dock=right] .cmppill{left:50%;top:10px;transform:translateX(-50%)}
-.cmpzone{position:absolute;z-index:5;pointer-events:none;background:color-mix(in srgb,var(--acc) 28%,transparent);border:2px dashed var(--acc);border-radius:8px;box-sizing:border-box}
+.cmpmain[data-dock=left] .cmppill,.cmpmain[data-dock=right] .cmppill{left:50%;top:2px;transform:translateX(-50%);width:22px;height:40px}
+.cmpzone{position:absolute;z-index:5;pointer-events:none;background:color-mix(in srgb,var(--acc) 24%,transparent);border:2px dashed var(--acc);border-radius:var(--cr);box-sizing:border-box}
 .cmpzone[hidden]{display:none}
 .cmpmain[data-dock=bottom] .cmpside,.cmpmain[data-dock=right] .cmpside{order:3}
-.cmpmain[data-dock=bottom] .cmpview,.cmpmain[data-dock=right] .cmpview{order:1}.cmpview{flex:1;min-height:0;min-width:0;position:relative;display:flex;order:2}
-.cmpgrid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cmpt,110px),1fr));gap:4px;align-content:start;padding:2px;overscroll-behavior:contain}
-.cmpth{position:relative;background:var(--pane);border:2px solid transparent;border-radius:6px;overflow:hidden;cursor:pointer;-webkit-user-select:none;user-select:none}
-.cmpth::before{content:"";display:block;padding-top:100%}   /* 正方形（aspect-ratioは、高さの決まった格子で行が縮むので使わない） */
-.cmpth img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
-.cmpth.sel{border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 40%,transparent)}
+.cmpmain[data-dock=bottom] .cmpview,.cmpmain[data-dock=right] .cmpview{order:1}
+.cmpview{flex:1;min-height:0;min-width:0;position:relative;display:flex;flex-direction:column;order:2;gap:6px}
+/* 一覧：印のチップ（絞り込みと枚数を兼ねる）＋絵 */
+.cmpchips{display:flex;flex-wrap:wrap;gap:4px;padding:8px 8px 4px;flex:0 0 auto}
+.cmpchip{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:34px;padding:0 6px;border-radius:999px;white-space:nowrap;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cmpchip .n{font-weight:600;font-variant-numeric:tabular-nums}
+.cmpchip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+.cmpchip:not([aria-pressed=true]) .g[data-f=o]{color:#1a9c4b}.cmpchip:not([aria-pressed=true]) .g[data-f=x]{color:#d33}.cmpchip:not([aria-pressed=true]) .g[data-f=s]{color:#d99a00}.cmpchip:not([aria-pressed=true]) .g[data-f=h]{color:#37c}
+.cmpgrid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,var(--cell,88px));grid-auto-rows:var(--cell,88px);gap:6px;align-content:start;justify-content:start;padding:4px 2px 8px 2px;margin:0 6px;overscroll-behavior:contain;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.cmpgrid.lp{cursor:crosshair}
+.cmpth{position:relative;background:var(--bg);border-radius:9px;overflow:hidden;cursor:pointer;outline:2px solid transparent;outline-offset:-2px;transition:outline-color .1s}
+.cmpth img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.cmpth.sel{outline:3px solid var(--acc)}
+.cmpth.sel img{opacity:.92}
 .cmpth.err{opacity:.4}
-.cmpbd{position:absolute;right:2px;top:1px;font-size:15px;line-height:1;text-shadow:0 0 3px #fff,0 0 3px #fff}
-.cmpth[data-m="o"] .cmpbd{color:#1a9c4b}.cmpth[data-m="x"] .cmpbd{color:#d33}.cmpth[data-m="s"] .cmpbd{color:#e8a800}.cmpth[data-m="h"] .cmpbd{color:#37c}
-.cmpnm{position:absolute;left:0;right:0;bottom:0;font-size:10px;line-height:1.3;padding:0 3px;background:color-mix(in srgb,var(--pane) 80%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cmpnone{grid-column:1/-1;padding:18px 8px;font-size:12px;opacity:.7;text-align:center}
-.cmptiles{flex:1;min-width:0;min-height:0;display:grid;gap:4px;grid-auto-rows:minmax(0,1fr)}
-.cmpempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;line-height:1.7;opacity:.75;padding:10px;pointer-events:none}
+.cmpck{position:absolute;left:5px;top:5px;width:20px;height:20px;border-radius:50%;background:var(--acc);color:#fff;font-size:12px;line-height:20px;text-align:center;font-weight:700;display:none;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.cmpth.sel .cmpck{display:block}
+.cmpbd{position:absolute;right:4px;top:3px;font-size:16px;line-height:1;color:#e0245e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 5px #fff}   /* 印と、書き込みのある画像の ✎ */
+.cmpth[data-m="o"] .cmpbd{color:#1a9c4b}.cmpth[data-m="x"] .cmpbd{color:#d33}.cmpth[data-m="s"] .cmpbd{color:#d99a00}.cmpth[data-m="h"] .cmpbd{color:#37c}
+.cmpnm{position:absolute;left:0;right:0;bottom:0;font-size:10px;line-height:1.5;padding:8px 5px 2px;background:linear-gradient(transparent,rgba(0,0,0,.62));color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmpnone{grid-column:1/-1;padding:18px 8px;font-size:13px;opacity:.7;text-align:center}
+/* 見比べ：上の細い行（折り返して、見えなくならない）＋絵 */
+.cmpview{container:cmpv/inline-size}
+.cmpvbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;flex:0 0 auto}
+.cmppager,.cmptools{display:flex;gap:6px;min-width:0}
+.cmpmain[data-empty="1"] .cmpvbar,.cmpmain[data-empty="1"] .cmppinbar{display:none}
+@container cmpv (max-width:620px){.cmppager,.cmptools{flex:1 1 100%}.cmppager .cmpbtn,.cmptools .cmpbtn{flex:1 1 0;padding:0 6px}.cmppager #cmpHide{flex:0 0 auto;padding:0 12px}}
+.cmppinbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:0 0 auto;padding:4px 6px 4px 12px;border-radius:10px;background:color-mix(in srgb,#e0245e 12%,var(--pane));border:1px solid color-mix(in srgb,#e0245e 45%,var(--line));font-size:13px}
+.cmppinbar[hidden]{display:none}
+.cmpstage{flex:1;min-height:0;min-width:0;position:relative;display:flex}
+.cmptiles{flex:1;min-width:0;min-height:0;display:grid;gap:6px;grid-auto-rows:minmax(0,1fr)}
+.cmpempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px;pointer-events:none;overflow:auto}
 .cmpempty[hidden]{display:none}
-.cmpt{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--pane);border:2px solid var(--line);border-radius:8px;overflow:hidden}
+.cmpemptyin{max-width:440px;text-align:center;line-height:1.7;pointer-events:auto}
+.cmpemptyin h3{margin:6px 0 4px;font-size:18px}.cmpemptyin p{margin:0 0 14px;opacity:.8;font-size:14px}
+.cmpemoji{font-size:44px;line-height:1}
+.cmpemptyin ol{text-align:left;margin:16px auto 8px;padding:0 0 0 22px;font-size:13px;opacity:.85;max-width:380px}.cmpemptyin ol li{margin:4px 0}
+.cmpemptyin small{opacity:.65;font-size:12px}
+.cmpt{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--pane);border:2px solid var(--line);border-radius:var(--cr);overflow:hidden;box-shadow:var(--sh)}
 .cmpt.focus{border-color:var(--acc)}
-.cmpt[data-m="o"]{border-color:#1a9c4b}.cmpt[data-m="x"]{border-color:#d33;opacity:.82}.cmpt[data-m="s"]{border-color:#e8a800}.cmpt[data-m="h"]{border-color:#37c}
-.cmpth2{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;padding:2px 4px;font-size:11px;flex:0 0 auto;min-height:26px;cursor:grab;-webkit-user-select:none;user-select:none}
+.cmpt[data-m="o"]{border-color:#1a9c4b}.cmpt[data-m="x"]{border-color:#d33}.cmpt[data-m="s"]{border-color:#d99a00}.cmpt[data-m="h"]{border-color:#37c}
 .cmpt.dragging{opacity:.55}.cmpt.dropt{outline:3px dashed var(--acc);outline-offset:-3px}
+.cmpth2{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:5px 6px;flex:0 0 auto;cursor:grab;-webkit-user-select:none;user-select:none}
+.cmpth2 .mk{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.cmpth2 .mk button{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:15px;line-height:1;cursor:pointer}
+.cmpth2 .mk button.on{color:#fff;border-color:transparent}
+.cmpth2 .mk button[data-m=o].on{background:#1a9c4b}.cmpth2 .mk button[data-m=x].on{background:#d33}.cmpth2 .mk button[data-m=s].on{background:#d99a00}.cmpth2 .mk button[data-m=h].on{background:#37c}
+.cmpt[data-n="1"] .cmpth2{padding:4px;gap:3px}
+.cmpt[data-n="1"] .cmpth2 .mk{gap:3px}
+.cmpt[data-n="1"] .cmpth2 .mk button{min-width:30px;min-height:34px;border-radius:10px;font-size:14px}
+.cmplab{position:absolute;left:6px;top:6px;z-index:2;max-width:calc(100% - 56px);display:flex;align-items:baseline;gap:6px;padding:3px 8px;border-radius:8px;background:rgba(20,24,32,.62);color:#fff;font-size:12px;line-height:1.4;cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none}   /* 名前・大きさ・倍率：絵の左上に半透明で重ねる（つかむと入れ替え） */
+.cmplab .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.cmplab .dm,.cmplab .zp{white-space:nowrap;font-size:11px;opacity:.8}
+.cmpt[data-n="1"] .cmplab .dm{display:none}   /* 狭い枠では、大きさの字を省く（操作のボタンは省かない） */
+.cmpone{position:absolute;right:6px;top:6px;z-index:2;width:38px;height:38px;padding:0;border-radius:50%;border:0;background:rgba(20,24,32,.62);color:#fff;font:inherit;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.cmpone.on{background:var(--acc)}
+.cmpone:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.cmpt[data-n="1"] .cmpone{width:34px;height:34px;font-size:16px}
+/* ペンの操作の列（ペンを入れている間だけ出る。折り返して、隠れない） */
+.cmppenbar{display:flex;flex-direction:column;gap:6px;flex:0 0 auto;padding:6px 8px;border-radius:10px;background:color-mix(in srgb,var(--acc) 9%,var(--pane));border:1px solid color-mix(in srgb,var(--acc) 35%,var(--line))}
+.cmppenbar[hidden]{display:none}
+.cmpmain[data-empty="1"] .cmppenbar{display:none}
+.cmprow1{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 8px}
+.cmprow2{display:flex;flex-wrap:wrap;gap:6px}
+.cmprow2 .cmpbtn{flex:1 1 auto;white-space:normal;line-height:1.2;padding:4px 6px}
+.cmppenbar .cmpseg button{min-height:36px;padding:0 9px}
+.cmpcols{display:flex;gap:6px}
+.cmpcol{width:32px;height:32px;padding:0;border-radius:50%;border:2px solid var(--line);background:var(--c);cursor:pointer;box-shadow:inset 0 0 0 2px var(--pane);-webkit-tap-highlight-color:transparent}
+.cmpcol[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--pane),0 0 0 2px var(--acc)}
+.cmpcol:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.cmpview.pen .cmpcv{cursor:crosshair}.cmpview.eras .cmpcv{cursor:cell}
 .cmpdvs{position:absolute;inset:0;pointer-events:none;z-index:3}
 .cmpdv{position:absolute;pointer-events:auto;touch-action:none}
-.cmpdv[data-kind=v]{width:18px;margin-left:-9px;cursor:col-resize;z-index:2}.cmpdv[data-kind=h]{height:18px;margin-top:-9px;cursor:row-resize}
-.cmpdv::after{content:"";position:absolute;background:transparent;border-radius:3px}
-.cmpdv[data-kind=v]::after{left:7px;right:7px;top:0;bottom:0}.cmpdv[data-kind=h]::after{top:7px;bottom:7px;left:0;right:0}
+.cmpdv[data-kind=v]{width:22px;margin-left:-11px;cursor:col-resize;z-index:2}.cmpdv[data-kind=h]{height:22px;margin-top:-11px;cursor:row-resize}
+.cmpdv::after{content:"";position:absolute;background:transparent;border-radius:3px;transition:background .12s}
+.cmpdv[data-kind=v]::after{left:9px;right:9px;top:0;bottom:0}.cmpdv[data-kind=h]::after{top:9px;bottom:9px;left:0;right:0}
 .cmpdv:hover::after,.cmpdv.drag::after{background:var(--acc)}
-.cmpt[data-n="1"] .cmpth2 .dm,.cmpt[data-n="1"] .cmpth2 .zp{display:none}   /* 狭い枠では、大きさ・倍率の字を省き、印のボタンを優先 */
-.cmpth2 .nm{flex:1 1 70px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cmpth2 .dm,.cmpth2 .zp{opacity:.7;white-space:nowrap}
-.cmpth2 .mk{display:flex;gap:2px}.cmpth2 .mk button{padding:0 6px;min-height:22px;min-width:26px;font-size:13px;line-height:1}.cmpth2 .mk button.on{background:var(--acc);color:#fff}
 .cmpcv{position:relative;flex:1;min-height:0;background:repeating-conic-gradient(#8883 0 25%,transparent 0 50%) 0 0/14px 14px;cursor:grab}
 .cmpcv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.cmpst{margin:0;flex:0 0 auto}
-@media (pointer:coarse){.cmpbar button,.cmpbar select{min-height:38px}.cmpth2 .mk button{min-height:32px;min-width:34px}.cmpsplit{flex-basis:16px}.cmppill{width:64px;height:30px}.cmpdv[data-kind=v]{width:26px;margin-left:-13px}.cmpdv[data-kind=h]{height:26px;margin-top:-13px}.cmpdv[data-kind=v]::after{left:11px;right:11px}.cmpdv[data-kind=h]::after{top:11px;bottom:11px}}
+/* その他のメニュー：狭い画面では下から出るシート、広い画面では右上の小さな窓 */
+.cmpbk{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.35)}
+.cmpbk[hidden],.cmpmenu[hidden],.cmptoast[hidden]{display:none}
+.cmpmenu{position:absolute;z-index:21;right:0;top:52px;width:min(400px,100%);max-height:calc(100% - 60px);overflow:auto;overscroll-behavior:contain;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:var(--cr);box-shadow:0 8px 32px rgba(0,0,0,.28);padding:6px 14px 14px}
+.cmpmh{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--pane);padding:8px 0;z-index:1}
+.cmpmenu section{padding:6px 0 8px;border-top:1px solid var(--line)}
+.cmpmenu h4{margin:6px 0 6px;font-size:12px;letter-spacing:.04em;opacity:.65;font-weight:600}
+.cmpbtn.row{display:flex;width:100%;justify-content:flex-start;min-height:46px;margin:0 0 6px;font-size:14px;white-space:normal;text-align:left}
+.cmpbtn.row.danger{color:#d33;border-color:color-mix(in srgb,#d33 40%,var(--line))}
+.cmprowl{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;min-height:44px;font-size:14px}
+.cmprowl input[type=range]{flex:1 1 140px;min-width:120px;height:32px}
+.cmpseg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cmpseg button{min-height:40px;padding:0 12px;border:0;border-right:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.cmpseg button:last-child{border-right:0}
+.cmpseg button[aria-pressed=true]{background:var(--acc);color:#fff}
+.cmphelp{border-top:1px solid var(--line);padding-top:8px;font-size:13px}.cmphelp summary{cursor:pointer;min-height:36px;display:flex;align-items:center;font-weight:600}
+.cmphelp ul{margin:4px 0 0;padding-left:20px;line-height:1.7;opacity:.9}
+.cmptoast{position:absolute;z-index:30;left:50%;bottom:14px;transform:translateX(-50%);max-width:calc(100% - 20px);display:flex;align-items:center;gap:12px;padding:9px 12px 9px 16px;border-radius:12px;background:rgba(28,32,40,.94);color:#fff;font-size:13px;line-height:1.5;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+@media (max-width:720px){
+  .cmpbk{background:rgba(0,0,0,.45)}
+  .cmpmenu{left:0;right:0;top:auto;bottom:0;width:auto;max-height:82%;border-radius:18px 18px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .cmptoast{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+}
+@media (pointer:coarse){.cmpbtn.sm{min-height:40px}.cmpchip{min-height:36px}.cmpth2 .mk button{min-width:38px;min-height:38px}.cmpt[data-n="1"] .cmpth2 .mk button{min-width:30px;min-height:34px}.cmpsplit{flex-basis:30px}.cmppill{width:48px;height:26px}.cmpmain[data-dock=left] .cmppill,.cmpmain[data-dock=right] .cmppill{width:26px;height:48px}.cmpdv[data-kind=v]{width:28px;margin-left:-14px}.cmpdv[data-kind=h]{height:28px;margin-top:-14px}.cmpdv[data-kind=v]::after{left:12px;right:12px}.cmpdv[data-kind=h]::after{top:12px;bottom:12px}.cmpbtn.cmpdesk{display:none}}
 

@@ -40,10 +40,20 @@ function insSlots(kind){
   });
   return out;
 }
-function treeDrag(r){let t=null,on=false,sy=0,ins=null,cur=null;
+function treeDrag(r){let t=null,on=false,sy=0,ins=null,cur=null,lastE=null,raf=0,edgeAt=0;
   const isL=r.dataset.k==='l';
   const lineOff=()=>{if(ins){ins.remove();ins=null}cur=null};
-  const go=()=>{on=true;r.classList.add('drag')};
+  const go=()=>{on=true;r.classList.add('drag');if(!raf)raf=requestAnimationFrame(auto)};
+  /* 長い一覧：ドラッグ中に、窓の上下の端（32px以内）に0.35秒とどまると、自動でスクロールする（台帳Z-113）。端に近いほど速い。
+     すぐには動かさない＝端ぎわのすき間（いちばん奥など）へ、ふつうに運んで離す操作を、じゃましないため */
+  const auto=()=>{raf=0;if(!on)return;
+    if(lastE){const pr=lyPop.getBoundingClientRect(),y=lastE.clientY,z=32;let d=0;
+      if(y<pr.top+z)d=-Math.ceil((pr.top+z-y)/3);else if(y>pr.bottom-z)d=Math.ceil((y-(pr.bottom-z))/3);
+      if(d&&lastE.clientX>=pr.left&&lastE.clientX<=pr.right){
+        const now=performance.now();if(!edgeAt)edgeAt=now;
+        if(now-edgeAt>=350){const b=lyPop.scrollTop;lyPop.scrollTop+=Math.max(-20,Math.min(20,d));if(lyPop.scrollTop!==b)aim(lastE)}}
+      else edgeAt=0}
+    raf=requestAnimationFrame(auto)};
   const noop=c=>{if(isL){const n=LAYERS.length,p=n-1-(+r.dataset.i);return c.s===p||c.s===p+1}
     const a=byId(+r.dataset.id),y=LAYERS[c.i];if(!a||!y)return true;const ai=AC.filter(x=>layOf(x)===y).reverse().indexOf(a);return ai>=0&&(c.k===ai||c.k===ai+1)};
   const aim=e=>{  /* 指のyに一番近いすき間を選び、点線を出す */
@@ -58,9 +68,9 @@ function treeDrag(r){let t=null,on=false,sy=0,ins=null,cur=null;
   r.addEventListener('pointermove',e=>{
     if(!on){if(e.pointerType==='mouse'&&e.buttons&&Math.abs(e.clientY-sy)>5){go();try{r.setPointerCapture(e.pointerId)}catch(_){}}else if(t&&Math.abs(e.clientY-sy)>8){clearTimeout(t);t=null}
       if(!on)return}
-    aim(e);e.preventDefault()});
+    lastE=e;aim(e);e.preventDefault()});
   r.addEventListener('touchmove',e=>{if(on)e.preventDefault()},{passive:false});
-  const fin=ok=>{clearTimeout(t);t=null;if(!on)return;on=false;r.classList.remove('drag');
+  const fin=ok=>{clearTimeout(t);t=null;cancelAnimationFrame(raf);raf=0;lastE=null;edgeAt=0;if(!on)return;on=false;r.classList.remove('drag');
     const c=ok?cur:null;lineOff();if(!c)return;
     if(isL)moveLayAt(+r.dataset.i,c.s);
     else{const a=byId(+r.dataset.id);if(a)moveObjAt(a,LAYERS[c.i],c.k)}};

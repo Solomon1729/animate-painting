@@ -64,7 +64,7 @@
 | `src/js/2468-view-grid.js` | **ビューワーの見た目：キャンバスの外の色・ピクセルの格子・ピクセルまでの拡大**（台帳Z-237・Z-238）：`vwSplit`（画面に出す時だけ塗り分け。書き出し・録画・GIF・統合は従来どおり）・`vwCell`（キャンバス1pxの画面での大きさ）・`zMax`（拡大の上限）・`vwGrid`（格子）・`vwSharp`（`img()`が補間を切る条件）・設定`VW`（`100-background-and-export.js`。localStorage `am_view`）。👁メニューの「ピクセル・背景」。検査＝`tools/check_pixel_view.py`。 |
 | `src/js/2470-video.js` | **動画タブ**（台帳Z-44・Z-250。2026-11-04）：動画をビューワーの背景の上・絵の下に出し、時間（開始〜終了・なめらかな端）と場所（動画の枠に対する四角）を決めて、そこだけに色シート（合成モード）・色の調整（明るさ・コントラスト・彩度・色相）・歪み（波・水面・膨らみ・渦）をかける。`VD`（状態）・`vdDraw`（`drawBG`の最後から）・`vdApply`・`vdWarp`／`vdRemap`（歪みはCPU）・`vdOutline`（`paintFrame`の格子の次）・`vdExport`（実時間の録画＋音声）。タブ`data-t="vd"`・ツールボックスの📹。検査＝`tools/check_video.js`。 |
 | `src/js/2471-winx.js` | **窓の縁伸縮・移動**（台帳Z-255）：`WINX`（縁・角のカーソル＝`data-wz`、ドラッグ移動、◢、位置と大きさの保存）。`#tbx`・詳細の`#tp`・`#man`・レイヤー一覧の`#lypop`を登録。`paneGrab`＝窓の中の上下の高さをつかんで変える持ち手（ビジュアルプログラミングで使用。台帳Z-262） |
-| `src/js/2472-compare.js` | **コンソール3＝画像の見比べ**（台帳Z-256）：約100枚の読み込み・サムネ・複数選択・並べて拡大（共通の拡大位置）・印・CSV。一覧の置き場所（上下左右・⠿のドラッグ）と広さ、絵の境目の伸縮、見出しのつかみで入れ替え（台帳Z-263）。`CONSOLE.reg({id:'cmp'})` |
+| `src/js/2472-compare.js` | **コンソール3＝画像の見比べ**（台帳Z-256・Z-263・Z-265〜270）：約100枚の読み込み・サムネ（1枚の大きさは`cellUi`で計算＝格子の潰れ防止）・複数選択（マウスはなぞる／スマホは長押ししてすべらせる）・並べて拡大（共通の拡大位置）・印（○✕★？）と絞り込みチップ・CSV・**ペンの書き込み**（`CM.ink`＝画像の画素の位置で保存、`localStorage am_cmp_ink`、PNG書き出し）・一覧を空にする／はずす＋元に戻す（`CM.trash`）。スマホ優先の画面（折り返して隠さない・下から出るメニュー）。一覧の置き場所（上下左右・⠿のドラッグ）と広さ、絵の境目の伸縮、名前のつかみで入れ替え。`CONSOLE.reg({id:'cmp'})`、`CONSOLE.onEsc`（Escでメニューだけ閉じる） |
 | `src/js/247-freebook.js` | **自由帳**（台帳Z-221。起動状態を決めるので**manifestの最後**）：`startMode`（`?start=sample`／端末の設定`am_start`／既定は自由帳）・`startFree`・`startSample`・`toObject`（描いた絵をオブジェクトにする。既存の`makeClip`・`clipToObj`）・入口カード`#startcard`。 |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 

@@ -42,4 +42,4 @@ const CONSOLE={labs:[],cur:null,was:null,els:{},
   }
 };
 $('csx').onclick=()=>CONSOLE.close();
-addEventListener('keydown',e=>{if(e.key==='Escape'&&CONSOLE.isOpen()&&!modeIsOpen()){CONSOLE.close();e.stopImmediatePropagation();e.preventDefault()}},true);
+addEventListener('keydown',e=>{if(e.key==='Escape'&&CONSOLE.isOpen()&&!modeIsOpen()){if(CONSOLE.onEsc&&CONSOLE.onEsc()){e.stopImmediatePropagation();e.preventDefault();return}CONSOLE.close();e.stopImmediatePropagation();e.preventDefault()}},true);   /* onEsc＝コンソールの中の開いている窓（メニューなど）を先に閉じる。閉じたらtrue */
