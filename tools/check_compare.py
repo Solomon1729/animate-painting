@@ -1,6 +1,6 @@
 """コンソール3（画像の見比べ）の検査（台帳Z-251）: python3 tools/check_compare.py <HTMLの絶対パス>
 画像を読み込む（複数・重複は飛ばす）・サムネイルができる・マウスでなぞって選べる／Shiftで範囲・選ぶと大きく並ぶ（枚数に合わせた並び）・ホイールで拡大・同期（全部の絵が一緒に動く）・
-等倍（100%）・印（O/X/S/H・同じ印をもう一度で外す）・サムネイルの印・絞り込み・次の組（N/P）・1枚だけ大きく（F）・同じ場所の目印（Shift+押す）・CSV保存・印が読み直しで戻る・
+等倍（100%）・絵の欄には絵と枠線だけ（名前・倍率・印・ボタンを重ねない＝2026-11-08ユーザーの強い指示）・上は薄い1行＋畳める面（操作▾）・印（O/X/S/H・同じ印をもう一度で外す）・サムネイルの印・絞り込み・次の組（N/P）・1枚だけ大きく（F）・同じ場所の目印（Shift+押す）・CSV保存・印が読み直しで戻る・
 本体の作品（AC・Undo）に触れない・エラーなし。起動は ?ui=win&start=sample。ヘッドレスのみ・実機（指）未確認。全項目OKが正常。"""
 import sys, os, tempfile, struct, zlib, json
 from playwright.sync_api import sync_playwright
@@ -10,6 +10,16 @@ def chk(name, cond, info=''):
     global ok, ng
     if cond: ok += 1; print('OK  ', name, info)
     else: ng += 1; print('NG  ', name, info)
+def shut(pg_):   # 畳める面が開いていれば、Escで閉じる
+    if not pg_.evaluate("()=>document.getElementById('cmpPanel').hidden"): pg_.keyboard.press('Escape'); pg_.wait_for_timeout(80)
+def P(pg_, sel, tap=False):   # 畳める面の中のボタンを押す（閉じていれば「操作▾」で開く）。押したあと、面が自動で閉じるのを待つ
+    if pg_.evaluate("()=>document.getElementById('cmpPanel').hidden"): (pg_.tap if tap else pg_.click)('#cmpTog'); pg_.wait_for_timeout(120)
+    (pg_.tap if tap else pg_.click)(sel); pg_.wait_for_timeout(80)
+OVL = """()=>{const st=document.getElementById('cmpStage'),r=st.getBoundingClientRect(),bad=[];
+  for(let i=0;i<5;i++)for(let j=0;j<5;j++){
+    const x=r.left+4+(r.width-8)*i/4,y=r.top+4+(r.height-8)*j/4,e=document.elementFromPoint(x,y);
+    if(e&&!st.contains(e))bad.push((e.id||e.className||e.tagName)+'@'+Math.round(x)+','+Math.round(y))}
+  return bad.slice(0,8)}"""
 def png(path, w, h, base):
     rows = []
     for y in range(h):
@@ -63,7 +73,7 @@ with sync_playwright() as pw:
     # 3枚を選ぶ（同じ大きさの0〜2）
     for i in range(3): pg.locator('.cmpth').nth(i).click()
     pg.wait_for_timeout(500)
-    zp = lambda: pg.evaluate("()=>[...document.querySelectorAll('.cmpt .zp')].map(e=>e.textContent)")
+    zp = lambda: pg.evaluate("()=>[...document.querySelectorAll('.cmpt')].map(e=>e.dataset.z)")
     z0 = zp()
     t0 = pg.locator('.cmpcv').nth(0).bounding_box()
     pg.mouse.move(t0['x'] + t0['width'] / 2, t0['y'] + t0['height'] / 2)
@@ -80,7 +90,7 @@ with sync_playwright() as pw:
     chk('Spaceで等倍（元の絵の1画素＝画面の1画素＝100%）', all(abs(num(s) - 100) < 3 for s in zp()), zp())
     pg.keyboard.press('Space'); pg.wait_for_timeout(250)
     chk('もう一度Spaceで全体に戻る（等倍ではなくなる）', all(abs(num(s) - 100) > 3 for s in zp()) or True, zp())
-    pg.click('#cmpFit'); pg.wait_for_timeout(200)
+    P(pg, '#cmpFit'); pg.wait_for_timeout(200)
     # 同期オフ
     pg.keyboard.press('l'); pg.wait_for_timeout(100)
     chk('Lで同期が切れる（ボタンの表示）', pg.evaluate("()=>!$('cmpSync').classList.contains('on')"))
@@ -88,15 +98,19 @@ with sync_playwright() as pw:
     for _ in range(4): pg.mouse.wheel(0, -240); pg.wait_for_timeout(30)
     pg.wait_for_timeout(200); z2 = zp()
     chk('同期オフ：触った絵だけ拡大される', num(z2[0]) > num(z2[1]) * 2, z2)
-    pg.keyboard.press('l'); pg.click('#cmpFit'); pg.wait_for_timeout(150)
+    pg.keyboard.press('l'); P(pg, '#cmpFit'); pg.wait_for_timeout(150)
     # 印
     t1 = pg.locator('.cmpt').nth(1).bounding_box()
     pg.mouse.move(t1['x'] + t1['width'] / 2, t1['y'] + t1['height'] / 2); pg.keyboard.press('o'); pg.wait_for_timeout(150)
     chk('Oで、見ている絵に○がつく（絵の枠・一覧の印）', pg.evaluate("()=>document.querySelectorAll('.cmpt')[1].dataset.m")=='o' and pg.evaluate("()=>document.querySelector('.cmpth.sel:nth-child(2)')?.dataset.m")=='o', pg.evaluate("()=>[...document.querySelectorAll('.cmpth')].slice(0,3).map(e=>e.dataset.m)"))
     pg.keyboard.press('o'); pg.wait_for_timeout(100)
     chk('同じ印をもう一度で外れる', pg.evaluate("()=>document.querySelectorAll('.cmpt')[1].dataset.m")=='')
-    pg.click('.cmpt:nth-child(1) .mk button[data-m="x"]'); pg.wait_for_timeout(150)
-    chk('ボタンでも印をつけられる（✕）', pg.evaluate("()=>document.querySelectorAll('.cmpt')[0].dataset.m")=='x')
+    t0b = pg.locator('.cmpt').nth(0).bounding_box(); pg.mouse.click(t0b['x'] + t0b['width'] / 2, t0b['y'] + t0b['height'] / 2); pg.wait_for_timeout(100)   # 見ている絵（青い枠）にする
+    P(pg, '#cmpMk button[data-m="x"]'); pg.wait_for_timeout(150)
+    chk('畳める面の「いま見ている絵」のボタンでも印をつけられる（✕）', pg.evaluate("()=>document.querySelectorAll('.cmpt')[0].dataset.m")=='x')
+    chk('印のボタンは、続けて押せるよう、面は開いたまま', pg.evaluate("()=>!document.getElementById('cmpPanel').hidden"))
+    chk('見ている絵の印が、上の1行の名前の前にも出る（✕）', '✕' in pg.inner_text('#cmpInfo .nm'), pg.inner_text('#cmpInfo .nm'))
+    shut(pg)
     pg.mouse.move(t1['x'] + t1['width'] / 2, t1['y'] + t1['height'] / 2); pg.keyboard.press('s'); pg.wait_for_timeout(100)
     sv = pg.evaluate("()=>JSON.parse(localStorage.getItem('am_cmp')).marks")
     chk('印が端末に覚えられる', sorted(sv.values()) == ['s', 'x'], sv)
@@ -124,11 +138,11 @@ with sync_playwright() as pw:
     pg.keyboard.press('f'); pg.wait_for_timeout(300)
     chk('もう一度Fで並びへ戻る', pg.locator('.cmpt').count() == 3)
     # 目印（Shift+押す）
-    pg.click('#cmpFit'); tb = pg.locator('.cmpcv').nth(0).bounding_box()
+    P(pg, '#cmpFit'); tb = pg.locator('.cmpcv').nth(0).bounding_box()
     pg.keyboard.down('Shift'); pg.mouse.click(tb['x'] + tb['width'] * .5, tb['y'] + tb['height'] * .5); pg.keyboard.up('Shift'); pg.wait_for_timeout(200)
     chk('Shift＋押すで、同じ場所の目印が置かれる（📍1）', '📍1' in pg.inner_text('#cmpPins'), pg.inner_text('#cmpPins'))
     # CSV
-    pg.click('#cmpMore'); pg.wait_for_timeout(150)
+    P(pg, '#cmpMore'); pg.wait_for_timeout(150)
     with pg.expect_download() as dl: pg.click('#cmpCsv')
     path = dl.value.path(); txt = open(path, encoding='utf-8-sig').read()
     chk('CSVに名前・印・幅・高さが入る', txt.count('\n') >= 24 and '★ベスト' in txt and '✕不採用' in txt and '300' in txt, txt[:120].replace('\r\n', '|'))
@@ -154,7 +168,7 @@ with sync_playwright() as pw:
     w3 = pg.locator('#cmpSide').bounding_box()['width']
     chk('矢印キー（←）で、一覧が狭まる', w3 < w2 - 15, (w2, w3))
     # 置き場所：⠿をつかんで縁へ
-    pg.click('#cmpClr'); pg.wait_for_timeout(100)
+    P(pg, '#cmpClr'); pg.wait_for_timeout(100)
     for i in range(4): pg.evaluate("(i)=>document.querySelectorAll('.cmpth')[i].click()", i)
     pg.wait_for_timeout(500)
     def pill_to(fx, fy):
@@ -186,7 +200,7 @@ with sync_playwright() as pw:
     chk('左の縁へ動かすと、一覧が左に戻る', dock() == 'left' and bx('#cmpSide')['x'] < bx('#cmpView')['x'], dock())
     # 絵の境目・入れ替え
     pg.set_input_files('#cmpFile', files); pg.wait_for_timeout(1500)
-    if pg.locator('#cmpClr').is_enabled(): pg.click('#cmpClr')
+    if pg.locator('#cmpClr').is_enabled(): P(pg, '#cmpClr')
     pg.wait_for_timeout(100)
     for i in range(4): pg.evaluate("(i)=>document.querySelectorAll('.cmpth')[i].click()", i)
     pg.wait_for_timeout(600)
@@ -207,68 +221,81 @@ with sync_playwright() as pw:
     h2 = bx('.cmpt >> nth=0')['height']; hb2 = bx('.cmpt >> nth=2')['height']
     chk('境目をダブルクリックすると、均等に戻る', abs(h2 - hb2) < 4, (round(h2), round(hb2)))
     ids0 = pg.evaluate("()=>[...document.querySelectorAll('.cmpt')].map(e=>+e.dataset.id)")
-    hd = bx('.cmpt >> nth=0 >> .cmplab'); tg = bx('.cmpt >> nth=3')
-    pg.mouse.move(hd['x'] + 20, hd['y'] + hd['height'] / 2); pg.mouse.down(); pg.mouse.move(tg['x'] + tg['width'] / 2, tg['y'] + tg['height'] / 2, steps=8)
-    hl = pg.evaluate("()=>!!document.querySelector('.cmpt.dropt')")
-    pg.mouse.up(); pg.wait_for_timeout(300)
+    t0b = bx('.cmpt >> nth=0'); pg.mouse.click(t0b['x'] + t0b['width'] / 2, t0b['y'] + t0b['height'] / 2); pg.wait_for_timeout(100)   # 見ている絵＝1番目
+    P(pg, '#cmpMR'); pg.wait_for_timeout(300)
     ids1 = pg.evaluate("()=>[...document.querySelectorAll('.cmpt')].map(e=>+e.dataset.id)")
-    chk('絵の上の名前の所をつかんで、ほかの絵の上で離すと、位置が入れ替わる（移す先に枠が出る）', hl and ids1[0] == ids0[3] and ids1[3] == ids0[0] and ids1[1] == ids0[1], (hl, ids0, ids1))
-    pg.click('.cmpt >> nth=0 >> .mk button[data-m=o]'); pg.wait_for_timeout(150)
+    chk('「いま見ている絵」の ▶ で、見ている絵が1つ後ろの絵と入れ替わる', ids1[0] == ids0[1] and ids1[1] == ids0[0] and ids1[2:] == ids0[2:], (ids0, ids1))
+    chk('入れ替えても、面は開いたまま（続けて押せる）', pg.evaluate("()=>!document.getElementById('cmpPanel').hidden"))
+    pg.click('#cmpML'); pg.wait_for_timeout(300)
     ids2 = pg.evaluate("()=>[...document.querySelectorAll('.cmpt')].map(e=>+e.dataset.id)")
-    chk('ヘッダーの印のボタンは、押しても並びが変わらない', ids2 == ids1, ids2)
-    pg.click('.cmpt >> nth=0 >> .mk button[data-m=o]'); pg.wait_for_timeout(100)
+    chk('◀ で、元の位置へ戻る', ids2 == ids0, ids2)
+    chk('1番目の絵では、◀ が押せない（端）', pg.evaluate("()=>document.getElementById('cmpML').disabled===true"))
+    pg.click('#cmpFR'); pg.wait_for_timeout(150)
+    chk('「いま見ている絵」の › で、見ている絵が次の絵に移る（青い枠）', pg.evaluate("()=>document.querySelectorAll('.cmpt')[1].classList.contains('focus')&&!document.querySelectorAll('.cmpt')[0].classList.contains('focus')"))
+    shut(pg)
+    chk('絵の欄には、絵と枠線だけがある（名前・倍率・印・ボタンが絵の上に無い）', pg.evaluate("()=>[...document.querySelectorAll('#cmpStage .cmpt *')].every(e=>e.matches('.cmpcv,canvas'))&&![...document.querySelectorAll('#cmpStage button,#cmpStage .cmplab,#cmpStage .cmpone,#cmpStage .mk')].some(e=>e.offsetParent)"))
+    ov = pg.evaluate(OVL); chk('絵の欄の上に、絵以外の部品が重なっていない（面が閉じている間）', not ov, ov)
+    P(pg, '#cmpTog') if False else None
+    pg.click('.cmpt >> nth=0 >> .cmpcv', position={'x': 30, 'y': 30}); pg.wait_for_timeout(100)
     # ---- ペン（絵の上に軽く書き込む） ----
     tile_px = lambda rgb, i=0: pg.evaluate("([c,i])=>{const cv=document.querySelectorAll('.cmpcv canvas')[i],d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;let n=0;for(let k=0;k<d.length;k+=4)if(Math.abs(d[k]-c[0])<22&&Math.abs(d[k+1]-c[1])<22&&Math.abs(d[k+2]-c[2])<22&&d[k+3]>200)n++;return n}", [rgb, i])
     ink = lambda: pg.evaluate("()=>JSON.parse(localStorage.getItem('am_cmp_ink')||'{\"ink\":{}}').ink")
     nstroke = lambda: sum(len(v) for v in ink().values())
     RED = (224, 36, 94); BLUE = (29, 111, 224)
-    pg.click('#cmpPen'); pg.wait_for_timeout(500)   # ペンの列が出ると、絵の枠の大きさが変わるので、出してから測る
-    zp0 = pg.evaluate("()=>document.querySelector('.cmpt .zp').textContent")
+    st_h0 = bx('#cmpStage')['height']
+    pg.click('#cmpPen'); pg.wait_for_timeout(500)
+    zp0 = pg.evaluate("()=>document.querySelector('.cmpt').dataset.z")
+    chk('ペンを入れても、絵の欄の高さが変わらない（縮まない）', abs(bx('#cmpStage')['height'] - st_h0) < 1, (st_h0, bx('#cmpStage')['height']))
+    ov = pg.evaluate(OVL); chk('ペンを入れても、絵の欄の上に何も重ならない', not ov, ov)
     r0 = tile_px(RED)
-    chk('「✎ ペン」を押すと、ペンの操作の列（色・太さ・消しゴム・戻す）が出る', pg.evaluate("()=>!document.getElementById('cmpPenBar').hidden&&document.getElementById('cmpPen').getAttribute('aria-pressed')==='true'&&document.querySelectorAll('#cmpCols button').length===6"))
+    chk('「✎ ペン」を押すと、ペンの操作（色・太さ・消しゴム・戻す）が、畳める面の中に出る', pg.evaluate("()=>!document.getElementById('cmpPenBar').hidden&&document.getElementById('cmpPen').getAttribute('aria-pressed')==='true'&&document.querySelectorAll('#cmpCols button').length===6&&document.getElementById('cmpPenBar').closest('#cmpPanel')"))
+    chk('ペンを入れると、上の1行に ↩（戻す）が出る', pg.evaluate("()=>!document.getElementById('cmpUndoQ').hidden"))
     tb = bx('.cmpcv >> nth=0'); X0, Y0 = tb['x'] + tb['width'] * .25, tb['y'] + tb['height'] * .35
     pg.mouse.move(X0, Y0); pg.mouse.down(); pg.mouse.move(X0 + tb['width'] * .3, Y0 + 40, steps=8); pg.mouse.move(X0 + tb['width'] * .1, Y0 + 80, steps=6); pg.mouse.up(); pg.wait_for_timeout(700)
     r1 = tile_px(RED)
     chk('ペンで、絵の上に線が書ける（赤い画素が増える）', r1 > r0 + 100, (r0, r1))
-    chk('書いても、絵は動かない（倍率が変わらない）', pg.evaluate("()=>document.querySelector('.cmpt .zp').textContent") == zp0)
+    chk('書いても、絵は動かない（倍率が変わらない）', pg.evaluate("()=>document.querySelector('.cmpt').dataset.z") == zp0)
     chk('書き込みが端末に覚えられる（1本）', nstroke() == 1, ink())
     chk('書き込みのある画像の一覧の絵に、✎が付く', pg.evaluate("()=>document.querySelectorAll('.cmpth[data-ink=\"1\"]').length") == 1)
     chk('状態の行に、書き込みのある枚数が出る', '書き込みあり1枚' in pg.inner_text('#cmpSt'), pg.inner_text('#cmpSt'))
     pg.mouse.move(tb['x'] + tb['width'] * .45, tb['y'] + tb['height'] * .5)
     for _ in range(5): pg.mouse.wheel(0, -240); pg.wait_for_timeout(30)
     pg.wait_for_timeout(300)
-    chk('拡大すると、書き込みも絵といっしょに拡大される（動かずに貼り付いている）', tile_px(RED) != r1 and pg.evaluate("()=>document.querySelector('.cmpt .zp').textContent") != zp0)
-    pg.click('#cmpFit'); pg.wait_for_timeout(250)
+    chk('拡大すると、書き込みも絵といっしょに拡大される（動かずに貼り付いている）', tile_px(RED) != r1 and pg.evaluate("()=>document.querySelector('.cmpt').dataset.z") != zp0)
+    chk('上の1行に、見ている絵の倍率が出る（拡大後）', pg.evaluate("()=>document.querySelector('#cmpInfo .iz').textContent") == pg.evaluate("()=>document.querySelector('.cmpt.focus').dataset.z"), pg.inner_text('#cmpInfo'))
+    P(pg, '#cmpFit'); pg.wait_for_timeout(250)
     chk('全体に戻すと、書き込みも元の位置・大きさに戻る', abs(tile_px(RED) - r1) <= r1 * .05, (tile_px(RED), r1))
-    pg.click('#cmpUndoInk'); pg.wait_for_timeout(600)
-    chk('「戻す」で、書いた線が消える', tile_px(RED) <= r0 + 5 and nstroke() == 0, (tile_px(RED), r0))
+    pg.click('#cmpUndoQ'); pg.wait_for_timeout(600)
+    chk('上の1行の ↩ で、書いた線が消える', tile_px(RED) <= r0 + 5 and nstroke() == 0, (tile_px(RED), r0))
     pg.keyboard.press('Control+z'); pg.wait_for_timeout(200)
-    pg.click('.cmpcol[data-c="#1d6fe0"]'); b0 = tile_px(BLUE)
+    P(pg, '.cmpcol[data-c="#1d6fe0"]'); b0 = tile_px(BLUE)
+    chk('ペンの色を替えると、上のペンのボタンの色の点も替わる', pg.evaluate("()=>getComputedStyle(document.getElementById('cmpPen')).getPropertyValue('--pc').trim()") == '#1d6fe0')
     pg.mouse.move(X0, Y0 + 20); pg.mouse.down(); pg.mouse.move(X0 + 120, Y0 + 20, steps=6); pg.mouse.up(); pg.wait_for_timeout(500)
     chk('色を青にすると、青い線が書ける', tile_px(BLUE) > b0 + 60, (b0, tile_px(BLUE)))
-    pg.click('#cmpPenW button[data-w="9"]'); pg.mouse.move(X0, Y0 + 60); pg.mouse.down(); pg.mouse.move(X0 + 120, Y0 + 60, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
+    P(pg, '#cmpPenW button[data-w="9"]'); pg.mouse.move(X0, Y0 + 60); pg.mouse.down(); pg.mouse.move(X0 + 120, Y0 + 60, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
     nb = tile_px(BLUE)
-    pg.click('#cmpPenW button[data-w="2"]'); pg.mouse.move(X0, Y0 + 100); pg.mouse.down(); pg.mouse.move(X0 + 120, Y0 + 100, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
+    P(pg, '#cmpPenW button[data-w="2"]'); pg.mouse.move(X0, Y0 + 100); pg.mouse.down(); pg.mouse.move(X0 + 120, Y0 + 100, steps=6); pg.mouse.up(); pg.wait_for_timeout(300)
     chk('太さを変えられる（太い線のほうが、画素が多い）', (nb - tile_px(BLUE) + (tile_px(BLUE) - nb)) == 0 and nstroke() >= 0 and True)
-    pg.click('#cmpEras'); pg.mouse.move(X0 + 60, Y0 + 5); pg.mouse.down(); pg.mouse.move(X0 + 60, Y0 + 40, steps=6); pg.mouse.up(); pg.wait_for_timeout(500)
+    P(pg, '#cmpEras'); pg.mouse.move(X0 + 60, Y0 + 5); pg.mouse.down(); pg.mouse.move(X0 + 60, Y0 + 40, steps=6); pg.mouse.up(); pg.wait_for_timeout(500)
     n_after = nstroke()
     chk('消しゴムで、なぞった線だけが消える', n_after == 2, n_after)
     pg.keyboard.press('Control+z'); pg.wait_for_timeout(500)
     chk('Ctrl+Zで、消しゴムで消した線が戻る', nstroke() == 3, nstroke())
-    pg.click('#cmpEras'); pg.wait_for_timeout(100)
-    pg.click('#cmpInkShow'); pg.wait_for_timeout(250)
+    P(pg, '#cmpEras'); pg.wait_for_timeout(100)
+    P(pg, '#cmpInkShow'); pg.wait_for_timeout(250)
     chk('「書き込みを隠す」で、線が見えなくなる（消えてはいない）', tile_px(BLUE) < 30 and nstroke() == 3, tile_px(BLUE))
-    pg.click('#cmpInkShow'); pg.wait_for_timeout(250)
+    P(pg, '#cmpInkShow'); pg.wait_for_timeout(250)
     chk('「書き込みを出す」で、線が戻る', tile_px(BLUE) > 100)
-    pg.click('.cmpt >> nth=0 >> .cmpone'); pg.wait_for_timeout(300)
-    chk('ペンを入れていても、⤢を押すと、書かずに1枚表示になる', pg.locator('.cmpt').count() == 1 and nstroke() == 3, (pg.locator('.cmpt').count(), nstroke()))
-    pg.click('.cmpt >> nth=0 >> .cmpone'); pg.wait_for_timeout(300)
+    P(pg, '#cmpOne'); pg.wait_for_timeout(300)
+    chk('ペンを入れていても、「⤢ 1枚だけ」を押すと、書かずに1枚表示になる', pg.locator('.cmpt').count() == 1 and nstroke() == 3, (pg.locator('.cmpt').count(), nstroke()))
+    P(pg, '#cmpOne'); pg.wait_for_timeout(300)
+    chk('もう一度押すと、並びへ戻る', pg.locator('.cmpt').count() == 4, pg.locator('.cmpt').count())
     with pg.expect_download() as dl2:
-        pg.click('#cmpMore'); pg.click('#cmpInkSave')
+        P(pg, '#cmpMore'); pg.click('#cmpInkSave')
     fn = dl2.value.suggested_filename; dat = open(dl2.value.path(), 'rb').read()
     wpx, hpx = struct.unpack('>II', dat[16:24])
     chk('「書き込みつきの画像を保存」で、元の大きさのPNGが保存される', fn.endswith('_書き込み.png') and dat[:8] == b'\x89PNG\r\n\x1a\n' and (wpx, hpx) in ((300, 200), (200, 300), (600, 400)), (fn, wpx, hpx))
-    pg.wait_for_timeout(400); pg.click('#cmpInkClr'); pg.wait_for_timeout(500)
+    pg.wait_for_timeout(400); P(pg, '#cmpInkClr'); pg.wait_for_timeout(500)
     chk('「書き込みを消す」で、この絵の書き込みが全部消える', nstroke() == 0 and tile_px(BLUE) < 30, nstroke())
     pg.click('#cmpToast button'); pg.wait_for_timeout(500)
     chk('「元に戻す」で、書き込みが戻る', nstroke() == 3, nstroke())
@@ -290,8 +317,8 @@ with sync_playwright() as pw:
     ctx2 = br.new_context(**pw.devices['Pixel 7']); pg2 = ctx2.new_page(); errs2 = []; pg2.on('pageerror', lambda e: errs2.append(str(e)[:200]))
     pg2.goto('file://' + F + '?ui=win&start=sample'); pg2.wait_for_timeout(800); pg2.evaluate("()=>localStorage.removeItem('am_cmp')"); pg2.reload(); pg2.wait_for_timeout(800)
     pg2.evaluate("()=>modeSet('cons3')"); pg2.wait_for_timeout(300)
-    emp = pg2.evaluate("()=>({vbar:getComputedStyle(document.getElementById('cmpVBar')).display,cta:document.getElementById('cmpAdd2').getBoundingClientRect().height})")
-    chk('スマホ：画像が0枚のとき、操作の列は出さず、追加ボタンを大きく出す', emp['vbar'] == 'none' and emp['cta'] >= 44, emp)
+    emp = pg2.evaluate("()=>({vbar:getComputedStyle(document.getElementById('cmpRowView')).display,pen:getComputedStyle(document.getElementById('cmpPen')).display,cta:document.getElementById('cmpAdd2').getBoundingClientRect().height})")
+    chk('スマホ：画像が0枚のとき、操作（▾・ペン）は出さず、追加ボタンを大きく出す', emp['vbar'] == 'none' and emp['pen'] == 'none' and emp['cta'] >= 44, emp)
     pg2.set_input_files('#cmpFile', files); pg2.wait_for_timeout(2500)
     th = pg2.evaluate("()=>[...document.querySelectorAll('.cmpth')].slice(0,8).map(e=>{const r=e.getBoundingClientRect();return[Math.round(r.width),Math.round(r.height)]})")
     chk('スマホ：一覧の画像は、正方形で、十分な大きさ（60px以上）', all(abs(w - h) <= 1 and w >= 60 for w, h in th), th[:3])
@@ -311,29 +338,40 @@ with sync_playwright() as pw:
     p5 = cen(5); tp('touchStart', p5); pg2.wait_for_timeout(60); tp('touchEnd', p5); pg2.wait_for_timeout(300)
     chk('スマホ：短くタップすると、その1枚だけが加わる（4枚になる）', pg2.locator('.cmpth.sel').count() == 4, pg2.locator('.cmpth.sel').count())
     pg2.wait_for_timeout(400)
-    g = pg2.evaluate("()=>{const r=s=>document.querySelector(s).getBoundingClientRect();return {main:r('#cmpMain').height,side:r('#cmpSide').height,view:r('#cmpView').height,stage:r('#cmpStage').height,vbar:r('#cmpVBar').height,dock:document.getElementById('cmpMain').dataset.dock}}")
-    chk('スマホ：見比べの絵の欄が、全体の半分以上', g['stage'] >= g['main'] * .5, g)
+    g = pg2.evaluate("()=>{const r=s=>document.querySelector(s).getBoundingClientRect();return {main:r('#cmpMain').height,side:r('#cmpSide').height,view:r('#cmpView').height,stage:r('#cmpStage').height,bar:r('#cmpBar').height,dock:document.getElementById('cmpMain').dataset.dock}}")
+    chk('スマホ：見比べの絵の欄が、全体の半分以上（上の部品に取られない）', g['stage'] >= g['main'] * .5, g)
+    chk('スマホ：上の列は1行（48px以下）', g['bar'] <= 48, g)
+    ov = pg2.evaluate(OVL); chk('スマホ：絵の欄の上に、絵以外の部品が重なっていない', not ov, ov)
     tb = pg2.evaluate("()=>[...document.querySelectorAll('.cmpcv')].map(e=>{const r=e.getBoundingClientRect();return[Math.round(r.width),Math.round(r.height)]})")
-    chk('スマホ：4枚の絵が、それぞれ幅140px以上・高さ100px以上（⤢で1枚だけ大きくもできる）', len(tb) == 4 and all(w >= 140 and h >= 100 for w, h in tb), tb)
-    def hidden_things(pg_):
-        return pg_.evaluate("""()=>{const W=innerWidth,bad=[];
-          document.querySelectorAll('.cmptop button,.cmpchip,.cmpvbar button,.cmpt .mk button,.cmpone,#cmpSplit,#cmpPill').forEach(b=>{
+    chk('スマホ：4枚の絵が、それぞれ幅140px以上・高さ100px以上（「1枚だけ」で大きくもできる）', len(tb) == 4 and all(w >= 140 and h >= 100 for w, h in tb), tb)
+    def hidden_things(pg_):   # 上の1行のボタンと、開いた面の中のボタンが、全部見えて押せる大きさか
+        return pg_.evaluate("""()=>{const W=innerWidth,bad=[],chk1=sel=>document.querySelectorAll(sel).forEach(b=>{
             const r=b.getBoundingClientRect(),cs=getComputedStyle(b);
-            if(cs.display==='none'||cs.visibility==='hidden'||r.width<20||r.height<20||r.left<-1||r.right>W+1)bad.push((b.id||b.className)+':'+Math.round(r.left)+','+Math.round(r.right)+','+Math.round(r.width)+'x'+Math.round(r.height))});
-          const t=[...document.querySelectorAll('.cmpt')].filter(t=>{const r=t.getBoundingClientRect();return [...t.querySelectorAll('.mk button,.cmpone')].some(b=>{const q=b.getBoundingClientRect();return q.right>r.right+1||q.left<r.left-1})}).length;
-          return {bad,tileOver:t,hscroll:document.documentElement.scrollWidth-innerWidth}}""")
+            if(cs.display==='none'||cs.visibility==='hidden'||!b.offsetParent)return;
+            const mn=b.id==='cmpPill'?20:28;
+            if(r.width<mn||r.height<mn||r.left<-1||r.right>W+1)bad.push((b.id||b.className)+':'+Math.round(r.left)+','+Math.round(r.right)+','+Math.round(r.width)+'x'+Math.round(r.height))});
+          chk1('#cmpBar .cmpbtn,#cmpSplit,#cmpPill');
+          const open=document.getElementById('cmpPanel').hidden;if(open)document.getElementById('cmpTog').click();
+          chk1('#cmpPanel .cmpbtn,#cmpPanel .cmpcol');
+          const pn=document.getElementById('cmpPanel').getBoundingClientRect();
+          const out=pn.left<-1||pn.right>W+1;
+          if(open)document.getElementById('cmpTog').click();
+          return {bad,out,hscroll:document.documentElement.scrollWidth-innerWidth}}""")
     hh = hidden_things(pg2)
-    chk('スマホ：ボタン・印・境目が、全部見えていて、画面からはみ出さない（横スクロールなし）', not hh['bad'] and hh['tileOver'] == 0 and hh['hscroll'] <= 1, hh)
-    chk('スマホ：操作の列（前へ・次へ・連動など）が、2行以内', g['vbar'] <= 100, g['vbar'])
-    one = pg2.evaluate("()=>{const t=document.querySelector('.cmpt');return [...t.querySelectorAll('.mk button,.cmpone')].map(b=>{const r=b.getBoundingClientRect();return Math.round(Math.min(r.width,r.height))})}")
-    chk('スマホ：絵の上の印のボタンは、指で押せる大きさ（30px以上）', all(x >= 30 for x in one), one)
+    chk('スマホ：上の1行と、開いた面の中のボタンが、全部見えていて、画面からはみ出さない（横スクロールなし）', not hh['bad'] and not hh['out'] and hh['hscroll'] <= 1, hh)
+    pn = pg2.evaluate("()=>{document.getElementById('cmpTog').click();const r=document.getElementById('cmpPanel').getBoundingClientRect();const h=r.height;document.getElementById('cmpTog').click();return {h,vh:innerHeight}}")
+    chk('スマホ：開いた面（ペンなし）の高さは、画面の半分以下', pn['h'] <= pn['vh'] * .5, pn)
+    one = pg2.evaluate("()=>{document.getElementById('cmpTog').click();const v=[...document.querySelectorAll('#cmpMk button,#cmpOne,#cmpML,#cmpMR,#cmpFL,#cmpFR')].map(b=>{const r=b.getBoundingClientRect();return Math.round(Math.min(r.width,r.height))});document.getElementById('cmpTog').click();return v}")
+    chk('スマホ：面の中の印・入れ替えのボタンは、指で押せる大きさ（30px以上）', one and all(x >= 30 for x in one), one)
     # 一覧の枠・絵の枠を小さくしても、ボタンは隠れない（折り返す）
     pg2.set_viewport_size({'width': 320, 'height': 640}); pg2.wait_for_timeout(500)
     hh2 = hidden_things(pg2)
-    chk('小さな画面（320px幅）でも、ボタン・印・境目が隠れない', not hh2['bad'] and hh2['tileOver'] == 0 and hh2['hscroll'] <= 1, hh2)
+    chk('小さな画面（320px幅）でも、ボタンが隠れず、面がはみ出さない', not hh2['bad'] and not hh2['out'] and hh2['hscroll'] <= 1, hh2)
+    ov = pg2.evaluate(OVL); chk('小さな画面（320px幅）でも、絵の欄の上に何も重ならない', not ov, ov)
     pg2.set_viewport_size({'width': 412, 'height': 839}); pg2.wait_for_timeout(300)
     # メニュー（その他）が、下から出る
-    pg2.tap('#cmpMore'); pg2.wait_for_timeout(300)
+    P(pg2, '#cmpMore', tap=True); pg2.wait_for_timeout(300)
+    chk('スマホ：「その他」を押すと、操作の面は閉じる（メニューと重ならない）', pg2.evaluate("()=>document.getElementById('cmpPanel').hidden"))
     mb = pg2.evaluate("()=>{const r=document.getElementById('cmpMenu').getBoundingClientRect();return{top:r.top,bottom:r.bottom,w:r.width,h:innerHeight,vw:innerWidth,open:!document.getElementById('cmpMenu').hidden}}")
     chk('スマホ：「その他」を押すと、下から出る窓（幅いっぱい）が開く', mb['open'] and mb['bottom'] >= mb['h'] - 2 and mb['w'] >= mb['vw'] - 2, mb)
     rows = pg2.evaluate("()=>[...document.querySelectorAll('#cmpMenu .cmpbtn.row')].filter(b=>b.offsetParent).map(b=>Math.round(b.getBoundingClientRect().height))")
@@ -343,23 +381,24 @@ with sync_playwright() as pw:
     chk('スマホ：外側を押すと、メニューが閉じる', pg2.evaluate("()=>document.getElementById('cmpMenu').hidden"))
     # ペン（指）：1本の指で書く／2本の指で、書きかけの線は消えて拡大になる
     pg2.tap('#cmpPen'); pg2.wait_for_timeout(500)
+    chk('スマホ：ペンを入れても、絵の欄の高さが変わらず、上の1行も1行のまま', abs(pg2.evaluate("()=>document.getElementById('cmpStage').getBoundingClientRect().height") - g['stage']) < 2 and pg2.evaluate("()=>document.getElementById('cmpBar').getBoundingClientRect().height") <= 48)
     inks = lambda: pg2.evaluate("()=>Object.values(JSON.parse(localStorage.getItem('am_cmp_ink')||'{\"ink\":{}}').ink).reduce((a,v)=>a+v.length,0)")
     tbx = pg2.evaluate("()=>{const r=document.querySelectorAll('.cmpcv')[1].getBoundingClientRect();return[r.x,r.y,r.width,r.height]}")
-    P = lambda fx, fy: (tbx[0] + tbx[2] * fx, tbx[1] + tbx[3] * fy)
+    PT = lambda fx, fy: (tbx[0] + tbx[2] * fx, tbx[1] + tbx[3] * fy)
     def multi(t_, pts): cdp.send('Input.dispatchTouchEvent', {'type': t_, 'touchPoints': [{'x': x, 'y': y, 'id': i} for i, (x, y) in enumerate(pts)]})
-    a0 = P(.2, .5); multi('touchStart', [a0])
-    for k in range(1, 8): multi('touchMove', [P(.2 + .08 * k, .5 + .1 * (k % 2))]); pg2.wait_for_timeout(20)
+    a0 = PT(.2, .5); multi('touchStart', [a0])
+    for k in range(1, 8): multi('touchMove', [PT(.2 + .08 * k, .5 + .1 * (k % 2))]); pg2.wait_for_timeout(20)
     multi('touchEnd', []); pg2.wait_for_timeout(700)
     chk('スマホ：ペンを入れて、1本の指でなぞると、線が書ける', inks() == 1, inks())
     chk('スマホ：書いている間に、一覧の選択は変わらない', pg2.locator('.cmpth.sel').count() == 4)
-    z0 = pg2.evaluate("()=>document.querySelectorAll('.cmpt .zp')[1].textContent")
-    f1 = P(.3, .6); multi('touchStart', [f1])
-    for k in range(1, 4): multi('touchMove', [P(.3 + .02 * k, .6)]); pg2.wait_for_timeout(20)
-    f2 = P(.7, .6); f1b = P(.32, .6)
+    z0 = pg2.evaluate("()=>document.querySelectorAll('.cmpt')[1].dataset.z")
+    f1 = PT(.3, .6); multi('touchStart', [f1])
+    for k in range(1, 4): multi('touchMove', [PT(.3 + .02 * k, .6)]); pg2.wait_for_timeout(20)
+    f2 = PT(.7, .6); f1b = PT(.32, .6)
     multi('touchStart', [f1b, f2])
-    for k in range(1, 7): multi('touchMove', [P(.32 - .02 * k, .6), P(.7 + .03 * k, .6)]); pg2.wait_for_timeout(20)
+    for k in range(1, 7): multi('touchMove', [PT(.32 - .02 * k, .6), PT(.7 + .03 * k, .6)]); pg2.wait_for_timeout(20)
     multi('touchEnd', []); pg2.wait_for_timeout(700)
-    z1 = pg2.evaluate("()=>document.querySelectorAll('.cmpt .zp')[1].textContent")
+    z1 = pg2.evaluate("()=>document.querySelectorAll('.cmpt')[1].dataset.z")
     chk('スマホ：2本の指でつまむと、書きかけの線は残らず、拡大になる', inks() == 1 and z1 != z0, (inks(), z0, z1))
     chk('スマホ：ページエラーなし', not errs2, errs2[:3]); ctx2.close()
     # 読み直しで印が戻る
@@ -369,29 +408,29 @@ with sync_playwright() as pw:
     # ---- 一覧を空にする・元に戻す・メニュー・選択を解除 ----
     n0 = pg.locator('.cmpth').count()
     mk0 = pg.evaluate("()=>JSON.stringify(JSON.parse(localStorage.getItem('am_cmp')).marks)")
-    pg.click('#cmpMore'); pg.wait_for_timeout(200)
+    P(pg, '#cmpMore'); pg.wait_for_timeout(200)
     chk('「その他」を押すと、メニューが開く', pg.evaluate("()=>!document.getElementById('cmpMenu').hidden&&document.getElementById('cmpMore').getAttribute('aria-expanded')==='true'"))
     pg.keyboard.press('Escape'); pg.wait_for_timeout(150)
     chk('Escで、メニューが閉じる（見比べの画面は開いたまま）', pg.evaluate("()=>document.getElementById('cmpMenu').hidden&&CONSOLE.isOpen()"))
     for i in range(2): pg.locator('.cmpth').nth(i).click()
     pg.wait_for_timeout(200)
-    pg.click('#cmpMore'); pg.click('#cmpRmSel'); pg.wait_for_timeout(300)
+    P(pg, '#cmpMore'); pg.click('#cmpRmSel'); pg.wait_for_timeout(300)
     chk('選んだ画像だけを、一覧からはずせる（2枚）', pg.locator('.cmpth').count() == n0 - 2 and pg.locator('.cmpt').count() == 0, pg.locator('.cmpth').count())
     chk('はずしたあと、「元に戻す」が出る', pg.evaluate("()=>!document.getElementById('cmpToast').hidden&&/元に戻す/.test(document.getElementById('cmpToast').textContent)"))
     pg.click('#cmpToast button'); pg.wait_for_timeout(400)
     chk('「元に戻す」で、はずした2枚が一覧に戻る', pg.locator('.cmpth').count() == n0, pg.locator('.cmpth').count())
-    pg.click('#cmpMore'); pg.click('#cmpRmAll'); pg.wait_for_timeout(300)
-    emp = pg.evaluate("()=>({n:document.querySelectorAll('.cmpth').length,empty:!document.getElementById('cmpEmpty').hidden,vbar:getComputedStyle(document.getElementById('cmpVBar')).display,side:getComputedStyle(document.getElementById('cmpSide')).display,tiles:document.querySelectorAll('.cmpt').length})")
-    chk('「一覧を空にする」で、置いた画像が全部なくなり、最初の案内に戻る', emp['n'] == 0 and emp['empty'] and emp['vbar'] == 'none' and emp['side'] == 'none' and emp['tiles'] == 0, emp)
+    P(pg, '#cmpMore'); pg.click('#cmpRmAll'); pg.wait_for_timeout(300)
+    emp = pg.evaluate("()=>({n:document.querySelectorAll('.cmpth').length,empty:!document.getElementById('cmpEmpty').hidden,vbar:getComputedStyle(document.getElementById('cmpRowView')).display,pen:getComputedStyle(document.getElementById('cmpPen')).display,side:getComputedStyle(document.getElementById('cmpSide')).display,tiles:document.querySelectorAll('.cmpt').length})")
+    chk('「一覧を空にする」で、置いた画像が全部なくなり、最初の案内に戻る', emp['n'] == 0 and emp['empty'] and emp['vbar'] == 'none' and emp['pen'] == 'none' and emp['side'] == 'none' and emp['tiles'] == 0, emp)
     chk('空にしても、印（○✕★？）は、端末に残っている', pg.evaluate("()=>JSON.stringify(JSON.parse(localStorage.getItem('am_cmp')).marks)") == mk0)
     pg.click('#cmpToast button'); pg.wait_for_timeout(500)
     back = pg.evaluate("()=>({n:document.querySelectorAll('.cmpth').length,m:[...document.querySelectorAll('.cmpth')].map(e=>e.dataset.m).filter(Boolean).sort().join('')})")
     chk('「元に戻す」で、全部の画像と印が戻る', back['n'] == n0 and back['m'] == 'sx', back)
-    pg.click('#cmpMore'); pg.click('#cmpRmAll'); pg.wait_for_timeout(300)
+    P(pg, '#cmpMore'); pg.click('#cmpRmAll'); pg.wait_for_timeout(300)
     pg.set_input_files('#cmpFile', files[:5]); pg.wait_for_timeout(1200)
     chk('空にしたあとで、別の画像を入れ直せる（5枚）', pg.locator('.cmpth').count() == 5, pg.locator('.cmpth').count())
     for i in range(2): pg.locator('.cmpth').nth(i).click()
-    pg.wait_for_timeout(200); pg.click('#cmpClr'); pg.wait_for_timeout(200)
+    pg.wait_for_timeout(200); P(pg, '#cmpClr'); pg.wait_for_timeout(200)
     chk('「選択を解除」で、選びが全部外れる', pg.locator('.cmpth.sel').count() == 0 and pg.locator('.cmpt').count() == 0)
     # 本体に触れていない
     now = pg.evaluate("()=>({ac:AC.length,us:US.length})")
