@@ -153,7 +153,8 @@ function draw(l,x,y,m,kids){
   ctx.save();sc();l.M=ctx.getTransform();ctx.restore();
   const self=()=>{if(!isVisible(l)||(drawOnly&&!drawOnly.has(l)))return;ctx.save();sc();
     const tcs=l.maskTo?(l.toType==='layer'?AC.filter(x=>x!==l&&x.layerId===l.to):[byId(l.to)]):[],tl=tcs.filter(t=>t&&t.hasMask&&t.M);
-    if(tl.length)maskedImg(l,S,tl);else img(l,S);
+    if(l.liq&&typeof liqDraw==='function')liqDraw(l,S);   /* 液体の絵：水を先に描き、水の出る絵（蛇口など）を上に重ねる（台帳Z-272。2473-liquid.js） */
+    if(!(l.liq&&l.liq.ic===false)){if(tl.length)maskedImg(l,S,tl);else img(l,S)}
     const ov=!drawOnly;   /* 統合の描画では、補助表示（枠・マスクの色・範囲・ピン等）は描かない */
     if(BLK.a===l&&!hk&&!adjHQ)drawBlankHint(l,S);  /* 白紙を足した直後の範囲表示（台帳Z-118） */
     if(ov&&showBounds)drawBounds(l,S);
