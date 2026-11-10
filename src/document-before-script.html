@@ -114,7 +114,7 @@
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
   <div class="row" id="tbxD" hidden><span class="lab" id="tbxDt" style="flex:1">詳細</span><button type="button" id="tbxDx" aria-label="詳細設定を閉じる">✕ 閉じる</button></div>
-  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="vd">動画</button><button data-t="bg">背景・出力</button></div>
+  <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="vd">動画</button><button data-t="lq">液体</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
     <div class="row"><span class="lab">名前</span><input id="nm" type="text" aria-label="名前" style="flex:1;min-width:100px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"></div>
@@ -359,6 +359,32 @@
     </div>
   </div>
 
+  <div class="tab" data-tab="lq">
+    <div class="grp"><div class="gh">💧 液体を足す</div>
+    <div class="row"><button id="lqAddPour" type="button" aria-label="蛇口から水を注ぐ液体の絵を足す">＋蛇口（注ぐ）</button><button id="lqAddDrip" type="button" aria-label="蛇口から水を垂らす液体の絵を足す">＋蛇口（垂らす）</button></div>
+    <div class="row"><button id="lqAddDrop" type="button" aria-label="水滴が落ちる液体の絵を足す">＋水滴</button><button id="lqAddTear" type="button" aria-label="涙が落ちる液体の絵を足す">＋涙</button></div>
+    <div class="note">足した絵は、ほかの絵と同じように動かせます（位置・大きさ・向き・動き・レイヤー・元に戻す・保存）。水は、絵の向きに沿って出ます。水は「床の高さ」まで落ちて、床の上にたまります（写真の床に合わせて、高さと傾きを決めてください。絵や物体にはまだぶつかりません）。</div></div>
+    <div class="grp"><div class="gh" id="lqTitle">選んでいる液体</div>
+    <div class="note" id="lqNone">蛇口・水滴・涙の絵を選ぶと、ここで調整できます。</div>
+    <div id="lqCtl" hidden>
+    <div class="row"><button id="lqOn" type="button" aria-label="水を流す／止める">⏸ 止める</button><button id="lqClr" type="button" aria-label="いま出ている水を消す">水を消す</button></div>
+    <div class="row"><span class="lab" id="lqWl">流れの太さ</span><input id="lqW" type="range" min="1" max="12" step="1" aria-label="流れの太さ、または1回に出す粒の数"><b class="v" id="lqWv"></b></div>
+    <div class="row"><span class="lab">勢い</span><input id="lqV" type="range" min="0" max="1.2" step="0.01" aria-label="水を出す勢い"><b class="v" id="lqVv"></b></div>
+    <div class="row" id="lqGapRow"><span class="lab">間隔</span><input id="lqG" type="range" min="0.3" max="6" step="0.1" aria-label="水のかたまりを出す間隔（秒）"><b class="v" id="lqGv"></b></div>
+    <div class="row"><span class="lab">粘性</span><input id="lqVi" type="range" min="0" max="1" step="0.01" aria-label="粘性（大きいほどねばる）"><b class="v" id="lqViv"></b></div>
+    <div class="row"><span class="lab">粒の大きさ</span><input id="lqSz" type="range" min="0.4" max="2.5" step="0.05" aria-label="粒の大きさ（大きいほど粗く、軽くなる）"><b class="v" id="lqSzv"></b></div>
+    <div class="row"><span class="lab">色</span><input id="lqCol" type="color" aria-label="水の色"></div>
+    <div class="row"><span class="lab">透明度</span><input id="lqTr" type="range" min="0" max="0.97" step="0.01" aria-label="透明度（大きいほど透ける）"><b class="v" id="lqTrv"></b></div>
+    <div class="row"><span class="lab">波紋・つや</span><input id="lqRp" type="range" min="0" max="1" step="0.01" aria-label="水面のゆれの光り方・つやの強さ"><b class="v" id="lqRpv"></b></div>
+    <div class="row"><span class="lab">床の高さ</span><input id="lqFl" type="range" min="0.15" max="1.2" step="0.005" aria-label="水が着く床の高さ（紙の高さに対する位置）"><b class="v" id="lqFlv"></b></div>
+    <div class="row"><span class="lab">床の傾き</span><input id="lqPt" type="range" min="6" max="70" step="1" aria-label="床を見下ろす角度（小さいほど床が横長に寝て見える）"><b class="v" id="lqPtv"></b></div>
+    <div class="row"><span class="lab">たまり方</span><input id="lqPl" type="range" min="0" max="1" step="0.01" aria-label="水たまりの広がりやすさ（大きいほど広く、ゆっくり引く）"><b class="v" id="lqPlv"></b></div>
+    <div class="row"><label class="opt"><input type="checkbox" id="lqTk" aria-label="床にひろがらず、横から見た水そうのように紙の下と左右にためる">横から見た水そうにする（床にひろげない）</label></div>
+    <div class="row"><label class="opt"><input type="checkbox" id="lqIc" aria-label="水の出る絵（蛇口など）を見せる">水の出る絵（蛇口など）を見せる</label></div>
+    <div class="note" id="lqCnt" style="margin:0"></div>
+    </div></div>
+  </div>
+
   <div class="tab" data-tab="vd">
     <div class="grp"><div class="gh">動画を読み込む</div>
     <div class="row"><label class="file">📂 動画を選ぶ<input id="vdFile" type="file" accept="video/*"></label><button id="vdRm" aria-label="読み込んだ動画を外す">外す</button></div>
@@ -465,6 +491,7 @@
     <div class="row"><span class="lab">質感・統合を計算する画素の上限</span><input id="limTex" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="質感・統合を計算する画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 12000000。超えると質感を省きます。0＝制限なし</span></div>
     <div class="row"><span class="lab">動く歪み（ピン）の注意を出す数</span><input id="limPins" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動く歪み（ピン）の注意を出す数（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個。既定 24。超えても足せます（注意だけ）。0＝出さない</span></div>
     <div class="row"><span class="lab">操作の履歴（元に戻す）の上限</span><input id="limUndo" class="num" type="number" min="0" step="16" inputmode="numeric" aria-label="操作の履歴（元に戻す）の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">MB。既定 256。超えると古い履歴から消えます。0＝制限なし</span></div>
+    <div class="row"><span class="lab">液体の粒の数の上限</span><input id="limLiq" class="num" type="number" min="0" step="100" inputmode="numeric" aria-label="液体の粒の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（1つの液体の絵ごと）。既定 1500。超えると古い水から消えます。0＝制限なし</span></div>
     <div class="row"><button id="limReset" type="button">上限の設定を初めの値に戻す</button></div>
     </details>
   </div>

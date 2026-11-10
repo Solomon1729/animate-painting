@@ -17,6 +17,7 @@ const TBX_TOOLS=[
   {id:'add',ico:'＋',lab:'画像',act:'add'},
   {id:'ph',ico:'🌍',lab:'物理',tab:'ph'},
   {id:'vd',ico:'📹',lab:'動画',tab:'vd'},
+  {id:'lq',ico:'💧',lab:'液体',tab:'lq'},
   {id:'adj',ico:'🎨',lab:'色調',full:'色調整',tab:'adj'},
   {id:'pt',ico:'✂️',lab:'切抜',full:'切り抜き',tab:'pt'},
   {id:'clone',ico:'🩹',lab:'修整',tab:'dr',tool:'clone'},
