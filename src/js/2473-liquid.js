@@ -1,4 +1,4 @@
-/* ===== 液体表現（台帳Z-272。2026-11-09。ユーザー依頼「液体表現を実装」）=====
+/* ===== 液体表現（台帳Z-273。2026-11-09。ユーザー依頼「液体表現を実装」）=====
    ねらい：「注ぐ・垂れる」と「水滴・涙」を、本体の絵（オブジェクト）の一種として使えるようにする。
    ・液体は、ふつうのオブジェクトに `l.liq`（設定）を足したもの。蛇口・水滴・涙の絵が水の出る場所で、位置・大きさ・向き・動き・レイヤー・非表示・
      元に戻す・保存・複製は、ほかの絵と同じ道を通る（保存の形を変えていない。`l.liq`は普通のキーで、粒の状態`l._lq`は`_`始まり＝保存しない）。
@@ -41,6 +41,7 @@ function par(q,W,H,ex,ey){
     dk:(q.kind==='burst'||q.kind==='spray')?.2:vis*vis*3,        /* 粘性：速さが減る割合[/秒]（ばらまく粒は、空気中をほぼそのまま飛ぶ） */
     kf:4+30*vis*vis,     /* 床・壁に触れている間の、すべりにくさ[/秒]（水そうの時だけ） */
     coh:q.kind==='pour'?0:(q.kind==='burst'||q.kind==='spray')?0:.065+.02*vis,
+    sr:U*.018,rr:U*.018/sp,lk:clamp(nv(q.lnk,.5),0,1.5),   /* 基準の粒の間隔（大きさ1の時）／粒を細かくした時に、水の量・流れの太さを変えないための倍率／つながり（水が連なって見える度合い） */
     D:1.5*U,zl:.75*U,zb:-.9*U,cx:ex==null?W/2:ex,cy:ey==null?H/2:ey,   /* 奥行き（遠近の消点＝水の出る場所）：目の距離D・こちら側の面zl（ここに着いたら画面に付く）・向こう側の面zb（絵の奥の面）。画面の位置＝中心＋(位置−中心)×D/(D−z) */
     yl:clamp(nv(q.yld,0),0,1),adh:clamp(nv(q.adh,.6),0,6),dry:max(0,nv(q.dry,.3)),sc:clamp(nv(q.sc,0),0,1),fo:clamp(nv(q.foam,.5),0,2)};   /* 付いた膜：止まる強さ・付く量・乾く速さ／にごり（光を散らす）／あわ */   /* 水どうしが寄り合う力（表面張力のかわり。かたまりが飛び散りにくくなる） */
 }
@@ -181,7 +182,7 @@ function emit(S,q,P,sp,dt){
   const ux=sp.dx*ca-sp.dy*sa,uy=sp.dx*sa+sp.dy*ca,dp=clamp(nv(q.dep,0),-90,90)*PI/180,cd=Math.cos(dp),sd=Math.sin(dp);
   const tx=-uy,ty=ux,bx=ux*cd,by=uy*cd,bz=sd,jit=clamp(nv(q.jit,0),0,1);
   if(kd==='pour'){
-    const vm=max(v0,.08*U),T=P.sp*.95/vm,w=max(1,round(nv(q.w,1)));S.acc+=dt;let guard=0;
+    const vm=max(v0,.08*U),T=P.sp*.95/vm,w=max(1,round(nv(q.w,1)*P.rr));   /* 粒を細かくしても、流れの太さ・水の量は同じ（本数が増える） */S.acc+=dt;let guard=0;
     if(S.last.length!==w){S.last=new Array(w).fill(-1)}
     while(S.acc>=T&&guard++<40){S.acc-=T;
       const wob=.2*P.sp*(Math.sin(S.t*7.1)+.6*Math.sin(S.t*13.7+1));   /* 流れのゆらぎ（まっすぐな棒にならないように） */
@@ -191,18 +192,19 @@ function emit(S,q,P,sp,dt){
   }else if(kd==='burst'||kd==='spray'){
     /* ぶつける（一度に、ばらまく）／吹きかける（続けて、ばらまく）：向きを中心に、広がりsprの円すいの中へ。粒ごとに速さ・大きさがちがう */
     const spr=clamp(nv(q.spr,25),0,85)*PI/180;let N=0;
-    if(kd==='burst'){const gap=max(.3,nv(q.gap,2));if(S.gacc<0)S.gacc=max(0,gap-.3);S.gacc+=dt;if(S.gacc<gap)return;S.gacc-=gap;N=clamp(round(nv(q.w,24)),1,200)}
-    else{S.acc+=dt*clamp(nv(q.w,10),1,60)*8;N=min(60,floor(S.acc));S.acc-=N}
+    if(kd==='burst'){const gap=max(.3,nv(q.gap,2));if(S.gacc<0)S.gacc=max(0,gap-.3);S.gacc+=dt;if(S.gacc<gap)return;S.gacc-=gap;N=clamp(round(nv(q.w,24)*P.rr*P.rr),1,400)}
+    else{S.acc+=dt*clamp(nv(q.w,10),1,60)*8*P.rr*P.rr;N=min(160,floor(S.acc));S.acc-=N}
     let e1x=-by,e1y=bx,e1z=0,l=Math.hypot(e1x,e1y);if(l<1e-3){e1x=1;e1y=0;l=1}e1x/=l;e1y/=l;
     const e2x=by*e1z-bz*e1y,e2y=bz*e1x-bx*e1z,e2z=bx*e1y-by*e1x,rb=.7*P.sp*Math.cbrt(N+1);
     for(let k=0;k<N;k++){
       const an=spr*sqrt(rnd(S)),az=6.2832*rnd(S),c1=Math.sin(an)*Math.cos(az),c2=Math.sin(an)*Math.sin(az),c0=Math.cos(an);
       const dx=bx*c0+e1x*c1+e2x*c2,dy=by*c0+e1y*c1+e2y*c2,dz=bz*c0+e1z*c1+e2z*c2,v=v0*(.55+.45*rnd(S));
       const ox=(rnd(S)-.5)*2*rb,oy=(rnd(S)-.5)*2*rb,oz=(rnd(S)-.5)*2*rb;
-      addP(S,sp.x+ox,sp.y+oy,dx*v,dy*v,oz,dz*v,1+jit*(rnd(S)-.5)*1.5)}
+      const u=kd==='spray'?rnd(S)*dt:0;   /* 吹きかけは、同じ瞬間に出た粒が固まらないよう、出た時刻を少しずつずらす */
+      addP(S,sp.x+ox+dx*v*u,sp.y+oy+dy*v*u,dx*v,dy*v,oz+dz*v*u,dz*v,1+jit*(rnd(S)-.5)*1.5)}
   }else{
     const gap=max(.1,nv(q.gap,1));if(S.gacc<0)S.gacc=max(0,gap-.3);S.gacc+=dt;
-    if(S.gacc>=gap){S.gacc-=gap;const N=max(1,round(nv(q.w,1))),cr=.58*P.sp*sqrt(N),c0=.6*cr;
+    if(S.gacc>=gap){S.gacc-=gap;const N=max(1,round(nv(q.w,1)*P.rr*P.rr)),cr=.58*P.sp*sqrt(N),c0=.6*cr;
       for(let k=0;k<N;k++){const r=.58*P.sp*sqrt(k+.2),a=k*2.39996,ox=Math.cos(a)*r,oy=Math.sin(a)*r;
         addP(S,sp.x+bx*c0+tx*ox+bx*oy,sp.y+by*c0+ty*ox+by*oy,bx*v0,by*v0,bz*c0,bz*v0)}}
   }
@@ -225,7 +227,7 @@ function cull(S,P,cap){
 }
 /* 流れのつなぎが長く開きすぎたら切る（水しぶきの先の粒との間を、いつまでも水で結ばない） */
 function relink(S,P){
-  const n=S.n,l2=Math.pow(8*P.sp,2);
+  const n=S.n,l2=Math.pow((6+4*P.lk)*P.sp,2);   /* つながりが大きいほど、遠く離れても水で結ぶ */
   for(let i=0;i<n;i++){const j=S.nx[i];if(j<0)continue;if(j>=n){S.nx[i]=-1;continue}
     const dx=S.x[j]-S.x[i],dy=S.y[j]-S.y[i],dz=S.z[j]-S.z[i];if(dx*dx+dy*dy+dz*dz>l2)S.nx[i]=-1}
 }
@@ -327,7 +329,7 @@ function field(S,P,bx,by,gw,gh,cell,F){
         const d1s=d1*s;if(dd>d1s*d1s){wself=.58;const dl=sqrt(dd),m=Math.ceil(dl/(.55*sp*s));
           for(let t=1;t<m;t++){const u=t/m,sv_=sqrt(sa)*(1-u)+sqrt(sb)*u,s_=s+(ss[j]-s)*u;splat(x[p]+dx*u,y[p]+dy*u,R0*s_*thin(sv_),1,0,0,.58,yfp)}}}}   /* 間に足す影響は、粒が並ぶ間隔（.95sp）との比で弱める＝厚みがそろう */
     let st=1,ux=0,uy=0;
-    if(!linked&&sx2>sv2&&nxl[p]!==-2){const sq=sqrt(sx2);st=1+min(5,(sq-sv)*.02/(RK*sp));ux=vx[p]/sq;uy=vy[p]/sq}
+    if(!linked&&sx2>sv2&&nxl[p]!==-2){const sq=sqrt(sx2);st=1+min(1.2,(sq-sv)*.02/(RK*sp));ux=vx[p]/sq;uy=vy[p]/sq}
     splat(x[p],y[p],R,st,ux,uy,nxl[p]===-2?1.6:wself,yfp);   /* 粒の間が開いて、間を埋めた所は、粒の所だけ濃くならないよう、同じ重さにそろえる */
   }
 }
@@ -335,43 +337,78 @@ function field(S,P,bx,by,gw,gh,cell,F){
    返す関数 lit(nX,nY,nZ,tw,fx,fy,out,oi)：n＝面の向き（X右・Y下・Z奥。目の側が-Z）、tw＝水の厚み[px]、(fx,fy)＝後ろの絵を見る格子の位置（屈折のあと）。
    色をout[oi..oi+2]へ書き、「どれだけ目立つか」（フレネル・光の強さ。0〜1）を返す */
 function mkLit(o,bg,gw,gh){
-  const A=o.A,tint=o.tint,rip=o.rip,Tref=8*o.sp,sig=[0,0,0];
+  const A=o.A,tint=o.tint,rip=o.rip,Tref=6*sqrt(o.sp*(o.sr||o.sp)),sig=[0,0,0];
   for(let c=0;c<3;c++){const te=clamp(1-A*(1-tint[c]/255),.02,1);sig[c]=-Math.log(te)/Tref}
   const nrm=v=>{const l=1/sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);return[v[0]*l,v[1]*l,v[2]*l]};
-  const h1=nrm([-.45,-.65,-.6-1]),h2=nrm([.5,.45,-.7-1]),rimK=.22+.4*rip,sky=o.sky,hor=o.hor,Ls=nrm([-.4,-.6,-.7]),sc=o.sc||0,ks=1.6/o.sp,kk=5*o.sp/(o.cell||1);   /* sc＝にごり（光を散らして、水の色に見える割合）。Ls＝光の来る向き */
-  return function(nX,nY,nZ,tw,fx,fy,out,oi){
+  const h1=nrm([-.6,-.85,-1]),h2=nrm([.7,.55,-1]),rimK=o.rimk!=null?o.rimk:.5+.6*rip,sky=o.sky,hor=o.hor,Ls=nrm([-.4,-.6,-.7]),sc=o.sc||0,ks=1.6/(o.sr||o.sp),kk=6*o.sp/(o.cell||1),ts=sqrt(o.sp*(o.sr||o.sp)),
+    lxy=nrm([Ls[0],Ls[1],0]),dsp=.025+.035*rip;   /* sc＝にごり（光を散らして、水の色に見える割合）。Ls＝光の来る向き。dsp＝色ごとの屈折のずれ（赤・緑・青で、少しずつ違う所を見る） */
+  const bil=(px,py,c)=>{px=px<0?0:px>gw-1?gw-1:px;py=py<0?0:py>gh-1?gh-1:py;const ix=px|0,iy=py|0,ax=px-ix,ay=py-iy,ix1=ix<gw-1?ix+1:ix,iy1=iy<gh-1?iy+1:iy;
+    return bg[(iy*gw+ix)*4+c]*(1-ax)*(1-ay)+bg[(iy*gw+ix1)*4+c]*ax*(1-ay)+bg[(iy1*gw+ix)*4+c]*(1-ax)*ay+bg[(iy1*gw+ix1)*4+c]*ax*ay};
+  /* 色を作る。(fx,fy)＝屈折のあとに後ろの絵を見る位置。(ox,oy)＝屈折の前の位置（渡すと、色ごとにずらして見る） */
+  return function(nX,nY,nZ,tw,fx,fy,out,oi,ox,oy){
     const cs=-nZ,f=1-cs,f2=f*f,F=(.02+.98*f2*f2*f)*(1-.75*sc);
     const up=clamp(2*cs*nY*-1.3+.25,0,1);   /* 反射の向きが上向きなほど空 */
-    fx=fx<0?0:fx>gw-1?gw-1:fx;fy=fy<0?0:fy>gh-1?gh-1:fy;
-    const ix=fx|0,iy=fy|0,ax=fx-ix,ay=fy-iy,ix1=ix<gw-1?ix+1:ix,iy1=iy<gh-1?iy+1:iy;
-    const p00=(iy*gw+ix)*4,p10=(iy*gw+ix1)*4,p01=(iy1*gw+ix)*4,p11=(iy1*gw+ix1)*4,w00=(1-ax)*(1-ay),w10=ax*(1-ay),w01=(1-ax)*ay,w11=ax*ay;
-    let d1=nX*h1[0]+nY*h1[1]+nZ*h1[2];d1=d1>0?d1:0;let d2=d1*d1;d2*=d2;d2*=d2;d2*=d2;   /* (n・h)^16：するどい光 */
-    let e1=nX*h2[0]+nY*h2[1]+nZ*h2[2];e1=e1>0?e1:0;let e2=e1*e1;e2*=e2;e2*=e2;
-    const spec=rip*255*(1.1*d2*d2+.3*e2*e2)*(1-.55*sc),rim=1-rimK*f2*f*(1-.8*sc);
-    let ndl=nX*Ls[0]+nY*Ls[1]+nZ*Ls[2];ndl=ndl>0?ndl:0;const lam=.3+.7*ndl,scw=sc>0?sc*(1-exp(-tw*ks)):0;
-    let ei=Math.round(fx+nX*kk),ej=Math.round(fy+nY*kk);ei=ei<0?0:ei>gw-1?gw-1:ei;ej=ej<0?0:ej>gh-1?gh-1:ej;const pe=(ej*gw+ei)*4;   /* 周りの絵を、水面に写り込ませる（面の向きの先の絵） */
+    const sx=ox==null?0:fx-ox,sy=ox==null?0:fy-oy,bx0=ox==null?fx:ox,by0=ox==null?fy:oy;
+    let d1=nX*h1[0]+nY*h1[1]+nZ*h1[2];d1=d1>0?d1:0;const a2=d1*d1,a4=a2*a2,a8=a4*a4,a32=a8*a8*a8*a8;   /* (n・h)^8 と ^40：ひろい光と、するどい光 */
+    let e1=nX*h2[0]+nY*h2[1]+nZ*h2[2];e1=e1>0?e1:0;const b2=e1*e1,b4=b2*b2,b8=b4*b4,b24=b8*b8*b8;
+    const tkn=.35+.65*(tw/ts>1?1:tw/ts),spec=rip*255*(1.6*a32*a8+.05*a8*a8+.5*b24)*(1-.55*sc)*tkn,rim=1-rimK*Math.pow(f,1.6)*(1-.8*sc);
+    let ndl=nX*Ls[0]+nY*Ls[1]+nZ*Ls[2];ndl=ndl>0?ndl:0;const lam=.62+.5*ndl,scw=sc>0?sc*(1-exp(-tw*ks)):0;
+    /* 水の中を通った光：光の来る側と反対のふち（下・右）に光が集まって明るく、来る側は少し暗い（レンズのような濃淡）。厚みがあるほど強い */
+    const dl=nX*lxy[0]+nY*lxy[1],tk=tw/ts>1?1:tw/ts,foc=(dl<0?Math.pow(-dl,1.5)*tk:0),shd=dl>0?dl*tk:0,gain=(1+.55*foc-.16*shd)*(1-.5*sc);
+    let ei=Math.round(bx0+nX*kk),ej=Math.round(by0+nY*kk);ei=ei<0?0:ei>gw-1?gw-1:ei;ej=ej<0?0:ej>gh-1?gh-1:ej;const pe=(ej*gw+ei)*4;   /* 周りの絵を、水面に写り込ませる（面の向きの先の絵） */
     for(let c=0;c<3;c++){
-      const b=bg[p00+c]*w00+bg[p10+c]*w10+bg[p01+c]*w01+bg[p11+c]*w11,ev=(sky[c]*up+hor[c]*(1-up))*.7+bg[pe+c]*.3;
-      const v=(b*exp(-sig[c]*tw)*(1-scw)+tint[c]*lam*scw)*rim*(1-F)+ev*F+spec;out[oi+c]=v>255?255:v}
-    return min(1,F*3+spec/255*3);
+      const k=1+dsp*(c-1),b=bil(bx0+sx*k,by0+sy*k,c),ev=((sky[c]*up+hor[c]*(1-up))*.62+bg[pe+c]*.38)*(.55+.45*tkn);
+      const v=(b*exp(-sig[c]*tw)*gain*(1-scw)+tint[c]*lam*scw+55*foc*(1-sc))*rim*(1-F)+ev*F+spec;out[oi+c]=v>255?255:v}
+    return min(1,F*3+spec/255*3+foc*.5);
   };
 }
-/* 空中の水の見た目。F＝field、D＝作業用（gw×gh）、bg＝後ろの絵、po＝床の水たまり（RGBA。無ければnull）、out＝結果（RGBA。poの上に空中の水を重ねたもの）、o＝mkLitのo＋{cell,kr} */
+/* 水の中の「うねり」：流れに沿って下へ動く、なめらかな波。水の後ろの絵を、こねたようにゆがめる向き（−1〜1）を返す（X,Y＝紙の座標、t＝秒） */
+const WB=[0,0];
+function wob(X,Y,t){
+  const u=X*.05,v=(Y-t*70)*.055;
+  WB[0]=Math.sin(u*1.7+Math.sin(v*1.3+t*.9)*1.5)+.5*Math.sin(v*2.9-u*1.1+t*1.7);
+  WB[1]=Math.cos(v*1.5+Math.sin(u*1.1-t*.7)*1.4)+.5*Math.cos(u*2.7+v*.9-t*1.3);
+  return WB;
+}
+let WK=null,WK2=null;
+function wbuf(n){if(!WK||WK.length<n){WK=new Float32Array(n);WK2=new Float32Array(n)}}
+/* 箱ぼかし（横→縦。端は端の値を伸ばす）。src・dstは同じでもよい */
+function boxb(src,dst,tmp,gw,gh,r){
+  const iw=1/(2*r+1);
+  for(let y=0;y<gh;y++){const o=y*gw;let s=src[o]*(r+1);for(let k=1;k<=r;k++)s+=src[o+(k<gw?k:gw-1)];
+    for(let x=0;x<gw;x++){tmp[o+x]=s*iw;const a=x+r+1,b=x-r;s+=src[o+(a<gw?a:gw-1)]-src[o+(b>0?b:0)]}}
+  for(let x=0;x<gw;x++){let s=tmp[x]*(r+1);for(let k=1;k<=r;k++)s+=tmp[(k<gh?k:gh-1)*gw+x];
+    for(let y=0;y<gh;y++){dst[y*gw+x]=s*iw;const a=y+r+1,b=y-r;s+=tmp[(a<gh?a:gh-1)*gw+x]-tmp[(b>0?b:0)*gw+x]}}
+}
+/* 空中の水の見た目。F＝field、D＝作業用（gw×gh）、bg＝後ろの絵、po＝床の水たまり（RGBA。無ければnull）、out＝結果（RGBA。poの上に空中の水を重ねたもの）、
+   o＝mkLitのo＋{cell,kr,lk,t,bx,by,sh}。
+   つながり lk：粒のあいだを、ぼかした水の「すそ」でうめて連ねる（粒が離れていても、ひとつながりの水に見える）。厚みも同じ幅でなめらかにする */
 function shadeAir(F,gw,gh,D,bg,po,out,o){
-  const n=gw*gh,cell=o.cell,sp=o.sp,Tmax=4*sp,lit=mkLit(o,bg,gw,gh),kr=o.kr,hk=Tmax*.5/(2*cell),tmp=[0,0,0,0];
-  for(let ps=0;ps<(o.sm|0);ps++){   /* ねばる液体は、表面がなめらか（粒の並びのでこぼこを、ならす） */
-    for(let y=0;y<gh;y++){const r=y*gw;for(let x=0;x<gw;x++)D[r+x]=(F[r+(x>0?x-1:x)]+2*F[r+x]+F[r+(x<gw-1?x+1:x)])*.25}
-    for(let y=0;y<gh;y++){const r=y*gw,ru=(y>0?y-1:y)*gw,rd=(y<gh-1?y+1:y)*gw;for(let x=0;x<gw;x++)F[r+x]=(D[ru+x]+2*D[r+x]+D[rd+x])*.25}}
-  for(let i=0;i<n;i++){const f=(F[i]-TH)/7;D[i]=f<=0?0:f>=1?1:sqrt(f)}   /* 丸いふくらみ：ふちは急に立ち上がり、中ほど厚い（水滴はレンズのように、流れは丸い断面になる） */
+  const n=gw*gh,cell=o.cell,sp=o.sp,sr=o.sr||sp,ts=sqrt(sp*sr),Tmax=4*ts,lit=mkLit(o,bg,gw,gh),kr=o.kr*1.5,hk=Tmax*.5/(2*cell),tmp=[0,0,0,0],lk=o.lk==null?.5:o.lk;
+  wbuf(n);const B=WK,T=WK2,bx=o.bx||0,by=o.by||0,t=o.t||0,wa=.42,shA=o.sh==null?.14+.2*o.A:o.sh;
+  /* すそ：粒の影響をぼかして、もとに足す。輪郭も厚みも、このあとのFから作る */
+  const rb=max(1,round((.45+.75*lk)*sr/cell));boxb(F,B,T,gw,gh,rb);boxb(B,B,T,gw,gh,rb);
+  const kb=.2+.45*lk;for(let i=0;i<n;i++)F[i]+=kb*B[i];
+  /* 厚み：Fをさらにならして、丸いふくらみにする（水滴はレンズのように、流れは丸い断面になる） */
+  boxb(F,D,T,gw,gh,max(1,round((.2+.4*lk)*sr/cell)));
+  for(let i=0;i<n;i++){const f=(D[i]-TH)/7;D[i]=f<=0?0:f>=1?1:sqrt(f)}
+  const so=.55*sr/cell;   /* 影：光と反対（右下）へずらして、絵の面に落とす */
+  const shd=(x,y,oi,pa)=>{const sxi=round(x-so),syi=round(y-so*1.2);if(sxi<0||syi<0||sxi>=gw||syi>=gh)return 0;const v=B[syi*gw+sxi]/3;return v<=.02?0:(v>1?1:v)*shA};
   for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){
     const i=y*gw+x,oi=i*4,fv=F[i];
-    if(fv<TH*.3){if(po){out[oi]=po[oi];out[oi+1]=po[oi+1];out[oi+2]=po[oi+2];out[oi+3]=po[oi+3]}else out[oi+3]=0;continue}
-    const fl=F[y*gw+(x>0?x-1:x)],fr=F[y*gw+(x<gw-1?x+1:x)],fu=F[(y>0?y-1:y)*gw+x],fd=F[(y<gh-1?y+1:y)*gw+x];
-    const gx=(fr-fl)*.5,gy=(fd-fu)*.5,gm=sqrt(gx*gx+gy*gy)+1e-6;
-    let m=.5+(fv-TH)/gm;if(m<=0){if(po){out[oi]=po[oi];out[oi+1]=po[oi+1];out[oi+2]=po[oi+2];out[oi+3]=po[oi+3]}else out[oi+3]=0;continue}if(m>1)m=1;
+    let m=0;
+    if(fv>=TH*.3){
+      const fl=F[y*gw+(x>0?x-1:x)],fr=F[y*gw+(x<gw-1?x+1:x)],fu=F[(y>0?y-1:y)*gw+x],fd=F[(y<gh-1?y+1:y)*gw+x];
+      const gx=(fr-fl)*.5,gy=(fd-fu)*.5,gm=sqrt(gx*gx+gy*gy)+1e-6;m=.5+(fv-TH)/gm;if(m>1)m=1}
+    if(m<=0){
+      const sh=shd(x,y);
+      if(po){const pa=po[oi+3];if(sh>0){const k=1-sh;out[oi]=po[oi]*k;out[oi+1]=po[oi+1]*k;out[oi+2]=po[oi+2]*k;out[oi+3]=pa+(255-pa)*sh}else{out[oi]=po[oi];out[oi+1]=po[oi+1];out[oi+2]=po[oi+2];out[oi+3]=pa}}
+      else{out[oi]=out[oi+1]=out[oi+2]=0;out[oi+3]=255*sh}
+      continue}
     const hx=(D[y*gw+(x<gw-1?x+1:x)]-D[y*gw+(x>0?x-1:x)])*hk,hy=(D[(y<gh-1?y+1:y)*gw+x]-D[(y>0?y-1:y)*gw+x])*hk,tw=D[i]*Tmax;
     const il=1/sqrt(hx*hx+hy*hy+1),nX=-hx*il,nY=-hy*il,nZ=-il;
-    const vis=lit(nX,nY,nZ,tw,x-nX*tw*kr/cell,y-nY*tw*kr/cell,tmp,0);
+    const w=wob(bx+(x+.5)*cell,by+(y+.5)*cell,t),sxc=(-nX*tw*kr+wa*tw*w[0])/cell,syc=(-nY*tw*kr+wa*tw*w[1])/cell;
+    const vis=lit(nX,nY,nZ,tw,x+sxc,y+syc,tmp,0,x,y);
     const a1=tw/(.5*sp),al=m*clamp(Math.max(a1>1?1:a1,vis),0,1);
     if(po&&po[oi+3]>0){const pa=po[oi+3]/255,ao=al+pa*(1-al);
       for(let c=0;c<3;c++)out[oi+c]=(tmp[c]*al+po[oi+c]*pa*(1-al))/ao;out[oi+3]=255*ao}
@@ -388,7 +425,7 @@ function shadeCoat(C,P,bx,by,gw,gh,cell,bg,po,bg2,o){
   for(let y=ya;y<=yb;y++){const Y=by+(y+.5)*cell;
     for(let x=xa;x<=xb;x++){const X=bx+(x+.5)*cell,dd=smp(X,Y);if(dd<=.04*sp)continue;
       const hx=(smp(X+e,Y)-smp(X-e,Y))/(2*e)*kh,hy=(smp(X,Y+e)-smp(X,Y-e))/(2*e)*kh,il=1/sqrt(hx*hx+hy*hy+1),nX=-hx*il,nY=-hy*il,nZ=-il;
-      const oi=(y*gw+x)*4,vis=lit(nX,nY,nZ,dd,x-nX*dd*.6/cell,y-nY*dd*.6/cell,tmp,0);
+      const oi=(y*gw+x)*4,w=wob(X,Y,(o.t||0)*.25),vis=lit(nX,nY,nZ,dd,x+(-nX*dd*.6+.36*dd*w[0])/cell,y+(-nY*dd*.6+.36*dd*w[1])/cell,tmp,0,x,y);
       let al=(1-exp(-dd/d0));if(al<vis*.8)al=vis*.8;al*=clamp(dd/(.12*sp),0,1);if(al>1)al=1;
       /* あわ（シャンパン）：厚い所に、白い小さな粒 */
       let fw=0;if(fo>0){const h=Math.sin(X*.91+Y*1.37)*Math.sin(X*1.73-Y*.67);fw=clamp((h-.45)*2.2,0,1)*clamp(dd/(.5*sp),0,1)*fo*.7}
@@ -415,8 +452,8 @@ function shadePool(Pl,P,bx,by,gw,gh,cell,bg,po,bg2,o){
       const wy=1,ww=Sv,Xn=-Su,Yu=wy*cp+ww*sn,Zn=-wy*sn+ww*cp,il=1/sqrt(Xn*Xn+Yu*Yu+Zn*Zn),nX=Xn*il,nY=-Yu*il,nZ=Zn*il;
       const oi=(y*gw+x)*4,tw=dd;
       /* 屈折：平らな時の向きからのずれ（波・ふちの傾き）だけ、後ろの絵をずらす */
-      const lx=x-(nX-n0X)*dd*kr/cell,ly=y-(nY-n0Y)*dd*kr/cell;
-      const wet=clamp(dd/(PLD*sp),0,1),vis=lit(nX,nY,nZ,tw,lx,ly,tmp,0);
+      const wv=wob(X,Y,(o.t||0)*.6),lx=x+(-(nX-n0X)*dd*kr+.3*dd*wv[0])/cell,ly=y+(-(nY-n0Y)*dd*kr+.3*dd*wv[1])/cell;
+      const wet=clamp(dd/(PLD*sp),0,1),vis=lit(nX,nY,nZ,tw,lx,ly,tmp,0,x,y);
       const dark=1-.2*wet,fw=fo>.4?.4:fo;   /* 濡れた所は暗く／あわは白く */
       const al=clamp(wet*.55+vis*.8+fw,0,1)*clamp(dd/(.12*sp),0,1);
       po[oi]=tmp[0]*dark*(1-fw)+235*fw;po[oi+1]=tmp[1]*dark*(1-fw)+238*fw;po[oi+2]=tmp[2]*dark*(1-fw)+240*fw;po[oi+3]=255*al;
@@ -431,20 +468,20 @@ return{SUB,RK,TH,kern,par,mk,grow,addP,build,stepSub,emit,cull,relink,floorHit,t
    種類（kind）ごとの見た目と初期値。sp＝水の出る場所（絵の中心から、絵の大きさSに対する割合。向きは絵の下向き）。
    w＝（注ぐ）流れの太さ（粒の列の数）／（ほか）1回に出す粒の数。v0＝出す勢い（紙の短い辺に対する割合／秒）。gap＝かたまりの間隔[秒]。 */
 const LQK={
-  pour:{lab:'蛇口（注ぐ）',sp:[.117,.134],pre:{kind:'pour',on:true,w:2,v0:.45,gap:1,visc:.1,size:1,col:'#7ec3ec',tr:.88,rip:.7,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
-  drip:{lab:'蛇口（垂らす）',sp:[.117,.134],pre:{kind:'drip',on:true,w:9,v0:0,gap:1.1,visc:.2,size:1,col:'#7ec3ec',tr:.88,rip:.7,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
-  drop:{lab:'水滴',sp:[0,.36],pre:{kind:'drop',on:true,w:22,v0:.1,gap:2.4,visc:.05,size:1,col:'#8fd0f4',tr:.9,rip:.8,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
-  tear:{lab:'涙',sp:[-.12,.1],pre:{kind:'tear',on:true,w:5,v0:.05,gap:1.8,visc:.3,size:.8,col:'#cfe9f7',tr:.93,rip:.9,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
-  burst:{lab:'ぶつける',sp:[0,0],pre:{kind:'burst',on:true,w:30,v0:2.4,gap:2.4,visc:.55,size:1,col:'#c8281e',tr:.15,rip:.65,ic:true,fl:.8,pit:22,pl:.3,pool:'floor',ang:180,dep:70,spr:32,jit:.6,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
-  spray:{lab:'吹きかける',sp:[0,-.34],pre:{kind:'spray',on:true,w:14,v0:2.2,gap:1,visc:.03,size:.5,col:'#f1d98a',tr:.8,rip:.95,ic:true,fl:.8,pit:22,pl:.5,pool:'floor',ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}}};
+  pour:{lab:'蛇口（注ぐ）',sp:[.117,.134],pre:{kind:'pour',on:true,w:2,v0:.45,gap:1,visc:.1,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
+  drip:{lab:'蛇口（垂らす）',sp:[.117,.134],pre:{kind:'drip',on:true,w:9,v0:0,gap:1.1,visc:.2,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
+  drop:{lab:'水滴',sp:[0,.36],pre:{kind:'drop',on:true,w:22,v0:.1,gap:2.4,visc:.05,size:1,lnk:.6,col:'#8fd0f4',tr:.9,rip:.8,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
+  tear:{lab:'涙',sp:[-.12,.1],pre:{kind:'tear',on:true,w:3,v0:.05,gap:1.8,visc:.3,size:.8,lnk:.6,col:'#cfe9f7',tr:.93,rip:.9,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
+  burst:{lab:'ぶつける',sp:[0,0],pre:{kind:'burst',on:true,w:30,v0:2.4,gap:2.4,visc:.55,size:1,lnk:.8,col:'#c8281e',tr:.15,rip:.65,ic:true,fl:.8,pit:22,pl:.3,pool:'floor',ang:180,dep:70,spr:32,jit:.6,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
+  spray:{lab:'吹きかける',sp:[0,-.34],pre:{kind:'spray',on:true,w:4,v0:2.2,gap:1,visc:.03,size:.5,lnk:.3,col:'#f1d98a',tr:.8,rip:.95,ic:true,fl:.8,pit:22,pl:.5,pool:'floor',ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}}};
 /* 液体の種類：選ぶと、色・透明さ・ねばり・付き方・にごり・出し方がまとめて切り替わる（位置・床の設定は変えない）。
    yld＝止まる強さ（大きいほど、付いたまま垂れない）／adh＝付く量／dry＝乾く速さ／sc＝にごり／foam＝あわ／jit＝粒の大きさのばらつき／spr＝広がり */
 const LQM={
-  water:{lab:'水',kind:'pour',o:{w:2,v0:.45,visc:.1,size:1,col:'#7ec3ec',tr:.88,rip:.7,pl:.5,ang:0,dep:0,spr:0,jit:0,yld:0,adh:.6,dry:.3,sc:0,foam:.3}},
-  champagne:{lab:'シャンパン',kind:'spray',o:{w:30,v0:2.2,visc:.03,size:.5,col:'#f4d27a',tr:.8,rip:.95,pl:.5,ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}},
-  tomato:{lab:'トマト',kind:'burst',o:{w:30,v0:2.4,gap:2.4,visc:.55,size:1,col:'#c8281e',tr:.15,rip:.65,pl:.3,ang:180,dep:70,spr:32,jit:.6,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
-  ice:{lab:'アイスクリーム',kind:'burst',o:{w:20,v0:2,gap:2.4,visc:.92,size:1.3,col:'#f7ead8',tr:.04,rip:.35,pl:.05,ang:180,dep:65,spr:40,jit:.5,yld:.85,adh:3.2,dry:0,sc:1,foam:0}},
-  mayo:{lab:'マヨネーズ',kind:'pour',o:{w:3,v0:.25,visc:.95,size:.9,col:'#f2e3b0',tr:.06,rip:.75,pl:.04,ang:0,dep:0,spr:0,jit:0,yld:.9,adh:2.5,dry:0,sc:1,foam:0}}};
+  water:{lab:'水',kind:'pour',o:{w:2,v0:.45,visc:.1,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,pl:.5,ang:0,dep:0,spr:0,jit:0,yld:0,adh:.6,dry:.3,sc:0,foam:.3}},
+  champagne:{lab:'シャンパン',kind:'spray',o:{w:8,v0:2.2,visc:.03,size:.5,lnk:.25,col:'#f0c25a',tr:.62,rip:.95,pl:.5,ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}},
+  tomato:{lab:'トマト',kind:'burst',o:{w:30,v0:2.4,gap:2.4,visc:.55,size:1,lnk:.8,col:'#c8281e',tr:.15,rip:.65,pl:.3,ang:180,dep:70,spr:32,jit:.6,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
+  ice:{lab:'アイスクリーム',kind:'burst',o:{w:20,v0:2,gap:2.4,visc:.92,size:1,lnk:.8,col:'#f7ead8',tr:.04,rip:.35,pl:.05,ang:180,dep:65,spr:40,jit:.5,yld:.85,adh:3.2,dry:0,sc:1,foam:0}},
+  mayo:{lab:'マヨネーズ',kind:'pour',o:{w:3,v0:.25,visc:.95,size:.9,lnk:1.1,col:'#f2e3b0',tr:.06,rip:.75,pl:.04,ang:0,dep:0,spr:0,jit:0,yld:.9,adh:2.5,dry:0,sc:1,foam:0}}};
 const LQ={sc:null,id:null,F:null,D:null,key:'',sig:'',was:false,fc:0};
 function lqRR(g,x,y,w,h,r){g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}   /* 角丸の四角（古い端末にroundRectが無いため自前） */
 /* 水の出る場所の絵（自分で描く＝端末の絵文字の違いで出る場所がずれないように） */
@@ -522,13 +559,13 @@ function liqDraw(l,S){
   const ctb=LIQ.ctBox(St.ct);
   if(!St.n&&!pb&&!ctb)return;
   let x0=1e30,y0=1e30,x1=-1e30,y1=-1e30;
-  if(St.n){LIQ.project(St,P);let ms=1;for(let i=0;i<St.n;i++){const X=St.sx[i],Y=St.sy[i];if(St.ss[i]>ms)ms=St.ss[i];if(X<x0)x0=X;if(X>x1)x1=X;if(Y<y0)y0=Y;if(Y>y1)y1=Y}const R=LIQ.RK*P.sp*ms*1.6;x0-=R;y0-=R;x1+=R;y1+=R}
+  if(St.n){LIQ.project(St,P);let ms=1;for(let i=0;i<St.n;i++){const X=St.sx[i],Y=St.sy[i];if(St.ss[i]>ms)ms=St.ss[i];if(X<x0)x0=X;if(X>x1)x1=X;if(Y<y0)y0=Y;if(Y>y1)y1=Y}const R=LIQ.RK*P.sp*ms*1.6+3*P.sr;x0-=R;y0-=R;x1+=R;y1+=R}
   if(pb){x0=Math.min(x0,pb[0]);y0=Math.min(y0,pb[1]);x1=Math.max(x1,pb[2]);y1=Math.max(y1,pb[3])}
   if(ctb){x0=Math.min(x0,ctb[0]);y0=Math.min(y0,ctb[1]);x1=Math.max(x1,ctb[2]);y1=Math.max(y1,ctb[3])}
   const bx=Math.max(x0,0,-Z.x/zs),by=Math.max(y0,0,-Z.y/zs),ex=Math.min(x1,W,(cv.width/dpr-Z.x)/zs),ey=Math.min(y1,H,(cv.height/dpr-Z.y)/zs);
   if(!(ex>bx&&ey>by))return;
-  let cell=Math.max(1,P.sp*.22/Math.min(Math.max(zs,1),3)),gw,gh;
-  for(;;){gw=Math.ceil((ex-bx)/cell)+1;gh=Math.ceil((ey-by)/cell)+1;if(gw*gh<=1.2e5)break;cell*=1.25}
+  let cell=Math.max(.5/(zs*dpr),P.sp*.16/Math.min(Math.max(zs,1),3)),gw,gh;   /* 1マス＝端末の細かさに合わせる（高精細の画面で、粒がカクカクしない） */
+  for(;;){gw=Math.ceil((ex-bx)/cell)+1;gh=Math.ceil((ey-by)/cell)+1;if(gw*gh<=9e4)break;cell*=1.25}
   const N=gw*gh;
   if(!LQ.F||LQ.F.length<N){LQ.F=new Float32Array(N);LQ.D=new Float32Array(N);LQ.po=new Uint8ClampedArray(N*4);LQ.b2=new Uint8ClampedArray(N*4)}
   if(!LQ.sc){LQ.sc=document.createElement('canvas');LQ.bgc=document.createElement('canvas')}
@@ -541,11 +578,11 @@ function liqDraw(l,S){
   let bg;try{bg=g.getImageData(0,0,gw,gh).data}catch(e){return}   /* 外の画像などで読めない時は描かない */
   let mr=0,mg=0,mb=0,c=0;for(let i=0;i<N;i+=11){mr+=bg[i*4];mg+=bg[i*4+1];mb+=bg[i*4+2];c++}
   mr/=c;mg/=c;mb/=c;
-  const tr=Math.max(0,Math.min(.97,+q.tr||0)),oo={tint:lqHex(q.col),A:1-tr,sc:Math.max(0,Math.min(1,+q.sc||0)),sm:q.visc>.5?3:q.visc>.2?1:0,rip:Math.max(0,Math.min(1,+q.rip||0)),sp:P.sp,cell,kr:1,
+  const tr=Math.max(0,Math.min(.97,+q.tr||0)),oo={tint:lqHex(q.col),A:1-tr,sc:Math.max(0,Math.min(1,+q.sc||0)),lk:+q.lnk>=0?+q.lnk:.5,sr:P.sr,t:St.t,bx,by,rip:Math.max(0,Math.min(1,+q.rip||0)),sp:P.sp,cell,kr:1,
     sky:[mr*.35+196*.65,mg*.35+218*.65,mb*.35+244*.65],hor:[mr*.6+235*.4,mg*.6+238*.4,mb*.6+240*.4]};
   let po=null,bg2=bg;
   if(pb||ctb){po=LQ.po;bg2=LQ.b2;bg2.set(bg.subarray(0,N*4));po.fill(0,0,N*4)}
-  if(pb)LIQ.shadePool(St.pl,P,bx,by,gw,gh,cell,bg,po,bg2,Object.assign({},oo,{kr:3}));
+  if(pb)LIQ.shadePool(St.pl,P,bx,by,gw,gh,cell,bg,po,bg2,Object.assign({},oo,{kr:3,rimk:.16}));
   if(ctb)LIQ.shadeCoat(St.ct,P,bx,by,gw,gh,cell,bg,po,bg2,oo);
   const out=LQ.id.data;
   if(St.n){LIQ.field(St,P,bx,by,gw,gh,cell,LQ.F);LIQ.shadeAir(LQ.F,gw,gh,LQ.D,bg2,po,out,oo)}
@@ -579,6 +616,7 @@ function lqSync(){
   $('lqGapRow').style.display=pour?'none':'';lqSet('lqG',q.gap);$('lqGv').textContent=(+q.gap).toFixed(1)+'秒';
   lqSet('lqVi',q.visc);$('lqViv').textContent=(+q.visc).toFixed(2);
   lqSet('lqSz',q.size);$('lqSzv').textContent='×'+(+q.size).toFixed(2);
+  lqSet('lqLk',q.lnk==null?.5:q.lnk);$('lqLkv').textContent=Math.round((q.lnk==null?.5:q.lnk)*100)+'%';
   lqSet('lqCol',q.col);
   const bs=q.kind==='burst'||q.kind==='spray';
   lqSet('lqAng',q.ang||0);$('lqAngv').textContent=Math.round(q.ang||0)+'°';
@@ -609,7 +647,7 @@ function lqPoll(){
 function lqBind(){
   const num=(id,k,fmt)=>{const e=$(id);if(!e)return;e.addEventListener('input',()=>{const l=lqSel();if(!l)return;const v=parseFloat(e.value);if(!isFinite(v))return;l.liq[k]=v;$(id+'v').textContent=fmt(v);LQ.sig=JSON.stringify(l.liq)})};
   num('lqW','w',v=>String(v));num('lqV','v0',v=>v.toFixed(2));num('lqG','gap',v=>v.toFixed(1)+'秒');num('lqVi','visc',v=>v.toFixed(2));
-  num('lqSz','size',v=>'×'+v.toFixed(2));num('lqFl','fl',v=>Math.round(v*100)+'%');num('lqPt','pit',v=>Math.round(v)+'°');num('lqPl','pl',v=>Math.round(v*100)+'%');num('lqTr','tr',v=>Math.round(v*100)+'%');num('lqRp','rip',v=>Math.round(v*100)+'%');
+  num('lqSz','size',v=>'×'+v.toFixed(2));num('lqLk','lnk',v=>Math.round(v*100)+'%');num('lqFl','fl',v=>Math.round(v*100)+'%');num('lqPt','pit',v=>Math.round(v)+'°');num('lqPl','pl',v=>Math.round(v*100)+'%');num('lqTr','tr',v=>Math.round(v*100)+'%');num('lqRp','rip',v=>Math.round(v*100)+'%');
   const c=$('lqCol');if(c)c.addEventListener('input',()=>{const l=lqSel();if(l){l.liq.col=c.value;LQ.sig=JSON.stringify(l.liq)}});
   const tk=$('lqTk');if(tk)tk.addEventListener('change',()=>{const l=lqSel();if(l){l.liq.pool=tk.checked?'tank':'floor';l._lq=null;LQ.sig=JSON.stringify(l.liq)}});
   const ic=$('lqIc');if(ic)ic.addEventListener('change',()=>{const l=lqSel();if(l){l.liq.ic=ic.checked;LQ.sig=JSON.stringify(l.liq)}});
