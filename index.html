@@ -10840,7 +10840,7 @@ function paneGrab(bar,o){
    ・印：各絵の上の ○（採用）✕（不採用）★（ベスト）？（保留）。キーボードは O・X・S・H（消すのは 0）。一覧の上の印のボタンで、印ごとに絞り込める。印の一覧は、CSVで保存・コピーできる。
    ・書き込み（ペン）：「✎ ペン」を入れると、絵の上に、指・マウスで軽く書き込める（色・太さ・消しゴム・1つ戻す・この絵の書き込みを消す・書き込みの隠す／出す）。
      書き込みは、画像の画素の位置で覚えるので、拡大・移動しても、絵といっしょに動く。1本の指で書き、2本の指でつまむと拡大（書きかけの線は消える）。マウスは、Shiftを押しながら、または中ボタンで、絵を動かせる。
-     書き込みは、名前＋大きさ＋更新日時で覚え、同じ画像を読み直すと戻る（端末のlocalStorage am_cmp_ink）。元の画像は、書き換えない。「書き込みつきで保存」で、PNG画像にして残せる。
+     書き込みは、名前＋大きさ＋更新日時で覚え、同じ画像を読み直すと戻る（端末のlocalStorage am_cmp_ink）。元の画像は、書き換えない。「書き込みつきで保存」で、PNG画像にして残せる（2026-11-10：全部まとめて1つのzipで保存する操作を追加。台帳Z-272）。
      （2026-11-07：ユーザーの「印つけて」は、ペンで書き込む意味だった。○✕★？の印は、取り除かず、そのまま残してある）
    ・印の保存：CSV（名前・印・幅・高さ）／コピー。印は、名前＋大きさ＋更新日時で覚え、同じ画像を読み直すと戻る（端末のlocalStorage am_cmp）。
    ・同じ場所の目印（📍。Shiftを押して押す／📍モードで押す）は、すべての絵の同じ場所に出る（細部の見比べ用）。
@@ -11269,6 +11269,60 @@ async function saveInkPng(){
     catch(_){toast('「'+it.name+'」は、大きすぎて画像にできませんでした',5000)}
     if(it!==L[L.length-1])await new Promise(r=>setTimeout(r,250))}   /* 続けて保存する時だけ、少し間をあける */
   if(ok)toast('書き込みつきの画像を、'+ok+'枚、保存しました',4500)}
+/* 書き込みつきの画像を、1つのzipにまとめて保存（圧縮なしのzip。PNGはもともと圧縮済みなので、これで十分）。
+   zipの形式の都合（4GB・65535個まで）を超える時だけ、自動でzipを分ける。画像は減らさない */
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+async function zipStore(files){   /* files=[{name,blob}] → zipのBlob */
+  const enc=new TextEncoder(),parts=[],cen=[],d=new Date(),
+    dd=((d.getFullYear()-1980)<<9|(d.getMonth()+1)<<5|d.getDate())&0xFFFF,tt=(d.getHours()<<11|d.getMinutes()<<5|d.getSeconds()>>1)&0xFFFF;
+  let off=0,cs=0;
+  for(const f of files){
+    const nm=enc.encode(f.name),sz=f.blob.size,crc=crc32(new Uint8Array(await f.blob.arrayBuffer()));
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,tt,true);h.setUint16(12,dd,true);
+    h.setUint32(14,crc,true);h.setUint32(18,sz,true);h.setUint32(22,sz,true);h.setUint16(26,nm.length,true);h.setUint16(28,0,true);
+    parts.push(h.buffer,nm,f.blob);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,tt,true);c.setUint16(14,dd,true);
+    c.setUint32(16,crc,true);c.setUint32(20,sz,true);c.setUint32(24,sz,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    cen.push(c.buffer,nm);cs+=46+nm.length;off+=30+nm.length+sz}
+  const e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cen,e.buffer],{type:'application/zip'})}
+function dlBlob(b,name){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000)}
+async function saveInkZip(onlySel){
+  if(CM.zipBusy){toast('いま、zipを作っています。少しお待ちください',3000);return}
+  let L;
+  if(onlySel){let ids=[...CM.sel];if(!ids.length){const id=target();if(id)ids=[id]}
+    if(!ids.length){toast('画像を選んでください',3500);return}
+    L=ids.map(byId).filter(it=>it&&(CM.ink[it.key]||[]).length)}
+  else L=CM.items.filter(it=>(CM.ink[it.key]||[]).length);
+  if(!L.length){toast(CM.items.length?'書き込みのある画像が、ありません':'先に画像を追加してください',3500);return}
+  CM.zipBusy=true;
+  try{
+    const used=new Set(),groups=[[]];let bytes=0,bad=0,n=0;
+    for(const it of L){
+      toast('書き込みつきの画像を作っています… '+(++n)+' / '+L.length,120000);
+      try{
+        const b=await inkPng(it);
+        let nm=it.name.replace(/^.*\//,'').replace(/\.[^.]*$/,'').replace(/[\\/:*?"<>|]/g,'_')||'画像',f=nm+'_書き込み.png',k=1;
+        while(used.has(f))f=nm+'_書き込み ('+(++k)+').png';used.add(f);
+        let g=groups[groups.length-1];
+        if(g.length&&(g.length>=60000||bytes+b.size>3.5e9)){g=[];groups.push(g);bytes=0}
+        g.push({name:f,blob:b});bytes+=b.size}
+      catch(_){bad++}}
+    const m=groups[0].length?groups.length:0;
+    if(!m){toast('画像にできませんでした（大きすぎるかもしれません）',6000);return}
+    for(let i=0;i<m;i++){
+      toast('zipにまとめています… '+(i+1)+' / '+m,120000);
+      const z=await zipStore(groups[i]);
+      dlBlob(z,'見比べ_書き込みつき'+(m>1?'_'+(i+1)+'-'+m:'')+'.zip');
+      if(i<m-1)await new Promise(r=>setTimeout(r,400))}
+    const tot=groups.reduce((a,g)=>a+g.length,0);
+    toast('書き込みつきの画像を、'+tot+'枚、zip'+(m>1?'（'+m+'つに分けて）':'')+'で保存しました'+(bad?'（'+bad+'枚は、大きすぎて作れませんでした）':''),6000)}
+  catch(_){toast('zipを作れませんでした（メモリが足りないかもしれません）。「選んだ画像」で、数を減らして試してください',8000)}
+  finally{CM.zipBusy=false}}
 
 /* ---- 画面を作る ----
    上の1行（追加・選択を解除・その他）／一覧（印の絞り込み＋絵）／見比べ（前後の組・連動・全体・100%＋絵）。
@@ -11381,6 +11435,8 @@ function mount(el){
     <div class="cmprowl"><span>置き場所</span><div class="cmpseg" id="cmpDockSeg" role="group"><button type="button" data-d="auto">自動</button><button type="button" data-d="top">上</button><button type="button" data-d="bottom">下</button><button type="button" data-d="left">左</button><button type="button" data-d="right">右</button></div></div>
   </section>
   <section><h4>書き込み</h4>
+    <button type="button" id="cmpInkZip" class="cmpbtn row" data-close>書き込みつきの画像を、全部まとめて保存（zip）</button>
+    <button type="button" id="cmpInkZipSel" class="cmpbtn row" data-close>選んだ画像だけ、まとめて保存（zip）</button>
     <button type="button" id="cmpInkSave" class="cmpbtn row" data-close>書き込みつきの画像を保存（選んだ画像・PNG）</button>
     <button type="button" id="cmpInkClrSel" class="cmpbtn row" data-close>選んだ画像の書き込みを、全部消す</button>
   </section>
@@ -11392,7 +11448,7 @@ function mount(el){
     <li><b>選ぶ</b>：一覧の画像をタップ。長押ししてそのまま指をすべらせると、まとめて選べます（マウスは、押したままなぞる）</li>
     <li><b>拡大</b>：ピンチまたはホイール。ドラッグで動かす。「連動」がオンなら、全部の絵がいっしょに動きます</li>
     <li><b>印</b>：上の「操作▾」→「いま見ている絵」の ○ ✕ ★ ？（絵の枠の色にも出ます）。キーボードは O・X・S・H</li>
-    <li><b>書き込み</b>：「✎ ペン」を押して、絵の上に指やマウスで書く。2本の指でつまむと拡大。書き込みは、元の画像を変えません（「書き込みつきの画像を保存」で、画像にできます）。キーボードは D・E・Ctrl+Z</li>
+    <li><b>書き込み</b>：「✎ ペン」を押して、絵の上に指やマウスで書く。2本の指でつまむと拡大。書き込みは、元の画像を変えません（「⋯ その他」の「書き込みつきの画像を、全部まとめて保存（zip）」で、画像にして、1つのzipで受け取れます）。キーボードは D・E・Ctrl+Z</li>
     <li><b>大きさ・並び</b>：一覧との境目、絵と絵の境目をつかんで動かす。絵の入れ替えは、「操作▾」→「いま見ている絵」の ◀ ▶</li>
   </ul></details>
 </div>
@@ -11418,7 +11474,7 @@ function mount(el){
   q('cmpPxSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;CM.pixel=b.dataset.px;pxUi();save();drawAll()};
   q('cmpPin').onclick=()=>{CM.pinMode=!CM.pinMode;if(CM.pinMode)CM.pen.on=false;pinUi();penUi()};q('cmpPinOff').onclick=()=>{CM.pinMode=false;pinUi()};
   q('cmpPinClr').onclick=()=>{CM.pins.length=0;CM.pinMode=false;pinUi();drawAll()};
-  q('cmpHide').onclick=()=>toggleSide();q('cmpInkSave').onclick=saveInkPng;q('cmpCsv').onclick=saveCsv;q('cmpCp').onclick=copyList;q('cmpInkClrSel').onclick=inkClearSel;
+  q('cmpHide').onclick=()=>toggleSide();q('cmpInkSave').onclick=saveInkPng;q('cmpInkZip').onclick=()=>saveInkZip(false);q('cmpInkZipSel').onclick=()=>saveInkZip(true);q('cmpCsv').onclick=saveCsv;q('cmpCp').onclick=copyList;q('cmpInkClrSel').onclick=inkClearSel;
   q('cmpDockSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;CM.dock=b.dataset.d;dockUi();layout();schedule();save()};
   q('cmpTh').value=CM.thumb;q('cmpTh').oninput=e=>{CM.thumb=+e.target.value;cellUi()};q('cmpTh').onchange=save;
   q('cmpMore').onclick=()=>menuOpen();q('cmpMenuX').onclick=()=>menuOpen(false);R.bk.onclick=()=>menuOpen(false);

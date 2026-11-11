@@ -295,6 +295,22 @@ with sync_playwright() as pw:
     fn = dl2.value.suggested_filename; dat = open(dl2.value.path(), 'rb').read()
     wpx, hpx = struct.unpack('>II', dat[16:24])
     chk('「書き込みつきの画像を保存」で、元の大きさのPNGが保存される', fn.endswith('_書き込み.png') and dat[:8] == b'\x89PNG\r\n\x1a\n' and (wpx, hpx) in ((300, 200), (200, 300), (600, 400)), (fn, wpx, hpx))
+    # まとめてzip保存（台帳Z-272）：書き込みのある画像が、1つのzipに入る。中のPNGは、1枚ずつ保存したものと同じ
+    import zipfile
+    with pg.expect_download() as dz:
+        P(pg, '#cmpMore'); pg.click('#cmpInkZip')
+    zf = zipfile.ZipFile(dz.value.path()); zn = zf.namelist()
+    chk('「全部まとめて保存（zip）」で、zipが保存される', dz.value.suggested_filename == '見比べ_書き込みつき.zip' and len(zn) == 1 and zn[0].endswith('_書き込み.png'), (dz.value.suggested_filename, zn))
+    chk('zipが壊れていない（CRCが合う）', zf.testzip() is None)
+    zd = zf.read(zn[0]) if zn else b''
+    chk('zipの中のPNGが、1枚ずつ保存したPNGと同じ', zd == dat, (len(zd), len(dat)))
+    with pg.expect_download() as dz2:
+        P(pg, '#cmpMore'); pg.click('#cmpInkZipSel')
+    chk('「選んだ画像だけ、まとめて保存（zip）」でも、zipが保存される', len(zipfile.ZipFile(dz2.value.path()).namelist()) == 1)
+    src = open(F, encoding='utf-8').read(); zs = src[src.index('const CRCT='):src.index('function dlBlob')]   # zipを作る部分だけ取り出して、ページで動かす（画面を通さず、同じ名前の重複・空・日本語名を試す）
+    zt = pg.evaluate("async()=>{" + zs + "const b=await zipStore(" + "[{name:'同じ.png',blob:new Blob([new Uint8Array(70000).fill(7)])},{name:'b.png',blob:new Blob([])},{name:'日本語 (2).png',blob:new Blob(['abc'])}]);return Array.from(new Uint8Array(await b.arrayBuffer()))}")
+    open(D + 't.zip', 'wb').write(bytes(zt)); z2 = zipfile.ZipFile(D + 't.zip')
+    chk('zipの作り方：日本語名・空のファイル・大きめのファイルも、正しく入る', z2.testzip() is None and z2.namelist() == ['同じ.png', 'b.png', '日本語 (2).png'] and z2.read('同じ.png') == bytes([7]) * 70000 and z2.read('b.png') == b'' and z2.read('日本語 (2).png') == b'abc', z2.namelist())
     pg.wait_for_timeout(400); P(pg, '#cmpInkClr'); pg.wait_for_timeout(500)
     chk('「書き込みを消す」で、この絵の書き込みが全部消える', nstroke() == 0 and tile_px(BLUE) < 30, nstroke())
     pg.click('#cmpToast button'); pg.wait_for_timeout(500)
