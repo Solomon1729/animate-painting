@@ -454,52 +454,52 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
 .cmp{display:flex;flex-direction:column;min-height:0;flex:1}
 #cons[data-cmp] .cshd{display:none}   /* 見比べでは、縦を広く使うため、コンソール共通の見出しは畳む（戻る操作は、見比べの上の列の「← 本体へ戻る」。中身の文字は残す） */
 /* ---- 画像の見比べ（コンソール3）。スマホ（指）を最優先：ボタンは44px・折り返す・隠れない。色はテーマの変数 ---- */
-.cmp{--cr:12px;--sh:0 1px 2px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.08);gap:4px;font-size:14px}
+.cmp{--cr:12px;--sh:0 1px 2px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.08);gap:3px;font-size:13px}
 .cmp button{touch-action:manipulation}
-.cmpbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:14px;line-height:1.2;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cmpbtn{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:13px;line-height:1.2;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cmpbtn:hover{border-color:var(--acc)}.cmpbtn:active{transform:scale(.97)}
 .cmpbtn:disabled{opacity:.4;cursor:default;transform:none;border-color:var(--line)}
 .cmpbtn.prim{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
 .cmpbtn.big{min-height:48px;padding:0 22px;font-size:16px}
-.cmpbtn.ico{width:44px;padding:0;font-size:20px;line-height:1}
-.cmpbtn.sm{min-height:36px;padding:0 11px;font-size:13px}
+.cmpbtn.ico{width:30px;padding:0;font-size:16px;line-height:1}
+.cmpbtn.sm{min-height:28px;padding:0 8px;font-size:12.5px}
 .cmpbtn.on,.cmpbtn[aria-pressed=true].tg{background:color-mix(in srgb,var(--acc) 16%,var(--pane));border-color:var(--acc);color:var(--ink)}
 .cmpbtn.lt{background:transparent;border-color:rgba(255,255,255,.5);color:#fff}
 .cmpbtn:focus-visible,.cmpchip:focus-visible,.cmpseg button:focus-visible,.cmpth:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 /* 上は薄い1行（← ＋ 操作▾ ✎ ↩ と、いま見ている絵の名前・倍率）だけ。ほかの操作は「操作▾」で開く畳める面（既定は閉じている）。絵の欄には、絵と枠線以外を置かない */
 .cmpbarwrap{position:relative;flex:0 0 auto;z-index:8}
-.cmpbar{display:flex;flex-wrap:nowrap;align-items:center;gap:4px}
+.cmpbar{display:flex;flex-wrap:nowrap;align-items:center;gap:3px}
 .cmpbar .cmpbtn{flex:0 0 auto}
-.cmpbar .cmpbtn.ico{width:40px}
-#cmpTog{gap:4px;padding:0 10px}#cmpTog i{font-style:normal;font-size:11px;opacity:.8}
+.cmpbar .cmpbtn.ico{width:30px}
+#cmpTog{gap:3px;padding:0 8px}#cmpTog i{font-style:normal;font-size:11px;opacity:.8}
 #cmpTog.on{background:color-mix(in srgb,var(--acc) 16%,var(--pane));border-color:var(--acc)}
 #cmpPen .pdot{display:none;width:11px;height:11px;margin-left:5px;border-radius:50%;background:var(--pc,#e0245e);border:1px solid var(--ink);box-sizing:border-box}
 #cmpPen.on .pdot{display:inline-block}
 .cmpinfo{flex:1 1 0;min-width:0;display:flex;align-items:baseline;gap:6px;overflow:hidden;white-space:nowrap;line-height:1.3;padding:0 2px}
-.cmpinfo .cn{flex:0 0 auto;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
-.cmpinfo .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;opacity:.85}
-.cmpinfo .iz{flex:0 0 auto;font-size:11.5px;opacity:.7;font-variant-numeric:tabular-nums}
-.cmppanel{position:absolute;left:0;width:100%;max-width:560px;box-sizing:border-box;top:calc(100% + 4px);z-index:9;display:flex;flex-direction:column;gap:6px;padding:8px 10px 10px;overflow:auto;overscroll-behavior:contain;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:var(--cr);box-shadow:0 8px 28px rgba(0,0,0,.28)}
+.cmpinfo .cn{flex:0 0 auto;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.cmpinfo .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11.5px;opacity:.85}
+.cmpinfo .iz{flex:0 0 auto;font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
+.cmppanel{position:absolute;left:0;width:100%;max-width:560px;box-sizing:border-box;top:calc(100% + 2px);z-index:9;display:flex;flex-direction:column;gap:4px;padding:4px 6px 6px;overflow:auto;overscroll-behavior:contain;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:var(--cr);box-shadow:0 8px 28px rgba(0,0,0,.28)}
 .cmppanel[hidden],.cmpbtn[hidden],.cmppenbar[hidden]{display:none}
-.cmpps{display:flex;flex-direction:column;gap:6px}
-.cmpps+.cmpps,.cmpps+.cmppinbar,.cmppinbar+.cmpps{border-top:1px solid var(--line);padding-top:8px}
-.cmpps h5{margin:0;font-size:11.5px;font-weight:600;letter-spacing:.04em;opacity:.65}
-.cmppr{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cmpps{display:flex;flex-direction:column;gap:3px}
+.cmpps+.cmpps,.cmpps+.cmppinbar,.cmppinbar+.cmpps{border-top:1px solid var(--line);padding-top:4px}
+.cmpps h5{margin:0;font-size:10.5px;font-weight:600;letter-spacing:.04em;opacity:.65}
+.cmppr{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .cmppr .cmpcount{flex:1 1 120px}
 .cmpfr{flex-wrap:nowrap}
 .cmpfnm{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:13px}
-.cmppr .mk{display:inline-flex;flex-wrap:nowrap;gap:4px}
-.cmppr .mk button{display:inline-flex;align-items:center;justify-content:center;min-width:36px;min-height:36px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:16px;line-height:1;cursor:pointer}
+.cmppr .mk{display:inline-flex;flex-wrap:nowrap;gap:3px}
+.cmppr .mk button{display:inline-flex;align-items:center;justify-content:center;min-width:28px;min-height:28px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:14px;line-height:1;cursor:pointer}
 .cmppr .mk button:disabled{opacity:.4;cursor:default}
 .cmppr .mk button.on{color:#fff;border-color:transparent}
 .cmppr .mk button[data-m=o].on{background:#1a9c4b}.cmppr .mk button[data-m=x].on{background:#d33}.cmppr .mk button[data-m=s].on{background:#d99a00}.cmppr .mk button[data-m=h].on{background:#37c}
 .cmpmv{display:inline-flex;gap:4px;margin-left:auto}
-.cmpmv .cmpbtn.ico{width:36px}
-.cmppanel .cmpbtn.sm{padding:0 9px}
-.cmppanel .cmppr{gap:4px 5px}
-.cmppanel .cmppr .mk button{min-width:36px;min-height:36px}
+.cmpmv .cmpbtn.ico{width:28px}
+.cmppanel .cmpbtn.sm{padding:0 7px}
+.cmppanel .cmppr{gap:3px 4px}
+.cmppanel .cmppr .mk button{min-width:28px;min-height:28px}
 .cmpcount{flex:1 1 0;min-width:44px;display:flex;align-items:baseline;gap:6px;line-height:1.3;white-space:nowrap;overflow:hidden}   /* 選んだ枚数／全部の枚数。短い字だけ見せ、くわしい文は長押し（title）・読み上げ */
-.cmpcount b{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.cmpcount b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 .cmpcount small{font-size:11.5px;opacity:.7;overflow:hidden;text-overflow:ellipsis}
 .cmpcount small:empty{display:none}
 .cmpsp{flex:1 1 8px}
@@ -527,8 +527,8 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
 .cmpmain[data-dock=bottom] .cmpview,.cmpmain[data-dock=right] .cmpview{order:1}
 .cmpview{flex:1;min-height:0;min-width:0;position:relative;display:flex;flex-direction:column;order:2;gap:6px}
 /* 一覧：印のチップ（絞り込みと枚数を兼ねる）＋絵 */
-.cmpchips{display:flex;flex-wrap:wrap;gap:4px;padding:5px 6px 2px;flex:0 0 auto}
-.cmpchip{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:30px;padding:0 6px;border-radius:999px;white-space:nowrap;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cmpchips{display:flex;flex-wrap:wrap;gap:3px;padding:3px 4px 1px;flex:0 0 auto}
+.cmpchip{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:3px;min-height:24px;padding:0 6px;border-radius:999px;white-space:nowrap;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:12px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cmpchip .n{font-weight:600;font-variant-numeric:tabular-nums}
 .cmpchip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
 .cmpchip:not([aria-pressed=true]) .g[data-f=o]{color:#1a9c4b}.cmpchip:not([aria-pressed=true]) .g[data-f=x]{color:#d33}.cmpchip:not([aria-pressed=true]) .g[data-f=s]{color:#d99a00}.cmpchip:not([aria-pressed=true]) .g[data-f=h]{color:#37c}
@@ -562,13 +562,14 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
 .cmpt.focus{border-color:var(--acc)}
 .cmpt[data-m="o"]{border-color:#1a9c4b}.cmpt[data-m="x"]{border-color:#d33}.cmpt[data-m="s"]{border-color:#d99a00}.cmpt[data-m="h"]{border-color:#37c}
 /* ペンの操作の列（ペンを入れている間だけ出る。折り返して、隠れない） */
-.cmprow1{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 8px}
-.cmprow2{display:flex;flex-wrap:wrap;gap:6px}
-.cmprow2 .cmpbtn{flex:1 1 auto;white-space:normal;line-height:1.2;padding:4px 6px}
-.cmppenbar .cmpseg button{min-height:36px;padding:0 9px}
-.cmppenbar .cmpcol{width:32px;height:32px}
-.cmpcols{display:flex;gap:6px}
-.cmpcol{width:32px;height:32px;padding:0;border-radius:50%;border:2px solid var(--line);background:var(--c);cursor:pointer;box-shadow:inset 0 0 0 2px var(--pane);-webkit-tap-highlight-color:transparent}
+.cmppenpop{position:absolute;left:0;top:calc(100% + 2px);z-index:9;max-width:100%;box-sizing:border-box;padding:4px 5px;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:var(--cr);box-shadow:0 6px 18px rgba(0,0,0,.26)}   /* ペンを入れている間だけ、ペンの横の「▾」で開く小さな窓。色・太さ・消しゴム・戻す・全部消す・隠す。絵の欄は縮めない */
+.cmppenpop[hidden]{display:none}
+.cmppenbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
+.cmppenbar .cmpseg button{min-height:26px;padding:0 8px}
+.cmpcols{display:flex;gap:4px}
+#cmpPenOpt i{font-style:normal;font-size:12px;opacity:.85}
+#cmpPenOpt.on{background:color-mix(in srgb,var(--acc) 16%,var(--pane));border-color:var(--acc)}
+.cmpcol{width:22px;height:22px;padding:0;border-radius:50%;border:2px solid var(--line);background:var(--c);cursor:pointer;box-shadow:inset 0 0 0 2px var(--pane);-webkit-tap-highlight-color:transparent}
 .cmpcol[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--pane),0 0 0 2px var(--acc)}
 .cmpcol:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .cmpview.pen .cmpcv{cursor:crosshair}.cmpview.eras .cmpcv{cursor:cell}
@@ -583,19 +584,19 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
 /* その他のメニュー：狭い画面では下から出るシート、広い画面では右上の小さな窓 */
 .cmpbk{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.35)}
 .cmpbk[hidden],.cmpmenu[hidden],.cmptoast[hidden]{display:none}
-.cmpmenu{position:absolute;z-index:21;right:0;top:52px;width:min(400px,100%);max-height:calc(100% - 60px);overflow:auto;overscroll-behavior:contain;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:var(--cr);box-shadow:0 8px 32px rgba(0,0,0,.28);padding:6px 14px 14px}
-.cmpmh{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--pane);padding:8px 0;z-index:1}
-.cmpmenu section{padding:6px 0 8px;border-top:1px solid var(--line)}
-.cmpmenu h4{margin:6px 0 6px;font-size:12px;letter-spacing:.04em;opacity:.65;font-weight:600}
-.cmpbtn.row{display:flex;width:100%;justify-content:flex-start;min-height:46px;margin:0 0 6px;font-size:14px;white-space:normal;text-align:left}
+.cmpmenu{position:absolute;z-index:21;right:0;top:34px;width:min(400px,100%);max-height:calc(100% - 60px);overflow:auto;overscroll-behavior:contain;background:var(--pane);color:var(--ink);border:1px solid var(--line);border-radius:var(--cr);box-shadow:0 8px 32px rgba(0,0,0,.28);padding:2px 10px 8px}
+.cmpmh{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--pane);padding:4px 0;z-index:1}
+.cmpmenu section{padding:4px 0 4px;border-top:1px solid var(--line)}
+.cmpmenu h4{margin:4px 0 3px;font-size:11px;letter-spacing:.04em;opacity:.65;font-weight:600}
+.cmpbtn.row{display:flex;align-items:center;width:100%;justify-content:flex-start;min-height:34px;margin:0 0 3px;font-size:13px;white-space:normal;text-align:left}
 .cmpbtn.row.danger{color:#d33;border-color:color-mix(in srgb,#d33 40%,var(--line))}
-.cmprowl{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;min-height:44px;font-size:14px}
-.cmprowl input[type=range]{flex:1 1 140px;min-width:120px;height:32px}
-.cmpseg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.cmpseg button{min-height:40px;padding:0 12px;border:0;border-right:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.cmprowl{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;min-height:32px;font-size:13px}
+.cmprowl input[type=range]{flex:1 1 140px;min-width:120px;height:24px}
+.cmpseg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.cmpseg button{min-height:28px;padding:0 9px;border:0;border-right:1px solid var(--line);background:var(--pane);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
 .cmpseg button:last-child{border-right:0}
 .cmpseg button[aria-pressed=true]{background:var(--acc);color:#fff}
-.cmphelp{border-top:1px solid var(--line);padding-top:8px;font-size:13px}.cmphelp summary{cursor:pointer;min-height:36px;display:flex;align-items:center;font-weight:600}
+.cmphelp{border-top:1px solid var(--line);padding-top:8px;font-size:13px}.cmphelp summary{cursor:pointer;min-height:30px;display:flex;align-items:center;font-weight:600}
 .cmphelp ul{margin:4px 0 0;padding-left:20px;line-height:1.7;opacity:.9}
 .cmptoast{position:absolute;z-index:30;left:50%;bottom:14px;transform:translateX(-50%);max-width:calc(100% - 20px);display:flex;align-items:center;gap:12px;padding:9px 12px 9px 16px;border-radius:12px;background:rgba(28,32,40,.94);color:#fff;font-size:13px;line-height:1.5;box-shadow:0 4px 18px rgba(0,0,0,.35)}
 @media (max-width:720px){
@@ -603,7 +604,7 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
   .cmpmenu{left:0;right:0;top:auto;bottom:0;width:auto;max-height:82%;border-radius:18px 18px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
   .cmptoast{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 }
-@media (pointer:coarse){.cmpbtn.sm{min-height:40px}.cmpchip{min-height:36px}.cmpsplit{flex-basis:30px}.cmppill{width:48px;height:26px}.cmpmain[data-dock=left] .cmppill,.cmpmain[data-dock=right] .cmppill{width:26px;height:48px}.cmpdv[data-kind=v]{width:28px;margin-left:-14px}.cmpdv[data-kind=h]{height:28px;margin-top:-14px}.cmpdv[data-kind=v]::after{left:12px;right:12px}.cmpdv[data-kind=h]::after{top:12px;bottom:12px}.cmpbtn.cmpdesk{display:none}}
+@media (pointer:coarse){.cmpbtn.sm{min-height:30px}.cmppanel .cmppr .mk button{min-width:30px;min-height:30px}.cmpcol{width:26px;height:26px}.cmpmv .cmpbtn.ico{width:30px}.cmppenbar .cmpseg button{min-height:30px}.cmpseg button{min-height:30px}.cmpbtn.row{min-height:36px}.cmpchip{min-height:28px}.cmpsplit{flex-basis:30px}.cmppill{width:48px;height:26px}.cmpmain[data-dock=left] .cmppill,.cmpmain[data-dock=right] .cmppill{width:26px;height:48px}.cmpdv[data-kind=v]{width:28px;margin-left:-14px}.cmpdv[data-kind=h]{height:28px;margin-top:-14px}.cmpdv[data-kind=v]::after{left:12px;right:12px}.cmpdv[data-kind=h]::after{top:12px;bottom:12px}.cmpbtn.cmpdesk{display:none}}
 
 
 /* 液体タブ（台帳Z-272） */

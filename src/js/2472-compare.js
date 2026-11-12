@@ -336,7 +336,7 @@ function penUi(){
   if(!R.view)return;const p=CM.pen,q=R.el.querySelector.bind(R.el);
   R.view.classList.toggle('pen',p.on);R.view.classList.toggle('eras',p.on&&p.erase);
   const b=q('#cmpPen');b.classList.toggle('on',p.on);b.setAttribute('aria-pressed',p.on?'true':'false');b.style.setProperty('--pc',p.erase?'transparent':p.c);   /* ペンの色の点は、ペンのボタンの中に出す（絵の上には出さない） */
-  q('#cmpPenBar').hidden=!p.on;const uq=q('#cmpUndoQ');uq.hidden=!p.on;uq.disabled=!CM.undo.length;
+  q('#cmpPenBar').hidden=!p.on;q('#cmpPenOpt').hidden=!p.on;if(!p.on)penPopOpen(false);const uq=q('#cmpUndoQ');uq.hidden=!p.on;uq.disabled=!CM.undo.length;
   q('#cmpCols').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',(!p.erase&&x.dataset.c===p.c)?'true':'false'));
   q('#cmpPenW').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.w===p.w?'true':'false'));
   const er=q('#cmpEras');er.classList.toggle('on',p.erase);er.setAttribute('aria-pressed',p.erase?'true':'false');
@@ -503,9 +503,9 @@ function toast(msg,ms,act){
   if(act){const b=E('button','cmpbtn sm lt',act.label);b.type='button';b.onclick=()=>{hideToast();act.fn()};t.append(b)}
   t.hidden=false;clearTimeout(tTimer);tTimer=setTimeout(hideToast,ms>0?ms:4500)}
 function hideToast(){if(R.toast)R.toast.hidden=true}
-CONSOLE.onEsc=()=>{if(CONSOLE.cur!=='cmp')return false;if(R.menu&&!R.menu.hidden){menuOpen(false);return true}if(R.panel&&!R.panel.hidden){barOpen(false);return true}return false};   /* Escは、開いているメニュー→畳める面の順に閉じる（コンソールごとは閉じない） */
+CONSOLE.onEsc=()=>{if(CONSOLE.cur!=='cmp')return false;if(R.menu&&!R.menu.hidden){menuOpen(false);return true}if(R.panel&&!R.panel.hidden){barOpen(false);return true}if(R.penpop&&!R.penpop.hidden){penPopOpen(false);return true}return false};   /* Escは、開いているメニュー→畳める面の順に閉じる（コンソールごとは閉じない） */
 function menuOpen(on){
-  const m=R.menu;on=on===undefined?m.hidden:!!on;if(on)barOpen(false);m.hidden=!on;R.bk.hidden=!on;R.more.setAttribute('aria-expanded',on?'true':'false');
+  const m=R.menu;on=on===undefined?m.hidden:!!on;if(on){barOpen(false);penPopOpen(false)}m.hidden=!on;R.bk.hidden=!on;R.more.setAttribute('aria-expanded',on?'true':'false');
   if(on){m.scrollTop=0;const f=m.querySelector('#cmpMenuX');if(f)f.focus({preventScroll:true})}else if(document.activeElement&&m.contains(document.activeElement))R.more.focus({preventScroll:true})}
 function pxUi(){R.el.querySelectorAll('#cmpPxSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.px===CM.pixel?'true':'false'))}
 function dockUi(){R.el.querySelectorAll('#cmpDockSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===CM.dock?'true':'false'))}
@@ -524,8 +524,19 @@ function mount(el){
     <button type="button" id="cmpAdd" class="cmpbtn sm ico prim" aria-label="画像を追加（まとめて選べます）" title="画像を追加（まとめて選べます）">＋</button>
     <button type="button" id="cmpTog" class="cmpbtn sm" aria-expanded="false" aria-controls="cmpPanel" aria-label="操作を開く／たたむ" title="操作を開く／たたむ（Escで閉じる）"><span>操作</span><i aria-hidden="true">▾</i></button>
     <button type="button" id="cmpPen" class="cmpbtn sm cmpx" aria-pressed="false" aria-label="ペン：絵の上に書き込む（キー D）" title="絵の上に、指やマウスで書き込む（D）">✎ ペン<span class="pdot" aria-hidden="true"></span></button>
+    <button type="button" id="cmpPenOpt" class="cmpbtn sm ico cmpx" hidden aria-expanded="false" aria-controls="cmpPenPop" aria-label="ペンの色・太さ・消しゴムを開く／たたむ" title="ペンの色・太さ・消しゴム"><i aria-hidden="true">▾</i></button>
     <button type="button" id="cmpUndoQ" class="cmpbtn sm ico cmpx" hidden aria-label="書き込みを1つ戻す（Ctrl+Z）" title="書き込みを1つ戻す（Ctrl+Z）">↩</button>
     <div class="cmpinfo" id="cmpInfo" aria-live="polite"><b class="cn"></b><span class="nm"></span><small class="iz"></small></div>
+  </div>
+  <div class="cmppenpop" id="cmpPenPop" role="group" aria-label="ペンの色・太さ・消しゴム" hidden>
+    <div class="cmppenbar" id="cmpPenBar" hidden>
+      <div class="cmpcols" id="cmpCols" role="group" aria-label="ペンの色">${PCOL.map(([c,n])=>`<button type="button" class="cmpcol" data-c="${c}" style="--c:${c}" aria-pressed="false" aria-label="${n}" title="${n}"></button>`).join('')}</div>
+      <div class="cmpseg" id="cmpPenW" role="group" aria-label="ペンの太さ">${PW.map(([w,n])=>`<button type="button" data-w="${w}" aria-pressed="false">${n}</button>`).join('')}</div>
+      <button type="button" id="cmpEras" class="cmpbtn sm" aria-pressed="false" aria-label="消しゴム（キー E）。なぞった線を消します" title="なぞった線を消す（E）">消しゴム</button>
+      <button type="button" id="cmpUndoInk" class="cmpbtn sm" aria-label="書き込みを1つ戻す（Ctrl+Z）" title="書き込みを1つ戻す（Ctrl+Z）">↩ 戻す</button>
+      <button type="button" id="cmpInkClr" class="cmpbtn sm" aria-label="いま見ている絵（青い枠）の書き込みを、全部消す" title="いま見ている絵（青い枠）の書き込みを、全部消す">全部消す</button>
+      <button type="button" id="cmpInkShow" class="cmpbtn sm" aria-pressed="false" aria-label="書き込みを、一時的に隠す／出す" title="書き込みを、一時的に隠す／出す">隠す</button>
+    </div>
   </div>
   <div class="cmppanel" id="cmpPanel" role="group" aria-label="操作" hidden>
     <div class="cmpps">
@@ -549,18 +560,6 @@ function mount(el){
         <span class="cmpmv" role="group" aria-label="絵の並べ替え"><button type="button" id="cmpML" class="cmpbtn sm ico" aria-label="この絵を、1つ前の位置と入れ替える" title="1つ前の位置へ">◀</button><button type="button" id="cmpMR" class="cmpbtn sm ico" aria-label="この絵を、1つ後ろの位置と入れ替える" title="1つ後ろの位置へ">▶</button></span>
       </div></div>
     <div class="cmppinbar" id="cmpPinBar" hidden><span id="cmpPins">📍0</span><span id="cmpPinMode"></span><span class="cmpsp"></span><button type="button" id="cmpPinOff" class="cmpbtn sm">やめる</button><button type="button" id="cmpPinClr" class="cmpbtn sm">ピンを消す</button></div>
-    <div class="cmpps cmppenbar" id="cmpPenBar" hidden><h5>ペン</h5>
-      <div class="cmprow1">
-        <div class="cmpcols" id="cmpCols" role="group" aria-label="ペンの色">${PCOL.map(([c,n])=>`<button type="button" class="cmpcol" data-c="${c}" style="--c:${c}" aria-pressed="false" aria-label="${n}" title="${n}"></button>`).join('')}</div>
-        <div class="cmpseg" id="cmpPenW" role="group" aria-label="ペンの太さ">${PW.map(([w,n])=>`<button type="button" data-w="${w}" aria-pressed="false">${n}</button>`).join('')}</div>
-      </div>
-      <div class="cmprow2">
-        <button type="button" id="cmpEras" class="cmpbtn sm" aria-pressed="false" aria-label="消しゴム（キー E）。なぞった線を消します" title="なぞった線を消す（E）">消しゴム</button>
-        <button type="button" id="cmpUndoInk" class="cmpbtn sm" aria-label="書き込みを1つ戻す（Ctrl+Z）" title="書き込みを1つ戻す（Ctrl+Z）">↩ 戻す</button>
-        <button type="button" id="cmpInkClr" class="cmpbtn sm" aria-label="いま見ている絵（青い枠）の書き込みを、全部消す" title="いま見ている絵（青い枠）の書き込みを、全部消す">全部消す</button>
-        <button type="button" id="cmpInkShow" class="cmpbtn sm" aria-pressed="false" aria-label="書き込みを、一時的に隠す／出す" title="書き込みを、一時的に隠す／出す">隠す</button>
-      </div>
-    </div>
   </div>
 </div>
 <div class="cmpmain" id="cmpMain">
@@ -617,7 +616,7 @@ function mount(el){
     <li><b>選ぶ</b>：一覧の画像をタップ。長押ししてそのまま指をすべらせると、まとめて選べます（マウスは、押したままなぞる）</li>
     <li><b>拡大</b>：ピンチまたはホイール。ドラッグで動かす。「連動」がオンなら、全部の絵がいっしょに動きます</li>
     <li><b>印</b>：上の「操作▾」→「いま見ている絵」の ○ ✕ ★ ？（絵の枠の色にも出ます）。キーボードは O・X・S・H</li>
-    <li><b>書き込み</b>：「✎ ペン」を押して、絵の上に指やマウスで書く。2本の指でつまむと拡大。書き込みは、元の画像を変えません（「⋯ その他」の「書き込みつきの画像を、全部まとめて保存（zip）」で、画像にして、1つのzipで受け取れます）。キーボードは D・E・Ctrl+Z</li>
+    <li><b>書き込み</b>：「✎ ペン」を押して、絵の上に指やマウスで書く。色・太さ・消しゴムは、ペンの横の「▾」から選びます。2本の指でつまむと拡大。書き込みは、元の画像を変えません（「⋯ その他」の「書き込みつきの画像を、全部まとめて保存（zip）」で、画像にして、1つのzipで受け取れます）。キーボードは D・E・Ctrl+Z</li>
     <li><b>大きさ・並び</b>：一覧との境目、絵と絵の境目をつかんで動かす。絵の入れ替えは、「操作▾」→「いま見ている絵」の ◀ ▶</li>
   </ul></details>
 </div>
@@ -625,7 +624,7 @@ function mount(el){
 <div class="cmpsr" id="cmpSt" aria-live="polite"></div>
 <input type="file" id="cmpFile" accept="image/*" multiple hidden><input type="file" id="cmpDirF" webkitdirectory multiple hidden>`;
   const q=id=>el.querySelector('#'+id);
-  R={grid:q('cmpGrid'),view:q('cmpView'),stage:q('cmpStage'),tiles:q('cmpTiles'),empty:q('cmpEmpty'),st:q('cmpSt'),pins:q('cmpPins'),side:q('cmpSide'),main:q('cmpMain'),split:q('cmpSplit'),pill:q('cmpPill'),zone:q('cmpZone'),dv:q('cmpDvs'),
+  R={penpop:q('cmpPenPop'),penopt:q('cmpPenOpt'),grid:q('cmpGrid'),view:q('cmpView'),stage:q('cmpStage'),tiles:q('cmpTiles'),empty:q('cmpEmpty'),st:q('cmpSt'),pins:q('cmpPins'),side:q('cmpSide'),main:q('cmpMain'),split:q('cmpSplit'),pill:q('cmpPill'),zone:q('cmpZone'),dv:q('cmpDvs'),
     count:q('cmpCount'),chips:q('cmpChips'),prev:q('cmpPrev'),next:q('cmpNext'),clr:q('cmpClr'),more:q('cmpMore'),menu:q('cmpMenu'),bk:q('cmpBk'),toast:q('cmpToast'),el,
     wrap:q('cmpBarWrap'),bar:q('cmpBar'),panel:q('cmpPanel'),tog:q('cmpTog'),info:q('cmpInfo'),cn:el.querySelector('#cmpInfo .cn'),inm:el.querySelector('#cmpInfo .nm'),iz:el.querySelector('#cmpInfo .iz'),
     fnm:q('cmpFNm'),mk:q('cmpMk'),one:q('cmpOne'),fl:q('cmpFL'),fr:q('cmpFR'),ml:q('cmpML'),mr:q('cmpMR')};
@@ -649,9 +648,9 @@ function mount(el){
   q('cmpMore').onclick=()=>menuOpen();q('cmpMenuX').onclick=()=>menuOpen(false);R.bk.onclick=()=>menuOpen(false);
   q('cmpBack').onclick=()=>{const x=document.getElementById('csx');if(x)x.click()};   /* コンソールの見出しは、見比べでは畳む。戻る操作は、ここに置く */
   /* 畳める面：既定は閉じている。「操作▾」・Esc・外を押す・（印の以外の）操作ボタンを押す、で閉じる */
-  R.tog.onclick=()=>barOpen();
+  R.tog.onclick=()=>barOpen();R.penopt.onclick=()=>penPopOpen();
   R.panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.closest('#cmpMk,#cmpFL,#cmpFR,.cmpmv')||b.id==='cmpMore')return;if(b.id==='cmpPinOff'||b.id==='cmpPinClr')return;setTimeout(()=>barOpen(false),0)});   /* 印と、見ている絵の切り替えは、続けて押せるよう開いたまま */
-  el.addEventListener('pointerdown',e=>{if(!R.panel.hidden&&!e.target.closest('.cmpbarwrap,.cmpmenu,.cmptoast'))barOpen(false)},true);
+  el.addEventListener('pointerdown',e=>{const out=!e.target.closest('.cmpbarwrap,.cmpmenu,.cmptoast');if(out&&!R.panel.hidden)barOpen(false);if(out&&!R.penpop.hidden)penPopOpen(false)},true);   /* 絵を触った・外を押した時は、面もペンの小さな窓も閉じる */
   R.mk.addEventListener('click',e=>{const b=e.target.closest('button');const id=fid();if(b&&id)setMark(id,b.dataset.m)});
   R.one.onclick=()=>{const id=fid();if(!id)return;CM.single=CM.single?0:id;schedule();infoUi()};
   R.fl.onclick=()=>moveFocus(-1);R.fr.onclick=()=>moveFocus(1);R.ml.onclick=()=>moveTile(-1);R.mr.onclick=()=>moveTile(1);
@@ -670,12 +669,16 @@ function mount(el){
   el.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){e.preventDefault();addFiles([...e.dataTransfer.files])}});
   layout();renderGrid();status();
 }
-/* 畳める面（「操作▾」）。上の薄い1行の下に重なって開く。閉じている間は、絵の欄は最大。ペンの色・太さもここ（絵の上には浮かせない） */
+/* 畳める面（「操作▾」）。上の薄い1行の下に重なって開く。閉じている間は、絵の欄は最大。ペンの色・太さは、ペンを入れている間だけ出る小さな窓（ペンの横の「▾」。penPopOpen）に置く（どちらも絵の上には常には浮かせない） */
 function barFit(){if(R.panel&&!R.panel.hidden)R.panel.style.maxHeight=Math.max(120,R.el.clientHeight-R.bar.offsetHeight-10)+'px'}
 function barOpen(on){
   const p=R.panel;if(!p)return;on=on===undefined?p.hidden:!!on;if(on===!p.hidden)return;
-  p.hidden=!on;R.tog.setAttribute('aria-expanded',on?'true':'false');R.tog.classList.toggle('on',on);R.tog.querySelector('i').textContent=on?'▴':'▾';
+  if(on)penPopOpen(false);p.hidden=!on;R.tog.setAttribute('aria-expanded',on?'true':'false');R.tog.classList.toggle('on',on);R.tog.querySelector('i').textContent=on?'▴':'▾';
   if(on){barFit();p.scrollTop=0}}
+/* ペンの小さな窓（ペンを入れている間だけ、ペンの横の「▾」で開く）。色・太さ・消しゴム・戻す・全部消す・隠す。上の1行の下に重なって開き、絵の欄は縮めない */
+function penPopOpen(on){
+  const p=R&&R.penpop;if(!p)return;on=on===undefined?p.hidden:!!on;if(on&&!CM.pen.on)on=false;if(on===!p.hidden)return;
+  if(on)barOpen(false);p.hidden=!on;R.penopt.setAttribute('aria-expanded',on?'true':'false');R.penopt.classList.toggle('on',on);R.penopt.querySelector('i').textContent=on?'▴':'▾'}
 function toggleSync(on){
   const n=on===undefined?!CM.sync:on;if(n===CM.sync)return;
   if(n){const t=CM.tiles.get(CM.focus)||CM.tiles.values().next().value;if(t)CM.v={...t.v}}
@@ -734,6 +737,7 @@ addEventListener('keydown',e=>{
   const tg=e.target;if(tg&&(/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)&&tg.type!=='range'&&tg.type!=='button'||tg.isContentEditable||tg.id==='cmpSplit'||tg.id==='cmpPill'))return;   /* 境目・置き場所のつかみは、自分でキーを受ける */
   if(R.menu&&!R.menu.hidden){if(e.key==='Escape'){menuOpen(false);e.preventDefault();e.stopImmediatePropagation()}return}   /* メニューを開いている間は、ほかのキーは働かせない */
   if(e.key==='Escape'&&R.panel&&!R.panel.hidden){barOpen(false);e.preventDefault();e.stopImmediatePropagation();return}
+  if(e.key==='Escape'&&R.penpop&&!R.penpop.hidden){penPopOpen(false);e.preventDefault();e.stopImmediatePropagation();return}
   const k=e.key.toLowerCase();let h=true;
   if((e.ctrlKey||e.metaKey)){if(k==='a'){for(const it of vis())CM.sel.add(it.id);selChanged()}else if(k==='z'&&!e.shiftKey)inkUndo();else h=false}
   else if(k==='o'||k==='x'||k==='s'||k==='h'){const id=target();if(id)setMark(id,k);else h=false}
@@ -753,5 +757,5 @@ addEventListener('keydown',e=>{
   else h=false;
   if(h){e.preventDefault();e.stopImmediatePropagation()}},true);
 
-CONSOLE.reg({id:'cmp',no:3,mode:'cons3',ico:'🔍',name:'画像の見比べ',mount,enter(){const c=document.getElementById('cons');if(c)c.dataset.cmp='1';layout();renderTiles();status()},leave(){const c=document.getElementById('cons');if(c)delete c.dataset.cmp;if(R.menu)menuOpen(false);barOpen(false);finalizeTrash()}});
+CONSOLE.reg({id:'cmp',no:3,mode:'cons3',ico:'🔍',name:'画像の見比べ',mount,enter(){const c=document.getElementById('cons');if(c)c.dataset.cmp='1';layout();renderTiles();status()},leave(){const c=document.getElementById('cons');if(c)delete c.dataset.cmp;if(R.menu)menuOpen(false);barOpen(false);penPopOpen(false);finalizeTrash()}});
 })();
