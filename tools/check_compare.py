@@ -12,8 +12,11 @@ def chk(name, cond, info=''):
     else: ng += 1; print('NG  ', name, info)
 def shut(pg_):   # 畳める面が開いていれば、Escで閉じる
     if not pg_.evaluate("()=>document.getElementById('cmpPanel').hidden"): pg_.keyboard.press('Escape'); pg_.wait_for_timeout(80)
-def P(pg_, sel, tap=False):   # 畳める面の中のボタンを押す（閉じていれば「操作▾」で開く）。押したあと、面が自動で閉じるのを待つ
-    if pg_.evaluate("()=>document.getElementById('cmpPanel').hidden"): (pg_.tap if tap else pg_.click)('#cmpTog'); pg_.wait_for_timeout(120)
+PENSEL = ('cmpCols', 'cmpcol', 'cmpPenW', 'cmpEras', 'cmpUndoInk', 'cmpInkClr', 'cmpInkShow')
+def P(pg_, sel, tap=False):   # 畳める面の中のボタンを押す（閉じていれば「操作▾」で開く）。押したあと、面が自動で閉じるのを待つ。ペンの色・太さ・消しゴムなどは、ペンの横の「▾」の小さな窓（台帳Z-282）
+    if any(k in sel for k in PENSEL):
+        if pg_.evaluate("()=>document.getElementById('cmpPenPop').hidden"): (pg_.tap if tap else pg_.click)('#cmpPenOpt'); pg_.wait_for_timeout(120)
+    elif pg_.evaluate("()=>document.getElementById('cmpPanel').hidden"): (pg_.tap if tap else pg_.click)('#cmpTog'); pg_.wait_for_timeout(120)
     (pg_.tap if tap else pg_.click)(sel); pg_.wait_for_timeout(80)
 OVL = """()=>{const st=document.getElementById('cmpStage'),r=st.getBoundingClientRect(),bad=[];
   for(let i=0;i<5;i++)for(let j=0;j<5;j++){
@@ -248,7 +251,19 @@ with sync_playwright() as pw:
     chk('ペンを入れても、絵の欄の高さが変わらない（縮まない）', abs(bx('#cmpStage')['height'] - st_h0) < 1, (st_h0, bx('#cmpStage')['height']))
     ov = pg.evaluate(OVL); chk('ペンを入れても、絵の欄の上に何も重ならない', not ov, ov)
     r0 = tile_px(RED)
-    chk('「✎ ペン」を押すと、ペンの操作（色・太さ・消しゴム・戻す）が、畳める面の中に出る', pg.evaluate("()=>!document.getElementById('cmpPenBar').hidden&&document.getElementById('cmpPen').getAttribute('aria-pressed')==='true'&&document.querySelectorAll('#cmpCols button').length===6&&document.getElementById('cmpPenBar').closest('#cmpPanel')"))
+    chk('「✎ ペン」を押すと、ペンの横に小さな「▾」が出る（窓はまだ閉じている）', pg.evaluate("()=>!document.getElementById('cmpPenOpt').hidden&&document.getElementById('cmpPenPop').hidden&&document.getElementById('cmpPen').getAttribute('aria-pressed')==='true'"))
+    pg.click('#cmpPenOpt'); pg.wait_for_timeout(150)
+    pp = pg.evaluate("()=>{const r=document.getElementById('cmpPenPop').getBoundingClientRect(),bar=document.getElementById('cmpBar').getBoundingClientRect();return{open:!document.getElementById('cmpPenPop').hidden,h:Math.round(r.height),w:Math.round(r.width),cols:document.querySelectorAll('#cmpPenPop #cmpCols button').length,ws:document.querySelectorAll('#cmpPenPop #cmpPenW button').length,inPanel:!!document.getElementById('cmpPenPop').closest('#cmpPanel'),under:r.top>=bar.bottom-1,btns:['cmpEras','cmpUndoInk','cmpInkClr','cmpInkShow'].every(i=>document.getElementById('cmpPenPop').contains(document.getElementById(i)))}}")
+    chk('「▾」を押すと、ペンの小さな窓（色6・太さ3・消しゴム・戻す・全部消す・隠す）が、上の1行の下に開く（面の中ではない）', pp['open'] and pp['cols'] == 6 and pp['ws'] == 3 and pp['btns'] and pp['under'] and not pp['inPanel'], pp)
+    chk('ペンの小さな窓は小さい（高さ80px以下）', pp['h'] <= 80, pp)
+    chk('ペンの小さな窓を開いても、絵の欄の高さが変わらない', abs(bx('#cmpStage')['height'] - st_h0) < 1, (st_h0, bx('#cmpStage')['height']))
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(120)
+    chk('Escで、ペンの小さな窓だけが閉じる（見比べの画面とペンは残る）', pg.evaluate("()=>document.getElementById('cmpPenPop').hidden&&CONSOLE.isOpen()&&document.getElementById('cmpPen').getAttribute('aria-pressed')==='true'"))
+    pg.click('#cmpPenOpt'); pg.wait_for_timeout(100); pg.click('#cmpTog'); pg.wait_for_timeout(120)
+    chk('「操作▾」を開くと、ペンの小さな窓は閉じる（重ならない）', pg.evaluate("()=>document.getElementById('cmpPenPop').hidden&&!document.getElementById('cmpPanel').hidden"))
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(100)
+    bh = pg.evaluate("()=>Math.round(document.getElementById('cmpBar').getBoundingClientRect().height)")
+    chk('パソコン：上の1行は、細い（34px以下）', bh <= 34, bh)
     chk('ペンを入れると、上の1行に ↩（戻す）が出る', pg.evaluate("()=>!document.getElementById('cmpUndoQ').hidden"))
     tb = bx('.cmpcv >> nth=0'); X0, Y0 = tb['x'] + tb['width'] * .25, tb['y'] + tb['height'] * .35
     pg.mouse.move(X0, Y0); pg.mouse.down(); pg.mouse.move(X0 + tb['width'] * .3, Y0 + 40, steps=8); pg.mouse.move(X0 + tb['width'] * .1, Y0 + 80, steps=6); pg.mouse.up(); pg.wait_for_timeout(700)
@@ -356,7 +371,7 @@ with sync_playwright() as pw:
     pg2.wait_for_timeout(400)
     g = pg2.evaluate("()=>{const r=s=>document.querySelector(s).getBoundingClientRect();return {main:r('#cmpMain').height,side:r('#cmpSide').height,view:r('#cmpView').height,stage:r('#cmpStage').height,bar:r('#cmpBar').height,dock:document.getElementById('cmpMain').dataset.dock}}")
     chk('スマホ：見比べの絵の欄が、全体の半分以上（上の部品に取られない）', g['stage'] >= g['main'] * .5, g)
-    chk('スマホ：上の列は1行（48px以下）', g['bar'] <= 48, g)
+    chk('スマホ：上の列は1行で細い（36px以下）', g['bar'] <= 36, g)
     ov = pg2.evaluate(OVL); chk('スマホ：絵の欄の上に、絵以外の部品が重なっていない', not ov, ov)
     tb = pg2.evaluate("()=>[...document.querySelectorAll('.cmpcv')].map(e=>{const r=e.getBoundingClientRect();return[Math.round(r.width),Math.round(r.height)]})")
     chk('スマホ：4枚の絵が、それぞれ幅140px以上・高さ100px以上（「1枚だけ」で大きくもできる）', len(tb) == 4 and all(w >= 140 and h >= 100 for w, h in tb), tb)
@@ -391,13 +406,13 @@ with sync_playwright() as pw:
     mb = pg2.evaluate("()=>{const r=document.getElementById('cmpMenu').getBoundingClientRect();return{top:r.top,bottom:r.bottom,w:r.width,h:innerHeight,vw:innerWidth,open:!document.getElementById('cmpMenu').hidden}}")
     chk('スマホ：「その他」を押すと、下から出る窓（幅いっぱい）が開く', mb['open'] and mb['bottom'] >= mb['h'] - 2 and mb['w'] >= mb['vw'] - 2, mb)
     rows = pg2.evaluate("()=>[...document.querySelectorAll('#cmpMenu .cmpbtn.row')].filter(b=>b.offsetParent).map(b=>Math.round(b.getBoundingClientRect().height))")
-    chk('スマホ：メニューの項目は、44px以上の高さ（押しやすい）', rows and all(h >= 44 for h in rows), rows)
+    chk('スマホ：メニューの項目は、小さく（34〜44px）しても押せる', rows and all(34 <= h <= 44 for h in rows), rows)
     chk('スマホ：メニューに、パソコン向けの「フォルダごと追加」は出ない', pg2.evaluate("()=>getComputedStyle(document.getElementById('cmpDir')).display")=='none')
     pg2.tap('#cmpBk', position={'x': 12, 'y': 12}); pg2.wait_for_timeout(250)
     chk('スマホ：外側を押すと、メニューが閉じる', pg2.evaluate("()=>document.getElementById('cmpMenu').hidden"))
     # ペン（指）：1本の指で書く／2本の指で、書きかけの線は消えて拡大になる
     pg2.tap('#cmpPen'); pg2.wait_for_timeout(500)
-    chk('スマホ：ペンを入れても、絵の欄の高さが変わらず、上の1行も1行のまま', abs(pg2.evaluate("()=>document.getElementById('cmpStage').getBoundingClientRect().height") - g['stage']) < 2 and pg2.evaluate("()=>document.getElementById('cmpBar').getBoundingClientRect().height") <= 48)
+    chk('スマホ：ペンを入れても、絵の欄の高さが変わらず、上の1行も1行のまま', abs(pg2.evaluate("()=>document.getElementById('cmpStage').getBoundingClientRect().height") - g['stage']) < 2 and pg2.evaluate("()=>document.getElementById('cmpBar').getBoundingClientRect().height") <= 36)
     inks = lambda: pg2.evaluate("()=>Object.values(JSON.parse(localStorage.getItem('am_cmp_ink')||'{\"ink\":{}}').ink).reduce((a,v)=>a+v.length,0)")
     tbx = pg2.evaluate("()=>{const r=document.querySelectorAll('.cmpcv')[1].getBoundingClientRect();return[r.x,r.y,r.width,r.height]}")
     PT = lambda fx, fy: (tbx[0] + tbx[2] * fx, tbx[1] + tbx[3] * fy)
