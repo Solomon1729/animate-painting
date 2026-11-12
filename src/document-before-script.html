@@ -363,16 +363,26 @@
     <div class="grp"><div class="gh">💧 液体を足す</div>
     <div class="row"><button id="lqAddPour" type="button" aria-label="蛇口から水を注ぐ液体の絵を足す">＋蛇口（注ぐ）</button><button id="lqAddDrip" type="button" aria-label="蛇口から水を垂らす液体の絵を足す">＋蛇口（垂らす）</button></div>
     <div class="row"><button id="lqAddDrop" type="button" aria-label="水滴が落ちる液体の絵を足す">＋水滴</button><button id="lqAddTear" type="button" aria-label="涙が落ちる液体の絵を足す">＋涙</button></div>
+    <div class="row"><button id="lqAddTom" type="button" aria-label="トマトをぶつける液体の絵を足す">＋トマト（ぶつける）</button><button id="lqAddChm" type="button" aria-label="シャンパンを吹きかける液体の絵を足す">＋シャンパン</button></div>
+    <div class="row"><button id="lqAddIce" type="button" aria-label="アイスクリームが飛び散る液体の絵を足す">＋アイス</button><button id="lqAddMay" type="button" aria-label="マヨネーズを絞り出す液体の絵を足す">＋マヨネーズ</button></div>
     <div class="note">足した絵は、ほかの絵と同じように動かせます（位置・大きさ・向き・動き・レイヤー・元に戻す・保存）。水は、絵の向きに沿って出ます。水は「床の高さ」まで落ちて、床の上にたまります（写真の床に合わせて、高さと傾きを決めてください。絵や物体にはまだぶつかりません）。</div></div>
     <div class="grp"><div class="gh" id="lqTitle">選んでいる液体</div>
     <div class="note" id="lqNone">蛇口・水滴・涙の絵を選ぶと、ここで調整できます。</div>
     <div id="lqCtl" hidden>
-    <div class="row"><button id="lqOn" type="button" aria-label="水を流す／止める">⏸ 止める</button><button id="lqClr" type="button" aria-label="いま出ている水を消す">水を消す</button></div>
+    <div class="row"><button id="lqOn" type="button" aria-label="水を流す／止める">⏸ 止める</button><button id="lqClr" type="button" aria-label="空中と床の水を消す（かかった跡は残る）">水を消す</button></div>
+    <div class="row"><button id="lqHold" type="button" aria-label="この液体だけ、その場で止める／動かす">❄ その場で止める</button><button id="lqClrCt" type="button" aria-label="絵の面に付いた跡だけを消す">かかった跡を消す</button><button id="lqDel" type="button" aria-label="この液体を削除する">この液体を削除</button></div>
+    <div class="row"><span class="lab">種類</span><select id="lqMat" aria-label="液体の種類（色・ねばり・付き方がまとめて変わる）"><option value="water">水</option><option value="champagne">シャンパン</option><option value="tomato">トマト</option><option value="ice">アイスクリーム</option><option value="mayo">マヨネーズ</option></select></div>
+    <div class="row"><span class="lab">向き</span><input id="lqAng" type="range" min="0" max="360" step="1" aria-label="出す向きの角度（0°が下、360°ぐるり）"><b class="v" id="lqAngv"></b></div>
+    <div class="row"><span class="lab">奥行き</span><input id="lqDep" type="range" min="-90" max="90" step="1" aria-label="奥行きの向き（プラスはこちらへ向かってくる、マイナスは向こうへ向かっていく）"><b class="v" id="lqDepv"></b></div>
+    <div class="row" id="lqSprRow"><span class="lab">広がり</span><input id="lqSpr" type="range" min="0" max="85" step="1" aria-label="ばらまく広がりの角度"><b class="v" id="lqSprv"></b></div>
+    <div class="row"><span class="lab">止まる強さ</span><input id="lqYld" type="range" min="0" max="1" step="0.01" aria-label="絵の面に付いたあと、垂れずに止まる強さ（大きいほど付いたまま）"><b class="v" id="lqYldv"></b></div>
+    <div class="row"><span class="lab">付く量</span><input id="lqAdh" type="range" min="0" max="6" step="0.1" aria-label="絵の面に付く量"><b class="v" id="lqAdhv"></b></div>
     <div class="row"><span class="lab" id="lqWl">流れの太さ</span><input id="lqW" type="range" min="1" max="12" step="1" aria-label="流れの太さ、または1回に出す粒の数"><b class="v" id="lqWv"></b></div>
     <div class="row"><span class="lab">勢い</span><input id="lqV" type="range" min="0" max="1.2" step="0.01" aria-label="水を出す勢い"><b class="v" id="lqVv"></b></div>
     <div class="row" id="lqGapRow"><span class="lab">間隔</span><input id="lqG" type="range" min="0.3" max="6" step="0.1" aria-label="水のかたまりを出す間隔（秒）"><b class="v" id="lqGv"></b></div>
     <div class="row"><span class="lab">粘性</span><input id="lqVi" type="range" min="0" max="1" step="0.01" aria-label="粘性（大きいほどねばる）"><b class="v" id="lqViv"></b></div>
-    <div class="row"><span class="lab">粒の大きさ</span><input id="lqSz" type="range" min="0.4" max="2.5" step="0.05" aria-label="粒の大きさ（大きいほど粗く、軽くなる）"><b class="v" id="lqSzv"></b></div>
+    <div class="row"><span class="lab">粒の大きさ</span><input id="lqSz" type="range" min="0.4" max="2.5" step="0.05" aria-label="粒の大きさ（小さいほど細かい。水の量や流れの太さは変わらず、粒の数だけ増える）"><b class="v" id="lqSzv"></b></div>
+    <div class="row"><span class="lab">つながり</span><input id="lqLk" type="range" min="0" max="1.5" step="0.01" aria-label="つながり（大きいほど粒がなめらかにつながって、ねっとり見える。粘性とは別）"><b class="v" id="lqLkv"></b></div>
     <div class="row"><span class="lab">色</span><input id="lqCol" type="color" aria-label="水の色"></div>
     <div class="row"><span class="lab">透明度</span><input id="lqTr" type="range" min="0" max="0.97" step="0.01" aria-label="透明度（大きいほど透ける）"><b class="v" id="lqTrv"></b></div>
     <div class="row"><span class="lab">波紋・つや</span><input id="lqRp" type="range" min="0" max="1" step="0.01" aria-label="水面のゆれの光り方・つやの強さ"><b class="v" id="lqRpv"></b></div>

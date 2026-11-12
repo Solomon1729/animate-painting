@@ -79,8 +79,20 @@ with sync_playwright() as p:
     chk('先に足した液体は「注ぐ」', a0 == 'pour')
     open_lq(pg)
     chk('液体タブを開くと、操作の欄が出る', pg.evaluate("()=>!document.getElementById('lqCtl').hidden"))
-    for i in ('lqFl', 'lqPt', 'lqPl', 'lqTk', 'lqTr'):
+    for i in ('lqFl', 'lqPt', 'lqPl', 'lqTk', 'lqTr', 'lqSz', 'lqLk', 'lqAng', 'lqDep', 'lqMat', 'lqAddTom', 'lqAddChm', 'lqAddIce', 'lqAddMay', 'lqHold', 'lqClrCt', 'lqDel'):
         chk(f'操作の部品がある（{i}）', pg.evaluate("i=>!!document.getElementById(i)", i))
+    # つながり・粒の大きさ（細かさ）は、粘性とは別に動かせて、水に伝わる
+    pg.evaluate("()=>{const e=document.getElementById('lqLk');e.value=1.1;e.dispatchEvent(new Event('input',{bubbles:true}))}")
+    chk('「つながり」を動かすと、水に伝わる（粘性とは別）', abs(pg.evaluate("()=>AC.filter(a=>a.liq)[0].liq.lnk") - 1.1) < .02 and abs(pg.evaluate("()=>AC.filter(a=>a.liq)[0].liq.visc") - .1) < .3)
+    pg.evaluate("()=>{const e=document.getElementById('lqSz');e.value=.6;e.dispatchEvent(new Event('input',{bubbles:true}))}")
+    chk('「粒の大きさ」を動かすと、水に伝わる', abs(pg.evaluate("()=>AC.filter(a=>a.liq)[0].liq.size") - .6) < .02)
+    pg.evaluate("()=>{const e=document.getElementById('lqSz');e.value=1;e.dispatchEvent(new Event('input',{bubbles:true}))}")
+    pg.evaluate("()=>{const e=document.getElementById('lqLk');e.value=.6;e.dispatchEvent(new Event('input',{bubbles:true}))}")
+    for m in ('tomato', 'champagne', 'ice', 'mayo'):
+        n0 = pg.evaluate("()=>AC.filter(a=>a.liq).length")
+        pg.evaluate("m=>liqAdd(null,m)", m)
+        chk(f'液体の種類を足せる（{m}）', pg.evaluate("()=>AC.filter(a=>a.liq).length") == n0 + 1 and pg.evaluate("()=>AC.filter(a=>a.liq).slice(-1)[0].liq.mat") == m)
+    pg.evaluate("()=>{const L=AC.filter(a=>a.liq);for(const a of L.slice(1))a.liq.on=false;sel=L[0]}")
 
     # ---------- 水が描かれる／止めると消える ----------
     pg.wait_for_timeout(3500)

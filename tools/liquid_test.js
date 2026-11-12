@@ -71,4 +71,38 @@ chk('水そう：水たまり（床）は作らない', !R7.S.pl || poolSum(R7.S
 const R8 = run(Object.assign({}, PRE, { visc: 1 }), 5, 60);
 chk('粘りを最大にしても、数が有限で動く', fin(R8.S.x, R8.S.n) && fin(R8.S.y, R8.S.n) && R8.S.n > 0 && R8.maxN <= 600, R8.maxN);
 
+/* 8. 粒の細かさ（size）：細かくしても水の量・流れの太さは同じで、粒の数だけ増える。つながり（lnk）は計算に使える */
+const RF = run(Object.assign({}, PRE, { size: .5 }), 5, 60, 1500), RN = run(Object.assign({}, PRE), 5, 60, 1500);
+chk('粒を細かくする（size .5）と、粒の数がおおよそ4倍（2.5〜6倍）', RF.S.n > 2.5 * RN.S.n && RF.S.n < 6 * RN.S.n, RF.S.n + ' / ' + RN.S.n);
+chk('粒を細かくしても、有限で、上限（1500）を超えない', fin(RF.S.x, RF.S.n) && fin(RF.S.y, RF.S.n) && RF.maxN <= 1500, RF.maxN);
+const spanX = (S, a, b) => { let lo = 1e9, hi = -1e9; for (let i = 0; i < S.n; i++) if (S.y[i] > a && S.y[i] < b) { lo = Math.min(lo, S.x[i]); hi = Math.max(hi, S.x[i]) } return hi - lo };
+chk('粒を細かくしても、流れの太さがほぼ同じ（0.6〜1.6倍）', (() => { const a = spanX(RF.S, 90, 140), b = spanX(RN.S, 90, 140); return a > .6 * b && a < 1.6 * b + 6 })(), spanX(RF.S, 90, 140).toFixed(1) + ' / ' + spanX(RN.S, 90, 140).toFixed(1));
+for (const l of [0, 1.5]) { const P = LIQ.par(Object.assign({}, PRE, { lnk: l }), W, H); chk('つながり ' + l + '：計算に使う値が有限', isFinite(P.lk) && P.lk === l) }
+
+/* 9. ぶつける（burst）・吹きかける（spray）：手前・奥・ぐるりの向きでも有限で、絵の面に付いた膜ができる（手前）／止まらず消える */
+const BU = { kind: 'burst', on: true, w: 30, v0: 2.4, gap: 2.4, visc: .55, size: 1, tr: .15, rip: .65, fl: .8, pit: 22, pl: .3, pool: 'floor', ang: 180, dep: 70, spr: 32, jit: .6, yld: .45, adh: 2.4, sc: .9 };
+const RB = run(BU, 4, 60, 1500);
+chk('ぶつける（手前へ）：有限で、粒が暴走しない', fin(RB.S.x, RB.S.n) && fin(RB.S.y, RB.S.n) && fin(RB.S.z, RB.S.n) && RB.maxN <= 1500, RB.maxN);
+chk('ぶつける（手前へ）：絵の面に膜が付く', !!LIQ.ctBox(RB.S.ct), RB.S.ct && RB.S.ct.bb && RB.S.ct.bb.map(v => Math.round(v)).join(','));
+for (const [nm, o] of [['奥へ', { dep: -60, ang: 0 }], ['横（90°）', { dep: 0, ang: 90 }], ['真上（180°）', { dep: 0, ang: 180 }]]) {
+  const R = run(Object.assign({}, BU, o), 4, 60, 1500);
+  chk('ぶつける（' + nm + '）：有限で、暴走しない', fin(R.S.x, R.S.n) && fin(R.S.y, R.S.n) && fin(R.S.z, R.S.n) && R.maxN <= 1500, R.maxN);
+}
+const RS = run({ kind: 'spray', on: true, w: 8, v0: 2.2, visc: .03, size: .5, tr: .62, rip: .95, fl: .8, pit: 22, pool: 'floor', ang: 180, dep: 55, spr: 34, jit: .3, yld: 0, adh: .6, dry: .5 }, 3, 60, 1500);
+chk('吹きかける（細かい粒）：有限で、上限を超えない・速い（平均8ms未満）', fin(RS.S.x, RS.S.n) && RS.maxN <= 1500 && RS.ms < 8, RS.maxN + ' / ' + RS.ms.toFixed(2) + 'ms');
+
+/* 10. 見た目：空中の水を描く（画面なし）。有限の色・水の所だけ不透明・水の外に影（うすい黒）・つながりが大きいほど粒のあいだが埋まる */
+{
+  const Rr = run(Object.assign({}, PRE), 3, 60), P = Rr.P, cell = Rr.P.sp * .3, gw = Math.ceil(W / cell), gh = Math.ceil(H / cell), N = gw * gh;
+  const bgA = new Uint8ClampedArray(N * 4); for (let i = 0; i < N; i++) { bgA[i * 4] = 120 + (i % 40); bgA[i * 4 + 1] = 160; bgA[i * 4 + 2] = 200; bgA[i * 4 + 3] = 255 }
+  const shade = lk => { const F = new Float32Array(N), D = new Float32Array(N), out = new Uint8ClampedArray(N * 4);
+    LIQ.field(Rr.S, P, 0, 0, gw, gh, cell, F);
+    LIQ.shadeAir(F, gw, gh, D, bgA, null, out, { tint: [126, 195, 236], A: .12, sc: 0, rip: .7, sp: P.sp, sr: P.sr, cell, kr: 1, lk, t: 1, bx: 0, by: 0, sky: [200, 215, 240], hor: [220, 225, 235] });
+    let solid = 0, shadow = 0, bad = 0; for (let i = 0; i < N; i++) { const a = out[i * 4 + 3]; if (a > 200) solid++; else if (a > 3 && out[i * 4] < 5) shadow++; if (!isFinite(out[i * 4]) || !isFinite(out[i * 4 + 3])) bad++ } return { solid, shadow, bad } };
+  const s0 = shade(0), s1 = shade(1.2);
+  chk('空中の水の描画：水の所が不透明になり、色は有限', s0.solid > 50 && s0.bad === 0, JSON.stringify(s0));
+  chk('空中の水の描画：水の外に、うすい影が落ちる', s0.shadow > 20, s0.shadow);
+  chk('空中の水の描画：つながりを大きくすると、水の面積が増える（粒のあいだが埋まる）', s1.solid > s0.solid, s0.solid + ' → ' + s1.solid);
+}
+
 console.log('OK', ok, ' NG', ng); process.exit(ng ? 1 : 0);
