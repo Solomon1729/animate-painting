@@ -4,6 +4,7 @@
    ・帯の上で押して左へ56px以上、かつ横の動きが縦の1.6倍以上の時だけ。縦のスクロールはブラウザに任せる（touch-action:pan-y）。
      他の指が画面に触れている間は反応しない（ピンチ・2本指・✋と衝突しない）。操作窓の持ち手は押した所で捕まえている（setPointerCapture）ので、帯の上へ掃いても反応しない。
    ・モードの一覧は MODES。窓の一新（モードごとの窓）は、各モードの open に足していく。実体があるのは「編集・アニメーション」「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」。
+     取り込んだHTML（`part`印つきの項目）は、`2474-mode-parts.js`が実行時に足す（台帳Z-283）。ここの固定の項目は変えない。
      **コンソールは1つにつきプロジェクト1つ**（台帳Z-245）。コンソールの項目は `con:true` を付け、`open()` で開く試作のidを渡す（`CONSOLE.open('memo')`）。
    ・UIの一時状態：作品・Undo・保存には入れない。 */
 const MODES=[
@@ -27,7 +28,9 @@ function modeUi(){
     b.innerHTML='<b></b><span></span>';b.firstChild.textContent=m.ico+' '+m.name+(here?'（いま）':'');b.lastChild.textContent=m.note;
     b.onclick=()=>modeSet(m.id);
     $('mdl').appendChild(b);
+    if(m.part&&typeof partActions==='function')$('mdl').appendChild(partActions(m));   /* 取り込んだHTMLの項目だけ、出力・ビジュアルプログラミングで開く・外す（2474-mode-parts.js） */
   }
+  if(typeof partAddBar==='function')$('mdl').appendChild(partAddBar());   /* 「HTMLを足す」 */
 }
 function modeOpen(){
   if(modeIsOpen())return;

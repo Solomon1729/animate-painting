@@ -3,7 +3,7 @@
    ・**1つのコンソールには、プロジェクト（試作）を1つだけ置く**。コンソール1＝メモ帳／コンソール2＝ビジュアルプログラミング。別々にモード選択から開く（タブで切り替える形はやめた）。
    ・本体の作品の保存形式（snap／ser／loadProj）・Undo（US）・AC・LAYERS・DOCには、一切触れない（読むだけの窓口を使う）。ここでの操作は、作品・元に戻す・保存に入らない。
    ・開いている間は、本体の再生を止める（閉じる時、ここで止めたものだけ戻す）。コンソール1→2へ直接移る時は、止めた記録を引き継ぐ。
-   ・置けるもの＝試作（lab）。`CONSOLE.reg({id,no,mode,ico,name,mount(el),enter?(),leave?()})` で登録する。noはコンソールの番号、modeはモード選択の項目id（`cons`＋番号。`MODES`の項目と同じ）。
+   ・置けるもの＝試作（lab）。`CONSOLE.reg({id,no,mode,ico,name,title?,mount(el),enter?(),leave?()})` で登録する（titleは、取り込んだHTMLのモード用の見出し＝番号を付けない。台帳Z-283）。noはコンソールの番号、modeはモード選択の項目id（`cons`＋番号。`MODES`の項目と同じ）。
      mountは最初に開く時に1回、enter/leaveは見せる／隠す時に呼ばれる。**同じnoの試作を2つ登録しない**（新しい試作は新しい番号のコンソールにする）。
    ・移植の手順（台帳Z-207）：①ここで実機確認 → ②ユーザーがゴーサイン → ③Claudeが本体へ移し、台帳に「移植済」と書く。
    ・UIの一時状態：作品・Undo・保存には入れない。 */
@@ -33,8 +33,9 @@ const CONSOLE={labs:[],cur:null,was:null,els:{},
     const l=this.labs.find(x=>x.id===id);if(!l)return;
     const prev=this.lab();if(prev&&prev!==l&&prev.leave)try{prev.leave()}catch(_){}
     this.cur=id;MODE.cur=l.mode;
-    $('cstl').textContent=l.ico+' コンソール'+l.no+'（'+l.name+'）';
-    $('cons').setAttribute('aria-label','コンソール'+l.no+'（'+l.name+'）');
+    const tt=l.title||(l.ico+' コンソール'+l.no+'（'+l.name+'）');   /* title＝取り込んだHTMLのモード（番号なし。台帳Z-283） */
+    $('cstl').textContent=tt;
+    $('cons').setAttribute('aria-label',l.title?l.name:'コンソール'+l.no+'（'+l.name+'）');
     for(const k in this.els)this.els[k].hidden=k!==id;   /* 見せるのは、このコンソールの試作だけ */
     if(!this.els[id]){const el=document.createElement('div');el.dataset.lab=id;$('csbody').appendChild(el);this.els[id]=el;try{l.mount(el)}catch(e){el.textContent='この試作を開けませんでした：'+(e&&e.message||e)}}
     this.els[id].hidden=false;
