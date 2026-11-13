@@ -249,6 +249,17 @@ body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソ
 .mdi b{display:block;font-size:15px}.mdi span{display:block;font-size:12px;font-weight:500;opacity:.8;margin-top:2px}
 .mdi[aria-current="true"]{background:var(--acc);color:#fff;border-color:var(--acc)}
 .mdi:disabled{opacity:.5}
+/* 取り込んだHTMLのモード（台帳Z-283）：項目の下の操作・「HTMLを足す」・全面の枠 */
+.mdact{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px;padding:0 2px}
+.mdact button{font-size:12px;min-height:34px;padding:4px 8px}
+.mdadd{margin-top:10px;padding-top:10px;border-top:var(--bw,1px) solid var(--line);display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.mdadd .note{margin:0}
+.mdadd .file,.mdadd button{min-height:34px}
+.mdadd #mdpmsg:empty{display:none}
+.mdadd #mdpmsg[data-warn="1"]{font-weight:700}
+.csbody:has([data-lab^="part:"]:not([hidden])){overflow:hidden;padding:0}
+.csbody>div[data-lab^="part:"]{flex:1;min-height:0;gap:0}
+.partframe{display:block;flex:1;min-height:0;width:100%;border:0;background:#fff}
 .cons{position:fixed;inset:0;z-index:250;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px);padding-right:max(20px,env(safe-area-inset-right,0px))}   /* 右の20pxは空ける＝モード選択の縁の帯（#modeEdge。10px幅）の隣に入力欄などを置かない。指のタッチは判定に広がりがあり、帯の隣に入力欄があると、タッチがそちらに取られて右スワイプが効かない（実測：空き0pxで24回中4回しか帯に届かない／12px以上で全部届く。台帳Z-246） */
 .cshd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:var(--bw,1px) solid var(--line);background:var(--pane)}
 .cshd b{font-size:15px}.cshd .note{margin:0;flex:1 1 160px}
