@@ -67,6 +67,13 @@
 | `src/js/2472-compare.js` | **コンソール3＝画像の見比べ**（台帳Z-256・Z-263・Z-265〜270）：約100枚の読み込み・サムネ（1枚の大きさは`cellUi`で計算＝格子の潰れ防止）・複数選択（マウスはなぞる／スマホは長押ししてすべらせる）・並べて拡大（共通の拡大位置）・印（○✕★？）と絞り込みチップ・CSV・**ペンの書き込み**（`CM.ink`＝画像の画素の位置で保存、`localStorage am_cmp_ink`、PNG書き出し）・一覧を空にする／はずす＋元に戻す（`CM.trash`）。スマホ優先の画面（折り返して隠さない・下から出るメニュー）。一覧の置き場所（上下左右・⠿のドラッグ）と広さ、絵の境目の伸縮、名前のつかみで入れ替え。`CONSOLE.reg({id:'cmp'})`、`CONSOLE.onEsc`（Escでメニューだけ閉じる） |
 | `src/js/2473-liquid.js` | **液体表現**（台帳Z-273。注ぐ／垂らす／水滴／涙）：核`LIQ`（`/*LIQ-CORE-BEGIN*/`〜`END`。DOMなし。`par`・`tick`・`floorHit`・`plStep`（床の水たまり）・`field`/`shadeAir`（つながり＝すそ・厚み・影）/`shadeCoat`/`shadePool`/`mkLit`（屈折・反射）/`wob`（うねり）・`ctMk`/`ctAdd`/`ctStep`（絵の面の膜）。向き360°・奥行き・種類（`LQM`）・粒の大きさ（細かさ）・つながり。`tools/liquid_test.js`が単体で動かす）と、画面側（`liqAdd`・`liqDraw`・`liqTick`・`lqSync`/`lqBind`＝液体タブ・`lqGuide`＝床の目印）。上限`LIM.liq`。検査＝`tools/liquid_test.js`・`tools/check_liquid.py` |
 | `src/js/2474-mode-parts.js` | **モードの部品＝HTMLを取り込んでモード一覧の1項目にする**（台帳Z-283）：`PART`（保存`am_modeparts`・版`v`と知らないキーを保つ・上限なし）／`partImportFiles`（複数・Shift_JIS対応・HTMLか判定・外を指す記述を知らせる）／`partRegister`（`MODES`へ`part`印つきの項目＋`CONSOLE.reg`で登録＝既存の道）／`partDoc`（枠の文書に、通信を止める印（CSP）とその場だけのlocalStorageを足す）／`partExport`（元のHTMLそのまま）／`partRemove`／`partToVP`・`partFromVP`（ビジュアルプログラミングとの行き来）／`partActions`・`partAddBar`（`modeUi`が呼ぶ画面）。枠は`iframe sandbox="allow-scripts"`（`allow-same-origin`なし）で、別のモードへ移ると空にして止める。名前・メッセージは`textContent`だけ。`manifest.json`では`2473-liquid.js`の次（`247-freebook.js`の前） |
+| `src/js/2475-feature-core.js` | **機能コレクションの土台**（台帳Z-288。DOMなし）：JSの字句の分解`ftTok`・HTMLの木`ftHtml`・CSSの規則`ftCss`／`ftSel`・組み込みの名前`FT_GLOBALS`・ライブラリの目印`FT_LIBS` |
+| `src/js/2476-feature-extract.js` | 機能コレクションの解析（DOMなし）：使い方の読み取り`ftUse`・宣言の名前`ftDecl`／`ftNames`・上の階層の文`ftUnits`・HTML全体`ftApp` |
+| `src/js/2477-feature-pack.js` | 機能コレクションの取り出し・パックの形（DOMなし）：`ftExtract`（つながりの収集・CSS・変数・入出力・3段階の安全検査）・`ftNorm`（外から来たJSONの検査）・`ftDoc`（隔離した確認用の文書） |
+| `src/js/2478-feature-port.js` | 機能コレクションの移植・派生（DOMなし）：`ftPlan`（ぶつかりの検出）・`ftRwJs`／`ftRwCss`／`ftRwHtml`（付け替え）・`ftScope`（CSSを印の下へ）・`ftPort`／`ftUnport`（足す・外す＝先は1文字も変えない）・`ftCheck`・`ftDerive` |
+| `src/js/2479-feature-store.js` | 機能コレクションの保存と動作確認：`FTC`（保存`am_featurepacks`・版`v`と知らないキーを保つ・上限なし・壊れた保存は`am_featurepacks_bad`へ）・`ftSmoke`（隔離した枠で動かして誤りを見る）・`ftImportText`／`ftImportFile` |
+| `src/js/2480-feature-ui.js` | 機能コレクションの画面：`ftMount`（ビジュアルプログラミングの上の列の下に🧰の畳んだ枠）・左＝いまのアプリの機能（階層）／右＝コレクション・詳細・足す・派生 |
+| `tools/feature_core_test.js`・`tools/check_features.py` | 機能コレクションの検査（核171項目＝Node／画面と保存を通した流れ103項目＝ヘッドレス） |
 | `src/js/247-freebook.js` | **自由帳**（台帳Z-221。起動状態を決めるので**manifestの最後**）：`startMode`（`?start=sample`／端末の設定`am_start`／既定は自由帳）・`startFree`・`startSample`・`toObject`（描いた絵をオブジェクトにする。既存の`makeClip`・`clipToObj`）・入口カード`#startcard`。 |
 | `src/document-suffix.html` | `</script>` からHTML末尾まで |
 

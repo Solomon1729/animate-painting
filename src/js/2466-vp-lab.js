@@ -553,6 +553,7 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
       +'<button type="button" id="vpStPaint" aria-label="お絵かきと物理の見本から始める">🎨 お絵かき</button>'
       +'<label class="file" aria-label="HTMLファイルを読み込む（この画面へ落としても読み込めます）">📂 HTMLを読み込む<input id="vpFile" type="file" accept=".html,.htm,text/html"></label>'
       +'<button type="button" id="vpSave" aria-label="いまのソースをHTMLファイルで出力する">💾 HTMLで出力</button></div>'
+      +'<div id="ftHost"></div>'
       +'<div class="vpgrid">'
       +'<section class="vpcol"><div class="vpbar"><b>ビューワー</b>'
       +'<span class="vpseg" role="group" aria-label="ビューワーの使い方"><button type="button" id="vpRun" class="on" aria-pressed="true" aria-label="部品を、実際に動かす">▶ 動かす</button><button type="button" id="vpInsp" aria-pressed="false" aria-label="部品を押すと、その部品が出てくるソースの行が光る（部品は動かない）">🔍 調べる</button></span>'
@@ -574,6 +575,7 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
     sc.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('vpl')){e.preventDefault();vplSelLine(+e.target.dataset.n)}});
     paneGrab(vplQ('#vpGrabV'),{host:el,name:'--vpfh',key:'vpfh',measure:()=>vplQ('#vpFrame')?vplQ('#vpFrame').offsetHeight:340,min:120});
     paneGrab(vplQ('#vpGrabS'),{host:el,name:'--vpsh',key:'vpsh',measure:()=>vplQ('#vpScript').offsetHeight,min:100});
+    if(typeof ftMount==='function')ftMount(vplQ('#ftHost'));   /* 機能コレクション（台帳Z-288）：上の列は変えず、畳んだ枠を1つ足す */
     armTips(el);
   }
 });

@@ -65,6 +65,12 @@
     "js/2472-compare.js",
     "js/2473-liquid.js",
     "js/2474-mode-parts.js",
+    "js/2475-feature-core.js",
+    "js/2476-feature-extract.js",
+    "js/2477-feature-pack.js",
+    "js/2478-feature-port.js",
+    "js/2479-feature-store.js",
+    "js/2480-feature-ui.js",
     "js/247-freebook.js",
     "document-suffix.html"
   ]

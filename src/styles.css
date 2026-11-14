@@ -309,6 +309,49 @@ body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソ
   .vpscript{max-height:none;height:auto;flex:1 1 0}
   #vpGrabS{display:none}   /* 横2列では、ソースの欄が列いっぱいに広がるので、高さの持ち手は要らない */
 }
+/* ===== 機能コレクション（ビジュアルプログラミングの中の畳んだ枠。台帳Z-288）。色・角・枠は変数だけ使う ===== */
+.ftbox{margin:6px 0;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--pane);color:var(--ink)}
+.ftbox>summary{cursor:pointer;padding:6px 10px;font-weight:var(--fw,700);list-style-position:inside}
+.ftbody{max-height:var(--ftbh,340px);overflow:auto;padding:6px 10px 10px}
+.ftcols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:860px){.ftcols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.ftcol{min-width:0;border:var(--bw,1px) dashed var(--line);border-radius:calc(var(--rk,1)*8px);padding:6px 8px}
+.ftcur{border-style:solid}
+.ftcoll{border-style:solid;border-color:var(--acc)}
+.fth{margin:0 0 4px;font-size:14px}
+.ftmsg{margin:0 0 6px}
+.ftrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+.ftrow input[type=text]{flex:1 1 140px;min-width:0;box-sizing:border-box;font-size:14px;padding:4px 6px}
+.ftb{font-size:13px;padding:3px 8px;min-height:28px;cursor:pointer}
+.ftb[disabled]{opacity:.5;cursor:not-allowed}
+.ftb.on{background:var(--acc);color:#fff}
+.ftmain{font-weight:var(--fw,700)}
+.ftdanger{border-color:#c0392b;color:#c0392b}
+@media (pointer:coarse){.ftb{min-height:34px}}
+.ftgroup{margin:6px 0;max-height:220px;overflow:auto;border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
+.ftgh{font-size:12.5px;font-weight:var(--fw,700);margin:6px 0 2px}
+.ftblock{margin:2px 0;padding-left:calc(var(--d,0)*14px)}
+.ftblock>summary{cursor:pointer}
+.ftsub{padding-left:10px}
+.ftinner{padding:2px 0 4px 22px;font-size:12px}
+.ftunit{font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;opacity:.85}
+.ftfn{display:block;margin:2px 0;font-size:13.5px}
+.ftbadge{display:inline-block;padding:1px 8px;border-radius:calc(var(--rk,1)*10px);font-size:12px;font-weight:var(--fw,700);border:var(--bw,1px) solid var(--line)}
+.ftbadge.ftok{border-color:#1e8449;color:#1e8449}
+.ftbadge.ftwarn{border-color:#b9770e;color:#b9770e}
+.ftbadge.ftng{border-color:#c0392b;color:#c0392b}
+.ftitems{margin:4px 0;padding:0;list-style:none}
+.ftit{font-size:12.5px;line-height:1.5;padding:1px 0;overflow-wrap:anywhere}
+.ftit.ftng{color:#c0392b}.ftit.ftwarn{color:#b9770e}.ftit.ftok{color:#1e8449}
+.ftres{margin:6px 0;padding:6px 8px;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*8px)}
+.ftlist{list-style:none;margin:6px 0;padding:0}
+.ftlist>li.on>.ftname{outline:2px solid var(--acc)}
+.ftname{flex:1 1 140px;text-align:left;min-width:0;cursor:pointer;font-weight:var(--fw,700);padding:4px 8px;background:transparent;color:inherit;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*8px)}
+.ftdetail{padding:4px 0 8px 8px;border-left:3px solid var(--acc);margin:0 0 6px 4px}
+.fted{display:block;width:100%;box-sizing:border-box;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:6px;background:var(--bg);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*6px);resize:vertical}
+.ftcode{margin:4px 0;max-height:240px;overflow:auto;padding:6px 8px;background:var(--bg);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*6px);font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.ftpv{display:block;width:100%;height:200px;min-height:80px;resize:vertical;overflow:auto;border:var(--bw,1px) solid var(--line);background:#fff;margin-top:6px}
+.ftparent{margin:0}
 .startcard{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:6;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;background:var(--pane);color:var(--ink);border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*12px);padding:8px 10px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .startcard .row{justify-content:center;gap:5px}.startcard .row button{padding:6px 8px;font-size:13px}#stX{min-width:30px}
 .startcard .stfoot{justify-content:space-between;margin-top:6px}   /* 「次回から…」と✕を同じ段に（✕だけが下の段に取り残されない。台帳Z-234） */

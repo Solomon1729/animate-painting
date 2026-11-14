@@ -103,12 +103,14 @@ function dropRoute(fs){
   const isHtml=f=>/\.(x?html?)$/i.test(f.name||'')||f.type==='text/html';
   const isImg=f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(f.name||'');
   const hs=fs.filter(isHtml),im=fs.filter(f=>!isHtml(f)&&isImg(f));
+  const js=fs.filter(f=>/\.json$/i.test(f.name||'')||f.type==='application/json');   /* 機能コレクションのJSON（台帳Z-288） */
+  if(js.length&&typeof ftImportFile==='function'){if(typeof ftLoad==='function')ftLoad();for(const f of js)ftImportFile(f);if(typeof FTC!=='undefined'&&FTC.root)FTC.root.open=true}
   if(hs.length&&typeof vplImportFile==='function'){vplImportFile(hs[0],hs.length>1?hs.length-1:0)}
   if(im.length){
     if((typeof CONSOLE!=='undefined'&&CONSOLE.isOpen())||(typeof modeIsOpen==='function'&&modeIsOpen())){if(!hs.length)note('画像は、本体の画面に落とすと作品へ追加されます（いまはコンソール／モード選択が開いています）')}
     else addImages(im);
   }
-  if(!hs.length&&!im.length)note('画像かHTMLのファイルを落としてください');
+  if(!hs.length&&!im.length&&!js.length)note('画像かHTMLのファイルを落としてください');
 }
 addEventListener('dragover',e=>{if(!dropIsFiles(e))return;e.preventDefault();try{e.dataTransfer.dropEffect='copy'}catch(_){}dropHint(true)});
 addEventListener('dragleave',e=>{if(!e.relatedTarget)dropHint(false)});   /* 消すだけなので、ファイルのドラッグかは問わない（ブラウザによってdragleaveの種類情報が空でも、確実に消す） */
