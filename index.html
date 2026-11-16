@@ -302,6 +302,11 @@ body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソ
 .vpl.hl{background:color-mix(in srgb,var(--acc) 18%,transparent)}
 .vpl.sel{border-left-color:var(--acc);background:color-mix(in srgb,var(--acc) 30%,transparent)}
 .vpedit{display:block;width:100%;min-height:300px;box-sizing:border-box;resize:vertical;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:8px;border:0;background:var(--bg);color:var(--ink);white-space:pre}
+/* 編集に入っても、読む表示（.vpl）と同じ見た目：行番号の列・字・行の高さ・欄の高さ・スクロール位置を変えない（台帳Z-294）。欄の枠の色だけ強調色にして、編集中だと分かるようにする */
+.vpscript>.vped{display:flex;gap:8px;width:max-content;min-width:100%;box-sizing:border-box;padding:0;border-left:3px solid transparent;font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace}
+.vped>.vpgut{flex:0 0 3.4em;text-align:right;color:color-mix(in srgb,var(--ink) 55%,transparent);-webkit-user-select:none;user-select:none;padding-left:4px;white-space:pre}
+.vped>.vpedit{display:block;flex:1 0 auto;min-width:0;min-height:0;box-sizing:border-box;margin:0;padding:0 10px 0 0;border:0;border-radius:0;outline:0;resize:none;overflow:hidden;background:transparent;color:var(--ink);font:inherit;white-space:pre;tab-size:8}
+.vpscript.ved{border-color:var(--acc)}
 .vplog{flex:0 0 auto;max-height:150px;overflow:auto;margin:0;font-size:12.5px;line-height:1.5}
 .vplog div{padding:1px 0;border-top:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
 @keyframes vpfl{from{background:color-mix(in srgb,var(--acc) 45%,transparent)}to{background:transparent}}
@@ -493,6 +498,14 @@ body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp){background:color-mix(in srgb,var(--
 body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) :is(button,select,.file,.num,input[type=text],input[type=number]){background:color-mix(in srgb,var(--bg) calc(var(--tbxa,40%) * .5),transparent)}
 body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) button.on,body.ubox #tbx .tbg.on{background:color-mix(in srgb,var(--acc) 85%,transparent);text-shadow:none}
 body.ubox #tp .grp.alt{background:transparent}
+/* 台帳Z-291：詳細（⚙）の中のかたまりを、見出しを押して畳む（ツールボックス方式だけ。2469-toolbox.js の gf*）。畳むのは隠すだけ（中身・動作は同じ） */
+body.ubox #tp .grp>.gh.gfh{cursor:pointer;display:flex;align-items:center;gap:6px;min-height:28px;-webkit-user-select:none;user-select:none}
+body.ubox #tp .grp>.gh.gfh::before{content:"▾";font-size:11px;opacity:.7;flex:0 0 auto}
+body.ubox #tp .grp.gfold>.gh.gfh::before{content:"▸"}
+body.ubox #tp .grp.gfold>:not(.gh){display:none!important}
+body.ubox #tp .grp.gfold{padding-bottom:2px}
+#tbxDf[hidden]{display:none}
+@media (pointer:coarse){body.ubox #tp .grp>.gh.gfh{min-height:34px}}
 @media (pointer:coarse){#tbx .tbw .tbg{width:20px;height:20px;font-size:12px}.tb .tl{padding-right:15px}body.ubox #tbx{width:112px}#tbx .tbw .tb{min-height:46px}#tbx #tbxCol{flex-basis:24px;min-height:30px}#tbxFt button{min-height:32px}#tbxMore{min-height:46px}#tbxObj #lyopen{min-height:36px}}
 /* 右上の2つのボタンに、小さく名前を添える（👁＝補助、🎬＝設定）。ボタンの高さは変えず、絵文字の下に8pxの字 */
 #mnv,#mna{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:14px}
@@ -787,7 +800,7 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
   <div class="row" id="ch1"></div>
   <div class="row" id="addrow"><button id="qadd" aria-label="画像を選んで新しいオブジェクトを追加">＋画像</button><label class="opt" id="fitcvl"><input type="checkbox" id="fitcv" aria-label="画像の1枚目のときだけ、キャンバスをその画像の大きさに合わせる（オブジェクトが0個の時だけ使える）"><span>1枚目：キャンバスを画像に合わせる</span></label></div>
   <div class="note" id="noobj" hidden>オブジェクトがありません。「＋画像」などで追加すると、ここで編集できます（いまは背景・出力とキャンバスの大きさだけ使えます）。</div>
-  <div class="row" id="tbxD" hidden><span class="lab" id="tbxDt" style="flex:1">詳細</span><button type="button" id="tbxDx" aria-label="詳細設定を閉じる">✕ 閉じる</button></div>
+  <div class="row" id="tbxD" hidden><span class="lab" id="tbxDt" style="flex:1">詳細</span><button type="button" id="tbxDf" hidden>▸ たたむ</button><button type="button" id="tbxDx" aria-label="詳細設定を閉じる">✕ 閉じる</button></div>
   <div class="row" id="tabs"><button id="tabObj" hidden aria-label="いま選んでいる絵（オブジェクト）を、物理の対象にする（物体として動かす）。付けたあと、物理タブで質量・反発・摩擦などを調整できます">🌍 オブジェクトを対象化</button><button data-t="pl" class="on">配置</button><button data-t="mo">動き</button><button data-t="wp">歪み</button><button data-t="dr">描く</button><button data-t="adj">色調整</button><button data-t="fx">質感・局所</button><button data-t="mk">マスク</button><button data-t="pt">切り抜き</button><button data-t="ph">物理</button><button data-t="vd">動画</button><button data-t="lq">液体</button><button data-t="bg">背景・出力</button></div>
 
   <div class="tab on" data-tab="pl">
@@ -9486,18 +9499,60 @@ function vplRun(){
 function vplSend(m){try{if(VPL.frame&&VPL.frame.contentWindow)VPL.frame.contentWindow.postMessage(Object.assign({vp:1},m),'*')}catch(_){}}
 
 /* ---- ソースの行 ---- */
-function vplCode(){
-  const sc=vplQ('#vpScript');sc.innerHTML='';
+/* 編集に入っても、読む表示と同じ見た目のまま（台帳Z-294）：行番号の列・字・行の高さ・欄の高さ・スクロール位置を変えない。
+   読む表示（.vpl）と同じ字・行の高さの「行番号の列＋入力欄」を、同じ欄（#vpScript）の中へ置く。入力欄は中身の大きさに合わせて伸ばし（縦＝行数×行の高さ、
+   横＝長い行の幅）、スクロールは欄が受け持つ（読む表示と同じ）。ID（#vpEditTa）と、書き換える・反映・やめるの動きは今までどおり。 */
+function vplEditFit(ta,g){
+  const L=ta.value.split('\n'),n=L.length,cs=getComputedStyle(ta),lh=parseFloat(cs.lineHeight)||20;
+  if(g.dataset.n!==String(n)){g.dataset.n=String(n);let s='1';for(let i=2;i<=n;i++)s+='\n'+i;g.textContent=s}
+  ta.style.height=Math.ceil(n*lh)+'px';
+  const c=vplEditFit.c||(vplEditFit.c=document.createElement('canvas').getContext('2d'));c.font=cs.fontSize+' '+cs.fontFamily;
+  let best=[];for(let i=0;i<n;i++){const k=L[i].length;if(best.length<6||k>best[best.length-1][0]){best.push([k,i]);best.sort((a,b)=>b[0]-a[0]);if(best.length>6)best.pop()}}
+  let w=0;for(const[,i]of best)w=Math.max(w,c.measureText(L[i].replace(/\t/g,'        ')).width);
+  ta.style.width=(Math.ceil(w)+28)+'px';   /* 長い行の幅＋余白（全角と半角で幅が違うので、文字数でなく、同じ字で測る） */
+  ta.scrollTop=0;ta.scrollLeft=0;   /* 入力欄の中では動かさない（欄の外側が動く） */
+  return{L,lh,c}
+}
+/* 点滅するカーソルが、欄の見える範囲に入るようにする（欄が受け持つスクロール。入力欄は伸びているので、ブラウザは中で動かさない） */
+function vplEditReveal(sc,ta,fit){
+  const v=ta.value,p=ta.selectionStart,li=v.slice(0,p).split('\n').length-1,f=fit||vplEditFit(ta,ta.previousSibling),lh=f.lh;
+  const y=4+li*lh;if(y<sc.scrollTop)sc.scrollTop=Math.max(0,y-lh);else if(y+lh>sc.scrollTop+sc.clientHeight)sc.scrollTop=y+lh-sc.clientHeight+4;
+  const ls=v.lastIndexOf('\n',p-1)+1,x=ta.offsetLeft+f.c.measureText(v.slice(ls,p).replace(/\t/g,'        ')).width;
+  if(x<sc.scrollLeft)sc.scrollLeft=Math.max(0,x-40);else if(x+16>sc.scrollLeft+sc.clientWidth)sc.scrollLeft=x+16-sc.clientWidth}
+function vplCode(keep){
+  const sc=vplQ('#vpScript'),top=sc.scrollTop,left=sc.scrollLeft;
   vplQ('#vpEdit').hidden=VPL.editing;vplQ('#vpApply').hidden=!VPL.editing;vplQ('#vpCancel').hidden=!VPL.editing;
+  sc.classList.toggle('ved',!!VPL.editing);
   if(VPL.editing){
-    const ta=vplMk('textarea','vpedit');ta.id='vpEditTa';ta.value=VPL.src;ta.spellcheck=false;ta.wrap='off';ta.setAttribute('aria-label','ソースコード（HTML・CSS・JavaScript）を書き換える');
-    sc.appendChild(ta);return;
+    const w=vplMk('div','vped'),g=vplMk('div','vpgut'),ta=vplMk('textarea','vpedit');
+    g.setAttribute('aria-hidden','true');
+    ta.id='vpEditTa';ta.value=VPL.src;ta.spellcheck=false;ta.wrap='off';ta.setAttribute('aria-label','ソースコード（HTML・CSS・JavaScript）を書き換える');
+    ta.setAttribute('autocapitalize','off');ta.setAttribute('autocorrect','off');ta.setAttribute('autocomplete','off');
+    w.append(g,ta);sc.replaceChildren(w);   /* いったん空にしない（欄の高さが縮んで、画面が動くのを防ぐ） */
+    vplEditFit(ta,g);
+    ta.addEventListener('input',()=>{vplEditReveal(sc,ta,vplEditFit(ta,g))});
+    ta.addEventListener('keyup',e=>{if(e.key.indexOf('Arrow')===0||e.key==='Home'||e.key==='End'||e.key==='PageUp'||e.key==='PageDown')vplEditReveal(sc,ta)});
+    sc.scrollTop=top;sc.scrollLeft=left;
+    return;
   }
+  const fr=document.createDocumentFragment();
   VPL.an.lines.forEach((t,i)=>{
     const d=vplMk('div','vpl');d.append(vplMk('span','vpn',String(i+1)),vplMk('span','vpt',t));
     d.dataset.n=String(i);d.dataset.ids=VPL.an.refs[i].join(' ');d.tabIndex=0;d.setAttribute('role','button');
-    sc.appendChild(d);
+    fr.appendChild(d);
   });
+  sc.replaceChildren(fr);
+  if(keep){sc.scrollTop=top;sc.scrollLeft=left}
+}
+/* 「✎ 編集」：いま見ている所（選んだ行があればその行、なければ見えている先頭の行）にカーソルを置いて、そのまま書ける状態にする（見た目・位置は変えない） */
+function vplEditStart(){
+  const sc=vplQ('#vpScript'),top=sc.scrollTop,left=sc.scrollLeft,l0=sc.querySelector('.vpl'),lh=(l0&&parseFloat(getComputedStyle(l0).lineHeight))||20;
+  const li=VPL.selLine!=null?VPL.selLine:Math.max(0,Math.ceil((top-4)/lh));
+  VPL.editing=true;vplMsg('');vplCode(true);
+  const ta=vplQ('#vpEditTa');if(!ta)return;
+  const L=ta.value.split('\n');let pos=0;for(let i=0;i<Math.min(li,L.length-1);i++)pos+=L[i].length+1;
+  try{ta.focus({preventScroll:true});ta.setSelectionRange(pos,pos)}catch(_){}
+  sc.scrollTop=top;sc.scrollLeft=left;
 }
 function vplLineEls(){const sc=vplQ('#vpScript');return sc?[...sc.querySelectorAll('.vpl')]:[]}
 function vplFl(el,cls){if(!el)return;cls=cls||'vpfl';el.classList.remove('vpfl','vpng');void el.offsetWidth;el.classList.add(cls);clearTimeout(el._vt);el._vt=setTimeout(()=>el.classList.remove('vpfl','vpng'),1000)}
@@ -9633,7 +9688,8 @@ function vplApply(){
   const s=ta.value.replace(/\r\n?/g,'\n');
   if(!s.trim()){vplMsg('反映できません：中身が空です。',1);return}
   if(s.length>VPL.MAXSRC){vplMsg('反映できません：長すぎます（'+VPL.MAXSRC+'字まで）。',1);return}
-  const saved=vplSetSource(s,true);
+  const sc=vplQ('#vpScript'),st=sc.scrollTop,sl=sc.scrollLeft;   /* 反映しても、いま見ている所から動かさない */
+  const saved=vplSetSource(s,true);sc.scrollTop=st;sc.scrollLeft=sl;
   vplMsg('反映しました。動き直しています。'+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）'),saved?0:1);
   vplLogAdd('ソースを書き換えて、動き直した');
 }
@@ -9706,8 +9762,8 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
     vplQ('#vpStText').onclick=()=>vplStart('text');vplQ('#vpStPaint').onclick=()=>vplStart('paint');vplQ('#vpSave').onclick=vplExport;
     vplQ('#vpFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vplImportFile(f)};
     vplQ('#vpRun').onclick=()=>vplMode('run');vplQ('#vpInsp').onclick=()=>vplMode('insp');vplQ('#vpReset').onclick=vplReset;
-    vplQ('#vpEdit').onclick=()=>{VPL.editing=true;vplMsg('');vplCode();const t=vplQ('#vpEditTa');if(t)t.focus()};
-    vplQ('#vpCancel').onclick=()=>{VPL.editing=false;vplMsg('');vplCode();vplSync(false)};
+    vplQ('#vpEdit').onclick=vplEditStart;
+    vplQ('#vpCancel').onclick=()=>{VPL.editing=false;vplMsg('');vplCode(true);vplSync(false)};
     vplQ('#vpApply').onclick=vplApply;
     /* ソース：行を押す（キーボードのEnter・スペースも） */
     const sc=vplQ('#vpScript');
@@ -10084,7 +10140,8 @@ function tbxSync(){
     b.classList.toggle('on',a&&!TBX.edit);b.setAttribute('aria-pressed',a?'true':'false')});
   document.querySelectorAll('#tbx .tbg').forEach(g=>g.classList.toggle('on',TBX.det===g.dataset.id));
   $('tbxQ').hidden=!(UIM.m==='box'&&tab==='dr'&&!TBX.edit&&!TBX.x.col);
-  const d=TBX.det&&TBX_BY[TBX.det];$('tbxD').hidden=!(UIM.m==='box'&&d);if(d)$('tbxDt').textContent=(d.full||d.lab)+'の詳細'}
+  const d=TBX.det&&TBX_BY[TBX.det];$('tbxD').hidden=!(UIM.m==='box'&&d);if(d)$('tbxDt').textContent=(d.full||d.lab)+'の詳細';
+  gfSync()}
 function tbxTap(id){
   const t=TBX_BY[id];if(!t)return;
   if(TBX.edit)return;   /* 整理中は、押しても道具を使わない（ドラッグで並べ替える） */
@@ -10196,12 +10253,42 @@ function tbxUnfill(){
   if(!TBX.fill)return;TBX.fill=false;const R=document.documentElement;
   if(TBX.keep)R.style.setProperty('--bigh',TBX.keep);else R.style.removeProperty('--bigh');TBX.keep=''}
 
+/* ⚙の詳細の中の「かたまり」（.grp の見出し .gh）を、見出しを押して畳める（台帳Z-291。ツールボックス方式の中だけ。窓の方式は変えない）。
+   畳んだ状態は端末に覚える（am_tbx の fold。作品・Undo・保存に入れない）。既定は、すべて開いたまま。中身は消さず隠すだけ（部品・動作は同じ）。
+   <details>のかたまり（もともと畳める）は対象外。見出しのある所の鍵＝タブ名＋見出し（idがあればid）。 */
+function gfHead(g){return g.tagName==='DIV'?g.querySelector(':scope>.gh'):null}
+function gfKey(g){const t=g.closest('.tab'),h=gfHead(g);return (t?t.dataset.tab:'')+'|'+(h?(h.id||h.textContent.trim()):'')}
+function gfMap(){const f=TBX.x.fold;return f&&typeof f==='object'&&!Array.isArray(f)?f:{}}   /* 壊れた覚えは使わない（上書きは、畳んだ時） */
+function gfGroups(root){return [...root.querySelectorAll('.grp')].filter(g=>gfHead(g))}
+function gfApply(){
+  const box=UIM.m==='box',f=gfMap();
+  document.querySelectorAll('#tpb .tab').forEach(t=>gfGroups(t).forEach(g=>{
+    const h=gfHead(g),c=box&&!!f[gfKey(g)];
+    if(box){h.classList.add('gfh');h.setAttribute('role','button');h.tabIndex=0}
+    else{h.classList.remove('gfh');h.removeAttribute('role');h.removeAttribute('tabindex');h.removeAttribute('aria-expanded')}
+    g.classList.toggle('gfold',c);if(box)h.setAttribute('aria-expanded',c?'false':'true')}));
+  gfSync()}
+function gfSync(){
+  const b=$('tbxDf');if(!b)return;
+  const t=document.querySelector('#tpb .tab.on'),gs=t&&UIM.m==='box'?gfGroups(t):[],open=gs.some(g=>!g.classList.contains('gfold'));
+  b.hidden=gs.length<2;b.textContent=open?'▸ たたむ':'▾ ひらく';
+  b.setAttribute('aria-label',open?'このタブのかたまりを、すべて畳む':'このタブのかたまりを、すべて開く')}
+function gfSet(gs,fold){
+  const f=TBX.x.fold=Object.assign({},gfMap());
+  for(const g of gs){const k=gfKey(g);if(fold)f[k]=1;else delete f[k]}
+  if(!Object.keys(f).length)delete TBX.x.fold;
+  tbxSave();gfApply()}
+function gfToggle(h){const g=h.parentNode;if(g&&g.classList.contains('grp'))gfSet([g],!g.classList.contains('gfold'))}
+function gfAll(){
+  const t=document.querySelector('#tpb .tab.on');if(!t)return;
+  const gs=gfGroups(t);gfSet(gs,gs.some(g=>!g.classList.contains('gfold')))}
+
 function uiApply(){
   const box=UIM.m==='box';document.body.classList.toggle('ubox',box);
   if(box&&typeof UIS!=='undefined'&&UIS.tpf)tpToggle();   /* 分離していた窓は戻す（枠の方式には分離が無い） */
   tbxPlace(box);if(!box)tbxClose();
   document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{const a=b.dataset.ui===UIM.m;b.classList.toggle('on',a);b.setAttribute('aria-pressed',a?'true':'false')});
-  tbxSync();if(box)tbxFill();else tbxUnfill()}
+  gfApply();tbxSync();if(box)tbxFill();else tbxUnfill()}
 function uiSet(m){
   if(m!=='box'&&m!=='win')return;UIM.m=m;
   try{localStorage.setItem(UIM.LS,m)}catch(_){note('この端末では、この選択を覚えられません')}
@@ -10226,6 +10313,9 @@ $('tbxSide').onclick=tbxSide;$('tbxA').oninput=e=>{TBX.x.alpha=+e.target.value;t
 $('tbxDp').onclick=()=>{TBX.x.dpos=TBX.x.dpos==='s'?'b':'s';tbxSave();tbxApplyDet()};
 $('tbxRs').onclick=()=>{TBX.o=TBX_TOOLS.map(t=>t.id);TBX.n=TBX_N0;tbxSave();tbxRender()};
 $('tbxDx').onclick=tbxClose;
+$('tbxDf').onclick=gfAll;
+$('tp').addEventListener('click',e=>{if(UIM.m!=='box')return;const h=e.target.closest('.gfh');if(h&&$('tpb').contains(h))gfToggle(h)});
+$('tp').addEventListener('keydown',e=>{if(UIM.m!=='box'||(e.key!=='Enter'&&e.key!==' '))return;const h=e.target.closest&&e.target.closest('.gfh');if(h&&e.target===h){e.preventDefault();gfToggle(h)}});
 document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{b.onclick=()=>uiSet(b.dataset.ui)});
 if(typeof ResizeObserver==='function')[$('tbxQ'),$('tbx')].forEach(e=>new ResizeObserver(()=>{tbxFill();tbxLayout()}).observe(e));
 new MutationObserver(()=>tbxFill()).observe(document.body,{attributes:true,attributeFilter:['class']});
