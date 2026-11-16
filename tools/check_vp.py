@@ -14,6 +14,7 @@
   P6 本体に触れない：作品（ser）・Undo・Redo・変更あり・メモ帳・自動保存・保存先・再生／枠の中のコードが本体・外・保存先を壊せない
   P7 安全：HTMLとして解釈しない／壊れた保存／保存できない端末／偽の知らせ・大量の知らせ
   P8 画面：スマホ幅ではみ出さない・PC幅で2列・実行の記録が潰れない・タッチ
+  P10 編集に入っても見た目・位置が変わらない（台帳Z-294）：行番号の列が残る・スクロール位置と欄の高さと画面の位置が同じ・字と行の高さが同じ・見えている行にカーソル（選んだ行があればその行）・行を足すと番号が増えて、カーソルが見える所へ動く・やめる／反映しても同じ場所
   P9 始め方・HTMLの読み込みと出力・ドロップ（台帳Z-247・Z-248）：お絵かきの見本・HTMLの読み込み（Shift_JIS・外を指す記述・大きすぎ・やめる）・HTMLで出力・画面のどこへ落としても受ける・コンソール中の扱い
 """
 import sys, json
@@ -726,6 +727,57 @@ for (let i = 0; i < 60; i++) localStorage.setItem('k' + i, 'v');
     chk('タッチ：お絵かきの見本で、指でなぞって線が引ける（ページはスクロールしない）', ink > 500 and ev(pg, "()=>scrollY") == 0, ink)
     chk('エラーなし', errs == [], errs)
     ctx.close()
+
+    # --- P10 編集に入っても、見た目・位置が変わらない（台帳Z-294）
+    for tag, touch, w, h in (('PC', False, 1280, 800), ('スマホ', True, 412, 860)):
+        ctx, pg, errs = new(b, touch=touch, w=w, h=h)
+        load(pg)
+        open_lab(pg)
+        S = "()=>{const s=document.getElementById('vpScript'),t=document.getElementById('vpEditTa'),g=s.querySelector('.vpgut'),l=s.querySelector('.vpl .vpt');return {top:s.scrollTop,left:s.scrollLeft,sh:s.scrollHeight,ch:s.clientHeight,oh:s.offsetHeight,lg:document.getElementById('vpLog').offsetHeight,view:Math.round(document.getElementById('vpView').getBoundingClientRect().top),win:[scrollX,scrollY],vpl:s.querySelectorAll('.vpl').length,gut:g?g.textContent.split('\\n').length:0,n:t?t.value.split('\\n').length:0,ved:s.classList.contains('ved'),act:!!t&&document.activeElement===t,sel:t?t.selectionStart:-1,ta:t?{h:t.offsetHeight,st:t.scrollTop,sw:t.scrollWidth,cw:t.clientWidth,lh:getComputedStyle(t).lineHeight,fs:getComputedStyle(t).fontSize}:null,lh:getComputedStyle(l||s).lineHeight,fs:getComputedStyle(l||s).fontSize}}"
+        n0 = ev(pg, "()=>VPL.an.lines.length")
+        ev(pg, "()=>{document.getElementById('vpScript').scrollTop=300}")
+        a = ev(pg, S)
+        pg.click('#vpEdit')
+        pg.wait_for_timeout(250)
+        c = ev(pg, S)
+        chk('P10 %s 編集に入っても、行番号の列が残る（行ごとに1つ）' % tag, c['gut'] == n0 and c['n'] == n0 and c['vpl'] == 0, (c['gut'], c['n'], n0))
+        chk('P10 %s 編集に入っても、スクロール位置・欄の高さ・画面の位置が変わらない' % tag, c['top'] == a['top'] and c['left'] == a['left'] and c['sh'] == a['sh'] and (c['oh'] == a['oh'] or c['lg'] != a['lg']) and c['view'] == a['view'] and c['win'] == a['win'], (a, c))
+        chk('P10 %s 字と行の高さが読む表示と同じ（編集中は枠の色だけ強調）' % tag, c['ta']['lh'] == a['lh'] and c['ta']['fs'] == a['fs'] and c['ved'], (a['lh'], c['ta']))
+        chk('P10 %s そのまま書ける（入力欄に焦点・見えている行にカーソル・欄の中では動かない・横も切れない）' % tag, c['act'] and c['sel'] > 0 and c['ta']['st'] == 0 and c['ta']['sw'] <= c['ta']['cw'] + 1, c)
+        pg.keyboard.press('Control+End')
+        for i in range(30):
+            pg.keyboard.press('Enter')
+        pg.keyboard.type('// 末尾')
+        d = ev(pg, S)
+        chk('P10 %s 行を足すと行番号が増え、入力欄が伸び、カーソルが見える所へ動く（欄の高さは同じ）' % tag, d['gut'] == n0 + 30 and d['n'] == n0 + 30 and d['ta']['h'] == (n0 + 30) * 20 and d['top'] + d['ch'] >= d['sh'] - 30 and (d['oh'] == a['oh'] or d['lg'] != a['lg']), d)
+        pg.keyboard.type('x' * 400 + 'あ' * 60)
+        e = ev(pg, S)
+        chk('P10 %s 長い行でも切れず、横にも追いかける' % tag, e['ta']['sw'] <= e['ta']['cw'] + 1 and e['left'] > 0, e)
+        ev(pg, "()=>{document.getElementById('vpScript').scrollTop=500}")
+        pg.click('#vpCancel')
+        pg.wait_for_timeout(150)
+        f = ev(pg, S)
+        chk('P10 %s やめる：読む表示に戻り、同じ場所・ソースは変わらない' % tag, f['vpl'] == n0 and abs(f['top'] - 500) <= 1 and not f['ved'] and ev(pg, "()=>VPL.src.split('\\n').length") == n0, f)
+        ev(pg, "()=>{document.getElementById('vpScript').scrollTop=0}")
+        pg.click('#vpScript .vpl[data-n="12"]')
+        pg.click('#vpEdit')
+        pg.wait_for_timeout(200)
+        chk('P10 %s 行を選んでから編集に入ると、その行にカーソルが出る' % tag, ev(pg, "()=>{const t=document.getElementById('vpEditTa');return t.value.slice(0,t.selectionStart).split('\\n').length-1}") == 12)
+        pg.keyboard.type('<!-- メモ -->')
+        ev(pg, "()=>{document.getElementById('vpScript').scrollTop=200}")
+        pg.click('#vpApply')
+        pg.wait_for_timeout(500)
+        g = ev(pg, S)
+        chk('P10 %s 反映：ソースが変わり、同じ場所のまま読む表示に戻る' % tag, g['vpl'] > 0 and abs(g['top'] - 200) <= 1 and ev(pg, "()=>VPL.src.includes('<!-- メモ -->')"), g)
+        pg.click('#vpEdit')
+        pg.wait_for_timeout(150)
+        pg.keyboard.press('Control+a')
+        pg.keyboard.press('Delete')
+        h2 = ev(pg, S)
+        chk('P10 %s 全部消しても行番号は1・入力欄は1行分' % tag, h2['gut'] == 1 and h2['ta']['h'] == 20, h2)
+        pg.click('#vpCancel')
+        chk('P10 %s エラーなし' % tag, errs == [], errs)
+        ctx.close()
 
     b.close()
 

@@ -346,18 +346,60 @@ function vplRun(){
 function vplSend(m){try{if(VPL.frame&&VPL.frame.contentWindow)VPL.frame.contentWindow.postMessage(Object.assign({vp:1},m),'*')}catch(_){}}
 
 /* ---- ソースの行 ---- */
-function vplCode(){
-  const sc=vplQ('#vpScript');sc.innerHTML='';
+/* 編集に入っても、読む表示と同じ見た目のまま（台帳Z-294）：行番号の列・字・行の高さ・欄の高さ・スクロール位置を変えない。
+   読む表示（.vpl）と同じ字・行の高さの「行番号の列＋入力欄」を、同じ欄（#vpScript）の中へ置く。入力欄は中身の大きさに合わせて伸ばし（縦＝行数×行の高さ、
+   横＝長い行の幅）、スクロールは欄が受け持つ（読む表示と同じ）。ID（#vpEditTa）と、書き換える・反映・やめるの動きは今までどおり。 */
+function vplEditFit(ta,g){
+  const L=ta.value.split('\n'),n=L.length,cs=getComputedStyle(ta),lh=parseFloat(cs.lineHeight)||20;
+  if(g.dataset.n!==String(n)){g.dataset.n=String(n);let s='1';for(let i=2;i<=n;i++)s+='\n'+i;g.textContent=s}
+  ta.style.height=Math.ceil(n*lh)+'px';
+  const c=vplEditFit.c||(vplEditFit.c=document.createElement('canvas').getContext('2d'));c.font=cs.fontSize+' '+cs.fontFamily;
+  let best=[];for(let i=0;i<n;i++){const k=L[i].length;if(best.length<6||k>best[best.length-1][0]){best.push([k,i]);best.sort((a,b)=>b[0]-a[0]);if(best.length>6)best.pop()}}
+  let w=0;for(const[,i]of best)w=Math.max(w,c.measureText(L[i].replace(/\t/g,'        ')).width);
+  ta.style.width=(Math.ceil(w)+28)+'px';   /* 長い行の幅＋余白（全角と半角で幅が違うので、文字数でなく、同じ字で測る） */
+  ta.scrollTop=0;ta.scrollLeft=0;   /* 入力欄の中では動かさない（欄の外側が動く） */
+  return{L,lh,c}
+}
+/* 点滅するカーソルが、欄の見える範囲に入るようにする（欄が受け持つスクロール。入力欄は伸びているので、ブラウザは中で動かさない） */
+function vplEditReveal(sc,ta,fit){
+  const v=ta.value,p=ta.selectionStart,li=v.slice(0,p).split('\n').length-1,f=fit||vplEditFit(ta,ta.previousSibling),lh=f.lh;
+  const y=4+li*lh;if(y<sc.scrollTop)sc.scrollTop=Math.max(0,y-lh);else if(y+lh>sc.scrollTop+sc.clientHeight)sc.scrollTop=y+lh-sc.clientHeight+4;
+  const ls=v.lastIndexOf('\n',p-1)+1,x=ta.offsetLeft+f.c.measureText(v.slice(ls,p).replace(/\t/g,'        ')).width;
+  if(x<sc.scrollLeft)sc.scrollLeft=Math.max(0,x-40);else if(x+16>sc.scrollLeft+sc.clientWidth)sc.scrollLeft=x+16-sc.clientWidth}
+function vplCode(keep){
+  const sc=vplQ('#vpScript'),top=sc.scrollTop,left=sc.scrollLeft;
   vplQ('#vpEdit').hidden=VPL.editing;vplQ('#vpApply').hidden=!VPL.editing;vplQ('#vpCancel').hidden=!VPL.editing;
+  sc.classList.toggle('ved',!!VPL.editing);
   if(VPL.editing){
-    const ta=vplMk('textarea','vpedit');ta.id='vpEditTa';ta.value=VPL.src;ta.spellcheck=false;ta.wrap='off';ta.setAttribute('aria-label','ソースコード（HTML・CSS・JavaScript）を書き換える');
-    sc.appendChild(ta);return;
+    const w=vplMk('div','vped'),g=vplMk('div','vpgut'),ta=vplMk('textarea','vpedit');
+    g.setAttribute('aria-hidden','true');
+    ta.id='vpEditTa';ta.value=VPL.src;ta.spellcheck=false;ta.wrap='off';ta.setAttribute('aria-label','ソースコード（HTML・CSS・JavaScript）を書き換える');
+    ta.setAttribute('autocapitalize','off');ta.setAttribute('autocorrect','off');ta.setAttribute('autocomplete','off');
+    w.append(g,ta);sc.replaceChildren(w);   /* いったん空にしない（欄の高さが縮んで、画面が動くのを防ぐ） */
+    vplEditFit(ta,g);
+    ta.addEventListener('input',()=>{vplEditReveal(sc,ta,vplEditFit(ta,g))});
+    ta.addEventListener('keyup',e=>{if(e.key.indexOf('Arrow')===0||e.key==='Home'||e.key==='End'||e.key==='PageUp'||e.key==='PageDown')vplEditReveal(sc,ta)});
+    sc.scrollTop=top;sc.scrollLeft=left;
+    return;
   }
+  const fr=document.createDocumentFragment();
   VPL.an.lines.forEach((t,i)=>{
     const d=vplMk('div','vpl');d.append(vplMk('span','vpn',String(i+1)),vplMk('span','vpt',t));
     d.dataset.n=String(i);d.dataset.ids=VPL.an.refs[i].join(' ');d.tabIndex=0;d.setAttribute('role','button');
-    sc.appendChild(d);
+    fr.appendChild(d);
   });
+  sc.replaceChildren(fr);
+  if(keep){sc.scrollTop=top;sc.scrollLeft=left}
+}
+/* 「✎ 編集」：いま見ている所（選んだ行があればその行、なければ見えている先頭の行）にカーソルを置いて、そのまま書ける状態にする（見た目・位置は変えない） */
+function vplEditStart(){
+  const sc=vplQ('#vpScript'),top=sc.scrollTop,left=sc.scrollLeft,l0=sc.querySelector('.vpl'),lh=(l0&&parseFloat(getComputedStyle(l0).lineHeight))||20;
+  const li=VPL.selLine!=null?VPL.selLine:Math.max(0,Math.ceil((top-4)/lh));
+  VPL.editing=true;vplMsg('');vplCode(true);
+  const ta=vplQ('#vpEditTa');if(!ta)return;
+  const L=ta.value.split('\n');let pos=0;for(let i=0;i<Math.min(li,L.length-1);i++)pos+=L[i].length+1;
+  try{ta.focus({preventScroll:true});ta.setSelectionRange(pos,pos)}catch(_){}
+  sc.scrollTop=top;sc.scrollLeft=left;
 }
 function vplLineEls(){const sc=vplQ('#vpScript');return sc?[...sc.querySelectorAll('.vpl')]:[]}
 function vplFl(el,cls){if(!el)return;cls=cls||'vpfl';el.classList.remove('vpfl','vpng');void el.offsetWidth;el.classList.add(cls);clearTimeout(el._vt);el._vt=setTimeout(()=>el.classList.remove('vpfl','vpng'),1000)}
@@ -493,7 +535,8 @@ function vplApply(){
   const s=ta.value.replace(/\r\n?/g,'\n');
   if(!s.trim()){vplMsg('反映できません：中身が空です。',1);return}
   if(s.length>VPL.MAXSRC){vplMsg('反映できません：長すぎます（'+VPL.MAXSRC+'字まで）。',1);return}
-  const saved=vplSetSource(s,true);
+  const sc=vplQ('#vpScript'),st=sc.scrollTop,sl=sc.scrollLeft;   /* 反映しても、いま見ている所から動かさない */
+  const saved=vplSetSource(s,true);sc.scrollTop=st;sc.scrollLeft=sl;
   vplMsg('反映しました。動き直しています。'+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）'),saved?0:1);
   vplLogAdd('ソースを書き換えて、動き直した');
 }
@@ -566,8 +609,8 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
     vplQ('#vpStText').onclick=()=>vplStart('text');vplQ('#vpStPaint').onclick=()=>vplStart('paint');vplQ('#vpSave').onclick=vplExport;
     vplQ('#vpFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vplImportFile(f)};
     vplQ('#vpRun').onclick=()=>vplMode('run');vplQ('#vpInsp').onclick=()=>vplMode('insp');vplQ('#vpReset').onclick=vplReset;
-    vplQ('#vpEdit').onclick=()=>{VPL.editing=true;vplMsg('');vplCode();const t=vplQ('#vpEditTa');if(t)t.focus()};
-    vplQ('#vpCancel').onclick=()=>{VPL.editing=false;vplMsg('');vplCode();vplSync(false)};
+    vplQ('#vpEdit').onclick=vplEditStart;
+    vplQ('#vpCancel').onclick=()=>{VPL.editing=false;vplMsg('');vplCode(true);vplSync(false)};
     vplQ('#vpApply').onclick=vplApply;
     /* ソース：行を押す（キーボードのEnter・スペースも） */
     const sc=vplQ('#vpScript');

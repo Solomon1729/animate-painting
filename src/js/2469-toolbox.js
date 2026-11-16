@@ -71,7 +71,8 @@ function tbxSync(){
     b.classList.toggle('on',a&&!TBX.edit);b.setAttribute('aria-pressed',a?'true':'false')});
   document.querySelectorAll('#tbx .tbg').forEach(g=>g.classList.toggle('on',TBX.det===g.dataset.id));
   $('tbxQ').hidden=!(UIM.m==='box'&&tab==='dr'&&!TBX.edit&&!TBX.x.col);
-  const d=TBX.det&&TBX_BY[TBX.det];$('tbxD').hidden=!(UIM.m==='box'&&d);if(d)$('tbxDt').textContent=(d.full||d.lab)+'の詳細'}
+  const d=TBX.det&&TBX_BY[TBX.det];$('tbxD').hidden=!(UIM.m==='box'&&d);if(d)$('tbxDt').textContent=(d.full||d.lab)+'の詳細';
+  gfSync()}
 function tbxTap(id){
   const t=TBX_BY[id];if(!t)return;
   if(TBX.edit)return;   /* 整理中は、押しても道具を使わない（ドラッグで並べ替える） */
@@ -183,12 +184,42 @@ function tbxUnfill(){
   if(!TBX.fill)return;TBX.fill=false;const R=document.documentElement;
   if(TBX.keep)R.style.setProperty('--bigh',TBX.keep);else R.style.removeProperty('--bigh');TBX.keep=''}
 
+/* ⚙の詳細の中の「かたまり」（.grp の見出し .gh）を、見出しを押して畳める（台帳Z-291。ツールボックス方式の中だけ。窓の方式は変えない）。
+   畳んだ状態は端末に覚える（am_tbx の fold。作品・Undo・保存に入れない）。既定は、すべて開いたまま。中身は消さず隠すだけ（部品・動作は同じ）。
+   <details>のかたまり（もともと畳める）は対象外。見出しのある所の鍵＝タブ名＋見出し（idがあればid）。 */
+function gfHead(g){return g.tagName==='DIV'?g.querySelector(':scope>.gh'):null}
+function gfKey(g){const t=g.closest('.tab'),h=gfHead(g);return (t?t.dataset.tab:'')+'|'+(h?(h.id||h.textContent.trim()):'')}
+function gfMap(){const f=TBX.x.fold;return f&&typeof f==='object'&&!Array.isArray(f)?f:{}}   /* 壊れた覚えは使わない（上書きは、畳んだ時） */
+function gfGroups(root){return [...root.querySelectorAll('.grp')].filter(g=>gfHead(g))}
+function gfApply(){
+  const box=UIM.m==='box',f=gfMap();
+  document.querySelectorAll('#tpb .tab').forEach(t=>gfGroups(t).forEach(g=>{
+    const h=gfHead(g),c=box&&!!f[gfKey(g)];
+    if(box){h.classList.add('gfh');h.setAttribute('role','button');h.tabIndex=0}
+    else{h.classList.remove('gfh');h.removeAttribute('role');h.removeAttribute('tabindex');h.removeAttribute('aria-expanded')}
+    g.classList.toggle('gfold',c);if(box)h.setAttribute('aria-expanded',c?'false':'true')}));
+  gfSync()}
+function gfSync(){
+  const b=$('tbxDf');if(!b)return;
+  const t=document.querySelector('#tpb .tab.on'),gs=t&&UIM.m==='box'?gfGroups(t):[],open=gs.some(g=>!g.classList.contains('gfold'));
+  b.hidden=gs.length<2;b.textContent=open?'▸ たたむ':'▾ ひらく';
+  b.setAttribute('aria-label',open?'このタブのかたまりを、すべて畳む':'このタブのかたまりを、すべて開く')}
+function gfSet(gs,fold){
+  const f=TBX.x.fold=Object.assign({},gfMap());
+  for(const g of gs){const k=gfKey(g);if(fold)f[k]=1;else delete f[k]}
+  if(!Object.keys(f).length)delete TBX.x.fold;
+  tbxSave();gfApply()}
+function gfToggle(h){const g=h.parentNode;if(g&&g.classList.contains('grp'))gfSet([g],!g.classList.contains('gfold'))}
+function gfAll(){
+  const t=document.querySelector('#tpb .tab.on');if(!t)return;
+  const gs=gfGroups(t);gfSet(gs,gs.some(g=>!g.classList.contains('gfold')))}
+
 function uiApply(){
   const box=UIM.m==='box';document.body.classList.toggle('ubox',box);
   if(box&&typeof UIS!=='undefined'&&UIS.tpf)tpToggle();   /* 分離していた窓は戻す（枠の方式には分離が無い） */
   tbxPlace(box);if(!box)tbxClose();
   document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{const a=b.dataset.ui===UIM.m;b.classList.toggle('on',a);b.setAttribute('aria-pressed',a?'true':'false')});
-  tbxSync();if(box)tbxFill();else tbxUnfill()}
+  gfApply();tbxSync();if(box)tbxFill();else tbxUnfill()}
 function uiSet(m){
   if(m!=='box'&&m!=='win')return;UIM.m=m;
   try{localStorage.setItem(UIM.LS,m)}catch(_){note('この端末では、この選択を覚えられません')}
@@ -213,6 +244,9 @@ $('tbxSide').onclick=tbxSide;$('tbxA').oninput=e=>{TBX.x.alpha=+e.target.value;t
 $('tbxDp').onclick=()=>{TBX.x.dpos=TBX.x.dpos==='s'?'b':'s';tbxSave();tbxApplyDet()};
 $('tbxRs').onclick=()=>{TBX.o=TBX_TOOLS.map(t=>t.id);TBX.n=TBX_N0;tbxSave();tbxRender()};
 $('tbxDx').onclick=tbxClose;
+$('tbxDf').onclick=gfAll;
+$('tp').addEventListener('click',e=>{if(UIM.m!=='box')return;const h=e.target.closest('.gfh');if(h&&$('tpb').contains(h))gfToggle(h)});
+$('tp').addEventListener('keydown',e=>{if(UIM.m!=='box'||(e.key!=='Enter'&&e.key!==' '))return;const h=e.target.closest&&e.target.closest('.gfh');if(h&&e.target===h){e.preventDefault();gfToggle(h)}});
 document.querySelectorAll('#uiSeg [data-ui]').forEach(b=>{b.onclick=()=>uiSet(b.dataset.ui)});
 if(typeof ResizeObserver==='function')[$('tbxQ'),$('tbx')].forEach(e=>new ResizeObserver(()=>{tbxFill();tbxLayout()}).observe(e));
 new MutationObserver(()=>tbxFill()).observe(document.body,{attributes:true,attributeFilter:['class']});

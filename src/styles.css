@@ -294,6 +294,11 @@ body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソ
 .vpl.hl{background:color-mix(in srgb,var(--acc) 18%,transparent)}
 .vpl.sel{border-left-color:var(--acc);background:color-mix(in srgb,var(--acc) 30%,transparent)}
 .vpedit{display:block;width:100%;min-height:300px;box-sizing:border-box;resize:vertical;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:8px;border:0;background:var(--bg);color:var(--ink);white-space:pre}
+/* 編集に入っても、読む表示（.vpl）と同じ見た目：行番号の列・字・行の高さ・欄の高さ・スクロール位置を変えない（台帳Z-294）。欄の枠の色だけ強調色にして、編集中だと分かるようにする */
+.vpscript>.vped{display:flex;gap:8px;width:max-content;min-width:100%;box-sizing:border-box;padding:0;border-left:3px solid transparent;font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace}
+.vped>.vpgut{flex:0 0 3.4em;text-align:right;color:color-mix(in srgb,var(--ink) 55%,transparent);-webkit-user-select:none;user-select:none;padding-left:4px;white-space:pre}
+.vped>.vpedit{display:block;flex:1 0 auto;min-width:0;min-height:0;box-sizing:border-box;margin:0;padding:0 10px 0 0;border:0;border-radius:0;outline:0;resize:none;overflow:hidden;background:transparent;color:var(--ink);font:inherit;white-space:pre;tab-size:8}
+.vpscript.ved{border-color:var(--acc)}
 .vplog{flex:0 0 auto;max-height:150px;overflow:auto;margin:0;font-size:12.5px;line-height:1.5}
 .vplog div{padding:1px 0;border-top:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
 @keyframes vpfl{from{background:color-mix(in srgb,var(--acc) 45%,transparent)}to{background:transparent}}
@@ -485,6 +490,14 @@ body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp){background:color-mix(in srgb,var(--
 body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) :is(button,select,.file,.num,input[type=text],input[type=number]){background:color-mix(in srgb,var(--bg) calc(var(--tbxa,40%) * .5),transparent)}
 body.ubox :is(#tbx,#tbxQ,#tbxEd,#tbxTop,#tp) button.on,body.ubox #tbx .tbg.on{background:color-mix(in srgb,var(--acc) 85%,transparent);text-shadow:none}
 body.ubox #tp .grp.alt{background:transparent}
+/* 台帳Z-291：詳細（⚙）の中のかたまりを、見出しを押して畳む（ツールボックス方式だけ。2469-toolbox.js の gf*）。畳むのは隠すだけ（中身・動作は同じ） */
+body.ubox #tp .grp>.gh.gfh{cursor:pointer;display:flex;align-items:center;gap:6px;min-height:28px;-webkit-user-select:none;user-select:none}
+body.ubox #tp .grp>.gh.gfh::before{content:"▾";font-size:11px;opacity:.7;flex:0 0 auto}
+body.ubox #tp .grp.gfold>.gh.gfh::before{content:"▸"}
+body.ubox #tp .grp.gfold>:not(.gh){display:none!important}
+body.ubox #tp .grp.gfold{padding-bottom:2px}
+#tbxDf[hidden]{display:none}
+@media (pointer:coarse){body.ubox #tp .grp>.gh.gfh{min-height:34px}}
 @media (pointer:coarse){#tbx .tbw .tbg{width:20px;height:20px;font-size:12px}.tb .tl{padding-right:15px}body.ubox #tbx{width:112px}#tbx .tbw .tb{min-height:46px}#tbx #tbxCol{flex-basis:24px;min-height:30px}#tbxFt button{min-height:32px}#tbxMore{min-height:46px}#tbxObj #lyopen{min-height:36px}}
 /* 右上の2つのボタンに、小さく名前を添える（👁＝補助、🎬＝設定）。ボタンの高さは変えず、絵文字の下に8pxの字 */
 #mnv,#mna{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:14px}
