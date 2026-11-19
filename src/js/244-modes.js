@@ -9,8 +9,6 @@
    ・UIの一時状態：作品・Undo・保存には入れない。 */
 const MODES=[
   {id:'edit',ico:'🎬',name:'編集・アニメーション',note:'いままでの画面です（描く・動き・歪み・色調整・物理など全部）。'},
-  {id:'phys',ico:'🌍',name:'物理',note:'編集画面の「物理」タブへ移ります。独立したモードにはしていません（台帳Z-205）。',open(){
-    document.body.classList.contains('tpc')&&$('tc').click();setTab('ph')}},
   {id:'cons1',con:true,ico:'📝',name:'コンソール1（メモ帳）',note:'本体の作品に触れずに使うメモ帳です（txtの読み込み・出力、PDFの出力）。',open(){CONSOLE.open('memo')}},
   {id:'cons2',con:true,ico:'🧩',name:'コンソール2（ビジュアルプログラミング）',note:'本体の作品に触れずに試す、ビジュアルプログラミングの試作です（動く画面とソースコードが対応して見えます）。',open(){CONSOLE.open('vp')}},
   {id:'cons3',con:true,ico:'🔍',name:'コンソール3（画像の見比べ）',note:'100枚ほどの画像を読み込み、数枚を素早く選んで大きく拡大し、印をつけながら見比べます（本体の作品には触れません）。',open(){CONSOLE.open('cmp')}}
@@ -23,7 +21,7 @@ function modeUi(){
   $('mdl').innerHTML='';
   for(const m of MODES){
     const b=document.createElement('button');b.className='mdi';b.dataset.mode=m.id;b.disabled=!!m.off;
-    const here=m.id===cur;   /* 物理は編集画面の中のタブなので、「いま」は付かない */
+    const here=m.id===cur;
     b.setAttribute('aria-current',here?'true':'false');
     b.innerHTML='<b></b><span></span>';b.firstChild.textContent=m.ico+' '+m.name+(here?'（いま）':'');b.lastChild.textContent=m.note;
     b.onclick=()=>modeSet(m.id);

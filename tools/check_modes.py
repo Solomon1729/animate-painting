@@ -217,10 +217,10 @@ with sync_playwright() as p:
     pg.wait_for_timeout(250)
     chk('右の縁から中央へ十分に横引きすると出る', pg.evaluate(OPEN) is True)
     li = pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdi')].map(b=>[b.dataset.mode,b.disabled,b.getAttribute('aria-current')])")
-    chk('5つ：編集（いま）・物理・コンソール1（メモ帳）・コンソール2（ビジュアルプログラミング）・コンソール3（画像の見比べ）。全部押せる',
-        [x[0] for x in li] == ['edit', 'phys', 'cons1', 'cons2', 'cons3'] and li[0][2] == 'true' and all(x[1] is False for x in li), li)
+    chk('4つ：編集（いま）・コンソール1（メモ帳）・コンソール2（ビジュアルプログラミング）・コンソール3（画像の見比べ）。全部押せる',
+        [x[0] for x in li] == ['edit', 'cons1', 'cons2', 'cons3'] and li[0][2] == 'true' and all(x[1] is False for x in li), li)
     nm = pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdi b')].map(b=>b.textContent)")
-    chk('名前は「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」', 'コンソール1（メモ帳）' in nm[2] and 'コンソール2（ビジュアルプログラミング）' in nm[3], nm)
+    chk('名前は「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」', 'コンソール1（メモ帳）' in nm[1] and 'コンソール2（ビジュアルプログラミング）' in nm[2], nm)
     pg.keyboard.press('Escape')
     chk('Escapeで閉じる', pg.evaluate(OPEN) is False)
     touch_seq(cdp, [('touchStart', [P(406, 500)]), ('touchMove', [P(350, 500)]), ('touchMove', [P(250, 500)]), ('touchEnd', [])])
@@ -234,10 +234,8 @@ with sync_playwright() as p:
     pg.keyboard.press('Escape')
     pg.evaluate("()=>menuClose()")
     pg.evaluate("()=>modeOpen()")
-    pg.click('.mdi[data-mode=phys]')
-    chk('「物理」：編集画面の物理タブへ移り、閉じる（独立モードにはしない）', pg.evaluate("()=>document.querySelector('.tab.on').dataset.tab==='ph'&&!modeIsOpen()&&!CONSOLE.isOpen()"))
-    pg.evaluate("()=>modeOpen()")
-    chk('物理のタブにいても、「いま」は編集のまま', pg.evaluate("()=>document.querySelector('#mdl .mdi[aria-current=true]').dataset.mode") == 'edit')
+    chk('モード一覧に「物理」の項目は無い（物理は編集・アニメーションの中の物理タブ。台帳Z-295）', pg.evaluate("()=>!document.querySelector('#mdl .mdi[data-mode=phys]')&&!MODES.some(m=>m.id==='phys')&&!!document.querySelector('.tab[data-tab=ph]')"))
+    chk('「いま」は編集のまま', pg.evaluate("()=>document.querySelector('#mdl .mdi[aria-current=true]').dataset.mode") == 'edit')
     pg.keyboard.press('Escape')
     # 描くタブでペンの縁近く（帯の外）は普通に描ける
     pg.evaluate("()=>{setSel(AC[0]);setTab('dr')}")

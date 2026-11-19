@@ -685,6 +685,12 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
 /* 液体タブ（台帳Z-272） */
 #lqCol{width:48px;height:32px;padding:0;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*8px);background:var(--bg)}
 #lqCtl[hidden],#lqNone[hidden]{display:none}
+/* 使い方の案内（ビジュアルプログラミング・機能コレクション。台帳Z-295）：小さく、畳める */
+.vphelp,.ftguide{margin:4px 0;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*8px);padding:0 8px;background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.vphelp>summary,.ftguide>summary{cursor:pointer;font-weight:var(--fw,900);min-height:30px;display:flex;align-items:center}
+.vphelp ol,.ftguide ol{margin:2px 0 6px 18px;padding:0;font-size:12.5px;line-height:1.5}
+.vphelp li,.ftguide li{margin:2px 0}
+.vphelp button,.ftguide button{margin:0 0 6px}
 </style>
 </head>
 <body>
@@ -1050,20 +1056,24 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="grp"><div class="gh">💧 液体を足す</div>
     <div class="row"><button id="lqAddPour" type="button" aria-label="蛇口から水を注ぐ液体の絵を足す">＋蛇口（注ぐ）</button><button id="lqAddDrip" type="button" aria-label="蛇口から水を垂らす液体の絵を足す">＋蛇口（垂らす）</button></div>
     <div class="row"><button id="lqAddDrop" type="button" aria-label="水滴が落ちる液体の絵を足す">＋水滴</button><button id="lqAddTear" type="button" aria-label="涙が落ちる液体の絵を足す">＋涙</button></div>
-    <div class="row"><button id="lqAddTom" type="button" aria-label="トマトをぶつける液体の絵を足す">＋トマト（ぶつける）</button><button id="lqAddChm" type="button" aria-label="シャンパンを吹きかける液体の絵を足す">＋シャンパン</button></div>
-    <div class="row"><button id="lqAddIce" type="button" aria-label="アイスクリームが飛び散る液体の絵を足す">＋アイス</button><button id="lqAddMay" type="button" aria-label="マヨネーズを絞り出す液体の絵を足す">＋マヨネーズ</button></div>
+    <div class="row"><button id="lqAddBurst" type="button" aria-label="勢いよくぶつかって飛び散る液体の絵を足す">＋ぶつける（飛び散る）</button><button id="lqAddSpray" type="button" aria-label="細かく吹きかける液体の絵を足す">＋吹きかける</button></div>
+    <div class="note">どの液体も、足したあとに「選んでいる液体」で、ねばり・色・透明度・止まる強さ・付く量・あわ…を自由に組み合わせて、さらさらの水から形が残るペーストまで表せます。作り方の例は <button id="lqHelp" type="button" aria-label="マニュアルの液体の説明を開く">📖 マニュアル「液体」</button> にあります。</div>
     <div class="note">足した絵は、ほかの絵と同じように動かせます（位置・大きさ・向き・動き・レイヤー・元に戻す・保存）。水は、絵の向きに沿って出ます。水は「床の高さ」まで落ちて、床の上にたまります（写真の床に合わせて、高さと傾きを決めてください。絵や物体にはまだぶつかりません）。</div></div>
     <div class="grp"><div class="gh" id="lqTitle">選んでいる液体</div>
     <div class="note" id="lqNone">蛇口・水滴・涙の絵を選ぶと、ここで調整できます。</div>
     <div id="lqCtl" hidden>
     <div class="row"><button id="lqOn" type="button" aria-label="水を流す／止める">⏸ 止める</button><button id="lqClr" type="button" aria-label="空中と床の水を消す（かかった跡は残る）">水を消す</button></div>
     <div class="row"><button id="lqHold" type="button" aria-label="この液体だけ、その場で止める／動かす">❄ その場で止める</button><button id="lqClrCt" type="button" aria-label="絵の面に付いた跡だけを消す">かかった跡を消す</button><button id="lqDel" type="button" aria-label="この液体を削除する">この液体を削除</button></div>
-    <div class="row"><span class="lab">種類</span><select id="lqMat" aria-label="液体の種類（色・ねばり・付き方がまとめて変わる）"><option value="water">水</option><option value="champagne">シャンパン</option><option value="tomato">トマト</option><option value="ice">アイスクリーム</option><option value="mayo">マヨネーズ</option></select></div>
+    <div class="row"><span class="lab">性質のひな形</span><select id="lqMat" aria-label="性質のひな形を選ぶと、ねばり・つながり・波紋・止まる強さ・付く量・乾く速さ・にごり・あわの値がまとまって入ります（色・出し方は変わりません。入れたあとも、つまみで自由に変えられます）"><option value="">選ぶと値が入る…</option><option value="thin">さらさら</option><option value="foam">あわ立つ</option><option value="thick">とろみ</option><option value="paste">ねっとり（形が残る）</option></select></div>
     <div class="row"><span class="lab">向き</span><input id="lqAng" type="range" min="0" max="360" step="1" aria-label="出す向きの角度（0°が下、360°ぐるり）"><b class="v" id="lqAngv"></b></div>
     <div class="row"><span class="lab">奥行き</span><input id="lqDep" type="range" min="-90" max="90" step="1" aria-label="奥行きの向き（プラスはこちらへ向かってくる、マイナスは向こうへ向かっていく）"><b class="v" id="lqDepv"></b></div>
     <div class="row" id="lqSprRow"><span class="lab">広がり</span><input id="lqSpr" type="range" min="0" max="85" step="1" aria-label="ばらまく広がりの角度"><b class="v" id="lqSprv"></b></div>
     <div class="row"><span class="lab">止まる強さ</span><input id="lqYld" type="range" min="0" max="1" step="0.01" aria-label="絵の面に付いたあと、垂れずに止まる強さ（大きいほど付いたまま）"><b class="v" id="lqYldv"></b></div>
     <div class="row"><span class="lab">付く量</span><input id="lqAdh" type="range" min="0" max="6" step="0.1" aria-label="絵の面に付く量"><b class="v" id="lqAdhv"></b></div>
+    <div class="row"><span class="lab">乾く速さ</span><input id="lqDry" type="range" min="0" max="1" step="0.01" aria-label="絵の面に付いた跡が乾いて消える速さ（0は乾かない）"><b class="v" id="lqDryv"></b></div>
+    <div class="row"><span class="lab">にごり</span><input id="lqSc" type="range" min="0" max="1" step="0.01" aria-label="にごり（大きいほど、中が白く濁って見える）"><b class="v" id="lqScv"></b></div>
+    <div class="row"><span class="lab">あわ</span><input id="lqFo" type="range" min="0" max="2" step="0.01" aria-label="あわの量（厚い所に白い小さな粒が出る）"><b class="v" id="lqFov"></b></div>
+    <div class="row"><span class="lab">粒の大きさのばらつき</span><input id="lqJi" type="range" min="0" max="1" step="0.01" aria-label="粒の大きさのばらつき（大きいほど、大小まざる）"><b class="v" id="lqJiv"></b></div>
     <div class="row"><span class="lab" id="lqWl">流れの太さ</span><input id="lqW" type="range" min="1" max="12" step="1" aria-label="流れの太さ、または1回に出す粒の数"><b class="v" id="lqWv"></b></div>
     <div class="row"><span class="lab">勢い</span><input id="lqV" type="range" min="0" max="1.2" step="0.01" aria-label="水を出す勢い"><b class="v" id="lqVv"></b></div>
     <div class="row" id="lqGapRow"><span class="lab">間隔</span><input id="lqG" type="range" min="0.3" max="6" step="0.1" aria-label="水のかたまりを出す間隔（秒）"><b class="v" id="lqGv"></b></div>
@@ -1189,6 +1199,9 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="row"><span class="lab">動く歪み（ピン）の注意を出す数</span><input id="limPins" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動く歪み（ピン）の注意を出す数（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個。既定 24。超えても足せます（注意だけ）。0＝出さない</span></div>
     <div class="row"><span class="lab">操作の履歴（元に戻す）の上限</span><input id="limUndo" class="num" type="number" min="0" step="16" inputmode="numeric" aria-label="操作の履歴（元に戻す）の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">MB。既定 256。超えると古い履歴から消えます。0＝制限なし</span></div>
     <div class="row"><span class="lab">液体の粒の数の上限</span><input id="limLiq" class="num" type="number" min="0" step="100" inputmode="numeric" aria-label="液体の粒の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（1つの液体の絵ごと）。既定 1500。超えると古い水から消えます。0＝制限なし</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングのソースの文字数</span><input id="limVps" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングのソースの文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（読み込むHTML・編集して反映するソース）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングの保存する1つの値</span><input id="limVpv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存する1つの値の文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（枠の中のページが覚える1つの値の長さ）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングの保存先の数</span><input id="limVpk" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存先の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（枠の中のページが覚える名前の数）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
     <div class="row"><button id="limReset" type="button">上限の設定を初めの値に戻す</button></div>
     </details>
   </div>
@@ -1250,19 +1263,19 @@ function emo(t){const c=document.createElement('canvas');c.width=c.height=320;co
    絵を勝手に縮めたり、操作の境目を黙って設けたりしない。ここは、既にあった上限を、設定で変えられるようにまとめたもの（0＝制限なし）。
    ・LIM（端末に覚える am_limits。作品・Undo・保存には入れない）。入れ物は、背景・出力タブの「⚙ 動作」の「上限の設定」。
    ・limOr(k)＝使う側が見る値（0なら Infinity）。使う所：ペン等の作業の細かさ pen（110・30）／白紙 blk（30）／質感・統合 tex（20・225・226）／
-     動く歪み pins（120。超えたら注意だけ。止めない）／Undoの履歴 undo（170。MB）／キャンバス cv・exp（235・160・220）／液体の粒の数 liq（2473。超えたら古い水から消す）。
+     動く歪み pins（120。超えたら注意だけ。止めない）／Undoの履歴 undo（170。MB）／キャンバス cv・exp（235・160・220）／液体の粒の数 liq（2473。超えたら古い水から消す）／ビジュアルプログラミングの文字数 vps・保存する1つの値の文字数 vpv・保存先の数 vpk（2466。**既定は0＝制限なし**。設定した時だけ、超えると止めて知らせる）。
    ・ブラウザ自身の上限（Canvasの1辺の最大・総画素）は、ここでは変えられない。大きくしすぎると、真っ白になったり落ちたりする端末がある（マニュアル「遅い場合の対処・上限」）。 */
-const LIM={pen:4096,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6,liq:1500};
+const LIM={pen:4096,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6,liq:1500,vps:0,vpv:0,vpk:0};
 const LIM_D=Object.assign({},LIM);
 try{const q=JSON.parse(localStorage.getItem('am_limits')||'null');if(q&&typeof q==='object')for(const k in LIM)if(q[k]!==undefined&&q[k]!==null&&q[k]!==''&&Number.isFinite(+q[k])&&+q[k]>=0)LIM[k]=+q[k]}catch(_){}
 const limOr=k=>LIM[k]>0?LIM[k]:Infinity;
 function limSave(){try{localStorage.setItem('am_limits',JSON.stringify(LIM))}catch(_){}}
-[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq']].forEach(([id,k])=>{
+[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']].forEach(([id,k])=>{
   const e=$(id);if(!e)return;e.value=LIM[k];
   const on=()=>{const v=parseFloat(e.value);if(!(v>=0))return;LIM[k]=Math.round(v);limSave()};
   e.addEventListener('input',on);e.addEventListener('change',on);
 });
-{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
+{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
 
 /* 動きの基本: 往復(方向つき)・回転・のび縮み × 波形。全波形は -1〜+1 */
 const K=[['m','往復',4,.05],['r','回転',360,5],['s','のび縮み',.5,.02]];
@@ -8817,8 +8830,6 @@ dvBuild();dvBind();
    ・UIの一時状態：作品・Undo・保存には入れない。 */
 const MODES=[
   {id:'edit',ico:'🎬',name:'編集・アニメーション',note:'いままでの画面です（描く・動き・歪み・色調整・物理など全部）。'},
-  {id:'phys',ico:'🌍',name:'物理',note:'編集画面の「物理」タブへ移ります。独立したモードにはしていません（台帳Z-205）。',open(){
-    document.body.classList.contains('tpc')&&$('tc').click();setTab('ph')}},
   {id:'cons1',con:true,ico:'📝',name:'コンソール1（メモ帳）',note:'本体の作品に触れずに使うメモ帳です（txtの読み込み・出力、PDFの出力）。',open(){CONSOLE.open('memo')}},
   {id:'cons2',con:true,ico:'🧩',name:'コンソール2（ビジュアルプログラミング）',note:'本体の作品に触れずに試す、ビジュアルプログラミングの試作です（動く画面とソースコードが対応して見えます）。',open(){CONSOLE.open('vp')}},
   {id:'cons3',con:true,ico:'🔍',name:'コンソール3（画像の見比べ）',note:'100枚ほどの画像を読み込み、数枚を素早く選んで大きく拡大し、印をつけながら見比べます（本体の作品には触れません）。',open(){CONSOLE.open('cmp')}}
@@ -8831,7 +8842,7 @@ function modeUi(){
   $('mdl').innerHTML='';
   for(const m of MODES){
     const b=document.createElement('button');b.className='mdi';b.dataset.mode=m.id;b.disabled=!!m.off;
-    const here=m.id===cur;   /* 物理は編集画面の中のタブなので、「いま」は付かない */
+    const here=m.id===cur;
     b.setAttribute('aria-current',here?'true':'false');
     b.innerHTML='<b></b><span></span>';b.firstChild.textContent=m.ico+' '+m.name+(here?'（いま）':'');b.lastChild.textContent=m.note;
     b.onclick=()=>modeSet(m.id);
@@ -9163,7 +9174,7 @@ CONSOLE.reg({id:'memo',no:1,mode:'cons1',ico:'📝',name:'メモ帳',
    ・ソースは「編集」で書き換えられ、「反映」で動き直す。書き換えたソースは、この端末にだけ覚える（`am_vplab`）。
    ・コンソールの決まり：本体の作品・Undo・保存（snap／ser／US／AC／LAYERS／DOC）には触れない。保存先は `am_vplab*` だけ（メモ帳の `am_memo` にも触れない）。
    ・ソース・名前・記録の文字は、必ず textContent で出す（HTMLとして解釈しない）。 */
-const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',MAXSRC:200000,MAXVAL:200000,MAXKEYS:50,
+const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',get MAXSRC(){return limOr('vps')},get MAXVAL(){return limOr('vpv')},get MAXKEYS(){return limOr('vpk')},   /* 既定は制限なし。設定した時だけ働く（01-limits.js・台帳Z-295） */
   src:'',an:null,frame:null,ready:false,mode:'run',editing:false,selId:null,selLine:null,H:{},B:null,bt:0,log:[],el:null,name:''};
 
 /* 見本のソース（本物のHTML・CSS・JavaScript。そのまま動く） */
@@ -9649,8 +9660,8 @@ function vplOnMsg(e){
       if(!op)break;
       if(op==='set'){
         const val=str(m.val,VPL.MAXVAL+1);
-        if(val.length>VPL.MAXVAL)vplMsg('保存できません：1つの値が長すぎます（'+VPL.MAXVAL+'字まで）。',1);
-        else if(vplSnapKeys(key)>=VPL.MAXKEYS)vplMsg('保存できません：保存先の数が多すぎます（'+VPL.MAXKEYS+'個まで）。',1);
+        if(val.length>VPL.MAXVAL)vplMsg('保存できません：1つの値が長すぎます（'+VPL.MAXVAL+'字まで）。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',1);
+        else if(vplSnapKeys(key)>=VPL.MAXKEYS)vplMsg('保存できません：保存先の数が多すぎます（'+VPL.MAXKEYS+'個まで）。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',1);
         else if(!vplLs.set(VPL.LSS+key,val))vplMsg('この端末では覚えられないので、画面を閉じると保存した文字は消えます。',1);
       }else if(op==='del')vplLs.del(VPL.LSS+key);
       else if(op==='clear'){try{for(const k of Object.keys(localStorage))if(k.indexOf(VPL.LSS)===0)localStorage.removeItem(k)}catch(_){}}
@@ -9687,7 +9698,7 @@ function vplApply(){
   const ta=vplQ('#vpEditTa');if(!ta)return;
   const s=ta.value.replace(/\r\n?/g,'\n');
   if(!s.trim()){vplMsg('反映できません：中身が空です。',1);return}
-  if(s.length>VPL.MAXSRC){vplMsg('反映できません：長すぎます（'+VPL.MAXSRC+'字まで）。',1);return}
+  if(s.length>VPL.MAXSRC){vplMsg('反映できません：長すぎます（'+VPL.MAXSRC+'字まで）。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',1);return}
   const sc=vplQ('#vpScript'),st=sc.scrollTop,sl=sc.scrollLeft;   /* 反映しても、いま見ている所から動かさない */
   const saved=vplSetSource(s,true);sc.scrollTop=st;sc.scrollLeft=sl;
   vplMsg('反映しました。動き直しています。'+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）'),saved?0:1);
@@ -9721,10 +9732,10 @@ async function vplImportFile(f,more){
   if(!f)return;
   if(!CONSOLE.isOpen()||CONSOLE.cur!=='vp')modeSet('cons2');   /* ビジュアルプログラミングを開く（まだ開いていなければ、ここで作る） */
   const bad=t=>{vplMsg(t,1);note(t)};
-  if(f.size>VPL.MAXSRC*4){bad('読み込めません：ファイルが大きすぎます（'+Math.round(f.size/1024)+'KB）。ソースは'+VPL.MAXSRC+'字までです。');return}
+  if(f.size>VPL.MAXSRC*4){bad('読み込めません：ファイルが大きすぎます（'+Math.round(f.size/1024)+'KB）。ソースは'+VPL.MAXSRC+'字までです。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）');return}
   let s;try{s=memoDecode(new Uint8Array(await f.arrayBuffer()))}catch(_){bad('読み込めません：ファイルを読み取れませんでした。');return}
   if(!/<\s*(!doctype|html|head|body|script|style|canvas|svg|div|p|h[1-6]|button|input|textarea|form|table|ul|ol|a|img|span|section|main)\b/i.test(s.slice(0,20000))){bad('読み込めません：HTMLファイルではないようです。');return}
-  if(s.length>VPL.MAXSRC){bad('読み込めません：ソースが長すぎます（'+s.length+'字。'+VPL.MAXSRC+'字まで）。');return}
+  if(s.length>VPL.MAXSRC){bad('読み込めません：ソースが長すぎます（'+s.length+'字。'+VPL.MAXSRC+'字まで）。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）');return}
   if(vplCustom()&&!confirm('いまのソースと、端末に保存した文字は消えます。「'+(f.name||'HTML')+'」を読み込みますか？'))return;
   vplClearStored();VPL.name=(f.name||'').slice(0,60);
   const saved=vplSetSource(s,true);
@@ -9749,6 +9760,13 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
       +'<button type="button" id="vpStPaint" aria-label="お絵かきと物理の見本から始める">🎨 お絵かき</button>'
       +'<label class="file" aria-label="HTMLファイルを読み込む（この画面へ落としても読み込めます）">📂 HTMLを読み込む<input id="vpFile" type="file" accept=".html,.htm,text/html"></label>'
       +'<button type="button" id="vpSave" aria-label="いまのソースをHTMLファイルで出力する">💾 HTMLで出力</button></div>'
+      +'<details class="vphelp" id="vpHelp"><summary>📖 使い方（はじめに読む）</summary><ol>'
+      +'<li>上の「始め方」で、見本か、自分のHTML（📂）を開きます。左が動く画面、右がそのソースです。</li>'
+      +'<li>🔍調べる：画面の部品を押すと、その部品のソースの行が光ります。行を押すと、画面の部品が光ります。</li>'
+      +'<li>✎編集で書き換えて、✔反映で動き直します。↺見本に戻す、💾HTMLで出力もできます。</li>'
+      +'<li>🧰機能コレクション（下）：開いているHTMLから、ひとまとまりの機能を取り出して、別のHTMLへ足せます。</li>'
+      +'<li>外のサイト（CDNなど）を読み込む記述は動きません。大きなHTMLは重くなります（文字数の制限は初めは無し）。</li>'
+      +'</ol><button type="button" id="vpHelpMan" aria-label="マニュアルのビジュアルプログラミングの説明を開く">📖 マニュアルを開く</button></details>'
       +'<div id="ftHost"></div>'
       +'<div class="vpgrid">'
       +'<section class="vpcol"><div class="vpbar"><b>ビューワー</b>'
@@ -9759,6 +9777,9 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
       +'<button type="button" id="vpEdit" aria-label="ソースコードを書き換える">✎ 編集</button><button type="button" id="vpApply" hidden aria-label="書き換えたソースコードを反映する">✔ 反映</button><button type="button" id="vpCancel" hidden aria-label="書き換えをやめる">✕ やめる</button></div>'
       +'<div class="note" id="vpMsg" style="margin:0" hidden></div><div class="vpscript vpcode" id="vpScript"></div><div class="vpgrab" id="vpGrabS" role="separator" tabindex="0" aria-label="ソースの欄の高さ。ドラッグで変える（矢印キーでも変えられます。ダブルクリックで元の高さ）" title="ドラッグで、ソースの欄の高さを変える（ダブルクリックで元に戻す）"></div><div class="vplog note" id="vpLog"></div></section></div>';
     vplLoadSrc();vplRun();vplCode();vplInfo();
+    {const hp=vplQ('#vpHelp');let seen=null;try{seen=localStorage.getItem('am_vplab_help')}catch(_){}
+      hp.open=seen==null&&innerWidth>=700;if(seen==null){try{localStorage.setItem('am_vplab_help','seen')}catch(_){}}   /* 初めて開く時だけ（広い画面で）開いておく。スマホは、縦の場所が貴重なので畳んだまま（見出しは残る） */
+      vplQ('#vpHelpMan').onclick=()=>{if(typeof manOpen==='function')manOpen('vp')}}
     vplQ('#vpStText').onclick=()=>vplStart('text');vplQ('#vpStPaint').onclick=()=>vplStart('paint');vplQ('#vpSave').onclick=vplExport;
     vplQ('#vpFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vplImportFile(f)};
     vplQ('#vpRun').onclick=()=>vplMode('run');vplQ('#vpInsp').onclick=()=>vplMode('insp');vplQ('#vpReset').onclick=vplReset;
@@ -9864,7 +9885,7 @@ const MANPAGES=[
 <li>「レイヤーとオブジェクト」の一覧：いちばん上にキャンバスのpx、各オブジェクトの下に「元の絵 ○×○ px／キャンバス上 ○×○ px」、各レイヤーの右にその絵が占める範囲（動き・物理を含めない目安）。</li>
 </ul>`},
   {id:'slow',title:'遅い場合の対処・上限',
-   live:()=>{const L=LIM,f=v=>v>0?String(v):'なし（制限なし）';return '上限の設定（いまの値）\nキャンバス 長辺 '+f(L.cv)+' px／総画素 '+f(L.exp)+'\nペン等の編集 長辺 '+f(L.pen)+' px／白紙 総画素 '+f(L.blk)+'\n質感・統合 総画素 '+f(L.tex)+'／ピンの注意 '+(L.pins>0?L.pins+' 個':'出さない')+'／履歴 '+(L.undo>0?L.undo+' MB':'なし')+'／液体の粒 '+f(L.liq)+' 個（1つの液体ごと）\n動画：効果の注意 '+(VD.warn>0?VD.warn+' 個':'出さない')+'／歪みの細かさ 画面 '+f(VD.cap)+' px・書き出し '+f(VD.capExp)+' px／書き出しの上限 '+f(VD.exMax)+' 画素'},
+   live:()=>{const L=LIM,f=v=>v>0?String(v):'なし（制限なし）';return '上限の設定（いまの値）\nキャンバス 長辺 '+f(L.cv)+' px／総画素 '+f(L.exp)+'\nペン等の編集 長辺 '+f(L.pen)+' px／白紙 総画素 '+f(L.blk)+'\n質感・統合 総画素 '+f(L.tex)+'／ピンの注意 '+(L.pins>0?L.pins+' 個':'出さない')+'／履歴 '+(L.undo>0?L.undo+' MB':'なし')+'／液体の粒 '+f(L.liq)+' 個（1つの液体ごと）\nビジュアルプログラミング：ソース '+f(L.vps)+' 字／保存する1つの値 '+f(L.vpv)+' 字／保存先 '+f(L.vpk)+' 個\n動画：効果の注意 '+(VD.warn>0?VD.warn+' 個':'出さない')+'／歪みの細かさ 画面 '+f(VD.cap)+' px・書き出し '+f(VD.capExp)+' px／書き出しの上限 '+f(VD.exMax)+' 画素'},
    html:()=>
 `<p><b>このアプリは、絵や動画を勝手に劣化させたり、操作に境目を作ったりしない方針です。</b>容量や速さのために上限が要る所は、①超えたら注意を出す　②小さく説明する　③背景・出力タブの「⚙ 動作」で変えられる　④このページに書く、の4つをそろえます。数の制限そのもの（効果は何個まで、など）は設けていません。</p>
 <h4>遅い・重い時にまず試すこと</h4>
@@ -9884,6 +9905,7 @@ const MANPAGES=[
 <li><b>動く歪み（ピン）24個</b>：これは「数の制限」ではなく、「超えると重くなることがある」という注意を出す数です。超えても足せます。</li>
 <li><b>液体の粒の数 1500個（液体の絵1つごと）</b>：超えると、古い水から消え、注意を1回出します（ふつうの流れは、数十〜数百個で足ります。細かい粒にすると増えます）。0＝制限なし。</li>
 <li><b>操作の履歴（元に戻す）256 MB</b>：超えると、古い履歴から消えます（初めて消える時に、注意を1回出します）。</li>
+<li><b>ビジュアルプログラミングの文字数・保存する値・保存先の数</b>：制限はありません（初めは0＝制限なし）。大きなHTML（本体そのものなど）も読み込めますが、大きいほど開くのに時間がかかります。数を入れると、超えた時に止めて、理由を知らせます。</li>
 <li><b>動画の効果の数</b>：制限はありません。「効果の注意を出す数」（初めは8）を超えると、注意が出ます。</li>
 <li><b>動画の歪みの細かさ（画面 640 px／書き出し 1024 px）</b>：動画の歪みは、長辺をこのpxにして計算してから拡大して重ねます。小さいほど速く、荒くなります。0＝動画そのままの細かさ（とても重いことがあります）。書き出しは、画面より細かい値が初めに入っています。</li>
 <li><b>動画の書き出しの上限 8300000 画素（4K相当）</b>：キャンバスの総画素がこれを超えると、書き出しは縮みます。縮む時は、書き出しの欄に注意が出ます。大きくすると、録画できない端末があります。</li>
@@ -9911,28 +9933,46 @@ const MANPAGES=[
 <li>ビジュアルプログラミング（ビューワーとソース欄の高さ。境目の帯をつかんで上下）</li>
 </ul>
 <p>対応していない窓・枠（装置トレー、メモ帳、色や太さの小窓、並べ替えの小窓、画面下の太さ・調整の一行）で必要なものがあれば、教えてください。</p>`},
-  {id:'liq',title:'液体（水・シャンパン・トマト・アイス・マヨネーズ）',
+  {id:'liq',title:'液体（さらさらの水〜形が残るペースト）',
    html:()=>
-`<p>写真や絵の上に、水などの液体を重ねて動かします。「液体」タブ（スマホは、道具の列の「▾」→💧液体）の「＋」ボタンで足すと、ほかの絵と同じように動かせる絵になります。重い立体にはせず、画面の面で動かして、奥行き（手前・奥）は粒ごとの高さで表しています。</p>
-<h4>足せるもの</h4>
+`<p>写真や絵の上に、液体を重ねて動かします。「液体」タブ（スマホは、道具の列の「▾」→💧液体）の「＋」ボタンで足すと、ほかの絵と同じように動かせる絵になります。重い立体にはせず、画面の面で動かして、奥行き（手前・奥）は粒ごとの高さで表しています。</p>
+<h4>考え方：「出し方」と「性質」を組み合わせる</h4>
 <ul>
-<li><b>蛇口（注ぐ／垂らす）・水滴・涙</b>：下へ流れ、床の高さで水たまりになります。</li>
-<li><b>トマト（ぶつける）・シャンパン（吹きかける）・アイス（飛び散る）・マヨネーズ（絞り出す）</b>：色・ねばり・付き方がまとめて変わります。手前へ飛ぶ液体は、絵の面に付いて残り、ねばりが強いほどゆっくり垂れます。</li>
+<li><b>出し方（足すボタン）</b>：蛇口（注ぐ）・蛇口（垂らす）・水滴・涙・ぶつける（飛び散る）・吹きかける。<b>どれも、足した直後は水に近い液体</b>です。</li>
+<li><b>性質（つまみ）</b>：粘性・つながり・止まる強さ・付く量・乾く速さ・にごり・あわ・色・透明度…。足したあと、「選んでいる液体」で自由に組み合わせます。「性質のひな形」（さらさら／あわ立つ／とろみ／ねっとり）を選ぶと、ねばり系の値がまとめて入るので、そこから微調整すると早く作れます（色と出し方は変わりません）。</li>
+<li>特定の物の名前の液体は、用意していません。いろいろな液体を、つまみの値で表します（下の「作り方の例」）。</li>
 </ul>
-<h4>調整（選んでいる液体の分）</h4>
+<h4>つまみの意味</h4>
 <ul>
-<li><b>向き・奥行き</b>：向きは0〜360°ぐるり。奥行きはプラスで「こちらへ向かってくる」、マイナスで「向こうへ向かっていく」。</li>
-<li><b>粒の大きさ</b>：小さいほど細かい粒になります。水の量や流れの太さは変わらず、粒の数だけ増えます（増えるほど重くなります）。</li>
+<li><b>粘性</b>：大きいほどねばって、ゆっくり流れます。<b>止まる強さ</b>：絵の面に付いたあと、垂れずに止まる強さ（大きいほど付いたまま。100%に近いと、形が残る半固体）。<b>付く量</b>：絵の面に付く量。<b>乾く速さ</b>：付いた跡が乾いて消える速さ（0は乾かない）。</li>
 <li><b>つながり</b>：粘性とは別。大きいほど、粒がなめらかにつながって、ねっとり見えます。小さいと、粒が離れて見えます。</li>
-<li><b>粘性・色・透明度・波紋とつや・流れの太さ・勢い・間隔・床の高さと傾き</b>、「水そう」（紙の縁にためる従来の表し方）。</li>
-<li>後ろの絵は、水の形に合わせて屈折し、少し歪んでうねります。絵が明るいほど水も明るく、暗いと水も暗く見えます。</li>
+<li><b>にごり</b>：大きいほど、中が白く濁って見えます。<b>あわ</b>：厚い所に白い小さな粒が出ます。<b>粒の大きさのばらつき</b>：大きいほど、大小がまざります。</li>
+<li><b>粒の大きさ</b>：小さいほど細かい粒になります。水の量や流れの太さは変わらず、粒の数だけ増えます（増えるほど重くなります）。</li>
+<li><b>向き・奥行き</b>：向きは0〜360°ぐるり。奥行きはプラスで「こちらへ向かってくる」、マイナスで「向こうへ向かっていく」。<b>広がり</b>：ばらまく角度。</li>
+<li><b>色・透明度・波紋とつや</b>、<b>流れの太さ（または1回に出す粒の数）・勢い・間隔</b>、<b>床の高さ・床の傾き・たまり方</b>、「横から見た水そう」（紙の縁にためる従来の表し方）。</li>
+<li>後ろの絵は、液体の形に合わせて屈折し、少し歪んでうねります。絵が明るいほど液体も明るく、暗いと暗く見えます。</li>
 </ul>
+<h4>作り方の例（これは例です。値は好みで変えてください）</h4>
+<p>数字は、画面のつまみに出る表示の単位です。「ひな形」を選ぶと近い値が入るので、書いていない値はそのままで構いません。</p>
+<ul>
+<li><b>絞り出した、ねっとりしたもの（ソース状）</b>：＋蛇口（注ぐ）を足す → ひな形「ねっとり」→ 流れの太さ3・勢い0.25 → 色をクリーム色に・透明度6% → つながり110%・たまり方4%。</li>
+<li><b>ぶつけると形が残って盛り上がる、冷たい塊（半固体）</b>：＋ぶつける（飛び散る）を足す → ひな形「ねっとり」→ 1回に出す粒の数20・勢い2.0・間隔2.4秒 → 色を白に近いクリーム色・透明度4%・波紋・つや35% → 奥行き「手前へ65°」・広がり40° → 付く量3.2・粒の大きさのばらつき50%。</li>
+<li><b>あわが立つ、吹きかけた飲み物</b>：＋吹きかける を足す → ひな形「あわ立つ」→ 1回に出す粒の数8 → 色を金色に・透明度62% → 粒の大きさ×0.5・つながり25% → あわ150%。</li>
+<li><b>ぶつかってべちゃっと付いて垂れる、赤い液</b>：＋ぶつける（飛び散る）を足す → ひな形「とろみ」→ 色を赤に・透明度15% → 勢い2.4・1回に出す粒の数30・たまり方30% → 粒の大きさのばらつき60%。</li>
+</ul>
+<p>考え方：<b>固くしたい</b>＝粘性・止まる強さ・付く量を上げる／<b>透けさせたくない</b>＝透明度を下げて、にごりを上げる／<b>垂れさせたくない</b>＝止まる強さを上げる／<b>さらさらにしたい</b>＝粘性・つながりを下げる。形が崩れない本物の固体は表せません（止まる強さを100%近くにすると、付いたまま垂れない半固体になります）。</p>
 <h4>止める・消す</h4>
 <ul>
-<li>「止める」＝出すのをやめる／「その場で止める」＝いま空中にある水をその場で固める。</li>
-<li>「水を消す」＝空中と床の水を消す（かかった跡は残る）／「かかった跡を消す」＝絵の面の跡だけ消す／「この液体を削除」。削除は「元に戻す」で戻せます。</li>
+<li>「止める」＝出すのをやめる／「その場で止める」＝いま空中にある液体をその場で固める。</li>
+<li>「水を消す」＝空中と床の液体を消す（かかった跡は残る）／「かかった跡を消す」＝絵の面の跡だけ消す／「この液体を削除」。削除は「元に戻す」で戻せます。</li>
 </ul>
-<p>重い時は、粒を大きく（または粒の数の上限を下げる）してください。上限は「遅い場合の対処・上限」にあります。実機での速さは未確認です。</p>`},
+<h4>困った時</h4>
+<ul>
+<li><b>重い・カクカクする</b>：粒の大きさを大きく、または粒の数の上限を下げます（上限は「遅い場合の対処・上限」）。</li>
+<li><b>思った見た目にならない</b>：まずひな形を選び、そのあと1つずつ動かして、どのつまみが何を変えるかを見てください。</li>
+<li>昔の作品の液体（種類の名前が付いていたもの）も、そのまま開けます（値は変わりません）。</li>
+</ul>
+<p>実機（スマホ）での速さは未確認です。</p>`},
   {id:'cmp',title:'画像の見比べ（コンソール3）',
    html:()=>
 `<p>たくさんの画像（100枚ほど）を読み込んで、数枚をすばやく選び、大きく拡大して見比べながら、印をつけたり、ペンで書き込んだりするための画面です。画面の右の縁から中央へなぞり、モード一覧から「コンソール3（画像の見比べ）」を選びます。画像は縮めずに扱い、拡大は元のpxまで行えます。</p>
@@ -9960,23 +10000,77 @@ const MANPAGES=[
 <li>同時に出す枚数を減らす。元の大きな画像は最大12枚までメモリに置き、古いものから外します（選んだ絵は残します）。</li>
 <li>キーボードの操作は、この画面を開いている間だけ効きます。</li>
 </ul>`},
-  {id:'feat',title:'機能コレクション（取り出す・貯める・足す・派生）',
+  {id:'vp',title:'ビジュアルプログラミング（使い方）',
    html:()=>
-`<p>ビジュアルプログラミング（コンソール2）の🧰「機能コレクション」で、開いているHTMLから「ひとまとまりの機能」を取り出して貯め、別のHTMLへ足して使い回せます。元のHTMLは、読むだけで変わりません。</p>
-<h4>流れ</h4>
+`<p>コンソール2の「ビジュアルプログラミング」は、<b>HTML・CSS・JavaScriptそのもの</b>を、動かしながら読んで、書き換えられる場所です。左に動く画面（ビューワー）、右にソースコードが出ます。画面の部品とソースの行が結びついているので、「この部品はどの行か」がすぐ分かります。<b>本体の作品・元に戻す・保存には一切触れません</b>（別の枠で動きます）。</p>
+<h4>はじめ方（上の3つのどれか）</h4>
 <ul>
-<li><b>取り出す</b>：左の「いまのアプリの機能」で、画面の部品（idのある要素）や関数に印を付け、「取り出して検査」。印を付けたものと<b>つながるHTML・CSS・JS・保存のキー・CSS変数・外のライブラリ</b>が、まとめて集まります（無関係な部分は入れません）。</li>
-<li><b>検査</b>：✔使える／⚠警告あり／✖動かない。探している要素が無い・呼ぶ関数が無い・文法の誤りなどは✖で、<b>保存も使用もできません</b>（直したいときは「下書き」で保存して、✎派生で直します）。隔離した枠で実際に動かして、誤りが出ないかも確かめます。</li>
-<li><b>貯める</b>：右の「コレクション」に、この端末へ保存されます（再起動しても残ります。元のアプリとは別）。名前の変更・複製・削除・プレビュー・構造の表示ができます。JSONやHTMLで書き出し、JSONの読み込み（ファイル・貼り付け・画面へ落とす）もできます。</li>
-<li><b>足す</b>：コレクションの機能を選び「➕ いまのHTMLへ足す」。同じid・クラス名・関数名・保存キーなどがあれば、足す側の名前だけを自動で付け替えます。直せないときは足しません。<b>先のHTMLは1文字も変えず</b>、足す部分を印のコメントで囲んで入れます。「足したものを外す」で完全に元へ戻ります。</li>
-<li><b>派生</b>：「✎ 派生」で、HTML・CSS・JSを直して<b>別の版として</b>保存できます。元の機能はそのまま残ります。足した先で直しても、コレクションの元は変わりません。</li>
+<li><b>📝 テキストエディタ／🎨 お絵かき</b>：小さな見本から始めます（見本のHTMLです。本体のお絵かきそのものではありません）。</li>
+<li><b>📂 HTMLを読み込む</b>：自分のHTMLファイルを選ぶか、画面へ落とします。<b>文字数の制限はありません</b>（本体そのもののような100万字超のHTMLも読み込めます。大きいほど、開くのに数秒かかります）。読み込んだものは、この端末に覚えます（別のページに切り替えるまで）。</li>
 </ul>
-<h4>限界（正直に）</h4>
+<h4>見る</h4>
 <ul>
-<li>動かさずに文字を読んで調べるので、<code>window[名前]</code>・<code>eval</code>・文字列で組み立てる名前・全体を1つの関数で包んだアプリなどは、つながりを読み切れません。その場合は多めに含めるか、警告・✖にします。</li>
-<li>外のCSS・フォント・外のライブラリ（CDN）は、通信を止めた枠で動かすので確かめられません（必要なものは警告に出します）。</li>
-<li>足す先は「ビジュアルプログラミングで開いているHTML」です。別のHTMLファイルへ足したいときは、📂で読み込んで、足して、💾で出力します。</li>
-<li>処理の順番を図（ブロックと線）で並べ替える編集は、まだありません（文字で直します）。</li>
+<li><b>▶ 動かす</b>：画面を実際に動かします。<b>🔍 調べる</b>：画面の部品を押すと、その部品が出てくるソースの行が光ります（部品は動きません）。ソースの行を押すと、画面の部品が光ります。</li>
+<li>動いた処理・書き換わった行・誤りの行番号は、ログに出ます。</li>
+</ul>
+<h4>書き換える</h4>
+<ul>
+<li><b>✎ 編集</b>を押すと、同じ場所・同じ行番号のまま、そのまま打ち込めます。<b>✔ 反映</b>で、新しいソースで動き直します。<b>✕ やめる</b>で、書き換えを捨てます。</li>
+<li><b>↺ 見本に戻す</b>：見本のソースに戻ります（書き換えたものと、画面が保存した文字は消えます。押す前に確かめます）。</li>
+<li>反映できない時（空・文法の誤り・上限を入れている場合の長さ）は、理由がソースの上に出ます。</li>
+</ul>
+<h4>出す</h4>
+<ul><li><b>💾 HTMLで出力</b>：いま動いているソースそのままを、1つのHTMLファイルとして保存します（反映していない書き換えは含まれません）。単独でブラウザで開けます。</li></ul>
+<h4>🧰 機能コレクション</h4>
+<p>開いているHTMLから、ひとまとまりの機能（例：計算の部品・ペン先の処理）を取り出して貯め、別のHTMLへ足せます。くわしくは、マニュアルの「機能コレクション」を見てください（🧰を開くと、最初に手順も出ます）。</p>
+<h4>注意（碌でもないことになりやすい所）</h4>
+<ul>
+<li><b>外のサイトを読み込む記述（CDN・外のフォント・画像のURLなど）は動きません</b>。安全のため、外への通信を止めてあります。読み込み時に知らせます。必要なファイルは、HTMLの中に埋め込んでください。</li>
+<li><b>大きなHTMLは、開くのも書き換えも重くなります</b>。重い時は、必要な部分だけを別のHTMLに分けてください（🧰の取り出しが使えます）。</li>
+<li>HTMLを読み込むと、それまでの書き換え・保存した文字は入れ替わります（上書きする前に確認が出ます）。必要なら先に💾で出力してください。</li>
+<li>画面の中のページが覚えられる量などの制限は、<b>初めは無し</b>です。入れたい時は、⚙動作の「上限の設定」で数を入れます（0＝制限なし）。超えると、止めて理由を知らせます。</li>
+<li>画面の中のページは、本体に触れず、外へも通信できません。「本体を直接直す」場所ではありません。</li>
+<li>スマホの指での使い心地は未確認です。</li>
+</ul>
+<h4>困った時</h4>
+<ul>
+<li><b>画面が真っ白</b>：ソースの誤りかもしれません。ログ（誤りの行番号）を見て直すか、↺見本に戻す。</li>
+<li><b>「反映できません」</b>：理由が書いてあります（空・文法・上限）。</li>
+<li><b>読み込めない</b>：HTMLでないファイル・壊れたファイルは読み込みません。理由が出ます。</li>
+</ul>`},
+  {id:'feat',title:'機能コレクション（使い方）',
+   html:()=>
+`<p>ビジュアルプログラミング（コンソール2）の🧰「機能コレクション」は、<b>開いているHTML（任意のWebアプリ）から、意味のあるひとまとまりの機能だけを取り出して</b>貯め、別のHTMLへ足して使い回す道具です。元のHTMLは読むだけで、変わりません。<b>取り出したものは、あなたが「保存」を押すまで、どこにも保存されません</b>（コレクションの初めは空です）。</p>
+<h4>使い方（4手順）</h4>
+<ul>
+<li><b>① 開く</b>：📂でHTMLを読み込む（または見本を開く）→ 🧰を開く。左に、そのHTMLの画面の部品（idのある要素）と関数が並びます。</li>
+<li><b>② 選ぶ</b>：取り出したい<b>部品や関数に印</b>を付けて「取り出して検査」。<b>中心になるものを1つか少数</b>選ぶのがコツです。選んだものと<b>つながるもの（その部品を動かす処理・処理が使う関数や変数・かかるCSS・保存のキー・外のライブラリ）</b>が、まとめて集まります。つながらない処理は入りません。</li>
+<li><b>③ 検査を見る</b>：隔離した枠で実際に動かして確かめます。<b>✔使える</b>／<b>⚠警告</b>（動くが、確かめることがある）／<b>✖動かない</b>（保存も使用もできない。理由と直し方が出ます）。</li>
+<li><b>④ 貯める・足す</b>：「コレクションに保存」→ 右のコレクションから、別のHTMLを開いたうえで「➕ いまのHTMLへ足す」。足す先のHTMLは1文字も変えず、足した部分を印のコメントで囲みます。「足したものを外す」で完全に元へ戻ります。</li>
+</ul>
+<h4>大きさの目安（実測）</h4>
+<p>本体そのもの（100万字超）を読み込んで試したところ、<b>ペン先・切り取り・物理の計算・液体・窓の部品などは、本体のJavaScriptの0〜10%ほど</b>で取り出せ、動かしても誤りは出ませんでした。一方、<b>「元に戻す」「貼り付け」のように本体全体と本当につながっている処理は、約3割（本体の約37%）</b>になり、⚠の警告が出ます（実際につながっているため。ほかのHTMLに足すには重く、ぶつかりやすい）。<b>その場合は、中心になる関数だけを選び直す</b>と小さくなります。「取り出した量」と「処理 N／元の M個」で、大きさが分かります。</p>
+<h4>表示の意味と、困った時の直し方</h4>
+<ul>
+<li><b>外枠だけ入れた</b>：選んだ処理が探している別の要素（共有のキャンバスなど）は、<b>枠だけ</b>入れます（中身・ほかの処理は入れません）。足した先でその要素そのものを使わせたい時は、その要素を選んで取り出し直す。</li>
+<li><b>元のJavaScriptの大半／約N%を含む</b>：機能として分かれていない／本体と深くつながっています。計算だけの関数など、中心になるものだけ選び直す。</li>
+<li><b>外で定義されているかもしれない関数</b>：取り出した中にも、元にも宣言が見つからない関数です。本当に必要ならその関数も選び直す。ブラウザに最初からある関数なら、気にしなくて大丈夫。</li>
+<li><b>外のライブラリが要る</b>：通信を止めた枠では確かめられません。足した先でも、同じライブラリを読み込んでください。</li>
+<li><b>外へ通信する・ほかを書き換えるかもしれない呼び出し</b>：意図した動きか確かめてから足してください。</li>
+<li><b>タグ名だけで探している処理</b>：足した先の同じタグの別の要素にも効きます。「✎ 派生」で、idやclassで探すよう直すと安全です。</li>
+<li><b>✖ 探している要素が無い／呼ぶ関数が無い／文法の誤り／import・export</b>：保存も使用もできません。理由に書いてあるものを選び直すか、「下書き」で保存して「✎ 派生」で直します。</li>
+<li><b>足せない（ぶつかりを自動で直せない）</b>：足す先のHTMLと、同じid・関数名・保存キーなどがぶつかっています。足す側の名前を付け替えて直せない時だけ止めます（先は変えません）。</li>
+</ul>
+<h4>派生（直して別の版にする）</h4>
+<p>「✎ 派生」で、HTML・CSS・JSを直して<b>別の版として</b>保存できます。元の機能はそのまま残ります。足した先で直しても、コレクションの元は変わりません。</p>
+<h4>やらないこと・限界（正直に）</h4>
+<ul>
+<li>編集・アニメーション本体を、勝手にバラして機能コレクションに入れることはしません。取り出すのは、<b>あなたが選んで保存したもの</b>だけです。</li>
+<li>動かさずに文字を読んで調べるので、<code>window[名前]</code>・<code>eval</code>・文字列で組み立てる名前・全体を1つの関数で包んだアプリなどは、つながりを読み切れません（多めに含めるか、警告・✖にします）。</li>
+<li>外のCSS・フォント・CDNは、通信を止めた枠で動かすので確かめられません。</li>
+<li>足す先は「ビジュアルプログラミングで開いているHTML」です。別のHTMLファイルへ足したい時は、📂で読み込んで、足して、💾で出力します。</li>
+<li>処理の順番を図（ブロックと線）で並べ替える編集は、まだありません。</li>
+<li>スマホの指での使い心地は未確認です。</li>
 </ul>`}
 ];
 let manCur=MANPAGES[0].id;
@@ -12235,16 +12329,16 @@ const LQK={
   drip:{lab:'蛇口（垂らす）',sp:[.117,.134],pre:{kind:'drip',on:true,w:9,v0:0,gap:1.1,visc:.2,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
   drop:{lab:'水滴',sp:[0,.36],pre:{kind:'drop',on:true,w:22,v0:.1,gap:2.4,visc:.05,size:1,lnk:.6,col:'#8fd0f4',tr:.9,rip:.8,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
   tear:{lab:'涙',sp:[-.12,.1],pre:{kind:'tear',on:true,w:3,v0:.05,gap:1.8,visc:.3,size:.8,lnk:.6,col:'#cfe9f7',tr:.93,rip:.9,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
-  burst:{lab:'ぶつける',sp:[0,0],pre:{kind:'burst',on:true,w:30,v0:2.4,gap:2.4,visc:.55,size:1,lnk:.8,col:'#c8281e',tr:.15,rip:.65,ic:true,fl:.8,pit:22,pl:.3,pool:'floor',ang:180,dep:70,spr:32,jit:.6,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
-  spray:{lab:'吹きかける',sp:[0,-.34],pre:{kind:'spray',on:true,w:4,v0:2.2,gap:1,visc:.03,size:.5,lnk:.3,col:'#f1d98a',tr:.8,rip:.95,ic:true,fl:.8,pit:22,pl:.5,pool:'floor',ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}}};
-/* 液体の種類：選ぶと、色・透明さ・ねばり・付き方・にごり・出し方がまとめて切り替わる（位置・床の設定は変えない）。
+  burst:{lab:'ぶつける（飛び散る）',sp:[0,0],pre:{kind:'burst',on:true,w:30,v0:2.4,gap:2.4,visc:.1,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,ic:true,fl:.8,pit:22,pl:.5,pool:'floor',ang:180,dep:70,spr:32,jit:.4,yld:0,adh:.6,dry:.3,sc:0,foam:.3}},
+  spray:{lab:'吹きかける',sp:[0,-.34],pre:{kind:'spray',on:true,w:4,v0:2.2,gap:1,visc:.05,size:.5,lnk:.3,col:'#7ec3ec',tr:.88,rip:.9,ic:true,fl:.8,pit:22,pl:.5,pool:'floor',ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:0,foam:.3}}};
+/* 液体の「性質のひな形」：選ぶと、ねばり・つながり・波紋・止まる強さ・付く量・乾く速さ・にごり・あわ だけが切り替わる（色・透明さ・出し方・位置・床は変えない。特定の物の名前は使わない。台帳Z-295）。
+   どの値も画面のつまみで自由に変えられる。作り方の例（何を、どのくらいにするか）はマニュアル「液体」。
    yld＝止まる強さ（大きいほど、付いたまま垂れない）／adh＝付く量／dry＝乾く速さ／sc＝にごり／foam＝あわ／jit＝粒の大きさのばらつき／spr＝広がり */
-const LQM={
-  water:{lab:'水',kind:'pour',o:{w:2,v0:.45,visc:.1,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,pl:.5,ang:0,dep:0,spr:0,jit:0,yld:0,adh:.6,dry:.3,sc:0,foam:.3}},
-  champagne:{lab:'シャンパン',kind:'spray',o:{w:8,v0:2.2,visc:.03,size:.5,lnk:.25,col:'#f0c25a',tr:.62,rip:.95,pl:.5,ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}},
-  tomato:{lab:'トマト',kind:'burst',o:{w:30,v0:2.4,gap:2.4,visc:.55,size:1,lnk:.8,col:'#c8281e',tr:.15,rip:.65,pl:.3,ang:180,dep:70,spr:32,jit:.6,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
-  ice:{lab:'アイスクリーム',kind:'burst',o:{w:20,v0:2,gap:2.4,visc:.92,size:1,lnk:.8,col:'#f7ead8',tr:.04,rip:.35,pl:.05,ang:180,dep:65,spr:40,jit:.5,yld:.85,adh:3.2,dry:0,sc:1,foam:0}},
-  mayo:{lab:'マヨネーズ',kind:'pour',o:{w:3,v0:.25,visc:.95,size:.9,lnk:1.1,col:'#f2e3b0',tr:.06,rip:.75,pl:.04,ang:0,dep:0,spr:0,jit:0,yld:.9,adh:2.5,dry:0,sc:1,foam:0}}};
+const LQP={
+  thin:{lab:'さらさら',o:{visc:.1,lnk:.6,rip:.7,yld:0,adh:.6,dry:.3,sc:0,foam:.3}},
+  foam:{lab:'あわ立つ',o:{visc:.03,lnk:.25,rip:.95,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}},
+  thick:{lab:'とろみ',o:{visc:.55,lnk:.8,rip:.65,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
+  paste:{lab:'ねっとり（形が残る）',o:{visc:.93,lnk:1,rip:.5,yld:.88,adh:2.8,dry:0,sc:1,foam:0}}};
 const LQ={sc:null,id:null,F:null,D:null,key:'',sig:'',was:false,fc:0};
 function lqRR(g,x,y,w,h,r){g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}   /* 角丸の四角（古い端末にroundRectが無いため自前） */
 /* 水の出る場所の絵（自分で描く＝端末の絵文字の違いで出る場所がずれないように） */
@@ -12290,10 +12384,10 @@ function lqSetIcon(l,kind){const ic=lqIcon(kind);
   l.dirty=true}
 function lqHex(s){const m=/^#?([0-9a-f]{6})$/i.exec(s||'');const v=m?parseInt(m[1],16):0x2f9bff;return[v>>16&255,v>>8&255,v&255]}
 /* 液体の絵を足す。選んだ状態にする */
-function liqAdd(kind,mat){
-  const M=mat&&LQM[mat];if(M)kind=M.kind;const K=LQK[kind];if(!K)return null;
+function liqAdd(kind,prop){
+  const M=prop&&LQP[prop];const K=LQK[kind];if(!K)return null;
   if(typeof pushUndo==='function')pushUndo();
-  const n=AC.filter(a=>a.liq).length,a=add(null,lqIcon(kind),{liq:Object.assign({},K.pre,M?M.o:{},M?{mat}:{}),fx:.28+.22*(n%3),fy:.12+.05*Math.floor(n/3%3),size:.7});
+  const n=AC.filter(a=>a.liq).length,a=add(null,lqIcon(kind),{liq:Object.assign({},K.pre,M?M.o:{}),fx:.28+.22*(n%3),fy:.12+.05*Math.floor(n/3%3),size:.7});
   a.name=K.lab+a.id;return a;
 }
 /* 描く：絵が描かれる時（draw()）に呼ばれる。水の出る場所を覚え、水があれば描く。変換は絵の変換のまま呼ばれ、水は紙の座標で描く。
@@ -12387,7 +12481,11 @@ function lqSync(){
   $('lqSprRow').style.display=bs?'':'none';lqSet('lqSpr',q.spr==null?25:q.spr);$('lqSprv').textContent=Math.round(q.spr==null?25:q.spr)+'°';
   lqSet('lqYld',q.yld||0);$('lqYldv').textContent=Math.round((q.yld||0)*100)+'%';
   lqSet('lqAdh',q.adh==null?.6:q.adh);$('lqAdhv').textContent=(+(q.adh==null?.6:q.adh)).toFixed(1);
-  if($('lqMat').value!==(q.mat||'water'))$('lqMat').value=q.mat||'water';
+  lqSet('lqDry',q.dry==null?.3:q.dry);$('lqDryv').textContent=Math.round((q.dry==null?.3:q.dry)*100)+'%';
+  lqSet('lqSc',q.sc||0);$('lqScv').textContent=Math.round((q.sc||0)*100)+'%';
+  lqSet('lqFo',q.foam==null?.3:q.foam);$('lqFov').textContent=Math.round((q.foam==null?.3:q.foam)*100)+'%';
+  lqSet('lqJi',q.jit||0);$('lqJiv').textContent=Math.round((q.jit||0)*100)+'%';
+  if($('lqMat').value!=='')$('lqMat').value='';   /* ひな形は「選んだ時に値を入れる」だけ。いまの状態の名前は出さない */
   $('lqHold').textContent=q.hold?'▶ 動かす':'❄ その場で止める';
   $('lqV').max=bs?4:1.2;
   lqSet('lqFl',q.fl==null?.8:q.fl);$('lqFlv').textContent=Math.round((q.fl==null?.8:q.fl)*100)+'%';
@@ -12416,15 +12514,16 @@ function lqBind(){
   const ic=$('lqIc');if(ic)ic.addEventListener('change',()=>{const l=lqSel();if(l){l.liq.ic=ic.checked;LQ.sig=JSON.stringify(l.liq)}});
   num('lqAng','ang',v=>Math.round(v)+'°');num('lqDep','dep',v=>(v>0?'手前へ ':v<0?'奥へ ':'')+Math.abs(Math.round(v))+'°');num('lqSpr','spr',v=>Math.round(v)+'°');
   num('lqYld','yld',v=>Math.round(v*100)+'%');num('lqAdh','adh',v=>v.toFixed(1));
-  $('lqMat').onchange=()=>{const l=lqSel(),M=LQM[$('lqMat').value];if(!l||!M)return;if(typeof pushUndo==='function')pushUndo();
-    const q=l.liq,k0=q.kind;Object.assign(q,M.o,{kind:M.kind,mat:$('lqMat').value});if(k0!==q.kind)lqSetIcon(l,q.kind);l._lq=null;lqSync()};
+  num('lqDry','dry',v=>Math.round(v*100)+'%');num('lqSc','sc',v=>Math.round(v*100)+'%');num('lqFo','foam',v=>Math.round(v*100)+'%');num('lqJi','jit',v=>Math.round(v*100)+'%');
+  $('lqMat').onchange=()=>{const l=lqSel(),M=LQP[$('lqMat').value];if(!M)return;if(!l){$('lqMat').value='';return}if(typeof pushUndo==='function')pushUndo();
+    Object.assign(l.liq,M.o);l._lq=null;lqSync()};   /* 性質の値だけを入れる（色・出し方・種類のアイコンは変えない） */
   $('lqHold').onclick=()=>{const l=lqSel();if(!l)return;l.liq.hold=!l.liq.hold;lqSync()};
   $('lqClrCt').onclick=()=>{const l=lqSel();if(l&&l._lq)l._lq.ct=null};
   $('lqDel').onclick=()=>{const l=lqSel();if(!l)return;if(typeof pushUndo==='function')pushUndo();sel=l;del()};
-  [['lqAddTom','tomato'],['lqAddChm','champagne'],['lqAddIce','ice'],['lqAddMay','mayo']].forEach(([id,m])=>{$(id).onclick=()=>{liqAdd(null,m);setTab('lq')}});
+  $('lqHelp').onclick=()=>{if(typeof manOpen==='function')manOpen('liq')};
   $('lqOn').onclick=()=>{const l=lqSel();if(!l)return;l.liq.on=!l.liq.on;lqSync()};
   $('lqClr').onclick=()=>{const l=lqSel();if(l&&l._lq){const c=l._lq.ct;l._lq=LIQ.mk();l._lq.ct=c}};   /* 空中と床の水を消す（かかった跡は残す） */
-  [['lqAddPour','pour'],['lqAddDrip','drip'],['lqAddDrop','drop'],['lqAddTear','tear']].forEach(([id,k])=>{$(id).onclick=()=>{liqAdd(k);setTab('lq')}});
+  [['lqAddPour','pour'],['lqAddDrip','drip'],['lqAddDrop','drop'],['lqAddTear','tear'],['lqAddBurst','burst'],['lqAddSpray','spray']].forEach(([id,k])=>{$(id).onclick=()=>{liqAdd(k);setTab('lq')}});
 }
 TT.lq=()=>'move';
 lqBind();
@@ -12727,7 +12826,7 @@ const FT_DANGER=new Set(['fetch','XMLHttpRequest','WebSocket','eval','importScri
 function ftClose(arr,k){let d=0;for(let j=k;j<arr.length;j++){const u=arr[j];if(u.t!=='p')continue;if('([{'.includes(u.v))d++;else if(')]}'.includes(u.v)){d--;if(d===0)return j}}return -1}
 /* 使い方の読み取り：探しているid・クラス・その場で作るid・保存のキー・CSS変数・呼んでいる関数 */
 function ftUse(toks,helpers){
-  const R={ids:new Set(),weak:new Set(),cls:new Set(),def:new Set(),keys:[],vars:new Set(),calls:new Set(),danger:new Set(),broad:0,dyn:0,look:0,strs:[]};
+  const R={ids:new Set(),weak:new Set(),cls:new Set(),def:new Set(),keys:[],vars:new Set(),calls:new Set(),danger:new Set(),broad:0,dyn:0,look:0,strs:[],pre:new Set(),hcalls:new Set(),wire:0};   /* wire＝イベントの受け口をつなぐ文の数（addEventListener・.onxxx=）／pre＝組み立てて探すidの頭（'panel-'+名前）／hcalls＝文字で組んだHTMLの onclick="関数()" が呼ぶ関数（台帳Z-304） */
   const sels=s=>{const q=ftSel(s);q.ids.forEach(a=>R.ids.add(a));q.cls.forEach(a=>R.cls.add(a));return q};
   const split=s=>String(s).split(/\s+/).filter(Boolean);
   const scan=arr=>{
@@ -12738,15 +12837,19 @@ function ftUse(toks,helpers){
         R.strs.push(t.v);
         t.v.replace(/(^|[^\w-])id\s*=\s*\\?["']([^"'\\]+)/g,(_,p0,a)=>{R.def.add(a)});
         t.v.replace(/(^|[^\w-])class\s*=\s*\\?["']([^"'\\]+)/g,(_,p0,a)=>{split(a).forEach(c=>R.cls.add(c))});
-        t.v.replace(/--[\w-]+/g,a=>{R.vars.add(a)})}
+        t.v.replace(/--[\w-]+/g,a=>{R.vars.add(a)});
+        t.v.replace(/(?:^|[^\w-])on[a-z]+\s*=\s*\\?["']?\s*([A-Za-z_$][\w$]*)\s*\(/g,(_,a)=>{if(!FTK.has(a))R.hcalls.add(a)})}
       if(t.t!=='id')continue;
       const call=n1&&n1.v==='(';
-      if(call&&!meth&&!FTK.has(t.v)&&!(p&&/^(function|class)$/.test(p.v)))R.calls.add(t.v);
+      if(call&&!meth&&!FTK.has(t.v)&&!(p&&/^(function|class)$/.test(p.v))){const c=ftClose(arr,k+1);if(!(c>0&&arr[c+1]&&arr[c+1].v==='{'&&!arr[c+1].nl))R.calls.add(t.v)}   /* 名前(引数){ … は、メソッドの宣言で、呼び出しではない */
+      if((t.v==='addEventListener'&&meth&&call)||(meth&&/^on[a-z]{3,}$/.test(t.v)&&n1&&n1.v==='='))R.wire++;
       if(FT_DANGER.has(t.v)&&(call||t.v==='XMLHttpRequest'||t.v==='WebSocket'))R.danger.add(t.v);
       if(t.v==='write'&&meth&&arr[k-2]&&arr[k-2].v==='document')R.danger.add('document.write');
       if(call&&(FT_LOOK.has(t.v)||(!meth&&helpers&&helpers.has(t.v)))){
         const help=!/^(getElementById|querySelector|querySelectorAll|closest|matches)$/.test(t.v);R.look++;
-        if(n2&&n2.t==='str'){
+        const cc=arr[k+3],dynS=n2&&((n2.t==='str'&&!(cc&&/^[),]$/.test(cc.v)))||(n2.t==='tpl'&&/\$\{/.test(n2.v)));
+        if(dynS){const m=/^[\w-]{2,}/.exec(String(n2.t==='tpl'?n2.v.split('${')[0]:n2.v).replace(/^[#.]/,''));if(m)R.pre.add(m[0])}   /* 'panel-'+名前 のように組み立てる名前は、頭の部分だけ覚える（その名前のidがあるわけではない） */
+        else if(n2&&n2.t==='str'){
           const v=n2.v;
           if(t.v==='getElementById')R.ids.add(v);
           else if(help){if(/^[#.\[]|[\s>+~]/.test(v))sels(v);else R.weak.add(v)}
@@ -12812,6 +12915,161 @@ function ftBreak(prev,nx){
   if(nx.t==='tpl'&&prev.t!=='p')return false;
   if(nx.t==='id'&&/^(else|catch|finally|extends|in|of|instanceof)$/.test(nx.v))return false;
   return true}
+/* 変数の「見える範囲」を考えた参照の読み取り：単位の中の関数・ブロックの引数や宣言に隠されていない名前（＝外の宣言を本当に使っている名前）だけを返す。
+   関数の中だけで使う名前（引数・内側の const／let／var・catch・for の変数・関数の名前）が、本体の同名の関数と取り違えられて、何を選んでも本体の9割が巻き込まれていた不具合の修正（台帳Z-295）。
+   **読み違えたら、隠れていないと見なす（多めに含める）側へ倒す**：隠す範囲は、確かな所だけ。実装は字句だけ（実行しない）。 */
+function ftFree(toks){
+  const MC=new WeakMap(),scopes=[];
+  const mt_=arr=>{let m=MC.get(arr);if(m)return m;m=new Int32Array(arr.length).fill(-1);const st=[];
+    for(let i=0;i<arr.length;i++){const u=arr[i];if(u.t!=='p')continue;const v=u.v;
+      if(v==='('||v==='['||v==='{')st.push(i);else if(v===')'||v===']'||v==='}'){const j=st.pop();if(j!==undefined){m[j]=i;m[i]=j}}}
+    MC.set(arr,m);return m};
+  const mk=(p,fn)=>{const s={p,fn,n:new Set(),r:[]};scopes.push(s);return s};
+  const fnOf=s=>{while(s&&!s.fn)s=s.p;return s};
+  const SOFT=/^(get|set|static|async|of)$/;
+  /* 式の終わり：深さ0の ; ・（commaなら , ）・待つ ? の無い : ・改行の切れ目・範囲の終わり */
+  function exprEnd(arr,j,b,comma){
+    const mt=mt_(arr);let q=0;
+    for(let k=j;k<b;k++){const u=arr[k];
+      if(k>j&&u.nl&&ftBreak(arr[k-1],u))return k;
+      if(u.t!=='p')continue;
+      if(u.v==='('||u.v==='['||u.v==='{'){if(mt[k]>=0&&mt[k]<b){k=mt[k];continue}return b}
+      if(u.v===';')return k;
+      if(u.v===','&&comma)return k;
+      if(u.v==='?')q++;
+      else if(u.v===':'){if(q>0)q--;else return k}}
+    return b}
+  /* 文の終わり（for の本体など、{} の無い文のため） */
+  function stmtEnd(arr,i,b){
+    const mt=mt_(arr),t=arr[i];if(!t||i>=b)return b;
+    if(t.v==='{')return mt[i]>=0?Math.min(mt[i]+1,b):b;
+    if(t.t==='id'){const v=t.v;
+      if(v==='if'||v==='for'||v==='while'||v==='with'){let j=i+1;if(arr[j]&&arr[j].v==='await')j++;if(arr[j]&&arr[j].v==='('&&mt[j]>=0)j=mt[j]+1;else return b;
+        let e=stmtEnd(arr,j,b);if(v==='if'&&arr[e]&&arr[e].v==='else')e=stmtEnd(arr,e+1,b);return e}
+      if(v==='do'){let e=stmtEnd(arr,i+1,b);if(arr[e]&&arr[e].v==='while'){const j=e+1;if(arr[j]&&arr[j].v==='('&&mt[j]>=0){e=mt[j]+1;if(arr[e]&&arr[e].v===';')e++}}return e}
+      if(v==='switch'){let j=i+1;if(arr[j]&&arr[j].v==='('&&mt[j]>=0)j=mt[j]+1;return arr[j]&&arr[j].v==='{'&&mt[j]>=0?mt[j]+1:b}
+      if(v==='try'){let e=stmtEnd(arr,i+1,b);if(arr[e]&&arr[e].v==='catch'){let j=e+1;if(arr[j]&&arr[j].v==='('&&mt[j]>=0)j=mt[j]+1;e=stmtEnd(arr,j,b)}if(arr[e]&&arr[e].v==='finally')e=stmtEnd(arr,e+1,b);return e}}
+    for(let k=i;k<b;k++){const u=arr[k];
+      if(k>i&&u.nl&&ftBreak(arr[k-1],u))return k;
+      if(u.t!=='p')continue;
+      if(u.v==='('||u.v==='['||u.v==='{'){if(mt[k]>=0&&mt[k]<b){k=mt[k];continue}return b}
+      if(u.v===';')return k+1}
+    return b}
+  /* 束縛の形（名前・{…}・[…]）を1つ読み、名前を bs へ、既定値や計算名の式を sc の中で読む。次の位置を返す */
+  function pat(arr,i,b,sc,bs){
+    const t=arr[i],mt=mt_(arr);if(!t||i>=b)return i;
+    if(t.t==='id'){if(!FTK.has(t.v))bs.add(t.v);return i+1}
+    if(t.v==='['||t.v==='{'){
+      const c=mt[i]>=0&&mt[i]<=b?mt[i]:b,obj=t.v==='{';let j=i+1;
+      while(j<c){const j0=j;
+        if(arr[j].v===','){j++;continue}
+        if(arr[j].v==='...'){j=pat(arr,j+1,c,sc,bs)}
+        else if(obj){
+          if(arr[j].v==='['){const kc=mt[j]>=0&&mt[j]<c?mt[j]:c;scan(arr,j+1,kc,sc,false);j=kc+1;if(arr[j]&&arr[j].v===':')j=pat(arr,j+1,c,sc,bs)}
+          else if(arr[j+1]&&arr[j+1].v===':')j=pat(arr,j+2,c,sc,bs);
+          else{if(arr[j].t==='id'&&!FTK.has(arr[j].v))bs.add(arr[j].v);j++}}
+        else j=pat(arr,j,c,sc,bs);
+        if(j<c&&arr[j].v==='='){const e=exprEnd(arr,j+1,c,true);scan(arr,j+1,e,sc,false);j=e}
+        if(j<c&&arr[j].v===',')j++;
+        if(j<=j0)j=j0+1}
+      return c+1}
+    return i+1}
+  /* 引数の並び arr[a..c) を、F の中で束縛する */
+  function params(arr,a,c,F){
+    let j=a;
+    while(j<c){const j0=j;
+      if(arr[j].v===','){j++;continue}
+      if(arr[j].v==='...')j++;
+      j=pat(arr,j,c,F,F.n);
+      if(j<c&&arr[j].v==='='){const e=exprEnd(arr,j+1,c,true);scan(arr,j+1,e,F,false);j=e}
+      if(j<=j0)j=j0+1}}
+  const isDecl=(arr,i)=>{
+    let k=i-1;while(k>=0&&arr[k].t==='id'&&/^(async|export|default)$/.test(arr[k].v))k--;
+    const p=arr[k];if(!p)return true;
+    if(p.t==='p')return /^[;{}]$/.test(p.v)||((p.v===')'||p.v===']')&&!!arr[k+1].nl);
+    if(p.t==='id')return !FTK.has(p.v)?!!arr[k+1].nl:/^(else|do)$/.test(p.v);
+    return !!arr[k+1].nl};
+  /* 関数 function [*][名前](引数){本体} */
+  function func(arr,i,b,sc){
+    const mt=mt_(arr);let j=i+1;if(arr[j]&&arr[j].v==='*')j++;
+    let name=null;if(arr[j]&&arr[j].t==='id'&&!FTK.has(arr[j].v)){name=arr[j].v;j++}
+    if(!(arr[j]&&arr[j].v==='('&&mt[j]>=0&&mt[j]<b))return i+1;
+    const c=mt[j],F=mk(sc,true);
+    if(name){if(isDecl(arr,i))sc.n.add(name);else F.n.add(name)}
+    params(arr,j+1,c,F);
+    if(arr[c+1]&&arr[c+1].v==='{'&&mt[c+1]>=0&&mt[c+1]<b){scan(arr,c+2,mt[c+1],F,false);return mt[c+1]+1}
+    return c+1}
+  /* 矢印関数：params は arr[pa..pb)、arr[ar] が => */
+  function arrow(arr,pa,pb,ar,b,sc){
+    const mt=mt_(arr),A=mk(sc,true);params(arr,pa,pb,A);const j=ar+1;
+    if(arr[j]&&arr[j].v==='{'&&mt[j]>=0&&mt[j]<b){scan(arr,j+1,mt[j],A,false);return mt[j]+1}
+    const e=exprEnd(arr,j,b,true);scan(arr,j,e,A,false);return Math.max(e,j+1>b?b:j)}
+  /* const / let / var の並び。次の位置を返す */
+  function decl(arr,k,b,sc,kind){
+    const T=kind==='var'?fnOf(sc):sc;let j=k+1;
+    for(;;){const j0=j;
+      j=pat(arr,j,b,sc,T.n);if(j===j0)break;
+      if(j<b&&arr[j].v==='='){const e=exprEnd(arr,j+1,b,true);scan(arr,j+1,e,sc,false);j=e}
+      if(j<b&&arr[j].v===','){j++;continue}
+      break}
+    return j}
+  function scan(arr,a,b,sc,cls){
+    const mt=mt_(arr);
+    for(let i=a;i<b;){
+      const u=arr[i];
+      if(u.t!=='id'){
+        if(u.sub&&u.sub.length)scan(u.sub,0,u.sub.length,sc,false);
+        else if(u.t==='p'){
+          if(u.v==='('){
+            const c=mt[i];
+            if(c>=0&&c<b&&arr[c+1]){
+              if(arr[c+1].v==='=>'){i=arrow(arr,i+1,c,c+1,b,sc);continue}
+              if(arr[c+1].v==='{'&&!arr[c+1].nl&&i>a&&(arr[i-1].v===']'||arr[i-1].t==='str'||arr[i-1].t==='num')){   /* 計算名・文字列名のメソッド */
+                const F=mk(sc,true);params(arr,i+1,c,F);const o=c+1;
+                if(mt[o]>=0&&mt[o]<b){scan(arr,o+1,mt[o],F,false);i=mt[o]+1;continue}}}}
+          else if(u.v==='{'){const c=mt[i]>=0&&mt[i]<b?mt[i]:b,S=mk(sc,false);scan(arr,i+1,c,S,false);i=c+1;continue}}
+        i++;continue}
+      const v=u.v,p=arr[i-1],n=arr[i+1];
+      if(FTK.has(v)){
+        if(v==='function'){i=func(arr,i,b,sc);continue}
+        if(v==='class'){
+          let j=i+1,name=null;if(arr[j]&&arr[j].t==='id'&&!FTK.has(arr[j].v)){name=arr[j].v;j++}
+          let ob=j;for(;ob<b;ob++){const x=arr[ob];if(x.v==='{')break;if((x.v==='('||x.v==='[')&&mt[ob]>=0)ob=mt[ob]}
+          if(ob>=b||mt[ob]<0||mt[ob]>=b){i++;continue}
+          scan(arr,j,ob,sc,false);   /* extends の式 */
+          const C=mk(sc,false);if(name){C.n.add(name);if(isDecl(arr,i))sc.n.add(name)}
+          scan(arr,ob+1,mt[ob],C,true);i=mt[ob]+1;continue}
+        if((v==='const'||v==='let'||v==='var')&&n&&(n.t==='id'||n.v==='['||n.v==='{')&&!(n.t==='id'&&FTK.has(n.v)&&!/^(of|get|set|static|async|await|yield)$/.test(n.v))){i=decl(arr,i,b,sc,v);continue}
+        if(v==='for'){
+          let j=i+1;if(arr[j]&&arr[j].v==='await')j++;
+          if(arr[j]&&arr[j].v==='('&&mt[j]>=0&&mt[j]<b){
+            const c=mt[j],e=stmtEnd(arr,c+1,b),S=mk(sc,false);
+            scan(arr,j+1,c,S,false);scan(arr,c+1,e,S,false);i=e;continue}
+          i++;continue}
+        if(v==='catch'&&n&&n.v==='('&&mt[i+1]>=0&&mt[i+1]<b){
+          const c=mt[i+1],C=mk(sc,false);params(arr,i+2,c,C);
+          if(arr[c+1]&&arr[c+1].v==='{'&&mt[c+1]>=0&&mt[c+1]<b){scan(arr,c+2,mt[c+1],C,false);i=mt[c+1]+1;continue}
+          i=c+1;continue}
+        if((v==='break'||v==='continue')&&n&&n.t==='id'&&!n.nl){i+=2;continue}
+        if(SOFT.test(v)&&n&&n.v==='('&&mt[i+1]>=0&&mt[i+1]<b&&arr[mt[i+1]+1]&&arr[mt[i+1]+1].v==='{'&&!arr[mt[i+1]+1].nl&&(!p||p.v!=='.')){   /* get(){} など、名前が予約語に似たメソッド */
+          const c=mt[i+1],F=mk(sc,true);params(arr,i+2,c,F);const o=c+1;
+          if(mt[o]>=0&&mt[o]<b){scan(arr,o+1,mt[o],F,false);i=mt[o]+1;continue}}
+        i++;continue}
+      if(p&&(p.v==='.'||p.v==='?.')){i++;continue}
+      if(n&&n.v==='=>'){i=arrow(arr,i,i+1,i+1,b,sc);continue}
+      if(n&&n.v===':'&&(!p||/^[;{},]$/.test(p.v))){i++;continue}   /* ラベル・オブジェクトのキー */
+      if(n&&n.v==='('&&mt[i+1]>=0&&mt[i+1]<b&&arr[mt[i+1]+1]&&arr[mt[i+1]+1].v==='{'&&!arr[mt[i+1]+1].nl){   /* メソッド名(引数){本体} */
+        const c=mt[i+1],F=mk(sc,true);params(arr,i+2,c,F);const o=c+1;
+        if(mt[o]>=0&&mt[o]<b){scan(arr,o+1,mt[o],F,false);i=mt[o]+1;continue}}
+      if(cls&&n&&(n.v==='='||n.v===';'||n.nl)&&(!p||p.v!=='.')){   /* クラスの欄（フィールド）の名前 */
+        if(n.v==='='){const e=exprEnd(arr,i+2,b,false);scan(arr,i+2,e,sc,false);i=e;continue}
+        i++;continue}
+      sc.r.push(v);i++}}
+  const root=mk(null,true);
+  scan(toks,0,toks.length,root,false);
+  const out=new Set();
+  for(const s of scopes)for(const nm of s.r){let q=s,hit=false;while(q){if(q.n.has(nm)){hit=true;break}q=q.p}if(!hit)out.add(nm)}
+  return out}
 /* コードを、上の階層の文（ひとかたまり）に分ける：{i,s,e,text,kind(fn|class|var|win|stmt|mod),names,refs,use} */
 function ftUnits(code,helpers){
   const toks=ftTok(code,0),out=[];let d=0,st=-1,prevE=0;
@@ -12834,14 +13092,85 @@ function ftUnits(code,helpers){
     else if(/^(const|let|var)$/.test(f.v))kind='var';
     else if(/^(import|export)$/.test(f.v))kind='mod';
     else if((f.v==='window'||f.v==='globalThis')&&my[1]&&my[1].v==='.'&&my[2]&&my[2].t==='id'&&my[3]&&my[3].v==='=')kind='win';
-    const refs=new Set();
-    const rf=arr=>{for(let j=0;j<arr.length;j++){const u=arr[j];if(u.sub&&u.sub.length)rf(u.sub);if(u.t!=='id'||FTK.has(u.v))continue;
-      const p=arr[j-1],n=arr[j+1];if(p&&(p.v==='.'||p.v==='?.'))continue;if(p&&(p.v==='{'||p.v===',')&&n&&n.v===':')continue;refs.add(u.v)}};
-    rf(my);
-    out.push({i:out.length,s:my[0].s,e:my[my.length-1].e,text,kind,names:kind==='stmt'?[]:ftNames(my,kind),refs,use:ftUse(my,helpers),toks:my,mod:false});
+    const refs=ftFree(my),use=ftUse(my,helpers);   /* 見える範囲を考えた参照（関数の中だけの名前は含めない。台帳Z-295） */
+    use.hcalls.forEach(n=>refs.add(n));   /* 文字で組んだHTMLの onclick="関数()" も、その関数を使っている */
+    out.push({i:out.length,s:my[0].s,e:my[my.length-1].e,text,kind,names:kind==='stmt'?[]:ftNames(my,kind),refs,use,toks:my,mod:false});
     prevE=my[my.length-1].e;st=-1}
   return out}
 /* HTML全体を読む：木・スクリプト・スタイル・外部の読み込み・上の階層の文・宣言の対応表 */
+/* ---- 大きな「まとめの関数」（init・setup・即時関数・DOMContentLoadedの中身など）を、中の文ごとに分けて読む（台帳Z-304）。
+   画面の部品を選んだ時に、その部品に関わる文（と、それが使う中の宣言）だけを入れるため。まとめの関数ごと入れると、無関係な部品の配線まで入ってしまう。
+   本体が関数で、その後ろに残るのが少ない（`)();`・`});`など）ものだけが対象。中の文が5つ未満・600字未満は分けない ---- */
+function ftBodyOf(A,u){
+  if(u._bd!==undefined)return u._bd;
+  u._bd=null;
+  if(u.text.length<600||u.mod||!u.toks)return null;
+  const T=u.toks;let open=-1,close=-1;
+  for(let k=1;k<T.length;k++){
+    if(T[k].t!=='p'||T[k].v!=='{')continue;
+    const pv=T[k-1];let isFn=false;
+    if(pv.v==='=>')isFn=true;
+    else if(pv.t==='p'&&pv.v===')'){
+      let d=0,j=k-1;for(;j>=0;j--){const x=T[j];if(x.t!=='p')continue;if(')]}'.includes(x.v))d++;else if('([{'.includes(x.v)){d--;if(d===0)break}}
+      const a=T[j-1],b=T[j-2];if(a&&(a.v==='function'||(a.t==='id'&&b&&(b.v==='function'||b.v==='*'))))isFn=true}
+    if(!isFn)continue;
+    const c=ftClose(T,k);if(c<0)continue;
+    if(T.length-1-c<=8&&(T[c].e-T[k].s)>=0.6*u.text.length){open=k;close=c;break}}
+  if(open<0)return null;
+  const code=A.scripts[u.si].code,body=code.slice(T[open].e,T[close].s),tail=code.slice(T[close].s,u.e);
+  if(!u.text.endsWith(body+tail))return null;
+  const subs=ftUnits(body,A.helpers);
+  if(subs.length<5)return null;
+  const loc=new Map();subs.forEach((x,i)=>x.names.forEach(n=>{if(!loc.has(n))loc.set(n,[]);loc.get(n).push(i)}));
+  u._bd={head:u.text.slice(0,u.text.length-body.length-tail.length),tail,subs,loc};
+  return u._bd}
+/* まとめの関数uのうち、pick(中の文)が真の文と、それが使う中の宣言だけを残した複製を返す。分けても全部が残る時・何も選ばれない時はnull */
+function ftSlice(A,u,pick){
+  const bd=ftBodyOf(A,u);if(!bd)return null;
+  const S=new Set();bd.subs.forEach((x,i)=>{if(pick(x))S.add(i)});
+  if(!S.size)return null;
+  for(const i of Array.from(S)){const x=bd.subs[i];if(x.kind==='var')for(const n of x.names)bd.subs.forEach((y,j)=>{if(y.refs.has(n))S.add(j)})}   /* 選ばれた文が作った変数（const 部品 = getElementById(…)）を使う文も、同じ部品の処理 */
+  for(let ch=true;ch;){ch=false;for(const i of Array.from(S))for(const r of bd.subs[i].refs){const d=bd.loc.get(r);if(d)for(const j of d)if(!S.has(j)){S.add(j);ch=true}}}
+  if(S.size===bd.subs.length)return null;
+  const sel=Array.from(S).sort((a,b)=>a-b).map(i=>bd.subs[i]);
+  const refs=new Set(),use={ids:new Set(),weak:new Set(),cls:new Set(),def:new Set(),keys:[],vars:new Set(),calls:new Set(),danger:new Set(),broad:0,dyn:0,look:0,strs:[],pre:new Set(),hcalls:new Set(),wire:0};
+  for(const x of sel){for(const r of x.refs)if(!bd.loc.has(r))refs.add(r);const q=x.use;
+    for(const k of ['ids','weak','cls','def','vars','calls','danger','pre','hcalls'])q[k].forEach(v=>use[k].add(v));
+    use.wire+=q.wire;use.keys.push(...q.keys);use.broad+=q.broad;use.dyn+=q.dyn;use.look+=q.look;use.strs.push(...q.strs)}
+  return Object.assign({},u,{text:bd.head+'\n'+sel.map(x=>x.text).join('\n')+'\n'+bd.tail,refs,use,sliced:[sel.length,bd.subs.length],_sid:undefined,_bd:undefined})}
+/* まとめの関数のうち、イベントの受け口をつなぐ文が何個あるか（配線の関数かどうかの目安。分けられないなら0） */
+function ftWireN(A,u){const bd=ftBodyOf(A,u);return bd?bd.subs.filter(x=>x.use.wire>0).length:0}
+/* まとめの関数の中にある、名前のある関数・変数（選べるようにするため）。{host:まとめの関数の名前（無名なら''）,names:[…]} の一覧 */
+function ftLocals(A){
+  if(A._loc)return A._loc;const out=[];
+  for(const u of A.units){if(u.text.length<600)continue;const bd=ftBodyOf(A,u);if(!bd)continue;
+    const nm=[];for(const x of bd.subs)if(x.kind!=='stmt'&&x.names[0])nm.push(x.names[0]);
+    if(nm.length)out.push({host:u.names[0]||'',i:u.i,names:nm})}
+  return A._loc=out}
+/* ---- 本体の中心にある処理（ハブ）：多くの処理から呼ばれ、呼ぶ先をたどると本体の大半に届くもの（台帳Z-304）。
+   機能の一部としては含めず、「元のアプリに頼る所」として分ける。含めると、どの機能を選んでも本体の4割前後が入ってしまうため。
+   決め方＝呼ばれている処理が3つ以上、かつ、そこから呼ぶ先を全部たどった大きさが、全体の10%（かつ2万字）以上。小さなアプリ（全体が6万字未満）は分けない。 ---- */
+const FT_HUB={pct:0.10,min:20000,callers:3};
+function ftHubs(A){
+  if(A._hub)return A._hub;
+  const U=A.units,n=U.length,hub=new Map();A._hub=hub;
+  const tot=U.reduce((a,u)=>a+u.text.length,0);
+  if(tot<FT_HUB.min*3)return hub;
+  const succ=U.map(u=>{const s=new Set();for(const r of u.refs){const d=A.declMap.get(r);if(d)for(const j of d)if(j!==u.i)s.add(j)}return s});
+  const callers=new Array(n).fill(0);for(const s of succ)for(const j of s)callers[j]++;
+  const lim=Math.max(FT_HUB.pct*tot,FT_HUB.min);
+  for(let i=0;i<n;i++){
+    if(callers[i]<FT_HUB.callers)continue;
+    const seen=new Set([i]),q=[i];let c=U[i].text.length;
+    while(q.length){const x=q.pop();for(const y of succ[x])if(!seen.has(y)){seen.add(y);c+=U[y].text.length;q.push(y)}}
+    if(c>=lim)hub.set(i,{pct:Math.round(100*c/tot),callers:callers[i]})}
+  return hub}
+/* 含めなかった中心の処理の「代わり」：足した先に同じ名前が無ければ、何もしない物を置く（呼んでも誤りにならない。初めて呼ばれた時だけ知らせる）。足した先に有れば、そちらを使う */
+function ftHostShim(names){
+  return '/* ft:host 元のアプリの中心にある処理（含めていない）。足した先に同じ名前があればそれを使い、無ければ何もしない */\n'
+   +'(function(g,L){var D=new Proxy(function(){},{get:function(t,k){return k===Symbol.toPrimitive?function(){return 0}:k===\'then\'?undefined:D},apply:function(){return D},construct:function(){return D}});'
+   +'L.forEach(function(k){if(k in g)return;var w=0;g[k]=new Proxy(function(){},{get:function(t,p){return p===Symbol.toPrimitive?function(){return 0}:p===\'then\'?undefined:D},'
+   +'apply:function(){if(!w){w=1;try{console.warn(\'[機能コレクション] 元のアプリの \'+k+\' は、ここには無いので何もしません\')}catch(e){}}return D},construct:function(){return D}})})})(window,'+JSON.stringify(names)+');\n'}
 function ftApp(src){
   const H=ftHtml(src),scripts=[],styles=[],ext=[];
   for(const a of H.all){
@@ -12876,48 +13205,86 @@ function ftExtract(src,sel,opt){
   opt=opt||{};sel=sel||{};
   const A=opt.app||ftApp(src),R={items:[],level:'ok'};
   const add=(lv,msg)=>{R.items.push({lv,msg});if(lv==='ng')R.level='ng';else if(lv==='warn'&&R.level==='ok')R.level='warn'};
-  const nodes=[],units=new Set(),EID=new Set();
+  const nodes=[],units=new Set(),EID=new Set(),dnodes=new Set(),DID=new Set();   /* nodes＝選んだ要素（中身ごと）／dnodes＝処理が探している別の要素（外枠だけ。台帳Z-295） */
   const addNode=n=>{
     if(!n||nodes.some(m=>ftInside(n,m)))return false;
     for(let i=nodes.length-1;i>=0;i--)if(ftInside(nodes[i],n))nodes.splice(i,1);
     nodes.push(n);for(const x of A.H.all)if(x.attrs.id&&ftInside(x,n))EID.add(x.attrs.id);return true};
   for(const id of sel.ids||[]){const nd=A.H.byId.get(id);if(!nd)add('ng','選んだ要素 #'+id+' が、元のHTMLに見つからない');else if(nd.tag==='script'||nd.tag==='style')add('ng','#'+id+' はスクリプト・スタイルで、要素ではない');else addNode(nd)}
-  for(const f of sel.fns||[]){const ds=A.declMap.get(f);if(!ds)add('ng','選んだ関数・変数 '+f+' が、元のJavaScriptに見つからない');else for(const d of ds)units.add(d)}
+  const HUB=opt.hub===false?new Map():ftHubs(A),hosts=new Set(),touch=new Set(),isHub=i=>HUB.has(i)&&!units.has(i);   /* 本体の中心の処理は含めず、頼る所として分ける（台帳Z-304）。選んだ・「含める」にした名前は入れる */
+  /* まとめの関数（init・即時関数など）は、選んだ部品に関わる文だけを入れる（spec）。まとめの関数そのものを選んだ・ほかの関数から呼ばれている時は、全部入れる */
+  const spec=new Map(),cache=new Map(),localSel=[];
+  const hitU=use=>{for(const id of use.ids)if(EID.has(id))return true;for(const id of use.weak)if(EID.has(id))return true;for(const pf of use.pre)for(const id of EID)if(id.startsWith(pf))return true;return false};
+  /* 部品を選んだ時、それに関わる処理のうち「その部品の持ち物」だけを入れる＝触っているidの半分以上が選んだ部品のもの。ほかの部品もたくさん触る処理（画面全体を切り替える制御など）は、その部品の機能ではないので入れない（呼ばれていれば、呼ぶ先として入る） */
+  const owned=use=>{const all=new Set([...use.ids,...use.weak]);let n=0;for(const x of all)if(EID.has(x))n++;return n>=all.size*0.5};
+  const pickOf=sp=>x=>(sp.ids&&hitU(x.use)&&(x.use.wire>0||owned(x.use)))||x.names.some(n=>sp.names.has(n));
+  const UU=i=>{const sp=spec.get(i);if(!sp)return A.units[i];if(cache.has(i))return cache.get(i);
+    const sl=ftSlice(A,A.units[i],pickOf(sp));
+    if(!sl){spec.delete(i);return A.units[i]}cache.set(i,sl);return sl};
+  const full=i=>{spec.delete(i);cache.delete(i)};
+  for(const f of [...(sel.fns||[]),...(sel.keep||[])]){const ds=A.declMap.get(f);if(ds){for(const d of ds)units.add(d)}else localSel.push(f)}
+  for(const f of localSel){const lo=ftLocals(A).find(h=>h.names.includes(f));
+    if(!lo){add('ng','選んだ関数・変数 '+f+' が、元のJavaScriptに見つからない');continue}
+    if(units.has(lo.i)&&!spec.has(lo.i))continue;
+    const sp=spec.get(lo.i)||{ids:false,names:new Set()};sp.names.add(f);spec.set(lo.i,sp);units.add(lo.i)}
   if(sel.all){const bd=A.H.all.find(a=>a.tag==='body');for(const c of(bd?bd.children:A.H.root.children))if(c.tag!=='script'&&c.tag!=='style')addNode(c);A.units.forEach(u=>units.add(u.i))}
   const badHandlers=new Set(),inl=n=>{const out=[];for(const x of A.H.all)if(ftInside(x,n))for(const k of Object.keys(x.attrs))if(/^on[a-z]+$/.test(k))out.push(x.attrs[k]);return out};
   /* つながりを、増えなくなるまでたどる */
+  /* 文字として書かれた名前が、元のHTMLの要素のidと同じ（またはidの頭と同じ＝id+'v' のように後ろを足して探す）なら、その要素も探されているとみなす（外枠だけ入れる） */
+  const idPre=new Map();for(const id of A.H.byId.keys())for(let k=1;k<=3;k++)if(id.length>k+1){const b0=id.slice(0,-k);if(!idPre.has(b0))idPre.set(b0,[]);idPre.get(b0).push(id)}
+  const strIds=u=>{if(u._sid)return u._sid;const o=new Set();for(const x of u.use.strs)if(x.length>=2&&x.length<=40&&/^[A-Za-z_][\w-]*$/.test(x)){if(A.H.byId.has(x))o.add(x);const pr=idPre.get(x);if(pr)for(const y of pr)o.add(y)}for(const pf of u.use.pre){let c=0;for(const id of A.H.byId.keys())if(id.startsWith(pf)&&c++<40)o.add(id)}   /* 'panel-'+名前 で探すid */
+    u._sid=[...o];return u._sid};
   let ch=true,guard=0;
   while(ch&&guard++<2000){
     ch=false;
     for(const u of A.units){
-      if(units.has(u.i))continue;
-      let hit=false;for(const id of u.use.ids)if(EID.has(id))hit=true;for(const id of u.use.weak)if(EID.has(id))hit=true;
-      if(hit){units.add(u.i);ch=true}}
+      if(units.has(u.i)&&!spec.has(u.i))continue;
+      if(hitU(u.use)){
+        if(isHub(u.i)){touch.add(u.i);continue}
+        let sl=null,sp=spec.get(u.i);
+        if(!sp&&owned(u.use)){units.add(u.i);ch=true;continue}   /* ほぼこの部品だけを触る処理は、そのまま入れる */
+        if(u.text.length>=600){sp=sp||{ids:false,names:new Set()};sp.ids=true;sl=ftSlice(A,u,pickOf(sp))}   /* ほかの部品も触る大きな関数（配線のinitなど）は、選んだ部品に関わる文だけ */
+        if(sl){spec.set(u.i,sp);cache.set(u.i,sl);units.add(u.i);ch=true}
+        else if(spec.has(u.i)){full(u.i)}
+        else touch.add(u.i)}}
     for(const i of Array.from(units)){
-      const u=A.units[i];
-      for(const r of u.refs){const ds=A.declMap.get(r);if(ds)for(const d of ds)if(!units.has(d)){units.add(d);ch=true}}
-      for(const id of [...u.use.ids,...u.use.weak]){const nd=A.H.byId.get(id);if(nd&&!EID.has(id)&&nd.tag!=='script'&&nd.tag!=='style'&&addNode(nd))ch=true}}
-    for(const i of Array.from(units))for(const id of A.units[i].use.ids)if(!A.H.byId.has(id))for(const v of A.units)if(!units.has(v.i)&&v.use.def.has(id)){units.add(v.i);ch=true}   /* その要素を後から作る処理も入れる */
+      const u=UU(i);
+      for(const r of u.refs){const ds=A.declMap.get(r);if(ds)for(const d of ds){if(units.has(d)){if(spec.has(d)&&d!==i&&u.kind!=='stmt'){full(d);ch=true}}   /* 別の処理から呼ばれているまとめの関数は、全部入れる */
+        else if(isHub(d))hosts.add(d);else{units.add(d);ch=true}}}
+      for(const id of [...u.use.ids,...u.use.weak,...strIds(u)]){const nd=A.H.byId.get(id);if(nd&&!EID.has(id)&&!DID.has(id)&&nd.tag!=='script'&&nd.tag!=='style'){dnodes.add(nd);DID.add(id);ch=true}}}   /* 処理が探している要素は「外枠だけ」入れる。中身まで入れて、その要素を探すほかの処理も全部入れると、共有の要素（キャンバスなど）1つで本体の大半に広がるため */
+    for(const i of Array.from(units))for(const id of UU(i).use.ids)if(!A.H.byId.has(id))for(const v of A.units)if(!units.has(v.i)&&v.use.def.has(id)){units.add(v.i);ch=true}   /* その要素を後から作る処理も入れる */
     for(const u of A.units)if(!units.has(u.i)&&nodes.some(n=>ftInside(A.scripts[u.si].node,n))){units.add(u.i);ch=true}   /* 取り出す要素の中に書かれたスクリプトも入れる */
-    for(const n of nodes)for(const v of inl(n))v.replace(/(^|[^.\w$])([A-Za-z_$][\w$]*)\s*\(/g,(_,p,nm)=>{
+    for(const v of nodes.flatMap(n=>inl(n)))v.replace(/(^|[^.\w$])([A-Za-z_$][\w$]*)\s*\(/g,(_,p,nm)=>{
       if(FTK.has(nm))return;const ds=A.declMap.get(nm);
-      if(ds){for(const d of ds)if(!units.has(d)){units.add(d);ch=true}}
+      if(ds){for(const d of ds){if(units.has(d)){if(spec.has(d)){full(d);ch=true}}else if(isHub(d))hosts.add(d);else{units.add(d);ch=true}}}
       else if(!FT_GLOBALS.has(nm)&&!A.declAll.has(nm))badHandlers.add(nm)});
     for(const u of A.units){
       if(units.has(u.i)||u.kind!=='stmt')continue;
       const ar=[...u.refs].filter(r=>A.declMap.has(r));
       if(ar.some(r=>A.declMap.get(r).some(d=>units.has(d)))&&!ar.some(r=>!A.declMap.get(r).some(d=>units.has(d)))){units.add(u.i);ch=true}}}
-  const U=Array.from(units).sort((a,b)=>a-b).map(i=>A.units[i]);
+  const U=Array.from(units).sort((a,b)=>a-b).map(i=>UU(i));
+  /* 処理が探している別の要素：外枠だけ（探されている子孫の要素は残す。それ以外の子・script・styleは入れない） */
+  const dmemo=new Map(),hasDep=c=>{if(dmemo.has(c))return dmemo.get(c);const r=dnodes.has(c)||c.children.some(hasDep);dmemo.set(c,r);return r};
+  const kept=new Set(),isEl=c=>c.tag!=='script'&&c.tag!=='style';
+  /* 外枠にする要素の onclick="…" などは外す：ほかの機能の動作で、その関数は入っていない（足した先で、呼べずに誤りになる） */
+  const noOn=t=>t.replace(/(\s)on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi,'$1').replace(/\s+(\/?>)$/,'$1');
+  const shell=n=>{kept.add(n);if(n.attrs.id)DID.add(n.attrs.id);
+    const cs=typeof n.cs==='number'?n.cs:n.e;
+    if(!n.children.some(isEl))return noOn(src.slice(n.s,cs))+src.slice(cs,n.e);   /* 文字だけ・子の要素が無いものは、そのまま（開始タグの動作だけ外す） */
+    return noOn(src.slice(n.s,cs))+n.children.filter(c=>isEl(c)&&hasDep(c)).map(shell).join('')+src.slice(n.ce,n.e)};
+  const dtop=[...dnodes].filter(n=>![...dnodes].some(m=>m!==n&&ftInside(n,m))).sort((a,b)=>a.s-b.s);
+  const dpieces=dtop.map(n=>({s:n.s,t:shell(n)}));
   /* HTML：外側のまとまりだけ。中にあるスクリプト・スタイルは別に持つので除く */
   const ord=nodes.slice().sort((a,b)=>a.s-b.s);
   const html=ord.map(n=>{
     const cut=A.H.all.filter(x=>(x.tag==='script'||x.tag==='style')&&ftInside(x,n)).map(x=>[x.s,x.e]).sort((a,b)=>b[0]-a[0]);
-    let t=src.slice(n.s,n.e);for(const[a,b]of cut)t=t.slice(0,a-n.s)+t.slice(b-n.s);return t.trim()}).join('\n');
+    let t=src.slice(n.s,n.e);for(const[a,b]of cut)t=t.slice(0,a-n.s)+t.slice(b-n.s);return{s:n.s,t:t.trim()}}).concat(dpieces).sort((a,b)=>a.s-b.s).map(x=>x.t).join('\n');
   const CLS=new Set(),TAGS=new Set();
   for(const x of A.H.all)if(nodes.some(n=>ftInside(x,n))){TAGS.add(x.tag);for(const c of ftWords(x.attrs.class))CLS.add(c)}
+  for(const n of kept){TAGS.add(n.tag);for(const c of ftWords(n.attrs.class))CLS.add(c)}
   for(const u of U)u.use.cls.forEach(c=>CLS.add(c));
   /* CSS：id・クラスがつながる規則だけ。タグだけ・全体（body・html・*）の規則は入れない */
-  const hitSel=pre=>{const q=ftSel(pre);for(const a of q.ids)if(EID.has(a))return true;for(const c of q.cls)if(CLS.has(c))return true;return false};
+  const hitSel=pre=>{const q=ftSel(pre);for(const a of q.ids)if(EID.has(a)||DID.has(a))return true;for(const c of q.cls)if(CLS.has(c))return true;return false};
   const pickRule=r=>{
     if(r.k==='rule'){const keep=ftSplitSel(r.pre).filter(hitSel);return keep.length?{k:'rule',pre:keep.join(', '),body:r.body}:null}
     if(r.k==='at'&&r.inner){const inn=r.inner.map(pickRule).filter(Boolean);return inn.length?{k:'at',pre:r.pre,inner:inn,body:''}:null}
@@ -12944,7 +13311,10 @@ function ftExtract(src,sel,opt){
   const root=vlist.length?{k:'rule',pre:':root',body:vlist.map(([a,b])=>a+':'+b).join(';')}:null;
   const cssAll=(root?[root]:[]).concat(css);
   cssTxt=cssAll.map(ftCssText).join('\n');
-  const js=U.map(u=>u.text).join('\n');
+  for(const d of Array.from(hosts))if(units.has(d))hosts.delete(d);
+  const hostL=Array.from(hosts).map(i=>({name:A.units[i].names[0]||'',kind:A.units[i].kind,pct:HUB.get(i).pct,callers:HUB.get(i).callers})).filter(h=>/^[A-Za-z_$][\w$]*$/.test(h.name)).sort((a,b)=>b.pct-a.pct);
+  const jsOwn=U.map(u=>u.text).join('\n'),hostNames=hostL.map(h=>h.name).filter(n=>!U.some(u=>u.names.includes(n)));
+  const js=(hostNames.length?ftHostShim(hostNames):'')+jsOwn;
   /* 入力・出力 */
   const ctl=/^(input|select|textarea|button|form)$/,inputs=[],outputs=[];
   for(const n of nodes)for(const x of A.H.all)if(ftInside(x,n)&&x.attrs.id&&ctl.test(x.tag))inputs.push({kind:'element',name:'#'+x.attrs.id,note:x.tag+(x.attrs.type?'('+x.attrs.type+')':'')});
@@ -12967,32 +13337,37 @@ function ftExtract(src,sel,opt){
   for(const e of A.ext)if(e.kind==='style')R.items.push({lv:'info',msg:'元のHTMLは外のCSS（'+ftClean(e.src,60)+'）を読んでいる。含めていない'});
   /* 安全の検査 */
   const empty=!html&&!js&&!cssTxt;
-  if(empty&&R.level!=='ng')add('ng','取り出せる中身が無い（要素も、処理も、CSSも、つながらなかった）');
-  if(U.some(u=>u.kind==='mod'||(u.mod&&/^(import|export)\b/.test(u.text))))add('ng','import・exportを含む（モジュール形式）は、まだ取り出せない');
-  else if(U.some(u=>u.mod))add('warn','モジュール（type="module"）のスクリプトが入っている');
+  if(empty&&R.level!=='ng')add('ng','取り出せる中身が無い（要素も、処理も、CSSも、つながらなかった）。画面の部品か関数を、もう一度選んでください');
+  if(U.some(u=>u.kind==='mod'||(u.mod&&/^(import|export)\b/.test(u.text))))add('ng','import・exportを含む（モジュール形式）は、まだ取り出せない（普通の<script>で書かれたコードなら取り出せます）');
+  else if(U.some(u=>u.mod))add('warn','モジュール（type="module"）のスクリプトが入っている。足した先によっては、動かないことがあります');
   const anyDef=new Set();for(const u of A.units)u.use.def.forEach(a=>anyDef.add(a));
   const incDef=new Set();for(const u of U)u.use.def.forEach(a=>incDef.add(a));
   const miss=[];for(const u of U)for(const id of u.use.ids)if(!A.H.byId.has(id)&&!incDef.has(id))miss.push(id);
   for(const id of new Set(miss))add('ng','処理が #'+id+' を探しているが、元のHTMLにも、取り出した中にも無い'+(anyDef.has(id)?'（取り出していない別の処理が作っている。その要素を作る関数も選ぶと、つながります）':''));
-  for(const nm of badHandlers)add('ng','要素の onclick などが呼ぶ関数 '+nm+' が、元のJavaScriptに見つからない');
-  if(js&&!U.some(u=>u.mod)){try{new Function(js)}catch(e){if(!(e&&e.name==='EvalError'))add('ng','JavaScriptの文法が正しくない：'+ftClean(e&&e.message,120))}}
-  if(unres.size)add('warn','外で定義されているかもしれない関数：'+Array.from(unres).slice(0,8).join('、')+(unres.size>8?' ほか':'')+'（取り出した中にも、元のJavaScriptの宣言にも見つからない）');
-  if(deps.length)add('warn','外のライブラリ（'+deps.map(d=>ftClean(d.src,50)).join('、')+'）が要る'+(maybe?'かもしれない':'')+'。通信が止まる場所では動かない');
+  for(const nm of badHandlers)add('ng','要素の onclick などが呼ぶ関数 '+nm+' が、元のJavaScriptに見つからない（その関数も選んで取り出すか、元のHTMLを確かめてください）');
+  if(js&&!U.some(u=>u.mod)){try{new Function(js)}catch(e){if(!(e&&e.name==='EvalError'))add('ng','JavaScriptの文法が正しくない：'+ftClean(e&&e.message,120)+'（元のHTMLの誤りか、取り出しの途中が切れている可能性。選ぶ範囲を変えて、やり直してください）')}}
+  if(unres.size)add('warn','外で定義されているかもしれない関数：'+Array.from(unres).slice(0,8).join('、')+(unres.size>8?' ほか':'')+'（取り出した中にも、元のJavaScriptの宣言にも見つからない）。本当に必要な関数なら、その関数も選んで取り出し直してください。ブラウザに最初から入っている関数なら、気にしなくて大丈夫です');
+  if(deps.length)add('warn','外のライブラリ（'+deps.map(d=>ftClean(d.src,50)).join('、')+'）が要る'+(maybe?'かもしれない':'')+'。通信が止まる場所では動かない。足した先でも、同じライブラリが読み込まれている必要があります');
   const dg=new Set();for(const u of U)u.use.danger.forEach(a=>dg.add(a));
-  if(dg.size)add('warn','外へ通信する・ほかを書き換えるかもしれない呼び出しがある：'+Array.from(dg).join('、'));
-  if(U.reduce((a,u)=>a+u.use.broad,0))add('warn','タグ名だけで探している処理がある（移した先のほかの要素にも効いてしまう）');
+  if(dg.size)add('warn','外へ通信する・ほかを書き換えるかもしれない呼び出しがある：'+Array.from(dg).join('、')+'。意図した動きか確かめてから足してください（動作確認は、通信を止めた枠で行っています）');
+  if(U.reduce((a,u)=>a+u.use.broad,0))add('warn','タグ名だけで探している処理がある（例：全部の div を探す）。足した先では、同じタグの別の要素にも効いてしまいます。id や class で探すよう直した「派生」を作ると安全です');
   const totalJs=A.units.reduce((a,u)=>a+u.text.length,0);
-  if(js&&A.units.length>1&&totalJs&&js.length/totalJs>=0.5)add('warn','元のJavaScriptの大半（'+Math.round(100*js.length/totalJs)+'%）を含む。機能として分かれていない可能性が高い');
+  if(jsOwn&&A.units.length>1&&totalJs&&jsOwn.length/totalJs>=0.5)add('warn','元のJavaScriptの大半（'+Math.round(100*jsOwn.length/totalJs)+'%）を含む。機能として分かれていない可能性が高い。計算だけの関数など、中心になるものだけを選び直してください');
+  if(jsOwn&&A.units.length>1&&totalJs&&jsOwn.length/totalJs>=0.2&&jsOwn.length/totalJs<0.5)add('warn','元のJavaScriptの約'+Math.round(100*jsOwn.length/totalJs)+'%を含む。選んだものが本体の多くの処理と本当につながっているため、足した先で重くなったり、ぶつかったりするかもしれません。一部だけ使いたい時は、中心になる関数だけを選び直してください');
+  if(hostNames.length)add('warn','元のアプリの中心にある処理 '+hostNames.length+' 個（'+hostNames.slice(0,6).join('、')+(hostNames.length>6?' ほか':'')+'）は、含めていない（含めると、本体の大半が入るため）。足した先に同じ名前の処理があればそれを使い、無ければ、その呼び出しは何もしません。その部分も使いたい時は、下の「含める」で選んでください');
+  for(const u of U)if(u.sliced)add('info','「'+(u.names[0]||'まとめの処理')+'」は大きい（中に'+u.sliced[1]+'個の文）ので、選んだ部品に関わる'+u.sliced[0]+'個の文だけを入れた（ほかの部品の配線は含めていない）');
+  if(touch.size)add('info','この部品を操作している、本体の中心の処理（'+Array.from(touch).map(i=>A.units[i].names[0]||'').filter(Boolean).slice(0,5).join('、')+'）は含めていない。足した先では、この部品の表示・切り替えを、足した側で行ってください');
   if(!js&&html&&R.level!=='ng')add('info','動きの処理が無い（見た目だけの部品）');
+  if(dtop.length)add('info','処理が探している別の要素（'+Array.from(DID).slice(0,8).map(a=>'#'+a).join('、')+(DID.size>8?' ほか':'')+'）は、外枠だけ入れた（中身・ほかの処理は入れていない）。足した先で本当にその要素を使わせたい時は、その要素を選んで取り出す');
   if(hasGlobal)add('info','全体にかかる規則（body・html・*）'+hasGlobal+'個は、ほかへ影響するので含めていない');
   if(hasFont)add('info','@font-face（フォント）は含めていない');
   const keys=[];for(const u of U)for(const k of u.use.keys)if(!keys.some(x=>x.kind===k.kind&&x.key===k.key))keys.push(k);
-  if(keys.length)add('info','保存に使うキー：'+keys.map(k=>k.key).join('、'));
+  if(keys.length)add('info','保存に使うキー：'+keys.map(k=>k.key).join('、')+'（足す時、足した先の同じ名前の保存を書き換えないよう、名前を付け替えます）');
   const name=ftClean((sel.name)||(sel.ids&&sel.ids[0])||(sel.fns&&sel.fns[0])||'機能',40);
   const pack={id:'',name,version:1,description:ftClean(sel.description||'',200),files:{html,css:cssTxt,javascript:js},dependencies:deps,
-    inputs,outputs,settings:{storage:keys,cssVars:vlist.map(([a,b])=>({name:a,value:b}))},
+    inputs,outputs,host:hostL,settings:{storage:keys,cssVars:vlist.map(([a,b])=>({name:a,value:b}))},
     safety:{level:R.level,items:R.items,t:Date.now()},parentId:'',source:{title:A.title,ids:ftSet(EID),fns:ftSet(names)},t:Date.now(),x:{}};
-  return{ok:R.level!=='ng',pack,report:R,stats:{units:U.length,all:A.units.length,jsLen:js.length,totalJs,ids:EID.size}}}
+  return{ok:R.level!=='ng',pack,report:R,stats:{units:U.length,all:A.units.length,jsLen:jsOwn.length,totalJs,ids:EID.size,dep:dnodes.size,host:hostL.length,touch:touch.size}}}
 
 /* ---- 外から来たパックを検査して整える（端末の保存・貼り付け・ドロップ）。知らないキーは x に残す ---- */
 function ftNorm(raw){
@@ -13004,21 +13379,38 @@ function ftNorm(raw){
   const s=k=>typeof f[k]==='string'?f[k]:'';
   if(!s('html').trim()&&!s('css').trim()&&!s('javascript').trim())return{ok:false,why:'中身が空'};
   const arr=v=>Array.isArray(v)?v.filter(q=>q&&typeof q==='object'):[];
-  const known=['id','name','version','description','files','dependencies','inputs','outputs','settings','safety','parentId','t','source','x','v'];
+  const known=['id','name','version','description','files','dependencies','inputs','outputs','host','settings','safety','parentId','t','source','x','v'];
   const x=Object.assign({},o.x&&typeof o.x==='object'?o.x:{});for(const k of Object.keys(o))if(!known.includes(k))x[k]=o[k];
   const st=o.settings&&typeof o.settings==='object'?o.settings:{},sf=o.safety&&typeof o.safety==='object'?o.safety:{};
   const fx={};if(f&&typeof f==='object')for(const k of Object.keys(f))if(!['html','css','javascript'].includes(k))fx[k]=f[k];
   return{ok:true,pack:{id:typeof o.id==='string'&&/^f[a-z0-9]{4,24}$/.test(o.id)?o.id:'',name:ftClean(o.name,40)||'機能',version:Number.isFinite(+o.version)&&+o.version>=1?Math.floor(+o.version):1,description:ftClean(o.description,200),
-    files:Object.assign(fx,{html:s('html'),css:s('css'),javascript:s('javascript')}),dependencies:arr(o.dependencies),inputs:arr(o.inputs),outputs:arr(o.outputs),
+    files:Object.assign(fx,{html:s('html'),css:s('css'),javascript:s('javascript')}),dependencies:arr(o.dependencies),inputs:arr(o.inputs),outputs:arr(o.outputs),host:arr(o.host),
     settings:Object.assign({},st,{storage:arr(st.storage),cssVars:arr(st.cssVars)}),
     safety:Object.assign({},sf,{level:/^(ok|warn|ng)$/.test(sf.level)?sf.level:'warn',items:arr(sf.items),t:+sf.t||0}),
     parentId:typeof o.parentId==='string'&&/^f[a-z0-9]{4,24}$/.test(o.parentId)?o.parentId:'',source:o.source&&typeof o.source==='object'?o.source:{},t:+o.t||0,x}}}
 const ftNewId=used=>{let id;do{id='f'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}while(used&&used.has(id));return id};
 /* 確認・プレビュー用の隔離した文書。外への通信を止め（CSP）、枠の中の誤りを親へ知らせる */
 function ftErrShim(){
-  function send(m,l){try{parent.postMessage({ft:1,m:String(m).slice(0,300),l:l|0},'*')}catch(e){}};
-  window.addEventListener('error',function(e){send(e.message||'error',e.lineno)});
-  window.addEventListener('unhandledrejection',function(e){send('Promise: '+(e.reason&&e.reason.message||e.reason),0)});
+  function send(m,l){try{parent.postMessage({ft:1,m:String(m).slice(0,300),l:l|0,p:window.__ftp|0},'*')}catch(e){}};
+  window.addEventListener('error',function(e){send(e.message||'error',e.lineno);try{e.preventDefault()}catch(x){}});
+  window.addEventListener('unhandledrejection',function(e){send('Promise: '+(e.reason&&e.reason.message||e.reason),0);try{e.preventDefault()}catch(x){}});
+}
+/* 動かす確認で、枠の中の部品を実際に操作する：入力欄を変え、ボタンを押し、スイッチを切り替える（枠の中だけ。外へは出ない）。
+   誤りは`__ftp=1`の印つきで親へ知らせる＝読み込み時の誤り（動かない）と、操作した時の誤り（元のアプリの状態が要るかもしれない）を分けるため */
+function ftProbe(){
+  window.__ftp=1;var n=0;
+  function fire(el,t){try{el.dispatchEvent(new Event(t,{bubbles:true}))}catch(e){}}
+  function all(s){return Array.prototype.slice.call(document.querySelectorAll(s)).slice(0,300)}
+  all('input,select,textarea').forEach(function(el){
+    var ty=String(el.type||'').toLowerCase();n++;
+    try{
+      if(ty==='checkbox'||ty==='radio'){el.checked=!el.checked;fire(el,'input');fire(el,'change')}
+      else if(ty==='range'||ty==='number'){var mn=+el.min||0,mx=el.max===''?mn+10:+el.max;el.value=mn+(mx-mn)/2;fire(el,'input');fire(el,'change')}
+      else if(el.tagName==='SELECT'){for(var i=0;i<Math.min(el.options.length,6);i++){el.selectedIndex=i;fire(el,'input');fire(el,'change')}}
+      else if(ty==='text'||ty==='search'||ty===''||el.tagName==='TEXTAREA'){el.value='a';fire(el,'input');fire(el,'change')}
+    }catch(e){}});
+  all('button,[onclick],summary,[role=button]').forEach(function(el){n++;try{el.click()}catch(e){}});
+  try{parent.postMessage({ft:2,n:n},'*')}catch(e){}
 }
 function ftDoc(pack,opt){
   opt=opt||{};
@@ -13026,7 +13418,7 @@ function ftDoc(pack,opt){
   const shim='<script>('+ftErrShim.toString().replace(/\n\s*/g,' ')+')()<\/script>';
   const f=pack.files;
   const safe=t=>String(t).replace(/<\/script/gi,'<\\/script');
-  return'<!doctype html><html><head><meta charset="utf-8">'+csp+shim+(opt.pre||'')+'<style>'+String(f.css).replace(/<\/style/gi,'<\\/style')+'</style></head><body>'+f.html+(f.javascript?'<script>'+safe(f.javascript)+'\n<\/script>':'')+'</body></html>'}
+  return'<!doctype html><html><head><meta charset="utf-8">'+csp+shim+(opt.pre||'')+'<style>'+String(f.css).replace(/<\/style/gi,'<\\/style')+'</style></head><body>'+f.html+(f.javascript?'<script>'+safe(f.javascript)+'\n<\/script>':'')+(opt.probe?'<script>window.addEventListener("load",function(){setTimeout(function(){('+ftProbe.toString().replace(/<\/script/gi,'<\\/script')+')()},300)})<\/script>':'')+'</body></html>'}
 /* ===== 機能コレクション（部品D：移す・衝突の検査・名前の付け替え・派生。台帳Z-288）=====
    最優先の約束：**移した先のHTMLの文字は、1文字も変えない**（足すだけ）。足した部分は `<!-- ft:begin 印 … -->`〜`<!-- ft:end 印 … -->` で囲み、`ftUnport` で外すと、元のHTMLとバイトまで一致する（足すたびに確かめ、一致しなければ足さない）。
    ぶつかるもの（要素のid・クラス名・関数／変数名・保存のキー・CSS変数・keyframes）は、パック側だけを一貫して付け替える（先方は触らない）。付け替えで直せないものがあれば、足さずに止める。
@@ -13199,7 +13591,7 @@ function ftDerive(pack,edit,used){
    版`v`と、知らないキー（全体も項目ごとも）は捨てずに書き戻す。読めない中身は消さず `am_featurepacks_bad` へ写す。**決め打ちの上限は置かない**（端末が覚えきれない時は、その場だけ使えると知らせる）。
    これは本体の作品の保存形式（`ser`／`PROJ`）とは別。モードの部品（`am_modeparts`）の保存とも別。 */
 const FTC={LS:'am_featurepacks',LSB:'am_featurepacks_bad',V:1,v:1,list:[],x:{},err:0,loaded:false,skipped:0,
-  sel:{ids:new Set(),fns:new Set()},res:null,run:null,cur:null,tab:'info',port:null,edit:null,undo:null,msg:'',busy:false,ac:null,root:null,pvSeq:0,del:null};
+  sel:{ids:new Set(),fns:new Set(),keep:new Set()},res:null,run:null,cur:null,tab:'info',port:null,edit:null,undo:null,msg:'',busy:false,ac:null,root:null,pvSeq:0,del:null};
 function ftLoad(){
   if(FTC.loaded)return;FTC.loaded=true;
   let raw=null;try{raw=localStorage.getItem(FTC.LS)}catch(_){return}
@@ -13229,23 +13621,27 @@ function ftSmoke(pack){
   return new Promise(res=>{
     if((pack.dependencies||[]).some(d=>d&&d.src))return res({skipped:'外のライブラリが要るので、動かす確認は省いた',errs:[]});
     if(!pack.files.html.trim()&&!pack.files.javascript.trim())return res({skipped:'動かす中身が無い',errs:[]});
-    const fr=document.createElement('iframe'),errs=[];
+    const fr=document.createElement('iframe'),errs=[],perrs=[];let probed=-1;
     fr.setAttribute('sandbox','allow-scripts');fr.setAttribute('aria-hidden','true');fr.tabIndex=-1;
     fr.style.cssText='position:fixed;left:-9999px;top:0;width:480px;height:320px;border:0';
     let done=false;
-    const fin=()=>{if(done)return;done=true;removeEventListener('message',on);try{fr.remove()}catch(_){}res({errs})};
-    const on=e=>{if(e.source!==fr.contentWindow)return;const d=e.data;if(!d||d.ft!==1||typeof d.m!=='string')return;if(errs.length<20)errs.push({m:d.m.slice(0,200),l:Number.isFinite(+d.l)?+d.l:0})};
+    const fin=()=>{if(done)return;done=true;removeEventListener('message',on);try{fr.remove()}catch(_){}res({errs,perrs,probed})};
+    const on=e=>{if(e.source!==fr.contentWindow)return;const d=e.data;if(!d)return;
+      if(d.ft===2){probed=Number.isFinite(+d.n)?+d.n:0;setTimeout(fin,300);return}   /* 操作を終えた知らせ */
+      if(d.ft!==1||typeof d.m!=='string')return;const a=d.p?perrs:errs;if(a.length<20)a.push({m:d.m.slice(0,200),l:Number.isFinite(+d.l)?+d.l:0})};
     addEventListener('message',on);
-    fr.addEventListener('load',()=>setTimeout(fin,700));
-    setTimeout(fin,4000);
+    fr.addEventListener('load',()=>setTimeout(fin,2500));   /* 操作を終えた知らせが来なかった時の保険 */
+    setTimeout(fin,5000);
     const pre=typeof partShim==='function'?'<script>('+partShim.toString().replace(/\n\s*/g,' ')+')()<\/script>':'';
-    fr.srcdoc=ftDoc(pack,{pre});document.body.appendChild(fr)})}
+    fr.srcdoc=ftDoc(pack,{pre,probe:true});document.body.appendChild(fr)})}
 /* 検査の結果（読んだだけの検査＋動かした結果）をまとめる */
 function ftMerge(rep,run){
   const items=rep.items.slice();let level=rep.level;
   if(run&&run.errs&&run.errs.length){for(const e of run.errs.slice(0,5))items.push({lv:'ng',msg:'動かすと誤りが出た：'+ftClean(e.m,120)});level='ng'}
   else if(run&&run.skipped)items.push({lv:'info',msg:run.skipped});
-  else if(run)items.push({lv:'info',msg:'隔離した枠で動かして、誤りは出なかった'});
+  else if(run){
+    items.push({lv:'info',msg:'隔離した枠で動かして、読み込みの誤りは出なかった'+(run.probed>0?'。部品を'+run.probed+'個、実際に操作（押す・変える）して確かめた':'')});
+    if(run.perrs&&run.perrs.length){const u=Array.from(new Set(run.perrs.map(e=>ftClean(e.m,80))));items.push({lv:'warn',msg:'部品を操作すると誤りが出る所がある（'+run.perrs.length+'回）：'+u.slice(0,3).join(' ／ ')+'。元のアプリの状態（選んでいる絵など）が要る部分かもしれません。足した先で、その部分は使わないか、必要な処理も一緒に選んでください'});if(level==='ok')level='warn'}}
   return{level,items}}
 const ftLv={ok:'✔ 使える',warn:'⚠ 警告あり',ng:'✖ 動かない（保存・使用できない）'};
 /* ---- 出す・入れる ---- */
@@ -13287,11 +13683,24 @@ function ftMount(host){
   d.append(body,grab);host.append(d);FTC.root=d;ftSummary();
   d.addEventListener('toggle',()=>{if(d.open)ftRender()});
   paneGrab(grab,{host:VPL.el,name:'--ftbh',key:'ftbh',measure:()=>body.offsetHeight,min:100})}
+/* はじめに読む使い方（📖マニュアルへの入口つき）。閉じた状態はこの画面を開いている間だけ覚える */
+function ftGuide(){
+  const d=document.createElement('details');d.className='ftguide';d.open=!FTC.guideShut;
+  d.append(ftE('summary','','📖 使い方（はじめに読む）'));
+  const ol=ftE('ol','');
+  ['上の「📂 HTMLを読み込む」で、取り出したいHTMLを開く（読むだけ。そのHTMLは変わりません）。',
+   '左で、取り出したい部品や関数に印を付け（中心になるものを1つか少数）、「取り出して検査」。選んだものと、つながるものだけが集まります。',
+   '検査を見る：✔使える／⚠警告あり／✖動かない。⚠✖には、理由と直し方が出ます。',
+   '✔か⚠なら「コレクションに保存」。別のHTMLを開いて、右から「いまのHTMLへ足す」で使い回せます。',
+   '取り出しただけでは、何も保存されません。「保存」を押したものだけが、コレクションに入ります。'].forEach(t=>ol.append(ftE('li','',t)));
+  d.append(ol,ftBtn('📖 マニュアルを開く',()=>{if(typeof manOpen==='function')manOpen('feat')},'マニュアルの「機能コレクション」を開く'));
+  d.addEventListener('toggle',()=>{FTC.guideShut=!d.open});
+  return d}
 function ftRender(){
   if(!FTC.root)return;ftSummary();
   if(!FTC.root.open)return;
   const body=FTC.root.querySelector('#ftBody'),keep=body.scrollTop;
-  body.replaceChildren();
+  body.replaceChildren();body.append(ftGuide());
   if(FTC.msg){const m=ftE('div','note ftmsg',FTC.msg);m.setAttribute('role','status');body.append(m)}
   if(FTC.err)body.append(ftE('div','note ftmsg','この端末に保存しきれませんでした。開いている間だけ使えます（JSONを書き出しておくと安全です）'));
   if(FTC.skipped)body.append(ftE('div','note ftmsg',FTC.skipped<0?'保存の中身が読めなかったので、別のキー（am_featurepacks_bad）へ残しました':'読めない項目が'+FTC.skipped+'件あったので、保存の元の文字を別のキー（am_featurepacks_bad）へ残しました'));
@@ -13305,7 +13714,7 @@ function ftRenderApp(sec){
   sec.append(ftE('div','note','ビジュアルプログラミングで開いているHTML（読むだけ。ここからは変わりません）。取り出したい部品や関数に印を付けてください。'));
   const info=ftE('div','ftrow');
   info.append(ftE('span','',(A.title?'「'+A.title+'」':'（題名なし）')+'　要素 '+A.H.byId.size+' ／ 処理 '+A.units.length));
-  info.append(ftBtn('↻ 読み直す',()=>{FTC.ac=null;FTC.res=null;ftRender()},'開いているHTMLを読み直す'));
+  info.append(ftBtn('↻ 読み直す',()=>{FTC.ac=null;FTC.res=null;FTC.sel.keep.clear();ftRender()},'開いているHTMLを読み直す'));
   sec.append(info);
   const skip=new Set(['script','style','link','meta','title','head','html','body','br','hr']);
   const els=A.H.all.filter(n=>n.attrs.id&&!skip.has(n.tag));
@@ -13334,6 +13743,22 @@ function ftRenderApp(sec){
     cb.setAttribute('aria-label',nm+' を取り出す対象にする');cb.onchange=()=>{cb.checked?FTC.sel.fns.add(nm):FTC.sel.fns.delete(nm)};
     lb.append(cb,document.createTextNode(' '+({fn:'関数',class:'クラス',var:'変数',win:'window.'}[u.kind]||'')+' '+u.names.join('、')));g2.append(lb)}
   sec.append(g2);
+  /* まとめの関数（初期化・即時実行・DOMContentLoadedなど）の中にある関数・変数も、選べるようにする（台帳Z-304） */
+  const lo=ftLocals(A).filter(h=>h.names.some(n=>!A.declMap.has(n)));
+  if(lo.length){
+    const g3=ftE('div','ftgroup');g3.append(ftE('div','ftgh','まとめの関数の中にある処理'));
+    g3.append(ftE('div','note','ひとかたまりの関数（初期化など）の中にある関数・変数です。選ぶと、その部分だけを取り出します。'));
+    for(const h of lo){
+      const dt=ftE('details','ftblock');dt.style.setProperty('--d',0);
+      const s=ftE('summary','',(h.host?h.host+' の中':'（名前のない関数）の中')+'　'+h.names.length+'個');dt.append(s);
+      const inner=ftE('div','ftinner');
+      for(const nm of h.names){
+        if(A.declMap.has(nm))continue;
+        const lb=ftE('label','ftfn'),cb=ftE('input');cb.type='checkbox';cb.checked=FTC.sel.fns.has(nm);
+        cb.setAttribute('aria-label',nm+' を取り出す対象にする');cb.onchange=()=>{cb.checked?FTC.sel.fns.add(nm):FTC.sel.fns.delete(nm)};
+        lb.append(cb,document.createTextNode(' '+nm));inner.append(lb)}
+      dt.append(inner);g3.append(dt)}
+    sec.append(g3)}
   const nr=ftE('div','ftrow'),ni=ftE('input');ni.type='text';ni.id='ftName';ni.placeholder='機能の名前（空なら選んだ名前）';ni.value=FTC.nameTxt||'';ni.setAttribute('aria-label','機能の名前');
   ni.oninput=()=>{FTC.nameTxt=ni.value};
   nr.append(ni,ftBtn('🔍 取り出して検査',ftDoExtract,'印を付けたものとつながっているものを集めて、動くかを検査する','ftmain'));sec.append(nr);
@@ -13342,15 +13767,28 @@ function ftRenderApp(sec){
   if(FTC.res)ftRenderRes(sec)}
 async function ftDoExtract(){
   if(!FTC.sel.ids.size&&!FTC.sel.fns.size){FTC.msg='取り出す要素か関数を、1つ以上選んでください';FTC.res=null;ftRender();return}
-  FTC.msg='';const r=ftExtract(VPL.src,{ids:[...FTC.sel.ids],fns:[...FTC.sel.fns],name:FTC.nameTxt||''},{app:ftAppNow()});
+  FTC.msg='';const r=ftExtract(VPL.src,{ids:[...FTC.sel.ids],fns:[...FTC.sel.fns],keep:[...FTC.sel.keep],name:FTC.nameTxt||''},{app:ftAppNow()});
   FTC.res=r;FTC.run=null;FTC.busy=r.report.level!=='ng';ftRender();
   if(FTC.busy){const mine=FTC.res;const run=await ftSmoke(r.pack);if(FTC.res===mine)FTC.run=run;FTC.busy=false;ftRender()}}
 function ftRenderRes(sec){
   const r=FTC.res,m=ftMerge(r.report,FTC.run),box=ftE('div','ftres');
   box.append(ftE('h4','fth','検査の結果'),ftBadge(m.level));
+  box.append(ftE('div','note',m.level==='ng'?'動かない、または必要なものが足りないので、保存も使用もできません。下の理由を直してください（「下書き」で保存して、「✎ 派生」で直せます）。':m.level==='warn'?'動きますが、下の注意を確かめてから、保存・使用してください。':'動かして確かめ、誤りは出ませんでした。保存して、別のHTMLへ足せます。'));
   const st=r.stats,f=r.pack.files;
   box.append(ftE('div','note','取り出した量：HTML '+f.html.length+'字・CSS '+f.css.length+'字・JS '+f.javascript.length+'字（処理 '+st.units+'／元の '+st.all+'個）'));
   box.append(ftList(m.items));
+  /* 元のアプリの中心にある処理（含めていないもの）。必要なら1つずつ「含める」で足せる（足すと、その処理が呼ぶ先も入る） */
+  const hs=r.pack.host||[];
+  if(hs.length||FTC.sel.keep.size){
+    const hb=ftE('div','ftgroup');hb.append(ftE('div','ftgh','元のアプリの中心にある処理（含めていないもの）'));
+    hb.append(ftE('div','note','足した先に同じ名前の処理があれば、それを使います。無ければ、その呼び出しは何もしません。この機能に必要な時だけ「含める」を押してください（含めると、その処理がたどる先も一緒に入ります）。'));
+    for(const h of hs){
+      const row=ftE('div','ftrow');row.append(ftE('span','',h.name+'　（含めると 全体の約'+Math.round(h.pct*100)+'%が入る／呼び出し元 '+h.callers+'個）'));
+      row.append(ftBtn('含める',()=>{FTC.sel.keep.add(h.name);ftDoExtract()},h.name+' も取り出しに含めて、検査し直す'));hb.append(row)}
+    for(const nm of FTC.sel.keep){
+      const row=ftE('div','ftrow');row.append(ftE('span','','含めた処理：'+nm));
+      row.append(ftBtn('外す',()=>{FTC.sel.keep.delete(nm);ftDoExtract()},nm+' を含めるのをやめて、検査し直す'));hb.append(row)}
+    box.append(hb)}
   const row=ftE('div','ftrow'),ok=m.level!=='ng';
   const sv=ftBtn('💾 コレクションに保存',()=>ftSaveRes(false),ok?'この機能をコレクションに保存する':'動かないと検査されたので保存できません');sv.disabled=!ok||FTC.busy;row.append(sv);
   if(!ok){row.append(ftBtn('📝 下書きとして保存',()=>ftSaveRes(true),'動かないと分かっている機能を、使えない印つきの下書きとして保存する（足す・使うことはできない）'))}
@@ -13469,7 +13907,7 @@ function ftRenderPort(box,p){
   const row=ftE('div','ftrow'),go=ftBtn('足す',()=>{
     const r=ftPort(p,VPL.src);
     if(!r.ok){FTC.msg='足せませんでした：'+r.why;ftRender();return}
-    if(typeof VPL.MAXSRC==='number'&&r.html.length>VPL.MAXSRC){FTC.msg='足せませんでした：足したあとのHTMLが、ビジュアルプログラミングの大きさの目安（'+VPL.MAXSRC+'字）を超えます';ftRender();return}
+    if(typeof VPL.MAXSRC==='number'&&r.html.length>VPL.MAXSRC){FTC.msg='足せませんでした：足したあとのHTMLが、ビジュアルプログラミングの文字数の上限（'+VPL.MAXSRC+'字。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）を超えます';ftRender();return}
     vplSetSource(r.html,true);FTC.undo={mark:r.mark,name:p.name};FTC.port=null;FTC.ac=null;
     FTC.msg='足しました：'+p.name+'（ぶつかり '+r.plan.conf.length+'件は、足す側の名前を付け替えて解決）。ビューワーとソースに反映されています。';ftRender()},'この機能を、いまのHTMLへ足す');
   go.disabled=pl.blocked||p.safety.level==='ng';

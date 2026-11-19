@@ -419,6 +419,39 @@ with sync_playwright() as p:
     chk('持ち手をダブルクリックすると、元の高さへ戻る', abs(ev(pg, "()=>document.getElementById('ftBody').offsetHeight") - h0) <= 4)
     chk('ページの誤りが出ていない', not errs, errs)
     ctx.close()
+    # ---------------- C9 本物のアプリ（本体そのもの）を読み込んで取り出す（台帳Z-295） ----------------
+    print('--- C9 本物のアプリで、機能ごとに小さく取り出せて、動かしても誤りが出ない')
+    ctx, pg, errs = new(b)
+    load(pg)
+    open_vp(pg)
+    app_src = open(sys.argv[1], encoding='utf-8').read()
+    pg.evaluate("(s)=>{vplSetSource(s,true)}", app_src)
+    pg.wait_for_timeout(600)
+    chk('本体そのもの（100万字超）も、ビジュアルプログラミングへ読み込める（文字数の制限は無い）', ev(pg, "()=>VPL.src.length") > 1000000)
+    FN = """async(n)=>{FTC.sel.ids.clear();FTC.sel.fns.clear();FTC.sel.fns.add(n);FTC.nameTxt='';await ftDoExtract();
+      const r=FTC.res,run=FTC.run,m=ftMerge(r.report,run);
+      return {level:m.level,pct:Math.round(100*r.stats.jsLen/r.stats.totalJs),errs:run&&run.errs?run.errs.length:-1,host:(r.pack.host||[]).length,ng:m.items.filter(x=>x.lv==='ng').map(x=>x.msg.slice(0,80))}}"""
+    for nm, lim in [('PHE', 12), ('LIQ', 8), ('makeClip', 8), ('penAt', 6), ('pushUndo', 6), ('WINX', 2), ('adjColorGen', 2), ('CONSOLE', 6)]:
+        r = pg.evaluate(FN, nm)
+        chk('%s：本体の%d%%未満（%d%%）・動かしても誤りなし・ngでない' % (nm, lim, r['pct']), r['pct'] < lim and r['errs'] == 0 and r['level'] != 'ng', r)
+    r = pg.evaluate(FN, 'restore')
+    chk('本当に本体とつながる処理（元に戻す）は、警告つきで保存できる（ngでない）。中心の処理は分けて知らせる（台帳Z-304）', r['pct'] >= 5 and r['level'] == 'warn' and r['errs'] == 0 and r['host'] > 0, r)
+    # 「含める」ボタン：押すと、その処理が入り、検査し直される（含めない既定→含める、で大きくなる。ngにならない）
+    open_box(pg)
+    h = pg.evaluate("""async()=>{FTC.sel.keep.clear();FTC.sel.ids.clear();FTC.sel.fns.clear();FTC.sel.fns.add('restore');await ftDoExtract();
+      const before=FTC.res.stats.jsLen,hn=(FTC.res.pack.host||[]).map(x=>x.name);
+      const btn=[...document.querySelectorAll('#ftBox button.ftb')].find(b=>b.textContent==='含める');
+      if(!btn)return {nobtn:1,hn};
+      btn.click();for(let i=0;i<80&&FTC.busy;i++)await new Promise(r=>setTimeout(r,100));await new Promise(r=>setTimeout(r,200));
+      const ex=[...document.querySelectorAll('#ftBox button.ftb')].some(b=>b.textContent==='外す');
+      return {before,after:FTC.res.stats.jsLen,keep:[...FTC.sel.keep],hn,left:(FTC.res.pack.host||[]).map(x=>x.name),level:ftMerge(FTC.res.report,FTC.run).level,hasOff:ex}}""")
+    chk('「含める」を押すと、その処理が入って検査し直され、「外す」が出る（ngにならない）', not h.get('nobtn') and h['after'] > h['before'] and len(h['keep']) == 1 and h['keep'][0] not in h['left'] and h['level'] != 'ng' and h['hasOff'], h)
+    off = pg.evaluate("""async()=>{const btn=[...document.querySelectorAll('#ftBox button.ftb')].find(b=>b.textContent==='外す');if(!btn)return {nobtn:1};btn.click();for(let i=0;i<80&&FTC.busy;i++)await new Promise(r=>setTimeout(r,100));await new Promise(r=>setTimeout(r,200));return {keep:FTC.sel.keep.size,host:(FTC.res.pack.host||[]).length}}""")
+    chk('「外す」を押すと、含めるのをやめた状態に戻る', not off.get('nobtn') and off['keep'] == 0 and off['host'] > 0, off)
+    chk('取り出しただけでは、コレクションに何も保存されない（既定は空）', store(pg) is None or len(store(pg).get('packs', [])) == 0)
+    chk('ページの誤りが出ていない', not errs, errs)
+    ctx.close()
+
     b.close()
 
 print('OK %d  NG %d' % (OKN[0], OKN[1]))

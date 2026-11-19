@@ -363,20 +363,24 @@
     <div class="grp"><div class="gh">💧 液体を足す</div>
     <div class="row"><button id="lqAddPour" type="button" aria-label="蛇口から水を注ぐ液体の絵を足す">＋蛇口（注ぐ）</button><button id="lqAddDrip" type="button" aria-label="蛇口から水を垂らす液体の絵を足す">＋蛇口（垂らす）</button></div>
     <div class="row"><button id="lqAddDrop" type="button" aria-label="水滴が落ちる液体の絵を足す">＋水滴</button><button id="lqAddTear" type="button" aria-label="涙が落ちる液体の絵を足す">＋涙</button></div>
-    <div class="row"><button id="lqAddTom" type="button" aria-label="トマトをぶつける液体の絵を足す">＋トマト（ぶつける）</button><button id="lqAddChm" type="button" aria-label="シャンパンを吹きかける液体の絵を足す">＋シャンパン</button></div>
-    <div class="row"><button id="lqAddIce" type="button" aria-label="アイスクリームが飛び散る液体の絵を足す">＋アイス</button><button id="lqAddMay" type="button" aria-label="マヨネーズを絞り出す液体の絵を足す">＋マヨネーズ</button></div>
+    <div class="row"><button id="lqAddBurst" type="button" aria-label="勢いよくぶつかって飛び散る液体の絵を足す">＋ぶつける（飛び散る）</button><button id="lqAddSpray" type="button" aria-label="細かく吹きかける液体の絵を足す">＋吹きかける</button></div>
+    <div class="note">どの液体も、足したあとに「選んでいる液体」で、ねばり・色・透明度・止まる強さ・付く量・あわ…を自由に組み合わせて、さらさらの水から形が残るペーストまで表せます。作り方の例は <button id="lqHelp" type="button" aria-label="マニュアルの液体の説明を開く">📖 マニュアル「液体」</button> にあります。</div>
     <div class="note">足した絵は、ほかの絵と同じように動かせます（位置・大きさ・向き・動き・レイヤー・元に戻す・保存）。水は、絵の向きに沿って出ます。水は「床の高さ」まで落ちて、床の上にたまります（写真の床に合わせて、高さと傾きを決めてください。絵や物体にはまだぶつかりません）。</div></div>
     <div class="grp"><div class="gh" id="lqTitle">選んでいる液体</div>
     <div class="note" id="lqNone">蛇口・水滴・涙の絵を選ぶと、ここで調整できます。</div>
     <div id="lqCtl" hidden>
     <div class="row"><button id="lqOn" type="button" aria-label="水を流す／止める">⏸ 止める</button><button id="lqClr" type="button" aria-label="空中と床の水を消す（かかった跡は残る）">水を消す</button></div>
     <div class="row"><button id="lqHold" type="button" aria-label="この液体だけ、その場で止める／動かす">❄ その場で止める</button><button id="lqClrCt" type="button" aria-label="絵の面に付いた跡だけを消す">かかった跡を消す</button><button id="lqDel" type="button" aria-label="この液体を削除する">この液体を削除</button></div>
-    <div class="row"><span class="lab">種類</span><select id="lqMat" aria-label="液体の種類（色・ねばり・付き方がまとめて変わる）"><option value="water">水</option><option value="champagne">シャンパン</option><option value="tomato">トマト</option><option value="ice">アイスクリーム</option><option value="mayo">マヨネーズ</option></select></div>
+    <div class="row"><span class="lab">性質のひな形</span><select id="lqMat" aria-label="性質のひな形を選ぶと、ねばり・つながり・波紋・止まる強さ・付く量・乾く速さ・にごり・あわの値がまとまって入ります（色・出し方は変わりません。入れたあとも、つまみで自由に変えられます）"><option value="">選ぶと値が入る…</option><option value="thin">さらさら</option><option value="foam">あわ立つ</option><option value="thick">とろみ</option><option value="paste">ねっとり（形が残る）</option></select></div>
     <div class="row"><span class="lab">向き</span><input id="lqAng" type="range" min="0" max="360" step="1" aria-label="出す向きの角度（0°が下、360°ぐるり）"><b class="v" id="lqAngv"></b></div>
     <div class="row"><span class="lab">奥行き</span><input id="lqDep" type="range" min="-90" max="90" step="1" aria-label="奥行きの向き（プラスはこちらへ向かってくる、マイナスは向こうへ向かっていく）"><b class="v" id="lqDepv"></b></div>
     <div class="row" id="lqSprRow"><span class="lab">広がり</span><input id="lqSpr" type="range" min="0" max="85" step="1" aria-label="ばらまく広がりの角度"><b class="v" id="lqSprv"></b></div>
     <div class="row"><span class="lab">止まる強さ</span><input id="lqYld" type="range" min="0" max="1" step="0.01" aria-label="絵の面に付いたあと、垂れずに止まる強さ（大きいほど付いたまま）"><b class="v" id="lqYldv"></b></div>
     <div class="row"><span class="lab">付く量</span><input id="lqAdh" type="range" min="0" max="6" step="0.1" aria-label="絵の面に付く量"><b class="v" id="lqAdhv"></b></div>
+    <div class="row"><span class="lab">乾く速さ</span><input id="lqDry" type="range" min="0" max="1" step="0.01" aria-label="絵の面に付いた跡が乾いて消える速さ（0は乾かない）"><b class="v" id="lqDryv"></b></div>
+    <div class="row"><span class="lab">にごり</span><input id="lqSc" type="range" min="0" max="1" step="0.01" aria-label="にごり（大きいほど、中が白く濁って見える）"><b class="v" id="lqScv"></b></div>
+    <div class="row"><span class="lab">あわ</span><input id="lqFo" type="range" min="0" max="2" step="0.01" aria-label="あわの量（厚い所に白い小さな粒が出る）"><b class="v" id="lqFov"></b></div>
+    <div class="row"><span class="lab">粒の大きさのばらつき</span><input id="lqJi" type="range" min="0" max="1" step="0.01" aria-label="粒の大きさのばらつき（大きいほど、大小まざる）"><b class="v" id="lqJiv"></b></div>
     <div class="row"><span class="lab" id="lqWl">流れの太さ</span><input id="lqW" type="range" min="1" max="12" step="1" aria-label="流れの太さ、または1回に出す粒の数"><b class="v" id="lqWv"></b></div>
     <div class="row"><span class="lab">勢い</span><input id="lqV" type="range" min="0" max="1.2" step="0.01" aria-label="水を出す勢い"><b class="v" id="lqVv"></b></div>
     <div class="row" id="lqGapRow"><span class="lab">間隔</span><input id="lqG" type="range" min="0.3" max="6" step="0.1" aria-label="水のかたまりを出す間隔（秒）"><b class="v" id="lqGv"></b></div>
@@ -502,6 +506,9 @@
     <div class="row"><span class="lab">動く歪み（ピン）の注意を出す数</span><input id="limPins" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動く歪み（ピン）の注意を出す数（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個。既定 24。超えても足せます（注意だけ）。0＝出さない</span></div>
     <div class="row"><span class="lab">操作の履歴（元に戻す）の上限</span><input id="limUndo" class="num" type="number" min="0" step="16" inputmode="numeric" aria-label="操作の履歴（元に戻す）の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">MB。既定 256。超えると古い履歴から消えます。0＝制限なし</span></div>
     <div class="row"><span class="lab">液体の粒の数の上限</span><input id="limLiq" class="num" type="number" min="0" step="100" inputmode="numeric" aria-label="液体の粒の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（1つの液体の絵ごと）。既定 1500。超えると古い水から消えます。0＝制限なし</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングのソースの文字数</span><input id="limVps" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングのソースの文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（読み込むHTML・編集して反映するソース）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングの保存する1つの値</span><input id="limVpv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存する1つの値の文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（枠の中のページが覚える1つの値の長さ）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングの保存先の数</span><input id="limVpk" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存先の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（枠の中のページが覚える名前の数）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
     <div class="row"><button id="limReset" type="button">上限の設定を初めの値に戻す</button></div>
     </details>
   </div>

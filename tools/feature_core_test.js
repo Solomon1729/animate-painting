@@ -3,7 +3,7 @@
 const fs=require('fs'),path=require('path');
 const dir=path.join(__dirname,'..','src','js');
 const src=['2475-feature-core','2476-feature-extract','2477-feature-pack','2478-feature-port'].map(f=>fs.readFileSync(path.join(dir,f+'.js'),'utf8')).join('\n');
-const A=new Function(src+'\nreturn {ftTok,ftHtml,ftCss,ftApp,ftUnits,ftExtract,ftNorm,ftDoc,ftPlan,ftPort,ftUnport,ftCheck,ftDerive,ftRwJs,ftRwCss,ftRwHtml,ftScope,ftNewId}')();
+const A=new Function(src+'\nreturn {ftTok,ftHtml,ftCss,ftApp,ftUnits,ftExtract,ftNorm,ftDoc,ftPlan,ftPort,ftUnport,ftCheck,ftDerive,ftRwJs,ftRwCss,ftRwHtml,ftScope,ftNewId,ftHubs,ftLocals,ftHostShim,ftProbe}')();
 let ok=0,ng=0;
 const t=(name,c)=>{if(c){ok++}else{ng++;console.log('NG:',name)}};
 const eq=(name,a,b)=>t(name+(a===b?'':'  [実際 '+JSON.stringify(a)+' ／ 期待 '+JSON.stringify(b)+']'),a===b);
@@ -216,5 +216,107 @@ for(const[name,tg]of[['断片だけ','<div id="x">a</div><script>let hist=1</scr
   const t1=Date.now();let thrown=false,r=null;try{r=A.ftExtract(big,{ids:['lypop']},{app:a})}catch(e){thrown=true;console.log(e.stack)}
   t('大きなアプリ：取り出しても落ちない',!thrown);t('大きなアプリ：取り出しの時間が5秒以内',Date.now()-t1<5000);
   t('大きなアプリ：つながりきれないものは、okにならず警告かngになる',r&&r.report.level!=='ok');
+}
+
+/* ---- 12. 変数の見える範囲（台帳Z-295）：関数の中だけの名前を、外の同名の関数と取り違えない ---- */
+{
+  const refs=c=>{const o=new Set();for(const u of A.ftUnits(c,null))u.refs.forEach(x=>o.add(x));return o};
+  const R=(name,code,yes,no)=>{const r=refs(code);t('範囲：'+name+'（要る：'+yes.join(',')+'）',yes.every(x=>r.has(x)));t('範囲：'+name+'（隠れる：'+no.join(',')+'）',no.every(x=>!r.has(x)))};
+  R('引数は隠す','function f(restore){ restore(); }',[],['restore']);
+  R('内側のvarは隠す','function f(){ var restore=1; return restore }',[],['restore']);
+  R('ブロックのletは、外では隠さない','function f(){ if(a){ let r=1; r } r(); }',['a','r'],[]);
+  R('矢印（1つの引数）','const g=x=>x+y',['y'],['x']);
+  R('矢印（既定値は外を使う）','const g=(a,b=zz)=>a+b',['zz'],['a','b']);
+  R('分割代入の引数','function f({a,b:c,d=ee},[e,...rest]){ return a+c+d+e+rest+ff }',['ee','ff'],['a','b','c','d','e','rest']);
+  R('catchの変数','try{x()}catch(err){err.m()}',['x'],['err']);
+  R('forのlet（外には効かない）','for(let i=0;i<n;i++)a[i]=i;\nq(i)',['n','a','q','i'],[]);
+  R('forのlet（本体の中）','for(let i=0;i<n;i++){ w(i) }',['n','w'],['i']);
+  R('メソッド名・クラス','const o={get(){return 1},run(a){return a+gg}};class A2 extends B{ m(x){return x+hh} }',['gg','B','hh'],['a','x','get','run','m']);
+  R('キーと省略形','const o={a:1,b}',['b'],['a']);
+  R('関数式の名前','const f=function inner(){return inner()}',[],['inner']);
+  R('ラベル','outer: for(const k of list){ for(const j of k){ if(j) continue outer } }',['list'],['outer','k','j']);
+  R('テンプレートの中','const s=`x${a+b}`',['a','b'],[]);
+  R('varは関数全体に効く','function f(){ if(a){ var v=1 } return v }',['a'],['v']);
+  R('内側の関数の引数は、外の同名を隠さない','function f(){ function g(restore){} restore() }',['restore'],[]);
+  R('矢印の本体が三項','const h=x=>x?y:z',['y','z'],['x']);
+  R('矢印のあとの改行','const f=x=>x+1\nx2()',['x2'],['x']);
+  R('中の関数が呼ぶ中の関数','function f(){ const k=()=>m(); function m(){}; return k }',[],['k','m']);
+  R('クラスの欄','class C3{ a=1; b=zq; m(){ return a2 } }',['zq','a2'],['a','b']);
+  R('分割のconst','const {p1,q1:[r1,s1=dflt]}=src2',['src2','dflt'],['p1','q1','r1','s1']);
+}
+/* ---- 13. 本物のアプリで、機能ごとの大きさ（取り違えがあると、どれを選んでも本体の約9割になる） ---- */
+{
+  const big=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),a=A.ftApp(big);
+  for(const [f,lim] of [['PHE',.12],['LIQ',.08],['makeClip',.08],['penAt',.06],['pushUndo',.06],['adjColorGen',.02],['WINX',.02]]){
+    const r=A.ftExtract(big,{fns:[f]},{app:a});t('本物のアプリ：'+f+'は本体の'+Math.round(lim*100)+'%未満（'+Math.round(100*r.stats.jsLen/r.stats.totalJs)+'%）',r.stats.jsLen/r.stats.totalJs<lim)}
+  const r2=A.ftExtract(big,{fns:['restore']},{app:a});t('本物のアプリ：本当に本体とつながっている処理は、警告が出る',r2.report.level!=='ok');
+}
+/* ---- 14. 処理が探している別の要素は、外枠だけ入れる ---- */
+{
+  const app='<div id="host"><p>関係のない文</p><button id="b1" onclick="zap()">x</button><i id="ic"></i></div><canvas id="cv"></canvas><script>function zap(){}\nfunction draw(){document.getElementById("cv").getContext("2d");document.getElementById("host");document.getElementById("ic")}\nfunction other(){document.getElementById("b1")}</script>';
+  const r=A.ftExtract(app,{fns:['draw']});const h=r.pack.files.html;
+  t('外枠：探されている要素は入る',/id="cv"/.test(h)&&/id="host"/.test(h)&&/id="ic"/.test(h));
+  t('外枠：関係のない子・ボタンは入らない',!/関係のない/.test(h)&&!/id="b1"/.test(h)&&!/zap/.test(r.pack.files.javascript));
+  t('外枠：その要素を探すほかの処理（other）は入らない',!/function other/.test(r.pack.files.javascript));
+  t('外枠：中身を省いたと知らせる',r.report.items.some(x=>/外枠だけ/.test(x.msg)));
+  const r3=A.ftExtract(app,{ids:['host']});t('要素を選んだ時は、中身ごと入り、その要素を探す処理も入る',/関係のない/.test(r3.pack.files.html)&&/function draw/.test(r3.pack.files.javascript));
+}
+/* ---- 15. 別の実アプリで見つけた欠陥（台帳Z-304）：本体の中心の処理・組み立てたid・文字列の中のonclick・まとめの関数・外枠のonclick ---- */
+{
+  /* 15a. 本体の中心の処理（多くの処理から呼ばれ、呼ぶ先をたどると本体の大半）は含めず、頼る所として分ける。「含める」で入る */
+  const filler=Array.from({length:40},(_,i)=>'function fill'+i+'(){ var a'+i+'='+i+'; return a'+i+'*2 /*'+'z'.repeat(2000)+'*/ }').join('\n');
+  const core='function core(){ '+Array.from({length:1600},(_,i)=>'window.k'+i+'='+i+';').join(' ')+' }';
+  const app1='<div id="ra"></div><div id="rb"></div><div id="rc"></div><script>'+filler+'\n'+core+'\nfunction fa(){ core(); document.getElementById("ra").textContent="a" }\nfunction fb(){ core(); document.getElementById("rb").textContent="b" }\nfunction fc(){ core(); document.getElementById("rc").textContent="c" }</script>';
+  const a1=A.ftApp(app1),hubs=[...A.ftHubs(a1)].map(([i])=>a1.units[i].names[0]);
+  t('中心の処理：多くから呼ばれ大きいものだけが見つかる（'+hubs.join(',')+'）',hubs.length===1&&hubs[0]==='core');
+  const r1=A.ftExtract(app1,{fns:['fa']},{app:a1});
+  t('中心の処理：既定では本体に入れない（'+r1.stats.jsLen+'字）',!r1.pack.files.javascript.includes('k1599')&&r1.stats.jsLen<2000);
+  t('中心の処理：頼る所として一覧に出る（名前・割合・呼び出し元）',r1.pack.host.length===1&&r1.pack.host[0].name==='core'&&r1.pack.host[0].pct>=10&&r1.pack.host[0].callers>=3);
+  t('中心の処理：代わりの物（何もしない）が入り、呼んでも落ちない',r1.pack.files.javascript.includes('ft:host'));
+  t('中心の処理：警告で知らせ、含められると案内する（ngにはしない）',r1.report.level==='warn'&&/含めていない/.test(msgs(r1))&&/「含める」/.test(msgs(r1)));
+  const r1b=A.ftExtract(app1,{fns:['fa'],keep:['core']},{app:a1});
+  t('「含める」を選ぶと、その処理が入り、頼る所の一覧から消える',r1b.pack.files.javascript.includes('k1599')&&r1b.pack.host.length===0&&!r1b.pack.files.javascript.includes('ft:host'));
+  const sh=A.ftHostShim(['core','zz']);
+  t('代わりの物：文法として正しい',(()=>{try{new Function(sh);return true}catch(e){console.log(e.message);return false}})());
+  t('代わりの物：先に同名があれば、それを使う（上書きしない）',(()=>{const g={core:function(){return 7}};new Function('window',sh)(g);return g.core()===7&&typeof g.zz==='function'})());
+  t('代わりの物：呼んでも、続けて呼んでも、数として使っても落ちない',(()=>{const g={};new Function('window','console',sh)(g,{warn(){}});try{g.zz().a.b(1)(2);return g.zz+0===0}catch(e){return false}})());
+  t('小さなアプリは、中心の処理に分けない',A.ftHubs(A.ftApp('<script>function a(){ b() }\nfunction c(){ b() }\nfunction d(){ b() }\nfunction b(){ }</script>')).size===0);
+  /* 15b. 組み立てたid（'panel-'+x）：同じ書き出しのidの要素を、まとめて入れる */
+  const app2='<div id="panel-a">A</div><div id="panel-b">B</div><div id="other">O</div><script>function sw(v){ document.getElementById("panel-"+v).style.display="block" }</script>';
+  const r2=A.ftExtract(app2,{fns:['sw']});
+  t('組み立てたid：同じ書き出しの要素が入る',/panel-a/.test(r2.pack.files.html)&&/panel-b/.test(r2.pack.files.html));
+  t('組み立てたid：関係ない要素は入らない',!/id="other"/.test(r2.pack.files.html));
+  t('組み立てたid：「探している要素が無い」とngにならない',r2.report.level!=='ng');
+  /* 15c. 文字列で組み立てたHTMLの中のonclickが呼ぶ関数も入る */
+  const app3='<div id="host"></div><script>function act(){ window.hit=1 }\nfunction mk(){ document.getElementById("host").innerHTML=\'<button onclick="act()">x</button>\' }\nfunction other(){ window.o=1 }</script>';
+  const r3=A.ftExtract(app3,{fns:['mk']});
+  t('文字列のonclick：呼ぶ関数が入る',/function act/.test(r3.pack.files.javascript)&&!/function other/.test(r3.pack.files.javascript));
+  t('文字列のonclick：動かない（ng）にならない',r3.report.level!=='ng');
+  /* 15d. 頼られるだけの外枠の要素にある onclick は外す（他の機能の関数を呼ばないため） */
+  const app4='<button id="gb" onclick="toggleGrades()">g</button><div id="inner"></div><script>function toggleGrades(){ document.body.classList.toggle("x") }\nfunction f(){ document.getElementById("gb"); document.getElementById("inner").textContent="hi" }</script>';
+  const r4=A.ftExtract(app4,{fns:['f']});
+  t('外枠のonclick：外れている',/id="gb"/.test(r4.pack.files.html)&&!/onclick/.test(r4.pack.files.html));
+  t('外枠のonclick：その関数を引き込まない・ngにならない',!/toggleGrades/.test(r4.pack.files.javascript)&&r4.report.level!=='ng');
+  const r4b=A.ftExtract(app4,{ids:['gb']});
+  t('選んだ要素のonclickは残り、呼ぶ関数も入る',/onclick="toggleGrades\(\)"/.test(r4b.pack.files.html)&&/function toggleGrades/.test(r4b.pack.files.javascript));
+  /* 15e. まとめの関数（初期化など）：選んだ部品の配線の文だけ切り出す。他の部品の配線・関数は入れない。中の関数は選べる */
+  const pad=Array.from({length:30},(_,i)=>'var pad'+i+'='+i+'; // '+'-'.repeat(20)).join('\n');
+  const app5='<button id="x1"></button><button id="y1"></button><button id="z1"></button><script>function go(){ window.went=1 }\nfunction zzz(){ window.zz=1 }\nfunction yyy(){ window.yy=1 }\nfunction init(){\n const x1=document.getElementById("x1");\n x1.addEventListener("click",()=>go());\n const y1=document.getElementById("y1");\n y1.addEventListener("click",()=>zzz());\n const z1=document.getElementById("z1");\n z1.addEventListener("click",()=>yyy());\n '+pad+'\n}\ninit();</script>';
+  const r5=A.ftExtract(app5,{ids:['x1']});const j5=r5.pack.files.javascript;
+  t('まとめの関数：選んだ部品の配線（取得→受け口）が入る',/getElementById\("x1"\)/.test(j5)&&/x1\.addEventListener/.test(j5)&&/function go/.test(j5));
+  t('まとめの関数：ほかの部品の配線・関数は入らない',!/zzz|yyy|y1|z1/.test(j5)&&!/pad0/.test(j5));
+  t('まとめの関数：呼び出し（init();）も入り、動かない（ng）にならない',/init\(\);/.test(j5)&&r5.report.level!=='ng'&&/切り出し|文だけ/.test(msgs(r5)));
+  const lo=A.ftLocals(A.ftApp(app5));
+  t('まとめの関数の中の名前が一覧になる',lo.length===1&&lo[0].host==='init'&&['x1','y1','z1'].every(n=>lo[0].names.includes(n)));
+  const r5b=A.ftExtract(app5,{fns:['pad3']});
+  t('まとめの関数の中の変数を、名前で選べる',/pad3/.test(r5b.pack.files.javascript)&&!/zzz|yyy/.test(r5b.pack.files.javascript));
+  /* 15f. 小さくてまとまっている関数は、切らずに丸ごと（ownershipの規則） */
+  const app6='<textarea id="ta"></textarea><button id="sv"></button><script>function saveIt(){ const ta=document.getElementById("ta"),sv=document.getElementById("sv"); window.v=ta.value; sv.disabled=true; ta.addEventListener("input",()=>{sv.disabled=false}); }</script>';
+  const r6=A.ftExtract(app6,{ids:['ta']});
+  t('小さくまとまった関数は、丸ごと入る（切り刻まない）',/sv\.disabled=false/.test(r6.pack.files.javascript)&&/window\.v=ta\.value/.test(r6.pack.files.javascript));
+  /* 15g. 動作確認の部品操作の道具が、文書に入る */
+  const d=A.ftDoc({files:{html:'<button id="b">x</button>',css:'',javascript:'document.getElementById("b").onclick=function(){}'}},{probe:true});
+  t('動作確認：部品を操作する道具が入り、終わりを親へ知らせる',/ft:2/.test(d)&&/click/.test(d)&&A.ftProbe.toString().length>100);
+  t('動作確認：操作しない時は入らない',!/ft:2/.test(A.ftDoc({files:{html:'<b></b>',css:'',javascript:''}},{})));
 }
 console.log('OK '+ok+'  NG '+ng);process.exit(ng?1:0);
