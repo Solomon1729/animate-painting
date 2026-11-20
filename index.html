@@ -5557,7 +5557,24 @@ function paFitArc(P,L){
   let sweep=ang[n-1]-ang[0];
   if(Math.hypot(P[n-1].x-A.x,P[n-1].y-A.y)<.18*L&&Math.abs(sweep)>1.5*Math.PI)sweep=(sweep<0?-1:1)*2*Math.PI;
   let e=0;for(const q of P){const d=Math.hypot(q.x-cx,q.y-cy)-r;e+=d*d}
-  return{rms:Math.sqrt(e/n),F:P.map(q=>({x:cx+r*Math.cos(ang[0]+sweep*q.t),y:cy+r*Math.sin(ang[0]+sweep*q.t)}))};
+  const rms=Math.sqrt(e/n),closed=Math.abs(Math.abs(sweep)-2*Math.PI)<1e-9;
+  /* 描く円弧：閉じた円でない時は、**始点と終点（指のいる位置）の両方を通る円**に当てはめ直す（台帳Z-259。直線の終点＝指の位置と同じ考え方）。
+     中心は始点と終点を結ぶ線の垂直二等分線の上（s＝その上の位置）。点の距離のずれの二乗和が最小になるsを、自由な円の中心の位置から黄金分割で探す。
+     形の似かた（rms）は、従来どおり自由な円（強さの許容の目盛りが変わらない）。極端に大きな円になる時は従来の円のまま。 */
+  let cc={x:cx,y:cy},rr=r,a0=ang[0],sw=sweep;
+  const B=P[n-1],dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy);
+  if(!closed&&len>1e-3&&len>.05*L){
+    const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,nx=-dy/len,ny=dx/len,s0=(cx-mx)*nx+(cy-my)*ny;
+    const cost=sv=>{const x=mx+nx*sv,y=my+ny*sv,rv=Math.hypot(len/2,sv);let c=0;for(const q of P){const d=Math.hypot(q.x-x,q.y-y)-rv;c+=d*d}return c};
+    let lo=s0-Math.max(Math.abs(s0)*.5,len*.5),hi=s0+Math.max(Math.abs(s0)*.5,len*.5);const g=.6180339887;
+    let m1=hi-g*(hi-lo),m2=lo+g*(hi-lo),f1=cost(m1),f2=cost(m2);
+    for(let i=0;i<40;i++){if(f1<f2){hi=m2;m2=m1;f2=f1;m1=hi-g*(hi-lo);f1=cost(m1)}else{lo=m1;m1=m2;f1=f2;m2=lo+g*(hi-lo);f2=cost(m2)}}
+    const sb=(lo+hi)/2,r2=Math.hypot(len/2,sb);
+    if(isFinite(r2)&&r2>0&&r2<=L*8){
+      const c2={x:mx+nx*sb,y:my+ny*sb};let t=Math.atan2(A.y-c2.y,A.x-c2.x);const an2=[t];
+      for(let i=1;i<n;i++){const u=Math.atan2(P[i].y-c2.y,P[i].x-c2.x);let d=u-an2[i-1];while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;an2.push(an2[i-1]+d)}
+      cc=c2;rr=r2;a0=an2[0];sw=an2[n-1]-an2[0]}}
+  return{rms,F:P.map(q=>({x:cc.x+rr*Math.cos(a0+sw*q.t),y:cc.y+rr*Math.sin(a0+sw*q.t)}))};
 }
 function paBez(c,t){
   const u=1-t;

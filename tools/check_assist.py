@@ -270,6 +270,20 @@ def run(p):
         e2 = pg.evaluate("""([qx,qy])=>{const l=sel,c=l.pen;if(!c)return -1;const p=penXY(l,{x:qx,y:qy},c.width,c.height);return c.getContext('2d').getImageData(Math.round(p.x),Math.round(p.y),1,1).data[3]}""", list(fb))
         chk('直線100%%（%s）：確定後も、指を離した位置にインクがある' % nm, e2 > 200, e2)
         pg.evaluate("undo()"); pg.wait_for_timeout(60)
+    # 円弧100%：終点は、指の位置のまま（台帳Z-259）。指が、円からすこし外れた所で終わっても
+    setpa(pg, 0, 100, 'arc')
+    for nm, f in (('円弧（終わりが外へ）', lambda t: (cx0 + 70 * math.cos(math.pi * (1 - .7 * t)) + (8 * t * t), cy0 - 70 * math.sin(math.pi * (1 - .7 * t)) + (6 * t * t))),
+                  ('円弧（終わりが内へ）', lambda t: (cx0 + 70 * math.cos(math.pi * (1 - .7 * t)) - (9 * t * t), cy0 - 70 * math.sin(math.pi * (1 - .7 * t)) - (7 * t * t)))):
+        pts = [f(i / 50) for i in range(51)]
+        pg.mouse.move(*pts[0]); pg.mouse.down()
+        for q in pts[1:]: pg.mouse.move(*q)
+        pg.wait_for_timeout(120)
+        o = pg.evaluate("PS&&PS.out?{k:PS.kind,a:PS.out[0],b:PS.out[PS.out.length-1],n:PS.pts.length}:null")
+        pg.mouse.up(); pg.wait_for_timeout(80)
+        fa, fb = qs(*pts[0]), qs(*pts[-1])
+        e0 = math.hypot(o['a']['x'] - fa[0], o['a']['y'] - fa[1]); e1 = math.hypot(o['b']['x'] - fb[0], o['b']['y'] - fb[1])
+        chk('円弧100%%（%s）：仮表示の始点・終点が、指の位置のまま（ずれ %.2f／%.2f px）' % (nm, e0, e1), o['k'] == 'arc' and e0 < .5 and e1 < .5, o)
+        pg.evaluate("undo()"); pg.wait_for_timeout(60)
     # ぐるぐる（5周）・往復を、弱い直線補正（50%）で：直線扱いにしない＝生のまま（始点も終点も指のまま、点も減らさない）
     setpa(pg, 50, 0, 'quad')
     for nm, f, n in (('5周の円', lambda t: (cx0 + 55 * math.cos(t * 10 * math.pi + .3), cy0 + 55 * math.sin(t * 10 * math.pi + .3)), 300),
