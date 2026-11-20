@@ -207,6 +207,8 @@ def g_magnet(p):
     for q in pts[2:5]:
         s.drag(q, (q[0] + 1, q[1] + 1), steps=3)
     n3 = pg.evaluate("SEL.mg.anchors.length")
+    cont = pg.evaluate("(()=>{const M=SEL.mg,a=M.anchors,sg=M.segs;if(sg.length<2)return 'noseg';for(let i=1;i<sg.length;i++){const q=sg[i];if(!q.length)return 'empty'+i;const e=q[q.length-1],b=q[0];if(e[0]!==a[i].x||e[1]!==a[i].y)return 'end'+i+':'+JSON.stringify([e,a[i]]);if(b[0]!==a[i-1].x||b[1]!==a[i-1].y)return 'st'+i+':'+JSON.stringify([b,a[i-1]])}return 'ok'})()")
+    chk('置いた点は、経路の端と同じ画素（点と経路の間に飛びが無い。台帳Z-153）', cont == 'ok', cont)
     pg.click('#selMagUn'); pg.wait_for_timeout(80)
     chk('「1点戻す」で点が1つ減る（%d → %d）' % (n3, n3 - 1), pg.evaluate("SEL.mg.anchors.length") == n3 - 1)
     q = pts[4]; s.drag(q, (q[0] + 1, q[1] + 1), steps=3)
@@ -271,8 +273,8 @@ def g_magnet(p):
       const l=sel,P=selPic(l),M=SEL.mg,q=selB2S(l,P,P.W*.85,P.H*.2),px=magPix(M,q,l);
       selAt(q,l);selEnd(true);
       const seg=M.segs[M.segs.length-1],end=seg&&seg[seg.length-1],an=M.anchors[M.anchors.length-1];
-      return{n:M.anchors.length,end,px:[px.x,px.y],snap:an&&Math.max(Math.abs(an.x-px.x),Math.abs(an.y-px.y)),pending:M.pending,want:M.want}})()""")
-    chk('離した瞬間のカーソルで点が決まる（フレームを待たない）', r['n'] == 2 and r['end'] == r['px'] and r['snap'] <= 5 and not r['pending'] and r['want'] is None, r)
+      return{n:M.anchors.length,end,an:an&&[an.x,an.y],px:[px.x,px.y],snap:an&&Math.max(Math.abs(an.x-px.x),Math.abs(an.y-px.y)),pending:M.pending,want:M.want}})()""")
+    chk('離した瞬間のカーソルで点が決まり、点＝経路の端（輪郭へ最大5px吸着。フレームを待たない。台帳Z-153）', r['n'] == 2 and r['end'] == r['an'] and r['snap'] <= 5 and not r['pending'] and r['want'] is None, r)
     chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
 
 
