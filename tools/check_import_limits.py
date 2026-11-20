@@ -50,7 +50,8 @@ with sync_playwright() as p:
     pg.evaluate("()=>{AC.length=0;sel=null;setCanvasSize(9000,1000)}")
     r=pg.evaluate("()=>({doc:[DOC.w,DOC.h],ht:$('ht').textContent})")
     chk('既定（長辺8192）：9000×1000は縮み、注意に設定の場所が書いてある', r['doc'][0]==8192 and '上限の設定' in r['ht'], str(r))
-    pg.evaluate("()=>{const e=$('limCv');e.value=0;e.dispatchEvent(new Event('input'));setCanvasSize(9000,1000)}")
+    pg.once('dialog', lambda d: d.accept())
+    pg.evaluate("()=>{const e=$('limCv');e.value=0;e.dispatchEvent(new Event('change'));setCanvasSize(9000,1000)}")
     r=pg.evaluate("()=>({doc:[DOC.w,DOC.h],ls:localStorage.getItem('am_limits')})")
     chk('長辺の上限を0にすると9000×1000のまま・端末に覚える', r['doc']==[9000,1000] and '"cv":0' in r['ls'], str(r))
     # 6. ペン等の細かさ：4096超は縮み注意、0なら縮めない
@@ -58,13 +59,15 @@ with sync_playwright() as p:
     pg.evaluate("""()=>{const c=document.createElement('canvas');c.width=5000;c.height=3000;const l=add(null,c,{name:'big'});window.__big=l}""")
     r=pg.evaluate("()=>{const l=window.__big;const d=workDims(l);return d}")
     chk('ペン：5000×3000は長辺4096に縮む', r['w']==4096 and r['h']==2458, str(r))
-    pg.evaluate("()=>{const e=$('limPen');e.value=0;e.dispatchEvent(new Event('input'))}")
+    pg.once('dialog', lambda d: d.accept())
+    pg.evaluate("()=>{const e=$('limPen');e.value=0;e.dispatchEvent(new Event('change'))}")
     r=pg.evaluate("()=>workDims(window.__big)")
     chk('ペン：上限0なら5000×3000のまま', r['w']==5000 and r['h']==3000, str(r))
     # 7. 白紙
     pg.evaluate("()=>{BLS.p='px';BLS.w=5000;BLS.h=4000}")
     r=pg.evaluate("()=>blankDims()")
-    pg.evaluate("()=>{const e=$('limBlk');e.value=0;e.dispatchEvent(new Event('input'))}")
+    pg.once('dialog', lambda d: d.accept())
+    pg.evaluate("()=>{const e=$('limBlk');e.value=0;e.dispatchEvent(new Event('change'))}")
     r2=pg.evaluate("()=>blankDims()")
     chk('白紙：既定は縮み（800万画素）、0なら5000×4000', r['cut'] and r2['w']==5000 and r2['h']==4000 and not r2['cut'], str([r,r2]))
     # 8. ピン：24個を超えても足せる（注意だけ）
@@ -79,6 +82,21 @@ with sync_playwright() as p:
     pg.evaluate("()=>manOpen('slow')")
     t=pg.evaluate("()=>({title:$('manTitle').textContent,live:$('manLive').textContent,body:$('manBody').textContent.length,btn:[...document.querySelectorAll('#manTabs button,#manTb button')].map(b=>b.textContent)})") if pg.locator('#manLive').count() else {}
     chk('マニュアルに「遅い場合の対処・上限」が開く', t and '上限の設定（いまの値）' in t.get('live','') and t.get('body',0)>500, str(t)[:300])
+    # Z-16 大きすぎる上限・制限なしにする時は、忠告を出して確かめる（やめたら元の値）
+    pg.evaluate("()=>{$('limReset').click()}"); msgs = []
+    def h(d): msgs.append(d.message); d.dismiss()
+    pg.on('dialog', h)
+    pg.evaluate("()=>{const e=$('limPen');e.value=20000;e.dispatchEvent(new Event('input'))}")
+    chk('Z-16 打っている途中（input）では保存せず、忠告も出さない', pg.evaluate("()=>LIM.pen")==4096 and not msgs, str(msgs))
+    pg.evaluate("()=>{const e=$('limPen');e.dispatchEvent(new Event('change'))}")
+    chk('Z-16 大きすぎる値（確定）で忠告：理由と目安つき。やめると元の値・入力欄も戻る', len(msgs)==1 and '遅く' in msgs[0] and '8,192' in msgs[0] and pg.evaluate("()=>LIM.pen===4096&&$('limPen').value==='4096'"), str(msgs)[:200])
+    pg.evaluate("()=>{const e=$('limPen');e.value=6000;e.dispatchEvent(new Event('change'))}")
+    chk('Z-16 目安以下の値では、忠告なしで変わる', len(msgs)==1 and pg.evaluate("()=>LIM.pen===6000"))
+    pg.evaluate("()=>{const e=$('limPen');e.value=0;e.dispatchEvent(new Event('change'))}")
+    chk('Z-16 「制限なし（0）」にする時も忠告（やめると変わらない）', len(msgs)==2 and '制限なし' in msgs[1] and pg.evaluate("()=>LIM.pen===6000"), str(msgs)[-120:])
+    pg.evaluate("()=>{const e=$('limPins');e.value=500;e.dispatchEvent(new Event('change'))}")
+    chk('Z-16 忠告の対象でない上限（動く歪みの点の数など）は、すぐ変わる', len(msgs)==2 and pg.evaluate("()=>LIM.pins===500"))
+    pg.remove_listener('dialog', h)
     # 設定を初めに戻す
     pg.evaluate("()=>{$('limReset').click()}")
     chk('「初めの値に戻す」で既定に戻る', pg.evaluate("()=>LIM.cv===8192&&LIM.pen===4096&&LIM.blk===8e6&&LIM.pins===24&&LIM.undo===256&&LIM.exp===25e6&&LIM.tex===12e6"))

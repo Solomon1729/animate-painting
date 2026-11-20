@@ -498,7 +498,7 @@
     <div class="note">キャンバスの画素がこれを超えると、動画の書き出しは縮みます。縮む時は、書き出しの欄に注意が出ます。大きくすると、録画できない端末があります。</div>
     <div class="note">動画の歪みは、長辺をこのpxにして計算してから拡大して重ねます。大きいほど細かく、重くなります。0＝動画そのままの細かさ（とても重いことがあります）。遅い時は、🎬メニューの「マニュアル」の「遅い場合の対処・上限」を見てください。</div>
     <h4 style="margin:10px 0 4px;font-size:13px">上限の設定</h4>
-    <div class="note">容量や速さのために、次の上限があります。超えた時は、必ず注意を出します。大きくするほど、重くなったり、端末が止まったりすることがあります（くわしくは、🎬メニューの「マニュアル」の「遅い場合の対処・上限」）。</div>
+    <div class="note">容量や速さのために、次の上限があります。超えた時は、必ず注意を出します。大きくするほど、重くなったり、端末が止まったりすることがあります。目安を超える値や「0＝制限なし」にする時は、確かめるポップアップが出ます（やめると元の値のまま）（くわしくは、🎬メニューの「マニュアル」の「遅い場合の対処・上限」）。</div>
     <div class="row"><span class="lab">キャンバスの長辺の上限</span><input id="limCv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="キャンバスの長辺の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px。既定 8192。0＝制限なし</span></div>
     <div class="row"><span class="lab">キャンバス・書き出しの総画素の上限</span><input id="limExp" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="キャンバス・書き出しの総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 25000000。0＝制限なし</span></div>
     <div class="row"><span class="lab">ペンなどで編集する細かさの上限</span><input id="limPen" class="num" type="number" min="0" step="256" inputmode="numeric" aria-label="ペンなどで編集する細かさの上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px（長辺）。既定 4096。これより大きい絵は、ペン・修整・色調整などを使い始める時に縮みます。0＝縮めない</span></div>
