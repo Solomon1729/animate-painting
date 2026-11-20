@@ -38,7 +38,7 @@ $('addt').onclick=()=>addSpecial('t');$('addd').onclick=()=>addBlank();
 /* 白紙の大きさのスロット（台帳Z-117・Z-126）：選んだ紙の大きさが、「＋白紙」「＋白紙レイヤー」の両方で使われる */
 function blUi(){
   const d=blankDims(),px=BLS.p==='px';
-  $('blcu').hidden=!px;$('bldpi').hidden=px||BLS.p==='sq';$('blor').hidden=px||BLS.p==='sq';
+  $('blcu').hidden=!px;$('bldpi').hidden=px||BLS.p==='sq';$('blor').hidden=px||BLS.p==='sq'||BLS.p==='scr';
   $('blor').textContent=BLS.land?'横':'縦';$('blor').setAttribute('aria-pressed',BLS.land?'true':'false');
   $('blnote').textContent='足す白紙：'+d.w+'×'+d.h+' px（'+(d.w*d.h/1e6).toFixed(1)+'百万画素）'+(d.cut?'。大きすぎるので縮めています':'')+'。透明な紙です。';
 }

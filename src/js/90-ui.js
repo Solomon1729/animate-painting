@@ -64,7 +64,7 @@ function setSel(l){
   sel=l;chips();frame(l);
   $('nm').value=l.name;
   adjUi();
-  $('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
+  $('sz').max=Math.max(6,Math.ceil(l.size));$('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
   $('em').innerHTML='';
   (l.sp?[]:EPAL).forEach(x=>{const b=document.createElement('button');b.textContent=x;b.setAttribute('aria-label',EDESC[x]||x);armTip(b);b.onclick=()=>{setImg(l,emo(x));chips();$('em').style.display='none'};$('em').appendChild(b)});
   $('em').style.display='none';$('emTgl').style.display=l.sp?'none':'';

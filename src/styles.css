@@ -2,7 +2,7 @@
 /* ===== 見た目（スキン）。既定＝落ち着いた標準（ライト。端末が暗い設定なら自動でダーク）。<html data-skin="…"> で切り替え（無い＝自動）。
    文字・角の丸み・密度・アイコンは別の属性（data-font／data-round／data-dens／data-icon）。UIの一時設定＝localStorageだけ（作品・Undo・保存には入れない）。
    変数：--rk＝角の丸みの倍率／--bw＝枠線の太さ／--dp＝余白の倍率／--fw＝太字の太さ／--font／--ei＝絵文字（text＝単色の字形・emoji＝カラー・normal＝端末まかせ）。台帳Z-186 ===== */
-:root{--bg:#f2f3f5;--ink:#1d2330;--sky:#dbe7f3;--ground:#d8cfbb;--pane:#fff;--acc:#2f6bd9;--line:#cfd5de;--rk:.45;--bw:1px;--dp:.92;--fw:600;--h1:17px;--ei:text;
+:root{--gut:color-mix(in srgb,var(--pane) 90%,var(--ink));--bg:#f2f3f5;--ink:#1d2330;--sky:#dbe7f3;--ground:#d8cfbb;--pane:#fff;--acc:#2f6bd9;--line:#cfd5de;--rk:.45;--bw:1px;--dp:.92;--fw:600;--h1:17px;--ei:text;
   --font:system-ui,-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;
   color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-skin]){--bg:#14171c;--ink:#e8ebf0;--sky:#27384c;--ground:#4a4332;--pane:#1d2128;--acc:#3a6fd8;--line:#323a46}}
@@ -23,10 +23,12 @@
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-variant-emoji:var(--ei,normal);padding:12px;max-width:680px;margin:0 auto}
+@media (min-width:900px){body:not(.big):not(.fs){max-width:min(96vw,max(680px,150vh))}}   /* 通常の枠：PC（広い画面）では、紙が細い帯にならないよう幅を広げる（Z-306） */
 h1{font-size:var(--h1,20px);font-weight:var(--fw,900);margin:4px 0 10px}
-#wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--pane);touch-action:none}   /* 紙の外の余白（枠「大」で窓を下げた時）に触れても、ページのスクロール・引っ張り更新に回さない（台帳Z-115）。メニュー（.cmenu）は自前のスクロール領域なので影響しない */
+#wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--gut,var(--pane));touch-action:none}   /* 紙の外の余白（枠「大」で窓を下げた時）に触れても、ページのスクロール・引っ張り更新に回さない（台帳Z-115）。メニュー（.cmenu）は自前のスクロール領域なので影響しない */
 canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* 動画タブの枠：縁に重ねたマウスのカーソル（2470-video.js の vdCursor。物理のカーソル指定とぶつからないよう !important） */
+#cv{box-shadow:0 0 0 1px var(--line),0 3px 16px rgba(0,0,0,.2)}   /* 紙の縁（Z-191。紙が枠より小さい時、紙と外の余白を見分ける。紙が枠いっぱいなら枠で切れて見えない） */
 #cv[data-vdc="ew-resize"]{cursor:ew-resize!important}#cv[data-vdc="ns-resize"]{cursor:ns-resize!important}#cv[data-vdc="nwse-resize"]{cursor:nwse-resize!important}#cv[data-vdc="nesw-resize"]{cursor:nesw-resize!important}#cv[data-vdc="move"]{cursor:move!important}#cv[data-vdc="crosshair"]{cursor:crosshair!important}
 /* キャンバス上のボタン：拡大縮小3つ（左上・常時）＋メニュー2つ（右上）。メニューは押した時だけ開く（ホバー演出なし） */
 .cbar{position:absolute;top:8px;z-index:5;display:flex;gap:6px}#cz{left:8px}#cm{right:8px}

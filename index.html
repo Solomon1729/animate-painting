@@ -10,7 +10,7 @@ if(d.getAttribute('data-font')==='maru'||(d.getAttribute('data-skin')==='pop'&&!
 /* ===== 見た目（スキン）。既定＝落ち着いた標準（ライト。端末が暗い設定なら自動でダーク）。<html data-skin="…"> で切り替え（無い＝自動）。
    文字・角の丸み・密度・アイコンは別の属性（data-font／data-round／data-dens／data-icon）。UIの一時設定＝localStorageだけ（作品・Undo・保存には入れない）。
    変数：--rk＝角の丸みの倍率／--bw＝枠線の太さ／--dp＝余白の倍率／--fw＝太字の太さ／--font／--ei＝絵文字（text＝単色の字形・emoji＝カラー・normal＝端末まかせ）。台帳Z-186 ===== */
-:root{--bg:#f2f3f5;--ink:#1d2330;--sky:#dbe7f3;--ground:#d8cfbb;--pane:#fff;--acc:#2f6bd9;--line:#cfd5de;--rk:.45;--bw:1px;--dp:.92;--fw:600;--h1:17px;--ei:text;
+:root{--gut:color-mix(in srgb,var(--pane) 90%,var(--ink));--bg:#f2f3f5;--ink:#1d2330;--sky:#dbe7f3;--ground:#d8cfbb;--pane:#fff;--acc:#2f6bd9;--line:#cfd5de;--rk:.45;--bw:1px;--dp:.92;--fw:600;--h1:17px;--ei:text;
   --font:system-ui,-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;
   color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-skin]){--bg:#14171c;--ink:#e8ebf0;--sky:#27384c;--ground:#4a4332;--pane:#1d2128;--acc:#3a6fd8;--line:#323a46}}
@@ -31,10 +31,12 @@ if(d.getAttribute('data-font')==='maru'||(d.getAttribute('data-skin')==='pop'&&!
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-variant-emoji:var(--ei,normal);padding:12px;max-width:680px;margin:0 auto}
+@media (min-width:900px){body:not(.big):not(.fs){max-width:min(96vw,max(680px,150vh))}}   /* 通常の枠：PC（広い画面）では、紙が細い帯にならないよう幅を広げる（Z-306） */
 h1{font-size:var(--h1,20px);font-weight:var(--fw,900);margin:4px 0 10px}
-#wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--pane);touch-action:none}   /* 紙の外の余白（枠「大」で窓を下げた時）に触れても、ページのスクロール・引っ張り更新に回さない（台帳Z-115）。メニュー（.cmenu）は自前のスクロール領域なので影響しない */
+#wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--gut,var(--pane));touch-action:none}   /* 紙の外の余白（枠「大」で窓を下げた時）に触れても、ページのスクロール・引っ張り更新に回さない（台帳Z-115）。メニュー（.cmenu）は自前のスクロール領域なので影響しない */
 canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* 動画タブの枠：縁に重ねたマウスのカーソル（2470-video.js の vdCursor。物理のカーソル指定とぶつからないよう !important） */
+#cv{box-shadow:0 0 0 1px var(--line),0 3px 16px rgba(0,0,0,.2)}   /* 紙の縁（Z-191。紙が枠より小さい時、紙と外の余白を見分ける。紙が枠いっぱいなら枠で切れて見えない） */
 #cv[data-vdc="ew-resize"]{cursor:ew-resize!important}#cv[data-vdc="ns-resize"]{cursor:ns-resize!important}#cv[data-vdc="nwse-resize"]{cursor:nwse-resize!important}#cv[data-vdc="nesw-resize"]{cursor:nesw-resize!important}#cv[data-vdc="move"]{cursor:move!important}#cv[data-vdc="crosshair"]{cursor:crosshair!important}
 /* キャンバス上のボタン：拡大縮小3つ（左上・常時）＋メニュー2つ（右上）。メニューは押した時だけ開く（ホバー演出なし） */
 .cbar{position:absolute;top:8px;z-index:5;display:flex;gap:6px}#cz{left:8px}#cm{right:8px}
@@ -901,7 +903,7 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="note">なぞっている間は、補正後の線と形の名前（直線・曲線など）が仮表示され、指を離すと描かれます。強いほど強制的に整い、弱いと小さな動きが残ります（弱いほど、よく似た形の時だけ補正）。直線のつもりが曲線になる時は「直線補正」を上げるか「曲線補正」を下げてください（逆の時は反対）。</div></div>
     <div class="row"><span class="lab">文字</span><input id="tx" type="text" placeholder="文字を入力" aria-label="文字" style="flex:1;min-width:120px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"><input id="tcl" type="color" value="#2b2140" aria-label="文字の色"><button class="pk" data-for="tcl" aria-label="スポイト">💧</button></div>
     <div class="row"><button id="addt">＋文字を置く</button><button id="addd">＋白紙レイヤー</button></div>
-    <div class="row" id="blrow"><span class="lab" style="min-width:0">白紙の大きさ</span><select id="blsz" aria-label="＋白紙で足す紙の大きさ（紙の規格）"><option value="A1">A1（594×841mm）</option><option value="A2">A2（420×594mm）</option><option value="A3">A3（297×420mm）</option><option value="A4" selected>A4（210×297mm）</option><option value="A5">A5（148×210mm）</option><option value="A6">A6（105×148mm）</option><option value="B1">B1（JIS 728×1030mm）</option><option value="B2">B2（JIS 515×728mm）</option><option value="B3">B3（JIS 364×515mm）</option><option value="B4">B4（JIS 257×364mm）</option><option value="B5">B5（JIS 182×257mm）</option><option value="B6">B6（JIS 128×182mm）</option><option value="sq">正方形 512×512</option><option value="px">px で指定…</option></select><button id="blor" aria-pressed="false" aria-label="紙の向き（縦・横）">縦</button><select id="bldpi" aria-label="紙の解像度（dpi）"><option value="72">72dpi</option><option value="150" selected>150dpi</option><option value="300">300dpi</option></select></div>
+    <div class="row" id="blrow"><span class="lab" style="min-width:0">白紙の大きさ</span><select id="blsz" aria-label="＋白紙で足す紙の大きさ（紙の規格）"><option value="scr">画面の形（画面いっぱい。画素数はA4と同じ）</option><option value="A1">A1（594×841mm）</option><option value="A2">A2（420×594mm）</option><option value="A3">A3（297×420mm）</option><option value="A4" selected>A4（210×297mm）</option><option value="A5">A5（148×210mm）</option><option value="A6">A6（105×148mm）</option><option value="B1">B1（JIS 728×1030mm）</option><option value="B2">B2（JIS 515×728mm）</option><option value="B3">B3（JIS 364×515mm）</option><option value="B4">B4（JIS 257×364mm）</option><option value="B5">B5（JIS 182×257mm）</option><option value="B6">B6（JIS 128×182mm）</option><option value="sq">正方形 512×512</option><option value="px">px で指定…</option></select><button id="blor" aria-pressed="false" aria-label="紙の向き（縦・横）">縦</button><select id="bldpi" aria-label="紙の解像度（dpi）"><option value="72">72dpi</option><option value="150" selected>150dpi</option><option value="300">300dpi</option></select></div>
     <div class="row" id="blcu" hidden><input id="blw" class="num" type="number" min="8" max="4096" step="1" inputmode="numeric" value="1024" aria-label="白紙の幅（px）" style="width:76px"><span>×</span><input id="blh" class="num" type="number" min="8" max="4096" step="1" inputmode="numeric" value="1024" aria-label="白紙の高さ（px）" style="width:76px"><span class="note" style="margin:0">px</span></div>
     <div class="note" id="blnote"></div>
     <div class="note">ペンで描いた線は、通常の「消しゴム」で描いた分だけ消せます（元の絵は残ります）。元の絵そのものを消したいときは「消しゴム（画像ごと）」を使ってください。文字を選んでいる間は、入力欄の変更がその文字に反映されます。</div>
@@ -1604,9 +1606,18 @@ function addSpecial(k){
 const PAPER={A1:[594,841],A2:[420,594],A3:[297,420],A4:[210,297],A5:[148,210],A6:[105,148],B1:[728,1030],B2:[515,728],B3:[364,515],B4:[257,364],B5:[182,257],B6:[128,182]};
 const BLK_MIN=8;   /* 上限はLIM.pen・LIM.blk（01-limits.js） */
 const BLS={p:'A4',land:false,dpi:150,w:1024,h:1024};
-function blankDims(){
+/* 画面の形の紙（台帳Z-306・起動時の自由帳）：今のビューワー（#wrap）と同じ縦横比で、画素数はA4（今のdpi）以上。画面いっぱいに紙が広がる（上下左右に紙の外の余白が出ない）。
+   A4縦で始めると、横長の画面（PC）では紙が細い帯になり、縦長の画面（スマホ）でも上下に余白が出ていた。ビューワーが測れない時はA4縦。 */
+function screenDims(){
+  const m=PAPER.A4,w0=m[0]/25.4*BLS.dpi,h0=m[1]/25.4*BLS.dpi,r=$('wrap').getBoundingClientRect();
+  if(!(r.width>40&&r.height>40))return{w:Math.round(w0),h:Math.round(h0)};
+  const dp=Math.min(devicePixelRatio||1,2),a=r.width/r.height,area=Math.max(w0*h0,r.width*r.height*dp*dp);   /* 画素数＝A4と同じか、画面の実画素（高精細な画面でぼやけない）の大きい方。上限はblankDimsが掛ける */
+  return{w:Math.round(Math.sqrt(area*a)),h:Math.round(Math.sqrt(area/a))};
+}
+function blankDims(sc){
   let w,h;
-  if(BLS.p==='sq'){w=h=512}
+  if(sc||BLS.p==='scr'){const d=screenDims();w=d.w;h=d.h}
+  else if(BLS.p==='sq'){w=h=512}
   else if(BLS.p==='px'){w=BLS.w;h=BLS.h}
   else{const m=PAPER[BLS.p]||PAPER.A4;w=m[0]/25.4*BLS.dpi;h=m[1]/25.4*BLS.dpi;if(BLS.land)[w,h]=[h,w]}
   w=Math.max(BLK_MIN,Math.round(w)||0);h=Math.max(BLK_MIN,Math.round(h)||0);
@@ -1617,10 +1628,10 @@ function blankDims(){
 /* 白紙を足した時、その範囲を、次の操作（どこかを押す・キーを打つ）まで、枠（点線）＋薄い市松で見せる（台帳Z-118）。
    白紙は透明で見えないため。表示だけ：作品・Undo・保存には入れず、静止画の書き出し・PDF（hk・adjHQ中）には描かない。足すボタンからだけ（読み込み・デモでは出さない）。 */
 const BLK={a:null};let _blkPat=null;
-function addBlank(){
-  const d=blankDims(),a=addSpecial('d');
+function addBlank(sc){
+  const d=blankDims(sc),a=addSpecial("d");
   a.cv.width=d.w;a.cv.height=d.h;   /* 足したばかりの透明な絵なので、大きさを変えても失うものはない */
-  if(BLS.p!=='sq')a.name='白紙'+a.id+' '+(BLS.p==='px'?d.w+'×'+d.h:BLS.p+(BLS.land?'（横）':''));
+  if(BLS.p!=='sq')a.name='白紙'+a.id+' '+(BLS.p==='px'?d.w+'×'+d.h:BLS.p==='scr'?'画面の形':BLS.p+(BLS.land?'（横）':''));
   BLK.a=a;
   if(d.cut)note('大きすぎるので '+d.w+'×'+d.h+' px に縮めました（上限：長辺'+LIM.pen+'px・合計'+LIM.blk/1e6+'百万画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);
   return a}
@@ -5013,7 +5024,7 @@ function setSel(l){
   sel=l;chips();frame(l);
   $('nm').value=l.name;
   adjUi();
-  $('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
+  $('sz').max=Math.max(6,Math.ceil(l.size));$('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
   $('em').innerHTML='';
   (l.sp?[]:EPAL).forEach(x=>{const b=document.createElement('button');b.textContent=x;b.setAttribute('aria-label',EDESC[x]||x);armTip(b);b.onclick=()=>{setImg(l,emo(x));chips();$('em').style.display='none'};$('em').appendChild(b)});
   $('em').style.display='none';$('emTgl').style.display=l.sp?'none':'';
@@ -6083,7 +6094,7 @@ $('addt').onclick=()=>addSpecial('t');$('addd').onclick=()=>addBlank();
 /* 白紙の大きさのスロット（台帳Z-117・Z-126）：選んだ紙の大きさが、「＋白紙」「＋白紙レイヤー」の両方で使われる */
 function blUi(){
   const d=blankDims(),px=BLS.p==='px';
-  $('blcu').hidden=!px;$('bldpi').hidden=px||BLS.p==='sq';$('blor').hidden=px||BLS.p==='sq';
+  $('blcu').hidden=!px;$('bldpi').hidden=px||BLS.p==='sq';$('blor').hidden=px||BLS.p==='sq'||BLS.p==='scr';
   $('blor').textContent=BLS.land?'横':'縦';$('blor').setAttribute('aria-pressed',BLS.land?'true':'false');
   $('blnote').textContent='足す白紙：'+d.w+'×'+d.h+' px（'+(d.w*d.h/1e6).toFixed(1)+'百万画素）'+(d.cut?'。大きすぎるので縮めています':'')+'。透明な紙です。';
 }
@@ -13972,9 +13983,9 @@ function paSet(L,C){PA.L=L;PA.C=C;$('paL').value=L;$('paC').value=C}
 /* 起動直後の状態を作る。pushUndo・dirtyProjには触れない（Undoは空のまま・前回の自動保存を上書きしない） */
 function startFree(){
   AC.length=0;uid=0;sel=null;
-  const d=blankDims();DOC.w=d.w;DOC.h=d.h;fit(true);canvasUi();
-  const a=addBlank();BLK.a=null;a.name='自由帳';
-  a.size=Math.min(6,Math.max(W,H)/S0);   /* 紙いっぱい（白紙は紙と同じ縦横比。絵の長辺＝S0×size。A4なら約5.4） */
+  const d=blankDims(true);DOC.w=d.w;DOC.h=d.h;fit(true);canvasUi();   /* 紙＝画面の形（Z-306。A4縦だと、PCでは細い帯・スマホでは上下に余白になっていた） */
+  const a=addBlank(true);BLK.a=null;a.name='自由帳';
+  a.size=Math.min(12,Math.max(W,H)/S0);   /* 紙いっぱい（白紙は紙と同じ縦横比。絵の長辺＝S0×size。横長の画面では6を超える＝つまみの上限は選んだ時に広がる） */
   setSel(a);setTab('dr');setTool('pen');paSet(START.PA,START.PA);
   layUi();dirtyProj=false;
 }
