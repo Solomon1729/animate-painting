@@ -41,7 +41,7 @@ def num(i): return int(i.split('-')[1])
 
 def bucket(state):
     if state.startswith('実装済(要実機)'): return 3
-    if state.startswith(('確認済', '却下', '記録', '実装済')): return 4
+    if state.startswith(('確認済', '却下', '記録', '実装済', '移管')): return 4
     if state.startswith(('運用', '継続')): return 2
     return 1
 
