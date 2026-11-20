@@ -365,7 +365,7 @@ function vdUi(keep){
 }
 /* 場所を決める：①✋でなぞって新しい四角を選ぶ（VD.pick）②いまの枠を直接ドラッグ（中＝移動、縁・四隅＝伸縮。マウスは縁でカーソルが変わる）。
    どちらも、キャンバスのpointerより先に受け（window・capture）、アプリ側の操作（絵の移動など）には渡さない。③の範囲外はアプリ側へ通す。 */
-function vdPaper(e){const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width),py=(e.clientY-r.top)*(H/r.height);return{x:(px-Z.x)/Z.s,y:(py-Z.y)/Z.s}}
+function vdPaper(e){const c=cvLoc(e.clientX,e.clientY),px=c.x*(W/c.w),py=c.y*(H/c.h);return{x:(px-Z.x)/Z.s,y:(py-Z.y)/Z.s}}
 function vdFrac(p,g){return{x:vdCl((p.x-g.x)/g.w,0,1),y:vdCl((p.y-g.y)/g.h,0,1)}}
 const vdDirectOn=()=>VD.direct&&VD.ok&&!VD.rec&&vdTabOn();
 /* カーソル：キャンバスの data-vdc 属性で出す（styles.css の #cv[data-vdc=…]）。変わった時だけ書く */
@@ -374,7 +374,7 @@ const VD_CUR={nw:'nwse-resize',se:'nwse-resize',ne:'nesw-resize',sw:'nesw-resize
 /* 押した所が、枠のどこか：四隅・四辺（縁から数px以内）＝伸縮／枠の中＝移動／外＝''。許容は、指なら広く（画面上の長さで測る） */
 function vdHit(e,g,f){
   const p=vdPaper(e),R=vdRegion(f),x=g.x+R.x*g.w,y=g.y+R.y*g.h,w=R.w*g.w,h=R.h*g.h;
-  const sc=(Z.s||1)*((cv.getBoundingClientRect().width/W)||1),touch=e.pointerType!=='mouse',tol=(touch?18:9)/sc;
+  const sc=(Z.s||1)*((cvLoc(0,0).w/W)||1),touch=e.pointerType!=='mouse',tol=(touch?18:9)/sc;
   if(p.x<x-tol||p.x>x+w+tol||p.y<y-tol||p.y>y+h+tol)return'';
   const tx=Math.min(tol,w/3),ty=Math.min(tol,h/3);
   const L=Math.abs(p.x-x)<=tx,Rr=Math.abs(p.x-(x+w))<=tx,T=Math.abs(p.y-y)<=ty,B=Math.abs(p.y-(y+h))<=ty;

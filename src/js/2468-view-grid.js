@@ -65,3 +65,10 @@ $('vwpx').onclick=()=>{
   const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(12*Math.max((DOC.w||W)/W,(DOC.h||H)/H),1,zMax(Z.s));
   Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y;
 };
+/* ビューワーを90度ずつ回す（台帳Z-307。表示だけ。保存しない。VR・cvLoc・fitは60・30） */
+function vrUi(){const b=$('vwrot');if(b)b.textContent='⟳ ビューワーを90°回す（いま '+(VR&3)*90+'°）'}
+function vrTurn(n){
+  VR=n===undefined?((VR+1)&3):(n&3);
+  fit(true);vrUi();
+  note('ビューワーを '+VR*90+'° 回しています（表示だけ。作品・書き出しは変わりません）'+(VR?'。4回押すと元に戻ります':''),4000)}
+$('vwrot').onclick=()=>vrTurn();

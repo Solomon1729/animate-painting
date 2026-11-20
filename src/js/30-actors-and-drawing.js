@@ -78,7 +78,15 @@ function fit(redo){
   let rh=r.height;   /* 紙を収める箱の高さ */
   if(big){if(redo===true||!(FITB.h>0)||Math.abs(FITB.w-r.width)>1){FITB.w=r.width;FITB.h=r.height}rh=FITB.h}else FITB.h=0;
   let nW,nH,nD,cw,ch,sw,sh,sm;
-  if(DOC.w>0&&DOC.h>0){
+  const rk=hk?0:VR&3,odd=rk&1;   /* ビューワーの回転（書き出し中は回さない）（Z-307）：90度・270度の時は、回した後の外接の箱（高さnW×幅nH）を枠に収める。回す前の箱は、中心を枠の中心に合わせる */
+  const rm=(nW,nH)=>{const ml=(r.width-nW)/2;return fs?((rh-nH)/2)+'px auto 0 '+ml+'px':((nW-nH)/2)+'px auto '+((nW-nH)/2)+'px '+ml+'px'};
+  if(DOC.w>0&&DOC.h>0&&odd){
+    const a=DOC.w/DOC.h,mh=fs?Math.max(1,rh):Math.max(160,innerHeight*.8);let w=Math.max(1,mh),h=w/a;if(h>r.width){h=Math.max(1,r.width);w=h*a}
+    nW=Math.max(1,w);nH=Math.max(1,nW/a);nD=hk?DOC.w*hk/nW:Math.min(devicePixelRatio||1,2);
+    cw=Math.round(nW*nD);ch=Math.round(nH*nD);sw=nW+'px';sh=nH+'px';sm=rm(nW,nH);
+  }else if(odd){
+    nD=hk||Math.min(devicePixelRatio||1,2);nW=Math.max(1,Math.round(fs?rh:r.width));nH=Math.max(1,Math.round(r.width));cw=nW*nD;ch=nH*nD;sw=nW+'px';sh=nH+'px';sm=rm(nW,nH);
+  }else if(DOC.w>0&&DOC.h>0){
     /* 指定サイズ：縦横比を保って枠に収める。W・Hは小数のまま持ち、書き出し（hk）ではキャンバスの画素数をちょうどDOC.w×hk・DOC.h×hkにする（四捨五入の1pxのずれを出さない） */
     const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,rh):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
     nW=Math.max(1,w);nH=Math.max(1,nW/a);nD=hk?DOC.w*hk/nW:Math.min(devicePixelRatio||1,2);
@@ -87,7 +95,8 @@ function fit(redo){
     nD=hk||Math.min(devicePixelRatio||1,2);nW=Math.max(1,Math.round(r.width));nH=fs?Math.max(1,Math.round(rh)):nW;cw=nW*nD;ch=nH*nD;sw='';sh=nH+'px';sm='';
   }
   /* 同じ大きさなら何もしない（枠の高さが変わるたびに呼ばれるが、cvの幅・高さを代入するたびに絵が消えるので、変わらない時は触らない） */
-  const sig=[nW,nH,nD,cw,ch,sw,sh,sm].join('|');
+  cv.style.transform=rk?'rotate('+rk*90+'deg)':'';
+  const sig=[nW,nH,nD,cw,ch,sw,sh,sm,rk].join('|');
   if(!MGR&&sig===FITLAST&&cv.width===Math.floor(cw)&&cv.height===Math.floor(ch)&&oc.width===cv.width&&oc.height===cv.height)return;
   W=nW;H=nH;dpr=nD;
   cv.width=cw;cv.height=ch;cv.style.width=sw;cv.style.height=sh;cv.style.margin=sm;
@@ -99,7 +108,11 @@ function fit(redo){
    「見えている中央」「見えている下端」を使う処理（ズームの中心・画像を置く位置・太さの目安・拡大窓・座標のラベル）は、W/2・Hではなくこれを使う（台帳Z-115） */
 function vis(){
   const r=$('wrap').getBoundingClientRect(),c=cv.getBoundingClientRect(),w=W||1,h=H||1;
-  const x0=Math.max(0,r.left-c.left),y0=Math.max(0,r.top-c.top),x1=Math.min(w,r.right-c.left),y1=Math.min(h,r.bottom-c.top);
+  let X0=r.left-c.left,Y0=r.top-c.top,X1=r.right-c.left,Y1=r.bottom-c.top;
+  if(VR&3){   /* 回している時は、枠の四隅を回す前の座標に戻して、その外接の箱を見る */
+    const q=[[r.left,r.top],[r.right,r.top],[r.left,r.bottom],[r.right,r.bottom]].map(p=>cvLoc(p[0],p[1],c));
+    X0=Math.min(...q.map(p=>p.x));X1=Math.max(...q.map(p=>p.x));Y0=Math.min(...q.map(p=>p.y));Y1=Math.max(...q.map(p=>p.y))}
+  const x0=Math.max(0,X0),y0=Math.max(0,Y0),x1=Math.min(w,X1),y1=Math.min(h,Y1);
   return x1>x0+1&&y1>y0+1?{x0,y0,x1,y1,cx:(x0+x1)/2,cy:(y0+y1)/2}:{x0:0,y0:0,x1:w,y1:h,cx:w/2,cy:h/2};
 }
 

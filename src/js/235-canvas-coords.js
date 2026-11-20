@@ -94,7 +94,7 @@ function crdPlace(el,x,y,anchor){  /* (x,y)＝キャンバス内の表示位置�
 const crdSgn=n=>(n>0?'+':'')+n;
 function crdPointer(e,pressed){
   if(!CRD.on||tgt)return;  /* オブジェクトをドラッグ中は、オブジェクトのラベルだけ出す */
-  const r=cv.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,q={x:sx*W/r.width,y:sy*H/r.height},p=wp(q),el=$('crdp');
+  const c0=cvLoc(e.clientX,e.clientY),sx=c0.x,sy=c0.y,q={x:sx*W/c0.w,y:sy*H/c0.h},p=wp(q),el=$('crdp');
   if(e.type==='pointerdown'){if(e.isPrimary)CRD.st={x:p.x,y:p.y,qx:q.x,qy:q.y}}
   else if(!pressed)CRD.st=null;  /* 触れていない（マウスが動いているだけ・ペンのホバー）時は、開始座標を出さない */
   let t='x '+crdX(p.x)+'  y '+crdY(p.y);

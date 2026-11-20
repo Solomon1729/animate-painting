@@ -48,10 +48,10 @@ function dvPlace(id,p){
   return r}
 /* 画面（ビューワー）の上で離したか。窓・ボタン・メニューの上なら取り消し。戻り値＝キャンバスの座標（拡大前）かnull */
 function dvCanvasPoint(cx,cy){
-  const r=cv.getBoundingClientRect();if(cx<r.left||cx>r.right||cy<r.top||cy>r.bottom)return null;
+  const r=cv.getBoundingClientRect();if(cx<r.left||cx>r.right||cy<r.top||cy>r.bottom)return null;const c0=cvLoc(cx,cy,r);
   const el=document.elementFromPoint(cx,cy);if(!el||el.closest('#tp,#dvghost'))return null;
   if(el!==cv&&(!el.closest('#wrap')||el.closest('button,select,input,.cmenu')))return null;
-  return wp({x:(cx-r.left)*W/r.width,y:(cy-r.top)*H/r.height})}
+  return wp({x:c0.x*W/c0.w,y:c0.y*H/c0.h})}
 function dvBind(){
   const el=$('dvtray');if(!el)return;let st=null;
   const stop=()=>{if(st&&st.ghost)st.ghost.remove();document.body.classList.remove('dvdrag');st=null};

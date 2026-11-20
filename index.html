@@ -718,6 +718,7 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
   <div class="vwr"><span>背景（キャンバスの外）</span><input type="color" id="vwbg" value="#8c8c8c" aria-label="背景（キャンバスの外側）の色"><button id="vwbr" aria-label="背景の色を灰色に戻す">灰色へ</button></div>
   <div class="note" id="vwnote"></div>
   <div class="cmh">補助表示</div>
+  <button id="vwrot" aria-label="ビューワーを90度回す（表示だけの回転。作品・書き出し・座標の値は変わりません。押すたびに90度ずつ回り、4回で元に戻ります。保存はしません）">⟳ ビューワーを90°回す（いま 0°）</button>
   <button id="crdb"aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
   <button id="lpb" aria-label="手元の拡大窓（オン：ペン・切り抜き・ぼかしや色調整の範囲・歪みのピンを触っている間、指の下を隅に拡大して見せる）" aria-pressed="false">🔍 手元の拡大窓</button>
   <button id="lpz" aria-label="拡大窓の倍率：自動（使っている道具の太さに合わせる）と固定を切り替える" disabled>🔍 倍率：自動（太さに合わせる）</button>
@@ -1676,7 +1677,15 @@ function fit(redo){
   let rh=r.height;   /* 紙を収める箱の高さ */
   if(big){if(redo===true||!(FITB.h>0)||Math.abs(FITB.w-r.width)>1){FITB.w=r.width;FITB.h=r.height}rh=FITB.h}else FITB.h=0;
   let nW,nH,nD,cw,ch,sw,sh,sm;
-  if(DOC.w>0&&DOC.h>0){
+  const rk=hk?0:VR&3,odd=rk&1;   /* ビューワーの回転（書き出し中は回さない）（Z-307）：90度・270度の時は、回した後の外接の箱（高さnW×幅nH）を枠に収める。回す前の箱は、中心を枠の中心に合わせる */
+  const rm=(nW,nH)=>{const ml=(r.width-nW)/2;return fs?((rh-nH)/2)+'px auto 0 '+ml+'px':((nW-nH)/2)+'px auto '+((nW-nH)/2)+'px '+ml+'px'};
+  if(DOC.w>0&&DOC.h>0&&odd){
+    const a=DOC.w/DOC.h,mh=fs?Math.max(1,rh):Math.max(160,innerHeight*.8);let w=Math.max(1,mh),h=w/a;if(h>r.width){h=Math.max(1,r.width);w=h*a}
+    nW=Math.max(1,w);nH=Math.max(1,nW/a);nD=hk?DOC.w*hk/nW:Math.min(devicePixelRatio||1,2);
+    cw=Math.round(nW*nD);ch=Math.round(nH*nD);sw=nW+'px';sh=nH+'px';sm=rm(nW,nH);
+  }else if(odd){
+    nD=hk||Math.min(devicePixelRatio||1,2);nW=Math.max(1,Math.round(fs?rh:r.width));nH=Math.max(1,Math.round(r.width));cw=nW*nD;ch=nH*nD;sw=nW+'px';sh=nH+'px';sm=rm(nW,nH);
+  }else if(DOC.w>0&&DOC.h>0){
     /* 指定サイズ：縦横比を保って枠に収める。W・Hは小数のまま持ち、書き出し（hk）ではキャンバスの画素数をちょうどDOC.w×hk・DOC.h×hkにする（四捨五入の1pxのずれを出さない） */
     const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,rh):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
     nW=Math.max(1,w);nH=Math.max(1,nW/a);nD=hk?DOC.w*hk/nW:Math.min(devicePixelRatio||1,2);
@@ -1685,7 +1694,8 @@ function fit(redo){
     nD=hk||Math.min(devicePixelRatio||1,2);nW=Math.max(1,Math.round(r.width));nH=fs?Math.max(1,Math.round(rh)):nW;cw=nW*nD;ch=nH*nD;sw='';sh=nH+'px';sm='';
   }
   /* 同じ大きさなら何もしない（枠の高さが変わるたびに呼ばれるが、cvの幅・高さを代入するたびに絵が消えるので、変わらない時は触らない） */
-  const sig=[nW,nH,nD,cw,ch,sw,sh,sm].join('|');
+  cv.style.transform=rk?'rotate('+rk*90+'deg)':'';
+  const sig=[nW,nH,nD,cw,ch,sw,sh,sm,rk].join('|');
   if(!MGR&&sig===FITLAST&&cv.width===Math.floor(cw)&&cv.height===Math.floor(ch)&&oc.width===cv.width&&oc.height===cv.height)return;
   W=nW;H=nH;dpr=nD;
   cv.width=cw;cv.height=ch;cv.style.width=sw;cv.style.height=sh;cv.style.margin=sm;
@@ -1697,7 +1707,11 @@ function fit(redo){
    「見えている中央」「見えている下端」を使う処理（ズームの中心・画像を置く位置・太さの目安・拡大窓・座標のラベル）は、W/2・Hではなくこれを使う（台帳Z-115） */
 function vis(){
   const r=$('wrap').getBoundingClientRect(),c=cv.getBoundingClientRect(),w=W||1,h=H||1;
-  const x0=Math.max(0,r.left-c.left),y0=Math.max(0,r.top-c.top),x1=Math.min(w,r.right-c.left),y1=Math.min(h,r.bottom-c.top);
+  let X0=r.left-c.left,Y0=r.top-c.top,X1=r.right-c.left,Y1=r.bottom-c.top;
+  if(VR&3){   /* 回している時は、枠の四隅を回す前の座標に戻して、その外接の箱を見る */
+    const q=[[r.left,r.top],[r.right,r.top],[r.left,r.bottom],[r.right,r.bottom]].map(p=>cvLoc(p[0],p[1],c));
+    X0=Math.min(...q.map(p=>p.x));X1=Math.max(...q.map(p=>p.x));Y0=Math.min(...q.map(p=>p.y));Y1=Math.max(...q.map(p=>p.y))}
+  const x0=Math.max(0,X0),y0=Math.max(0,Y0),x1=Math.min(w,X1),y1=Math.min(h,Y1);
   return x1>x0+1&&y1>y0+1?{x0,y0,x1,y1,cx:(x0+x1)/2,cy:(y0+y1)/2}:{x0:0,y0:0,x1:w,y1:h,cx:w/2,cy:h/2};
 }
 
@@ -4754,7 +4768,17 @@ return{V,CAT,OPCAT,SPEEDS,COLS,busy,drv,layout,fv,shapeText,fields,stepOf,opsOf,
 })();
 
 /* 入力: ドラッグ・2本指ズーム・空き地ドラッグで画面移動 */
-const sp=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}};
+/* ビューワーの回転（台帳Z-307）。VR＝90度の回数（時計回り。0〜3）。表示だけの回転で、作品・書き出し・座標の値は変わらない（保存もしない）。
+   キャンバス（cv）はCSSのtransformで回すので、getBoundingClientRectは回した後の外接の箱になる。指の位置は、箱の中心まわりに逆回転して、回す前のキャンバスの座標（CSS px）に戻す。
+   cvLoc(x,y)＝画面の点→回す前のcvの左上からの位置と大きさ。キャンバスの上の指の位置を読む所は、cv.getBoundingClientRect()を直接使わず、これを使う */
+let VR=0;
+function cvLoc(cx,cy,r){
+  r=r||cv.getBoundingClientRect();const k=VR&3;
+  if(!k)return{x:cx-r.left,y:cy-r.top,w:r.width,h:r.height};
+  const dx=cx-(r.left+r.width/2),dy=cy-(r.top+r.height/2),w=k===2?r.width:r.height,h=k===2?r.height:r.width;
+  const lx=k===1?dy:k===2?-dx:-dy,ly=k===1?-dx:k===2?-dy:dx;
+  return{x:lx+w/2,y:ly+h/2,w,h}}
+const sp=e=>{const c=cvLoc(e.clientX,e.clientY);return{x:c.x*W/c.w,y:c.y*H/c.h}};
 const wp=q=>({x:(q.x-Z.x)/Z.s,y:(q.y-Z.y)/Z.s});
 const cap=e=>{try{cv.setPointerCapture(e.pointerId)}catch(_){}};
 const up=()=>{scnPtrCancel();editing=false;tgt=null;drawing=false;lp=null;pan=null;pid=-1;wg=null;wbg=null;dragOff=null;boxStart=null;boxEnd=null};
@@ -7520,7 +7544,7 @@ function crdPlace(el,x,y,anchor){  /* (x,y)＝キャンバス内の表示位置�
 const crdSgn=n=>(n>0?'+':'')+n;
 function crdPointer(e,pressed){
   if(!CRD.on||tgt)return;  /* オブジェクトをドラッグ中は、オブジェクトのラベルだけ出す */
-  const r=cv.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,q={x:sx*W/r.width,y:sy*H/r.height},p=wp(q),el=$('crdp');
+  const c0=cvLoc(e.clientX,e.clientY),sx=c0.x,sy=c0.y,q={x:sx*W/c0.w,y:sy*H/c0.h},p=wp(q),el=$('crdp');
   if(e.type==='pointerdown'){if(e.isPrimary)CRD.st={x:p.x,y:p.y,qx:q.x,qy:q.y}}
   else if(!pressed)CRD.st=null;  /* 触れていない（マウスが動いているだけ・ペンのホバー）時は、開始座標を出さない */
   let t='x '+crdX(p.x)+'  y '+crdY(p.y);
@@ -8141,7 +8165,7 @@ function lupeZoom(m,l){
   const dia=m&&l&&l.M?m.ring(l):0;
   return cl(dia>0?LUP.sz*LUP.R/100/dia:(m?m.zoom:4),LUP.ZMIN,LUP.ZMAX);
 }
-function lupePointer(e){const r=cv.getBoundingClientRect();LUP.cx=(e.clientX-r.left)*W/r.width;LUP.cy=(e.clientY-r.top)*H/r.height}
+function lupePointer(e){const c=cvLoc(e.clientX,e.clientY);LUP.cx=c.x*W/c.w;LUP.cy=c.y*H/c.h}
 cv.addEventListener('pointerdown',e=>{if(!LUP.on)return;lupePointer(e);LUP.down=true;LUP.pin=null});
 cv.addEventListener('pointermove',e=>{if(LUP.on&&LUP.down&&(pid===-1?e.isPrimary!==false:e.pointerId===pid))lupePointer(e)});
 const lupeUp=()=>{if(LUP.down&&!ptrs.size){LUP.down=false;LUP.until=performance.now()+LUP.LINGER}};
@@ -8869,10 +8893,10 @@ function dvPlace(id,p){
   return r}
 /* 画面（ビューワー）の上で離したか。窓・ボタン・メニューの上なら取り消し。戻り値＝キャンバスの座標（拡大前）かnull */
 function dvCanvasPoint(cx,cy){
-  const r=cv.getBoundingClientRect();if(cx<r.left||cx>r.right||cy<r.top||cy>r.bottom)return null;
+  const r=cv.getBoundingClientRect();if(cx<r.left||cx>r.right||cy<r.top||cy>r.bottom)return null;const c0=cvLoc(cx,cy,r);
   const el=document.elementFromPoint(cx,cy);if(!el||el.closest('#tp,#dvghost'))return null;
   if(el!==cv&&(!el.closest('#wrap')||el.closest('button,select,input,.cmenu')))return null;
-  return wp({x:(cx-r.left)*W/r.width,y:(cy-r.top)*H/r.height})}
+  return wp({x:c0.x*W/c0.w,y:c0.y*H/c0.h})}
 function dvBind(){
   const el=$('dvtray');if(!el)return;let st=null;
   const stop=()=>{if(st&&st.ghost)st.ghost.remove();document.body.classList.remove('dvdrag');st=null};
@@ -10003,6 +10027,17 @@ const MANPAGES=[
 <li>ビジュアルプログラミング（ビューワーとソース欄の高さ。境目の帯をつかんで上下）</li>
 </ul>
 <p>対応していない窓・枠（装置トレー、メモ帳、色や太さの小窓、並べ替えの小窓、画面下の太さ・調整の一行）で必要なものがあれば、教えてください。</p>`},
+  {id:'view',title:'キャンバスの大きさ・向き',
+   html:()=>
+`<p>起動したときの白い紙（自由帳）は、<b>画面の形</b>（いまのビューワーと同じ縦横比）で、画面いっぱいに広がります。画素数はA4と同じかそれ以上です（高精細な画面では画面の実際の画素数）。横長のパソコンでも、縦長のスマホでも、紙の上下左右に余白が出ません。</p>
+<h4>大きさ・形を変えたい時</h4>
+<ul>
+<li>紙そのものの大きさ：背景・出力タブの「キャンバス」で、px（画素数）を指定します。</li>
+<li>白紙を足す時の大きさ：「白紙の大きさ」に「画面の形」「A4」などの規格が並んでいます（「A4」を選べば、従来のA4縦に近い紙になります）。</li>
+<li>紙が枠より小さい時は、紙の外の余白を少し暗く、紙の縁に細い線と影を付けて、どこまでが紙か分かるようにしています。</li>
+</ul>
+<h4>向きを変えたい時</h4>
+<p>画面右下などの「補助表示」にある「⟳ ビューワーを90°回す」で、<b>見え方だけ</b>を90°ずつ回します（押すたびに90°、4回で元に戻る）。作品の中身・書き出し・座標の値は変わらず、保存もしません（開き直すと元の向きです）。回した状態でも、指の位置に線が出ます。</p>`},
   {id:'liq',title:'液体（さらさらの水〜形が残るペースト）',
    html:()=>
 `<p>写真や絵の上に、液体を重ねて動かします。「液体」タブ（スマホは、道具の列の「▾」→💧液体）の「＋」ボタンで足すと、ほかの絵と同じように動かせる絵になります。重い立体にはせず、画面の面で動かして、奥行き（手前・奥）は粒ごとの高さで表しています。</p>
@@ -10231,6 +10266,13 @@ $('vwpx').onclick=()=>{
   const v=vis(),cx=v.cx,cy=v.cy,w0={x:(cx-Z.x)/Z.s,y:(cy-Z.y)/Z.s},s=cl(12*Math.max((DOC.w||W)/W,(DOC.h||H)/H),1,zMax(Z.s));
   Z.s=s;Z.x=cx-s*w0.x;Z.y=cy-s*w0.y;
 };
+/* ビューワーを90度ずつ回す（台帳Z-307。表示だけ。保存しない。VR・cvLoc・fitは60・30） */
+function vrUi(){const b=$('vwrot');if(b)b.textContent='⟳ ビューワーを90°回す（いま '+(VR&3)*90+'°）'}
+function vrTurn(n){
+  VR=n===undefined?((VR+1)&3):(n&3);
+  fit(true);vrUi();
+  note('ビューワーを '+VR*90+'° 回しています（表示だけ。作品・書き出しは変わりません）'+(VR?'。4回押すと元に戻ります':''),4000)}
+$('vwrot').onclick=()=>vrTurn();
 /* ===== ツールボックス方式（台帳Z-240）=====
    操作ウィンドウ（#tp。タブで切り替える窓）とは別の部品：画面の上に半透明で浮かぶ、専用の小さな枠（#tbx）に、道具を並べる。既定はこちら。
    🎬メニューの「操作方式」で、従来の操作ウィンドウに切り替えられる（従来の窓は、そのまま残す。窓にも利点があるので、置き換えではなく、別の表示様式）。
@@ -10852,7 +10894,7 @@ function vdUi(keep){
 }
 /* 場所を決める：①✋でなぞって新しい四角を選ぶ（VD.pick）②いまの枠を直接ドラッグ（中＝移動、縁・四隅＝伸縮。マウスは縁でカーソルが変わる）。
    どちらも、キャンバスのpointerより先に受け（window・capture）、アプリ側の操作（絵の移動など）には渡さない。③の範囲外はアプリ側へ通す。 */
-function vdPaper(e){const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width),py=(e.clientY-r.top)*(H/r.height);return{x:(px-Z.x)/Z.s,y:(py-Z.y)/Z.s}}
+function vdPaper(e){const c=cvLoc(e.clientX,e.clientY),px=c.x*(W/c.w),py=c.y*(H/c.h);return{x:(px-Z.x)/Z.s,y:(py-Z.y)/Z.s}}
 function vdFrac(p,g){return{x:vdCl((p.x-g.x)/g.w,0,1),y:vdCl((p.y-g.y)/g.h,0,1)}}
 const vdDirectOn=()=>VD.direct&&VD.ok&&!VD.rec&&vdTabOn();
 /* カーソル：キャンバスの data-vdc 属性で出す（styles.css の #cv[data-vdc=…]）。変わった時だけ書く */
@@ -10861,7 +10903,7 @@ const VD_CUR={nw:'nwse-resize',se:'nwse-resize',ne:'nesw-resize',sw:'nesw-resize
 /* 押した所が、枠のどこか：四隅・四辺（縁から数px以内）＝伸縮／枠の中＝移動／外＝''。許容は、指なら広く（画面上の長さで測る） */
 function vdHit(e,g,f){
   const p=vdPaper(e),R=vdRegion(f),x=g.x+R.x*g.w,y=g.y+R.y*g.h,w=R.w*g.w,h=R.h*g.h;
-  const sc=(Z.s||1)*((cv.getBoundingClientRect().width/W)||1),touch=e.pointerType!=='mouse',tol=(touch?18:9)/sc;
+  const sc=(Z.s||1)*((cvLoc(0,0).w/W)||1),touch=e.pointerType!=='mouse',tol=(touch?18:9)/sc;
   if(p.x<x-tol||p.x>x+w+tol||p.y<y-tol||p.y>y+h+tol)return'';
   const tx=Math.min(tol,w/3),ty=Math.min(tol,h/3);
   const L=Math.abs(p.x-x)<=tx,Rr=Math.abs(p.x-(x+w))<=tx,T=Math.abs(p.y-y)<=ty,B=Math.abs(p.y-(y+h))<=ty;
