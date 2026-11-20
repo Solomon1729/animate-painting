@@ -45,6 +45,7 @@ HELP = """window.CK={
     else if(kind==='sat'){r=150;gg=100;b=100}
     else if(kind==='hole'){const n=(rnd(x,y)-.5)*12;r=120+n;gg=160+n;b=200+n;if(x>=300&&x<340&&y>=220&&y<260){r=gg=b=0}}
     else if(kind==='opq'){const n=x<w/2?1:0;if(!n){r=gg=b=0;a=0}else{r=x*.35;gg=y*.45;b=40+(x+y)*.15}}
+    else if(kind==='gn'||kind==='gn2'){const k=kind==='gn'?6:14;if(!CK._n||CK._n.w!==w||CK._n.h!==h||CK._n.k!==k)CK._n={w,h,k,a:IO.noise(w,h,4711,.7)};const n=CK._n.a[y*w+x]*k;r=120+n;gg=160+n;b=200+n;if(kind==='gn'&&x>=300&&x<340&&y>=220&&y<260){r=gg=b=0}}   /* 写真の粒に近い（なめらかなガウス雑音）。gn＝黒い四角つき */
     else if(kind==='tex'){const n=(rnd(x,y)-.5)*30;r=110+x*.1+n;gg=130+y*.1+n;b=150+n}
     d[j]=Math.max(0,Math.min(255,r));d[j+1]=Math.max(0,Math.min(255,gg));d[j+2]=Math.max(0,Math.min(255,b));d[j+3]=a;
   }
@@ -195,6 +196,13 @@ def g_fix(p):
     s.setup('hole', mode='fill'); pg.evaluate("RT.s=30;RT.ps.fill=1;rtUi()"); s.stroke([(320, 240), (320, 240)], steps=1)
     sd1 = pg.evaluate("CK.std(305,225,30,30)"); sdbg = pg.evaluate("CK.std(200,100,40,40)")
     chk('粒状感0はなめらか、粒状感100は周りの粒に近い', sd0 < 2.5 and sd1 > sd0 + 1.5, {'粒0': round(sd0, 2), '粒100': round(sd1, 2), '周り': round(sdbg, 2)})
+    # Z-158：粒状感50（既定）の粒は、周りの粒と同じ強さ（以前は約2倍強かった）。100なら約2倍、0なら無し。写真の粒に近い雑音（gn）で測る
+    rr = {}
+    for gp in (.5, 1.0):
+        s.setup('gn', mode='fill'); pg.evaluate("([f])=>{RT.s=30;RT.ps.fill=f;rtUi()}", [gp]); s.stroke([(320, 240), (320, 240)], steps=1)
+        rr[gp] = pg.evaluate("CK.std(305,225,30,30)") / pg.evaluate("CK.std(200,100,40,40)")
+    chk('Z-158 周りで埋める：粒状感50の粒は周りと同じ強さ（0.75〜1.25倍）', .75 <= rr[.5] <= 1.25, {'50': round(rr[.5], 2)})
+    chk('Z-158 粒状感100は50のほぼ2倍（1.6〜2.4倍）', 1.6 <= rr[1.0] / rr[.5] <= 2.4, {'100/50': round(rr[1.0] / rr[.5], 2)})
     # 滑らかにする：ノイズを減らし、輪郭は保つ
     s.setup('step', mode='smooth'); pg.evaluate("RT.s=24;RT.ps.smooth=.5;RT.gs.smooth=1;rtUi()")
     n0 = pg.evaluate("CK.std(270,225,30,30)"); c0 = pg.evaluate("CK.lum(345,225,30,30)-CK.lum(270,225,30,30)")
@@ -345,6 +353,9 @@ def g_hole(p):
     sdh = pg.evaluate("CK.std(260,200,100,80)")
     cut('grain'); sdg = pg.evaluate("CK.std(260,200,100,80)"); mg = pg.evaluate("CK.mean(260,200,100,80)")
     chk('穴埋め「粒状感つき」：粒が足される（なめらかより標準偏差が大きい）', sdg > sdh + 1.0 and mg[3] > 250, {'なめらか': round(sdh, 2), '粒つき': round(sdg, 2)})
+    s.setup('gn', mode='fill'); pg.evaluate("()=>{ptFill='grain';ptHole='core';ptFeather=0;ptPos='auto';ptNow=false;rectSel(sel,{u:.35,v:.35},{u:.65,v:.65});takePart(true)}"); pg.wait_for_timeout(150)
+    rg = pg.evaluate("CK.std(260,200,100,80)") / pg.evaluate("CK.std(20,20,100,100)")
+    chk('Z-158 穴埋め「粒状感つき」の粒も、周りと同じ強さ（0.75〜1.25倍）', .75 <= rg <= 1.25, {'穴/周り': round(rg, 2)})
     # 切って貼る：元の位置に戻る（穴を埋めない設定。Z-143・Z-144）
     s.setup('tex'); pg.evaluate("()=>{ptFill='off';ptHole='core';ptFeather=0;ptPos='orig';ptNow=false;rectSel(sel,{u:.35,v:.35},{u:.65,v:.65})}")
     before = pg.evaluate("(()=>{const c=boxCv(sel,{adj:true,full:true}).c;return Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data)})()")

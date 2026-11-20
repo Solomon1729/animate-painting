@@ -304,6 +304,11 @@ function rtFilter(st,cx,cy,f,W){
 const RT_FILL_LOW=96;
 let RTN=null;
 const rtNoiseTile=()=>RTN||(RTN=IO.noise(512,512,90210,.7));
+/* 粒の強さの測り方（周りの粒と、足す粒の表を、同じ式で測って比べる＝周りの粒の相関・分布の形によらず、同じ強さになる）。
+   dv＝「その画素と、周り5×5の平均との差」の絶対値の列。輪郭の外れ値は、中央値の2.5倍で頭打ちにして、二乗平均の平方根を取る。 */
+const rtHpRms=dv=>{dv.sort((a,b)=>a-b);const m=dv[dv.length>>1],c=Math.max(2.5*m,1e-6);let s=0;for(let i=0;i<dv.length;i++){const e=dv[i]<c?dv[i]:c;s+=e*e}return Math.sqrt(s/dv.length)};
+let RTG=0;
+const rtTileStat=()=>RTG||(RTG=(()=>{const t=rtNoiseTile(),dv=[];for(let y=2;y<510;y+=3)for(let x=2;x<510;x+=3){let q=0;for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++)q+=t[((y+b)<<9)|(x+a)];dv.push(Math.abs(t[(y<<9)|x]-q/25))}return rtHpRms(dv)||1})());
 function rtFillDab(st,cx,cy,f,W){
   const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,R2=R*R*.9;
   const k=Math.max(1,Math.ceil(Math.max(w2,h2)/RT_FILL_LOW)),lw=Math.ceil(w2/k),lh=Math.ceil(h2/k),C=new Float32Array(lw*lh*3),A=new Float32Array(lw*lh),sd=Math.max(1,Math.floor(k/3));
@@ -348,7 +353,7 @@ function rtGrainAmp(D,bw,bh,win,cx,cy,R2,gain,fm){
     dv.push(Math.abs(lumAt(x,y)-s/25));
   }
   if(dv.length<20)return -1;
-  dv.sort((a,b)=>a-b);const sd=1.4826*dv[dv.length>>1]*1.6,amp=sd*gain*2;return amp<.3?0:amp;
+  const amp=rtHpRms(dv)/rtTileStat()*gain*2;return amp<.3?0:amp;   /* 周りの粒の標準偏差×gain×2（gain .5＝周りと同じ強さ。表は標準偏差1） */
 }
 /* 周りの細かい粒（高周波）の強さを測り、同じ強さの粒状ノイズ（窓の大きさ）を返す。gain＝0〜1（粒状感）。粒が無い（なめらかな）絵・gain0ならnull */
 function rtGrain(px,known,w,h,gain,seed){
@@ -357,8 +362,7 @@ function rtGrain(px,known,w,h,gain,seed){
   const bl=IO.box(lum,w,h,1,2),dv=[];
   for(let i=0;i<n;i+=3)if(known[i])dv.push(Math.abs(lum[i]-bl[i]));
   if(dv.length<20)return null;
-  dv.sort((a,b)=>a-b);const sd=1.4826*dv[dv.length>>1]*1.6;   /* 中央絶対偏差から標準偏差の見積り（輪郭の外れ値に強い。box平均との差の分を補正） */
-  const amp=sd*gain*2;if(amp<.3)return null;
+  const amp=rtHpRms(dv)/rtTileStat()*gain*2;if(amp<.3)return null;   /* rtGrainAmpと同じ測り方 */
   const z=IO.noise(w,h,seed,.7);for(let i=0;i<n;i++)z[i]*=amp;return z;
 }
 /* スマッジ：筆の下の絵を「持ち運ぶ」。最初の打ちは拾うだけ。次からは、持っている絵を今の位置へ置き、持っている絵を今の絵へ少し入れ替える */
