@@ -20,6 +20,7 @@ const RTM={
   blur  :{n:'ぼかす',g:70,pl:'ぼかす広さ',p:40,sp:.25,tip:'なぞった所をぼかします（縁もぼかすので、輪郭も溶けます）'},
   sharp :{n:'くっきりさせる',g:60,pl:'くっきり量',p:50,sp:.25,tip:'細かい所を強調して、くっきりさせます'},
   smudge:{n:'指でにじませる（スマッジ）',g:60,sp:.12,tip:'指でこするように、色を引きずってにじませます。強いほど遠くまで引きずります'},
+  mosaic:{n:'モザイク（ブロックにする）',g:100,pl:'ブロックの大きさ',p:30,sp:.25,tip:'なぞった所を、四角いブロックの平均色にします。ブロックの大きさは調整バーで（絵の大きさに合わせた比率）。ブロックの格子は絵に固定なので、重ねてなぞっても同じ形で、縞になりません。見せたくない所を隠す時に'},
   dodge :{n:'覆い焼き（明るく）',g:30,sp:.25,tip:'なぞった所を明るくします。重ねてなぞるほど明るくなります'},
   burn  :{n:'焼き込み（暗く）',g:30,sp:.25,tip:'なぞった所を暗くします。重ねてなぞるほど暗くなります'},
   vivid :{n:'スポンジ（鮮やかに）',g:30,sp:.25,tip:'なぞった所の色を鮮やかにします'},
@@ -90,7 +91,7 @@ function rtBegin(l,a){
   const M=rtM(),bw=l._bw,bh=l._bh;rtFlatten(l);
   const g=l.base.getContext('2d',{willReadFrequently:true}),work=g.getImageData(0,0,bw,bh);
   const st={l,bw,bh,g,work,mode:RT.mode,M,R:rtDia(bw,bh)/2,hd:RT.h/100,gs:RT.gs[RT.mode],ps:RT.ps[RT.mode],sp:M.sp,
-    src:(M.src||RT.mode==='smooth'||RT.mode==='jaggy'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
+    src:(M.src||RT.mode==='smooth'||RT.mode==='jaggy'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='mosaic'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
     selA:null,tc:{},fm:null,amp:0,nzx:(Math.random()*512)|0,nzy:(Math.random()*512)|0,lx:a.x,ly:a.y,cx:a.x,cy:a.y,acc:0,carry:null,off:null,stamp:false,cos:Math.cos(RT.rot*Math.PI/180),sin:Math.sin(RT.rot*Math.PI/180),fl:RT.flip?-1:1,isc:100/Math.max(5,RT.sc),seed:(Math.random()*1e9)|0};
   if(RT.useSel&&l.hasSm&&l.sm){
     const pm=partMask(l,bw,bh,false,2),d=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,bw,bh).data,sa=new Uint8Array(bw*bh);
@@ -141,6 +142,7 @@ function rtApplyDab(st,cx,cy){
   if(md==='heal')return rtHeal(st,cx,cy,f,W);
   if(md==='fill')return rtFillDab(st,cx,cy,f,W);
   if(md==='smooth'||md==='jaggy'||md==='blur'||md==='sharp')return rtFilter(st,cx,cy,f,W);
+  if(md==='mosaic')return rtMosaic(st,f,W);
   /* 覆い焼き・焼き込み・スポンジ：画素ごと */
   for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
@@ -150,6 +152,23 @@ function rtApplyDab(st,cx,cy){
     else{const y=rtLum(r,g,b),k=md==='vivid'?1.8:.2;r=rtC(y+(r-y)*k);g=rtC(y+(g-y)*k);b=rtC(y+(b-y)*k)}
     rtMix(D,p,r,g,b,a,m);
   }
+  return f;
+}
+/* モザイク：ブロックの大きさ（画像の画素）＝画像の短辺/256 を単位に、(1＋15×調整)倍（調整.3で約5.5単位。1240px幅の絵で約26px）。最小2画素。
+   ブロックの格子は画像の左上に固定（なぞり方・重ね方によらず同じ形）。色は元の絵（src）の、ブロックの中の「アルファ重みの平均」。透明な所（元のアルファ0）は変えない。 */
+const rtMosaicN=(bw,bh,p)=>Math.max(2,Math.round(Math.min(bw,bh)/256*(1+15*p)));
+function rtMosaic(st,f,W){
+  const bw=st.bw,bh=st.bh,D=st.work.data,S=st.src,n=rtMosaicN(bw,bh,st.ps),mc=st.mc||(st.mc=new Map()),nbx=Math.ceil(bw/n);
+  const blk=(bx,by)=>{const k=by*nbx+bx;let v=mc.get(k);if(v)return v;
+    const x0=bx*n,y0=by*n,x1=Math.min(bw,x0+n),y1=Math.min(bh,y0+n);let r=0,g=0,b=0,a=0;
+    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const q=(y*bw+x)*4,al=S[q+3];r+=S[q]*al;g+=S[q+1]*al;b+=S[q+2]*al;a+=al}
+    const cnt=(x1-x0)*(y1-y0);v=a>0?[r/a,g/a,b/a,a/cnt]:[0,0,0,0];mc.set(k,v);return v};
+  for(let j=0;j<f.h;j++){const y=f.y+j,by=(y/n)|0;for(let i=0;i<f.w;i++){
+    const m=W[j*f.w+i];if(m<=0)continue;
+    const x=f.x+i,p=(y*bw+x)*4,a0=S[p+3];if(a0===0)continue;
+    const v=blk((x/n)|0,by);if(v[3]<=0)continue;
+    rtMix(D,p,rtC(v[0]),rtC(v[1]),rtC(v[2]),a0,m);
+  }}
   return f;
 }
 /* 窓（打ちの範囲に余白mgを足した範囲）を画像の中に切り詰めて返す */

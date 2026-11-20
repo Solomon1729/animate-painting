@@ -368,6 +368,40 @@ def g_hole(p):
     chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
 
 
+def g_mosaic(p):
+    print('--- 10 モザイク（修整の方式。2026-11-20）')
+    s = S(p); pg = s.pg
+    def run(kind, ps=None, strokes=((320, 240),), size=40):
+        d = s.setup(kind, mode='mosaic'); pg.evaluate("([a,b])=>{RT.s=a;if(b!==null)RT.ps.mosaic=b;rtUi()}", [size, ps])
+        for (x, y) in strokes: s.stroke([(x, y), (x, y)], steps=1)
+        return d
+    runlen = "(()=>{const d=CK.get(280,240,80,1);let b=1,c=1;for(let i=1;i<80;i++){const q=i*4,r=q-4;if(d[q]===d[r]&&d[q+1]===d[r+1]&&d[q+2]===d[r+2])c++;else c=1;if(c>b)b=c}return b})()"
+    s.setup('tex', mode='mosaic'); pg.evaluate("RT.s=40;rtUi()")
+    opt = pg.evaluate("[...document.getElementById('rtMode').options].some(o=>o.value==='mosaic')"); lab = pg.evaluate("document.getElementById('rtPl')?document.getElementById('rtPl').textContent:''")
+    chk('方式の選択肢に「モザイク」があり、基準点は要らない', opt and not pg.evaluate("RTM.mosaic.src"), {'選択肢': opt})
+    s.setup('tex', mode='mosaic'); pg.evaluate("RT.s=40;rtUi()")
+    before = pg.evaluate("CK.mean(320,240,10,10)"); far0 = pg.evaluate("CK.mean(50,50,20,20)"); farsd0 = pg.evaluate("CK.std(50,50,20,20)")
+    sd_before = pg.evaluate("CK.std(320,240,10,10)")
+    s.stroke([(325, 245), (325, 245)], steps=1)
+    sd_after = pg.evaluate("CK.std(320,240,10,10)"); after = pg.evaluate("CK.mean(320,240,10,10)"); far1 = pg.evaluate("CK.mean(50,50,20,20)"); farsd1 = pg.evaluate("CK.std(50,50,20,20)")
+    chk('モザイク：ブロックの中は同じ色になる（元は粒がある→標準偏差が約0）', sd_before > 4 and sd_after < 0.6, {'前': round(sd_before, 2), '後': round(sd_after, 2)})
+    chk('モザイク：ブロックの色は、元のブロックの平均色（各色±1.5）', all(abs(before[i] - after[i]) <= 1.5 for i in range(3)), {'前': [round(v, 1) for v in before[:3]], '後': [round(v, 1) for v in after[:3]]})
+    chk('モザイク：なぞっていない所は変わらない', abs(far0[0] - far1[0]) < .01 and abs(farsd0 - farsd1) < .01, {'標準偏差': [round(farsd0, 2), round(farsd1, 2)]})
+    # 重ねてなぞっても、ブロックは変わらない（格子が絵に固定）
+    s.stroke([(327, 243), (333, 250)], steps=4)
+    after2 = pg.evaluate("CK.mean(320,240,10,10)"); sd2 = pg.evaluate("CK.std(320,240,10,10)")
+    chk('モザイク：ずらして重ねてなぞっても、同じブロック・同じ色（格子は絵に固定）', sd2 < 0.6 and all(abs(after[i] - after2[i]) <= 1.0 for i in range(3)), {'1回目': [round(v, 1) for v in after[:3]], '重ね': [round(v, 1) for v in after2[:3]]})
+    # ブロックの大きさ（調整バー）
+    run('tex', 0.0); r0 = pg.evaluate(runlen)
+    run('tex', 1.0); r1 = pg.evaluate(runlen)
+    chk('調整バーでブロックの大きさが変わる（0→小さい／1→大きい）', r0 <= 4 and r1 >= 24 and r1 > r0 * 5, {'バー0の連続': r0, 'バー1の連続': r1})
+    # 透明は透明のまま
+    run('opq', None, ((320, 240),)); a_left = pg.evaluate("CK.mean(290,235,25,10)"); a_right = pg.evaluate("CK.mean(330,235,25,10)")
+    rl = pg.evaluate("(()=>{const d=CK.get(270,240,45,1);let b=1,c=1;for(let i=1;i<45;i++){const q=i*4;if(d[q+3]>250&&d[q]===d[q-4]&&d[q+1]===d[q-3]&&d[q+2]===d[q-2])c++;else c=1;if(c>b)b=c}return b})()")
+    chk('透明な所（右半分）は透明のまま、絵のある所（左半分）だけブロックになる', a_right[3] < 1 and a_left[3] > 250 and rl >= 5, {'左α': round(a_left[3], 1), '右α': round(a_right[3], 1), '左のブロック幅': rl})
+    chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
+
+
 def g_speed(p):
     print('--- 9 速さ')
     s = S(p); pg = s.pg
@@ -383,7 +417,7 @@ def g_speed(p):
 
 def main():
     with sync_playwright() as p:
-        for g in (g_clone, g_heal, g_fix, g_tone, g_stamp, g_misc, g_ui, g_hole, g_speed):
+        for g in (g_clone, g_heal, g_fix, g_tone, g_stamp, g_misc, g_ui, g_hole, g_mosaic, g_speed):
             try: g(p)
             except Exception as e: chk('検査が途中で止まった：' + g.__name__, False, str(e)[:300])
     print('OK %d  NG %d' % tuple(OKN))

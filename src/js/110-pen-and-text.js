@@ -72,7 +72,11 @@ function penAt(q,l){
   if(tool==='ieraser'){
     const base=l.base,g=base.getContext('2d');
     g.globalCompositeOperation='destination-out';g.globalAlpha=eraseStrength;g.lineWidth=bs;g.lineCap=g.lineJoin='round';
-    g.beginPath();g.moveTo(px,py);g.lineTo(x,y);g.stroke();lp={x,y};bumpBP(l,1,0);recompose(l,dirtyRect(px,py,x,y,bs));return;
+    g.beginPath();g.moveTo(px,py);g.lineTo(x,y);g.stroke();
+    /* 「画像ごと」＝その画像の絵ぜんぶ。元の絵だけでなく、その上に描いた線（ペン層）も消える（消去の既定を画像ごとにした＝Z-305。以前は描いた線が残った） */
+    const pn=l.pen&&l.pen.width===bw&&l.pen.height===bh;
+    if(pn){const h=l.pen.getContext('2d');h.globalCompositeOperation='destination-out';h.globalAlpha=eraseStrength;h.lineWidth=bs;h.lineCap=h.lineJoin='round';h.beginPath();h.moveTo(px,py);h.lineTo(x,y);h.stroke()}
+    lp={x,y};bumpBP(l,1,pn?1:0);recompose(l,dirtyRect(px,py,x,y,bs));return;
   }
   if(!l.pen||l.pen.width!==bw||l.pen.height!==bh){l.pen=allocCanvas(bw,bh,'ペン');}
   const g=l.pen.getContext('2d');

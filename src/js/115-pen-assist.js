@@ -163,8 +163,11 @@ function paCommit(){
   g.lineWidth=bs;g.lineCap=g.lineJoin='round';g.beginPath();g.moveTo(P[0].x,P[0].y);
   if(P.length===1)g.lineTo(P[0].x,P[0].y);else for(let i=1;i<P.length;i++)g.lineTo(P[i].x,P[i].y);
   g.stroke();
+  const pn=inb&&l.pen&&l.pen.width===bw&&l.pen.height===bh;   /* 画像ごと消しゴムは、描いた線（ペン層）も消す（penAtと同じ。Z-305） */
+  if(pn){const h=l.pen.getContext('2d');h.globalCompositeOperation='destination-out';h.globalAlpha=eraseStrength;h.lineWidth=bs;h.lineCap=h.lineJoin='round';h.beginPath();h.moveTo(P[0].x,P[0].y);
+    if(P.length===1)h.lineTo(P[0].x,P[0].y);else for(let i=1;i<P.length;i++)h.lineTo(P[i].x,P[i].y);h.stroke()}
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of P){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
-  bumpBP(l,inb?1:0,inb?0:1);recompose(l,dirtyRect(x0,y0,x1,y1,bs));
+  bumpBP(l,inb?1:0,inb?(pn?1:0):1);recompose(l,dirtyRect(x0,y0,x1,y1,bs));
 }
 /* ペンの仮表示を、**離したあと（ペン層の解像度）と同じ見た目**で出す（2026-10-11ユーザー指摘「直線がボケる」）。
    画面の解像度でベクター描画すると、くっきり見えていた線が、離した瞬間にペン層の解像度（小さい画像・拡大表示で粗い）でボケて見える。

@@ -187,6 +187,15 @@ def run(p):
     chk('消しゴム＋直線補正：インクが減る', n1 < n0 * 0.5, {'before': n0, 'after': n1})
     pg.evaluate("setTool('pen')"); setpa(pg, 0, 0)
 
+    # 画像ごと消しゴム（Z-305：消去の既定）は、その上に描いた線（ペン層）も消す。補正オフ・オン（直線）の両方
+    for (L0, nm) in ((0, '補正オフ'), (100, '直線補正')):
+        setpa(pg, 0, 0); stroke(pg, [(w[0][0], w[0][1]), (w[-1][0], w[0][1])])
+        n0 = pg.evaluate(INK, 'line')['n']
+        pg.evaluate("setTool('ieraser');eraseStrength=1"); setpa(pg, L0, 0); stroke(pg, wobbly_line(R, 5) if L0 else [(w[0][0], w[0][1]), (w[-1][0], w[0][1])])
+        n1 = pg.evaluate(INK, 'line')['n']
+        chk('消しゴム（画像ごと）＋%s：描いた線（ペン層）も消える（Z-305）' % nm, n0 > 50 and n1 < n0 * 0.5, {'before': n0, 'after': n1})
+        pg.evaluate("setTool('pen')"); setpa(pg, 0, 0); pg.evaluate("undo();undo()"); pg.wait_for_timeout(60)
+
     # 画像ごと消しゴム：baseが変わる（bsvが進む）
     bs0 = pg.evaluate("sel.bsv||0")
     pg.evaluate("setTool('ieraser');eraseStrength=1"); setpa(pg, 100, 0); stroke(pg, wobbly_line(R, 5))
