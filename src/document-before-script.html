@@ -411,7 +411,7 @@
     <div class="row"><span class="lab">1秒のコマ数</span><input id="vdFps" class="num" type="number" step="0.001" inputmode="decimal" value="30" aria-label="動画の1秒あたりのコマ数。コマ送りと、コマ番号の指定に使う" style="width:84px"><span id="vdFpsNote" class="note" style="margin:0"></span></div>
     <div class="row"><button id="vdGrab" aria-label="いまのコマを絵（オブジェクト）にして、動画の上に重ねる">📸 このコマを絵にして重ねる</button></div>
     <div class="note">コマ送り：動画タブを開いている間は、キーボードの ← → でも1コマ、Shift＋← → で10コマ動きます。「絵にして重ねる」と、そのコマを原寸の絵として取り込み、ペン・修整・色調整などで直せます（動画の同じ位置に重なります）。</div>
-    <div class="row"><input id="vdSeek" data-e="1" type="range" min="0" max="1000" value="0" aria-label="再生位置" style="flex:1;min-width:0"></div>
+    <div class="row"><div id="vdSq" class="vdsq"><div id="vdBands" class="vdbands" aria-label="効果の時間の帯（帯をつかんで動かす・両端をつかんで伸び縮み・空いた所を押すとその時間へ）" hidden><i id="vdHead" class="vdhead"></i></div><input id="vdSeek" data-e="1" type="range" min="0" max="1000" value="0" aria-label="再生位置" style="flex:1;min-width:0"></div></div>
     <div class="row"><button id="vdFit" aria-label="キャンバスの大きさを動画の大きさ（px）に合わせる">📐 キャンバスを動画の大きさにする</button></div>
     <div class="note" id="vdInfo">動画はビューワーの背景として出ます。上にお絵かき・動き・物理を重ねられます。動画ファイルは作品ファイルには入りません（開き直したら選び直してください）。</div>
     </div>
@@ -432,7 +432,11 @@
     <div class="row"><span class="lab">高さ</span><input id="vdH" type="range" min="1" max="100" step="1" value="100" aria-label="場所の高さ（%）"></div>
     </div>
     <div class="grp"><div class="gh">色を重ねる（色シート）</div>
-    <div class="row"><span class="lab">色</span><input id="vdCc" type="color" value="#0000ff" aria-label="重ねる色"><button class="pk" data-for="vdCc" aria-label="スポイト">💧</button><select id="vdCm" aria-label="重ね方"><option value="lighten">比較（明）：黒をその色に</option><option value="screen">スクリーン：明るく</option><option value="multiply">乗算：暗く</option><option value="overlay">オーバーレイ</option><option value="soft-light">ソフトライト</option><option value="color">色（色相と彩度だけ）</option><option value="hue">色相</option><option value="darken">比較（暗）</option><option value="source-over">通常（上から塗る）</option></select></div>
+    <div class="row"><span class="lab">色</span><input id="vdCc" type="color" value="#0000ff" aria-label="重ねる色"><button class="pk" data-for="vdCc" aria-label="スポイト">💧</button><select id="vdCm" aria-label="重ね方"><option value="swap">色の入れ替え：元の色→この色</option><option value="lighten">比較（明）：黒をその色に</option><option value="screen">スクリーン：明るく</option><option value="multiply">乗算：暗く</option><option value="overlay">オーバーレイ</option><option value="soft-light">ソフトライト</option><option value="color">色（色相と彩度だけ）</option><option value="hue">色相</option><option value="darken">比較（暗）</option><option value="source-over">通常（上から塗る）</option></select></div>
+    <div class="row vdswap" hidden><span class="lab">元の色</span><input id="vdCf" type="color" value="#000000" aria-label="入れ替える前の色（この色に近い所が、上の「色」に変わる）"><button class="pk" data-for="vdCf" aria-label="スポイト">💧</button><label class="note" style="margin:0"><input type="checkbox" id="vdCks" checked> 陰影を残す</label></div>
+    <div class="row vdswap" hidden><span class="lab">許容幅</span><input id="vdCtl" type="range" min="0" max="100" step="1" value="30" aria-label="元の色にどれだけ近い色まで入れ替えるか（大きいほど広く）"></div>
+    <div class="row vdswap" hidden><span class="lab">縁のなじませ</span><input id="vdCsf" type="range" min="0" max="100" step="1" value="30" aria-label="入れ替える範囲の縁を、どれだけ薄くなじませるか"></div>
+    <div class="note vdswap" hidden>「元の色」に近い色の所だけを、上の「色」に置き換えます。「濃さ」が強さです（0だと何も変わりません）。「陰影を残す」を入れると明るさ・質感が残り、切るとべた塗りになります。広い範囲だと重くなることがあります（処理の軽さの設定に従います）。</div>
     <div class="row"><span class="lab">濃さ</span><input id="vdCa" type="range" min="0" max="100" step="1" value="0" aria-label="色を重ねる濃さ（0＝なし）"></div>
     </div>
     <div class="grp"><div class="gh">色の調整</div>

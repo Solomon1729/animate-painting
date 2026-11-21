@@ -28,6 +28,15 @@ h1{font-size:var(--h1,20px);font-weight:var(--fw,900);margin:4px 0 10px}
 #wrap{position:relative;border-radius:calc(var(--rk,1)*18px);overflow:hidden;background:var(--gut,var(--pane));touch-action:none}   /* 紙の外の余白（枠「大」で窓を下げた時）に触れても、ページのスクロール・引っ張り更新に回さない（台帳Z-115）。メニュー（.cmenu）は自前のスクロール領域なので影響しない */
 canvas{display:block;width:100%;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* 動画タブの枠：縁に重ねたマウスのカーソル（2470-video.js の vdCursor。物理のカーソル指定とぶつからないよう !important） */
+.vdsq{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.vdbands{position:relative;height:calc(var(--vn,1)*var(--vbh,12px) + 2px);touch-action:none;user-select:none;cursor:crosshair}
+.vdbands .vb{position:absolute;height:calc(var(--vbh,12px) - 3px);border-radius:5px;background:var(--accent);opacity:.45;cursor:grab;min-width:6px;box-sizing:border-box}
+.vdbands .vb.cur{opacity:.95;outline:2px solid var(--ink);outline-offset:-1px}
+.vdbands .vb.off{opacity:.2;background:repeating-linear-gradient(45deg,var(--accent) 0 4px,transparent 4px 8px)}
+.vdbands .vb::before,.vdbands .vb::after{content:"";position:absolute;top:0;bottom:0;width:9px;cursor:ew-resize}
+.vdbands .vb::before{left:0}.vdbands .vb::after{right:0}
+.vdbands .vdhead{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);pointer-events:none;border-radius:1px}
+@media (pointer:coarse){.vdbands{--vbh:20px}.vdbands .vb::before,.vdbands .vb::after{width:16px}}
 #cv{box-shadow:0 0 0 1px var(--line),0 3px 16px rgba(0,0,0,.2)}   /* 紙の縁（Z-191。紙が枠より小さい時、紙と外の余白を見分ける。紙が枠いっぱいなら枠で切れて見えない） */
 #cv[data-vdc="ew-resize"]{cursor:ew-resize!important}#cv[data-vdc="ns-resize"]{cursor:ns-resize!important}#cv[data-vdc="nwse-resize"]{cursor:nwse-resize!important}#cv[data-vdc="nesw-resize"]{cursor:nesw-resize!important}#cv[data-vdc="move"]{cursor:move!important}#cv[data-vdc="crosshair"]{cursor:crosshair!important}
 /* キャンバス上のボタン：拡大縮小3つ（左上・常時）＋メニュー2つ（右上）。メニューは押した時だけ開く（ホバー演出なし） */

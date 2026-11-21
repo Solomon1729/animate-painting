@@ -24,7 +24,7 @@ document.body.appendChild(vdV);
 
 const vdFmt=s=>{s=Math.max(0,+s||0);return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')};
 const vdCl=(v,a,b)=>v<a?a:v>b?b:v;
-function vdNewFx(n){return{name:'効果'+n,on:true,a:0,b:0,ramp:.5,x:0,y:0,w:1,h:1,sh:'rect',cc:'#0000ff',cm:'lighten',ca:0,br:100,ct:100,sa:100,hu:0,wt:'none',ws:30,wf:6,wp:.5}}
+function vdNewFx(n){return{name:'効果'+n,on:true,a:0,b:0,ramp:.5,x:0,y:0,w:1,h:1,sh:'rect',cc:'#0000ff',cm:'lighten',ca:0,cf:'#000000',ctl:30,csf:30,cks:true,br:100,ct:100,sa:100,hu:0,wt:'none',ws:30,wf:6,wp:.5}}
 VD.fx=[vdNewFx(1)];
 const vdCur=()=>VD.fx[VD.cur];
 
@@ -63,8 +63,29 @@ function vdDraw(){
   for(const f of VD.fx){const k=vdFactor(f,t);if(k>.001)vdApply(f,k,t,g)}
   ctx.restore();
 }
+/* 色の入れ替え（台帳Z-302）：「元の色（cf）に近い色の画素」を「色（cc）」に置き換える。許容幅ctl＝元の色からの距離（RGB。最大441）の%、縁のなじませcsf＝許容幅の内側の何%から薄くしていくか、
+   陰影を残すcks＝色の差（cc－cf）を足す（明暗・質感が残る）／切ると、ccのべた塗り。強さ＝濃さca×時間の山k。動画の画素を作業用Canvasに写して直す（大きさは処理の軽さの上限に従う） */
+const VDS={a:document.createElement('canvas')};VDS.g=VDS.a.getContext('2d',{willReadFrequently:true});
+const vdHex=h=>{const n=parseInt(String(h||'#000000').slice(1),16)||0;return[(n>>16)&255,(n>>8)&255,n&255]};
+function vdSwapPx(g,w,h,f,k){
+  const s=Math.min(1,f.ca/100*k);if(!(s>0))return;
+  const im=g.getImageData(0,0,w,h),d=im.data,[fr,fg,fb]=vdHex(f.cf),[tr,tg,tb]=vdHex(f.cc);
+  const T=Math.max(1,(f.ctl>=0?f.ctl:30)/100*441.67),sf=vdCl((f.csf>=0?f.csf:30)/100,0,1),T0=T*(1-sf),TT=T*T,keep=f.cks!==false,dr=tr-fr,dg=tg-fg,db=tb-fb;
+  for(let i=0,n=w*h*4;i<n;i+=4){
+    const r=d[i],gg=d[i+1],b=d[i+2],e=(r-fr)*(r-fr)+(gg-fg)*(gg-fg)+(b-fb)*(b-fb);if(e>=TT)continue;
+    const dist=Math.sqrt(e),wt=(dist<=T0?1:(T-dist)/(T-T0))*s;
+    const nr=keep?r+dr:tr,ng=keep?gg+dg:tg,nb=keep?b+db:tb;
+    d[i]=vdCl(r+(nr-r)*wt,0,255);d[i+1]=vdCl(gg+(ng-gg)*wt,0,255);d[i+2]=vdCl(b+(nb-b)*wt,0,255)}
+  g.putImageData(im,0,0)}
+function vdSwapDraw(f,k,flt,adj,R){
+  const cap=VD.exp?VD.capExp:VD.cap,sc=cap>0?Math.min(1,cap/Math.max(R.sw,R.sh)):1,cw=Math.max(8,Math.round(R.sw*sc)),ch=Math.max(8,Math.round(R.sh*sc));
+  if(VDS.a.width!==cw||VDS.a.height!==ch){VDS.a.width=cw;VDS.a.height=ch}
+  const g=VDS.g;g.globalCompositeOperation='source-over';g.globalAlpha=1;g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+  if(FILT)g.filter=adj?flt:'none';g.drawImage(vdV,R.sx,R.sy,R.sw,R.sh,0,0,cw,ch);if(FILT)g.filter='none';
+  vdSwapPx(g,cw,ch,f,k);
+  ctx.save();vdShapePath(ctx,f.sh,R.rx,R.ry,R.rw,R.rh);ctx.clip();ctx.imageSmoothingEnabled=true;ctx.drawImage(VDS.a,0,0,cw,ch,R.rx,R.ry,R.rw,R.rh);ctx.restore()}
 function vdSheet(f,k,x,y,w,h,c){   /* 色を重ねる（cは描く先。既定は画面のctx） */
-  if(!(f.ca>0))return;
+  if(!(f.ca>0)||f.cm==='swap')return;
   c=c||ctx;c.save();vdShapePath(c,f.sh,x,y,w,h);c.clip();
   c.globalCompositeOperation=f.cm;c.globalAlpha=Math.min(1,f.ca/100*k);c.fillStyle=f.cc;c.fillRect(x,y,w,h);c.restore();
 }
@@ -77,7 +98,7 @@ function vdApply(f,k,t,g){
   const adj=FILT&&(f.br!==100||f.ct!==100||f.sa!==100||f.hu!==0),flt=adj?vdFilter(f,k):'none';
   if(f.wt==='none'||!f.ws){   /* 色だけ：そのまま描く（速い） */
     if(adj){ctx.save();vdShapePath(ctx,f.sh,rx,ry,rw,rh);ctx.clip();ctx.filter=flt;ctx.drawImage(vdV,sx,sy,sw,sh,rx,ry,rw,rh);ctx.restore()}
-    vdSheet(f,k,rx,ry,rw,rh);
+    if(f.cm==='swap'&&f.ca>0)vdSwapDraw(f,k,flt,adj,{rx,ry,rw,rh,sx,sy,sw,sh});else vdSheet(f,k,rx,ry,rw,rh);
     return;
   }
   vdWarp(f,k,t,{rx,ry,rw,rh,sx,sy,sw,sh,flt});
@@ -95,7 +116,7 @@ function vdWarp(f,k,t,r){
   if(FILT)g.filter=r.flt;
   g.drawImage(vdV,r.sx,r.sy,r.sw,r.sh,0,0,cw,ch);
   if(FILT)g.filter='none';
-  vdSheet(f,k,0,0,cw,ch,g);
+  if(f.cm==='swap'&&f.ca>0)vdSwapPx(g,cw,ch,f,k);else vdSheet(f,k,0,0,cw,ch,g);
   const src=g.getImageData(0,0,cw,ch);
   if(!VDW.dst)VDW.dst=new ImageData(cw,ch);
   vdRemap(src.data,VDW.dst.data,cw,ch,f,k,t);
@@ -206,7 +227,7 @@ setInterval(()=>{   /* 再生位置の表示 */
   $('vdTime').textContent=vdFmt(t)+' / '+vdFmt(d);
   vdFrameUi();
   const s=$('vdSeek');if(document.activeElement!==s&&d>0)s.value=Math.round(t/d*1000);
-  vdSizeNote();
+  vdHeadUi();vdSizeNote();
 },150);
 
 /* ---- 再生の速さ（スロー）・コマ送り・コマ番号・いまのコマを絵にする（台帳Z-252・Z-253） ----
@@ -313,14 +334,17 @@ function vdAudio(){
 }
 
 /* ---- 効果の編集 ---- */
-const VD_IN=[['vdA','a',1],['vdB','b',1],['vdRamp','ramp',1],['vdX','x',.01],['vdY','y',.01],['vdW','w',.01],['vdH','h',.01],['vdCa','ca',1],['vdBr','br',1],['vdCt','ct',1],['vdSa','sa',1],['vdHu','hu',1],['vdWs','ws',1],['vdWf','wf',1],['vdWp','wp',1]];
+const VD_IN=[['vdA','a',1],['vdB','b',1],['vdRamp','ramp',1],['vdX','x',.01],['vdY','y',.01],['vdW','w',.01],['vdH','h',.01],['vdCa','ca',1],['vdCtl','ctl',1],['vdCsf','csf',1],['vdBr','br',1],['vdCt','ct',1],['vdSa','sa',1],['vdHu','hu',1],['vdWs','ws',1],['vdWf','wf',1],['vdWp','wp',1]];
 VD_IN.forEach(([id,key,sc])=>{
   const el=$(id),on=()=>{const f=vdCur();let v=parseFloat(el.value);if(!isFinite(v))return;f[key]=v*sc;if(key.length===1&&'xywh'.includes(key))vdFixRegion(f);vdUi(el)};
   el.addEventListener('input',on);el.addEventListener('change',on);
 });
 function vdFixRegion(f){const R=vdRegion(f);f.x=R.x;f.y=R.y;f.w=R.w;f.h=R.h}
 $('vdCc').addEventListener('input',e=>{vdCur().cc=e.target.value});
-$('vdCm').onchange=e=>{vdCur().cm=e.target.value};
+$('vdCm').onchange=e=>{const f=vdCur();f.cm=e.target.value;if(f.cm==='swap'&&!(f.ca>0))f.ca=100;vdSwapRows();vdUi()};   /* 入れ替えを選んだ時、濃さが0なら100にする（0だと何も起きず、壊れて見える） */
+$('vdCf').addEventListener('input',e=>{vdCur().cf=e.target.value});
+$('vdCks').onchange=e=>{vdCur().cks=e.target.checked};
+function vdSwapRows(){const on=vdCur().cm==='swap';document.querySelectorAll('.vdswap').forEach(e=>e.hidden=!on)}
 $('vdWt').onchange=e=>{vdCur().wt=e.target.value};
 $('vdShape').onchange=e=>{vdCur().sh=e.target.value==='ellipse'?'ellipse':'rect'};
 $('vdCirc').onclick=()=>{   /* 縦と横が同じ画素の円：短いほうに合わせ、いまの中心を保つ */
@@ -348,7 +372,7 @@ $('vdPick').onclick=()=>{
 function vdUi(keep){
   const f=vdCur();
   for(const[id,key,sc]of VD_IN){const el=$(id);if(el===keep||document.activeElement===el)continue;el.value=Math.round(f[key]/sc*1000)/1000;if(el._n)el._n.value=el.value}
-  $('vdCc').value=f.cc;$('vdCm').value=f.cm;$('vdWt').value=f.wt;$('vdFxOn').checked=f.on;$('vdShape').value=f.sh==='ellipse'?'ellipse':'rect';
+  $('vdCc').value=f.cc;$('vdCm').value=f.cm;$('vdCf').value=f.cf||'#000000';$('vdCks').checked=f.cks!==false;vdSwapRows();$('vdWt').value=f.wt;$('vdFxOn').checked=f.on;$('vdShape').value=f.sh==='ellipse'?'ellipse':'rect';
   {const fa=$('vdFa'),fb=$('vdFb'),fp=$('vdFps'),rt=$('vdRate'),ae=document.activeElement;
    if(ae!==fa)fa.value=Math.floor(f.a*VD.fps+1e-4)+1;if(ae!==fb)fb.value=f.b>0?Math.round(f.b*VD.fps):0;
    if(ae!==fp)fp.value=VD.fps;if(ae!==rt)rt.value=VD.rate;
@@ -361,7 +385,7 @@ function vdUi(keep){
   sel.value=VD.cur;
   $('vdPick').classList.toggle('on',VD.pick);
   $('vdPlay').textContent=vdV.paused?'▶ 再生':'⏸ 一時停止';
-  vdSizeNote();
+  vdBandsUi();vdSizeNote();
 }
 /* 場所を決める：①✋でなぞって新しい四角を選ぶ（VD.pick）②いまの枠を直接ドラッグ（中＝移動、縁・四隅＝伸縮。マウスは縁でカーソルが変わる）。
    どちらも、キャンバスのpointerより先に受け（window・capture）、アプリ側の操作（絵の移動など）には渡さない。③の範囲外はアプリ側へ通す。 */
@@ -532,3 +556,43 @@ function vdFinish(){
   $('vdExTx').textContent='書き出しました';
 }
 vdUi();
+/* ===== シーケンスバー（台帳Z-311）：再生位置のつまみ（vdSeek）の上に、効果ごとの時間の帯と、いまの位置の線を出す。
+   ・帯＝効果1つ（VD.fx[i]）の開始〜終了（b＝0は最後まで）。押すと、その効果を選ぶ。真ん中をつかむと、長さを保って動かす。両端をつかむと、開始・終了を変える（コマに丸める）。
+   ・帯のない所を押す・なぞると、その時間へ移る。再生位置は線で見える。使わない効果は、斜線のうすい帯。動画が無い間は出さない。 ===== */
+function vdBandsUi(){
+  const box=$('vdBands'),d=VD.ok?vdV.duration:0;if(!box)return;
+  const on=d>0&&isFinite(d);box.hidden=!on;if(!on)return;
+  box.style.setProperty('--vn',Math.max(1,VD.fx.length));
+  [...box.querySelectorAll('.vb')].forEach(e=>e.remove());
+  const rowH=parseFloat(getComputedStyle(box).getPropertyValue('--vbh'))||12;
+  VD.fx.forEach((f,i)=>{
+    const a=vdCl(f.a/d,0,1),b=vdCl((f.b>0?f.b:d)/d,0,1),e=document.createElement('div');
+    e.className='vb'+(i===VD.cur?' cur':'')+(f.on?'':' off');e.dataset.i=i;
+    e.style.left=(a*100)+'%';e.style.width=Math.max(0,(b-a)*100)+'%';e.style.top=(i*rowH+1)+'px';
+    e.title=f.name+'：'+vdFmt(f.a)+'〜'+(f.b>0?vdFmt(f.b):'最後')+(f.on?'':'（使わない）');box.appendChild(e)});
+  vdHeadUi();
+}
+function vdHeadUi(){const d=VD.ok?vdV.duration:0,h=$('vdHead');if(h&&d>0)h.style.left=(vdCl(vdV.currentTime/d,0,1)*100)+'%'}
+(function(){
+  const box=$('vdBands');if(!box)return;let drag=null,raf=0;
+  const snap=t=>{const fp=VD.fps>0?VD.fps:30;return Math.round(t*fp)/fp};
+  const tAt=e=>{const r=box.getBoundingClientRect();return vdCl((e.clientX-r.left)/Math.max(1,r.width),0,1)*vdV.duration};
+  box.addEventListener('pointerdown',e=>{
+    if(!VD.ok||!(vdV.duration>0))return;e.preventDefault();box.setPointerCapture(e.pointerId);
+    const bar=e.target.closest('.vb');
+    if(!bar){drag={m:'seek'};vdV.currentTime=tAt(e);return}
+    const i=+bar.dataset.i,f=VD.fx[i],r=bar.getBoundingClientRect(),ed=Math.min(r.width/3,e.pointerType==='mouse'?9:16),x=e.clientX-r.left;
+    VD.cur=i;drag={m:x<ed?'a':x>r.width-ed?'b':'move',i,t0:tAt(e),a0:f.a,b0:f.b>0?f.b:vdV.duration,open:!(f.b>0)};vdUi();
+  });
+  box.addEventListener('pointermove',e=>{
+    if(!drag)return;const d=vdV.duration;
+    if(drag.m==='seek'){vdV.currentTime=tAt(e);return}
+    const f=VD.fx[drag.i];if(!f)return;const t=tAt(e),dt=t-drag.t0,mf=1/(VD.fps>0?VD.fps:30);
+    if(drag.m==='a')f.a=vdCl(snap(drag.a0+dt),0,drag.b0-mf);
+    else if(drag.m==='b'){const nb=vdCl(snap(drag.b0+dt),f.a+mf,d);f.b=(drag.open&&nb>=d-1e-6)?0:nb}
+    else{const len=drag.b0-drag.a0,na=vdCl(snap(drag.a0+dt),0,Math.max(0,d-len));f.a=na;f.b=(drag.open&&na+len>=d-1e-6)?0:na+len}
+    if(!raf)raf=requestAnimationFrame(()=>{raf=0;vdUi()});
+  });
+  const end=e=>{if(drag){drag=null;try{box.releasePointerCapture(e.pointerId)}catch(_){}vdUi()}};
+  box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
+})();
