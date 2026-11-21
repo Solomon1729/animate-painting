@@ -750,6 +750,8 @@ for (let i = 0; i < 60; i++) localStorage.setItem('k' + i, 'v');
         S = "()=>{const s=document.getElementById('vpScript'),t=document.getElementById('vpEditTa'),g=s.querySelector('.vpgut'),l=s.querySelector('.vpl .vpt');return {top:s.scrollTop,left:s.scrollLeft,sh:s.scrollHeight,ch:s.clientHeight,oh:s.offsetHeight,lg:document.getElementById('vpLog').offsetHeight,view:Math.round(document.getElementById('vpView').getBoundingClientRect().top),win:[scrollX,scrollY],vpl:s.querySelectorAll('.vpl').length,gut:g?g.textContent.split('\\n').length:0,n:t?t.value.split('\\n').length:0,ved:s.classList.contains('ved'),act:!!t&&document.activeElement===t,sel:t?t.selectionStart:-1,ta:t?{h:t.offsetHeight,st:t.scrollTop,sw:t.scrollWidth,cw:t.clientWidth,lh:getComputedStyle(t).lineHeight,fs:getComputedStyle(t).fontSize}:null,lh:getComputedStyle(l||s).lineHeight,fs:getComputedStyle(l||s).fontSize}}"
         n0 = ev(pg, "()=>VPL.an.lines.length")
         ev(pg, "()=>{document.getElementById('vpScript').scrollTop=300}")
+        ev(pg, "()=>document.getElementById('vpEdit').scrollIntoView({block:'center'})")   # 押す前に、ボタンを見える所へ（見えない所を押すと、検査の側が外の枠を動かしてしまう）
+        pg.wait_for_timeout(100)
         a = ev(pg, S)
         pg.click('#vpEdit')
         pg.wait_for_timeout(250)

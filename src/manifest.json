@@ -71,6 +71,7 @@
     "js/2478-feature-port.js",
     "js/2479-feature-store.js",
     "js/2480-feature-ui.js",
+    "js/2481-setapi.js",
     "js/247-freebook.js",
     "document-suffix.html"
   ]

@@ -75,6 +75,19 @@ with sync_playwright() as p:
     # --- 8. 保存が動く
     pg.evaluate("()=>{document.getElementById('out').innerHTML='';document.getElementById('pxf').value='png';document.getElementById('pexp').click()}"); pg.wait_for_timeout(800)
     chk('このオブジェクトだけ保存が動く（背景・出力から）', pg.evaluate("()=>document.getElementById('out').children.length>0"))
+    # --- 9. ビジュアルプログラミングの章（台帳Z-309）：マニュアルの書いた文言が、実際の画面の文言と一致する
+    pg.evaluate("()=>manOpen('vp')"); pg.wait_for_timeout(200)
+    vt=pg.evaluate("()=>document.getElementById('manBody').textContent")
+    chk('VP章：モード一覧との行き来・できること・まだできないことの見出しがある', all(k in vt for k in ('モード一覧との行き来','できること／まだできないこと')))
+    chk('VP章：「まだできない」に、ブロック図の編集・本体の参照・CDN・窓口の範囲外が書いてある', all(k in vt for k in ('ブロックと線','最新のまま参照','CDN','上限・見た目・動画の重さ以外')))
+    pg.evaluate("()=>{manClose();setTab('ed')}") if False else None
+    labels=pg.evaluate("()=>{const t=(typeof partAddBar==='function')?partAddBar().textContent:'';return t}")
+    chk('VP章に書いた「📥 HTMLを足す」が、モード一覧の画面にある', '📥 HTMLを足す' in vt and '📥 HTMLを足す' in labels, labels[:60])
+    src=pg.evaluate("()=>partAddBar.toString()")
+    chk('VP章に書いた「🧩 ビジュアルプログラミングのいまのソースを足す」が、画面の部品にある', '🧩 ビジュアルプログラミングのいまのソースを足す' in vt and '🧩 ビジュアルプログラミングのいまのソースを足す' in src)
+    chk('VP章：本体の設定の窓口（appSettings・許可・出力HTMLには無い）が書いてある', all(k in vt for k in ('本体の設定を、ここから調べる・変える','appSettings.set("limit.cv", 6000)','初回だけ','typeof appSettings')))
+    chk('VP章に書いた設定の名前（limit.cv）が、窓口に実在する', pg.evaluate("()=>!!SETAPI.item('limit.cv')"))
+    pg.evaluate("()=>manClose()")
     chk('ページエラー無し', not errs, str(errs))
     print('OK',ok,' NG',ng)
     b.close()

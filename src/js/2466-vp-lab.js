@@ -9,6 +9,7 @@
    ・どの行がどの部品を使うかは、ソースの文字を読んで決める（id="…"・'…'・#…・const x = document.getElementById('…') の x）。実行中の対応は、枠の中で実際に起きたことを知らせてもらう。
    ・ソースは「編集」で書き換えられ、「反映」で動き直す。書き換えたソースは、この端末にだけ覚える（`am_vplab`）。
    ・コンソールの決まり：本体の作品・Undo・保存（snap／ser／US／AC／LAYERS／DOC）には触れない。保存先は `am_vplab*` だけ（メモ帳の `am_memo` にも触れない）。
+     ただし例外が1つだけ：本体の設定の窓口 SETAPI（2481-setapi.js。上限・見た目・動画の重さ。台帳Z-308）。枠の中のページは appSettings で、範囲を確かめたうえで読み書きできる（変えるには、動かすたびに初回だけ許可を聞き、ログに残す）。
    ・ソース・名前・記録の文字は、必ず textContent で出す（HTMLとして解釈しない）。 */
 const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',get MAXSRC(){return limOr('vps')},get MAXVAL(){return limOr('vpv')},get MAXKEYS(){return limOr('vpk')},   /* 既定は制限なし。設定した時だけ働く（01-limits.js・台帳Z-295） */
   src:'',an:null,frame:null,ready:false,mode:'run',editing:false,selId:null,selLine:null,H:{},B:null,bt:0,log:[],el:null,name:''};
@@ -279,8 +280,13 @@ function vplShim(INIT){
   EA.call(window,'resize',function(){if(selIds.length)render()});
   EA.call(window,'scroll',function(){if(selIds.length)render()},true);
   EA.call(window,'load',function(){live=1;var a=[].slice.call(document.querySelectorAll('[id]')).map(function(e){return String(e.id)}).filter(function(i){return i.indexOf('__vp')!==0}).slice(0,200);send({k:'ready',ids:a})});
+  /* 本体の設定の窓口（台帳Z-308）：appSettings.list()／get(id)／set(id,値)。返事は Promise（{ok:true,…}か{ok:false,reason}）。出力したHTMLには無いので、使う前に typeof appSettings で確かめる */
+  var rq=0,pr={};
+  var ask=function(op,id,v){return new Promise(function(res){var r=++rq;pr[r]=res;send({k:'cfg',op:op,id:id,v:v,rid:r})})};
+  try{Object.defineProperty(window,'appSettings',{configurable:true,value:Object.freeze({list:function(){return ask('list')},get:function(id){return ask('get',String(id))},set:function(id,v){return ask('set',String(id),v)}})})}catch(e){}
   /* 親からの指示 */
   EA.call(window,'message',function(e){if(e.source!==P)return;var d=e.data;if(!d||d.vp!==1)return;
+    if(d.k==='cfgr'){var f=pr[d.rid];if(f){delete pr[d.rid];f(d.res)}return}
     if(d.k==='mode'){mode=d.m==='insp'?'insp':'run';try{if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()}catch(x){}}
     else if(d.k==='sel'){selIds=Array.isArray(d.ids)?d.ids.map(String).slice(0,50):[];render()}
   });
@@ -335,7 +341,7 @@ function vplLoadSrc(){
   VPL.src=s||VP_SAMPLE;
 }
 function vplRun(){
-  VPL.an=vplAnalyze(VPL.src);VPL.H={};VPL.ready=false;VPL.B=null;
+  VPL.an=vplAnalyze(VPL.src);VPL.H={};VPL.ready=false;VPL.B=null;VPL.cfgOk=null;   /* 設定を変える許可は、動かし直すたびに聞き直す（台帳Z-308） */
   const box=vplQ('#vpView');box.innerHTML='';
   const f=document.createElement('iframe');
   f.setAttribute('sandbox','allow-scripts');   /* 同じ出所にしない（本体に触れさせない） */
@@ -512,12 +518,29 @@ function vplOnMsg(e){
       if(id)vplSelId(id);
       else{VPL.selId=null;VPL.selLine=null;vplSync(false);vplQ('#vpInfo').textContent='この部品には id が付いていないので、ソースの行と結べません'+(str(m.tag,20)?'（'+str(m.tag,20)+'）':'')+'。'}
       break}
+    case'cfg':{vplCfgReq(m);break}   /* 本体の設定の窓口（台帳Z-308）。読むのは自由、変えるのは、動かすたびに初回だけ許可を聞く */
     case'err':{
       const line=vplLn(m.line),msg=str(m.msg,300);
       vplMsg('実行中の誤り'+(line>=0?'（'+(line+1)+'行目）':'')+'：'+msg,1);
       if(line>=0)vplFlashLines([line],'vpng');
       vplBatch().err=msg+(line>=0?'（'+(line+1)+'行目）':'');break}
   }
+}
+function vplCfgReq(m){
+  const rid=Math.floor(+m.rid),reply=res=>vplSend({k:'cfgr',rid,res});
+  if(!(rid>0))return;
+  if(typeof SETAPI==='undefined'){reply({ok:false,reason:'設定の窓口が使えません'});return}
+  const op=m.op,id=typeof m.id==='string'?m.id.slice(0,64):'';
+  if(op==='list'){reply({ok:true,items:SETAPI.list()});return}
+  if(op==='get'){reply(SETAPI.get(id));return}
+  if(op!=='set'){reply({ok:false,reason:'知らない操作です'});return}
+  if(typeof m.v!=='number'&&typeof m.v!=='string'){reply({ok:false,reason:'値は、数か文字で渡してください'});return}
+  const it=SETAPI.item(id);
+  if(!it){reply({ok:false,reason:'知らない設定です：'+id});return}
+  if(VPL.cfgOk==null)VPL.cfgOk=confirm('このページが、本体の設定（上限・見た目・動画の重さ）を変えようとしています。許可しますか？\n\n許可すると、このページを動かしている間、設定を変えられます。変わった設定は端末に覚えられ、背景・出力タブの「⚙ 動作」などで元に戻せます。（読むだけなら、確認はありません）');
+  if(!VPL.cfgOk){reply({ok:false,reason:'このページには、設定を変えることを許可していません'});return}
+  const r=SETAPI.set(id,m.v);reply(r);
+  if(r.ok&&r.before!==r.value)vplLogAdd('本体の設定「'+it.label+'」を、このページが '+r.before+' → '+r.value+' に変えた');
 }
 function vplSnapKeys(key){let n=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(VPL.LSS)===0&&k!==VPL.LSS+key)n++}}catch(_){}return n}
 addEventListener('message',vplOnMsg);
@@ -628,6 +651,7 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
     sc.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('vpl')){e.preventDefault();vplSelLine(+e.target.dataset.n)}});
     paneGrab(vplQ('#vpGrabV'),{host:el,name:'--vpfh',key:'vpfh',measure:()=>vplQ('#vpFrame')?vplQ('#vpFrame').offsetHeight:340,min:120});
     paneGrab(vplQ('#vpGrabS'),{host:el,name:'--vpsh',key:'vpsh',measure:()=>vplQ('#vpScript').offsetHeight,min:100});
+    if(typeof vpCfgMount==='function')vpCfgMount(vplQ('#ftHost'));   /* 本体の設定の窓口（台帳Z-308）：畳んだ枠を1つ足す（上の列は変えない） */
     if(typeof ftMount==='function')ftMount(vplQ('#ftHost'));   /* 機能コレクション（台帳Z-288）：上の列は変えず、畳んだ枠を1つ足す */
     armTips(el);
   }

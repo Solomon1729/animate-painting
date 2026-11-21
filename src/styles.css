@@ -329,6 +329,7 @@ body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソ
 .ftbox{margin:6px 0;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--pane);color:var(--ink)}
 .ftbox>summary{cursor:pointer;padding:6px 10px;font-weight:var(--fw,700);list-style-position:inside}
 .ftbody{max-height:var(--ftbh,340px);overflow:auto;padding:6px 10px 10px}
+#vpCfgList{max-height:var(--cfgh,300px);overflow:auto;padding:0 2px}
 .ftcols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 @media (min-width:860px){.ftcols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .ftcol{min-width:0;border:var(--bw,1px) dashed var(--line);border-radius:calc(var(--rk,1)*8px);padding:6px 8px}

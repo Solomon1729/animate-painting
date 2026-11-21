@@ -337,6 +337,7 @@ body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソ
 .ftbox{margin:6px 0;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--pane);color:var(--ink)}
 .ftbox>summary{cursor:pointer;padding:6px 10px;font-weight:var(--fw,700);list-style-position:inside}
 .ftbody{max-height:var(--ftbh,340px);overflow:auto;padding:6px 10px 10px}
+#vpCfgList{max-height:var(--cfgh,300px);overflow:auto;padding:0 2px}
 .ftcols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 @media (min-width:860px){.ftcols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .ftcol{min-width:0;border:var(--bw,1px) dashed var(--line);border-radius:calc(var(--rk,1)*8px);padding:6px 8px}
@@ -9279,6 +9280,7 @@ CONSOLE.reg({id:'memo',no:1,mode:'cons1',ico:'📝',name:'メモ帳',
    ・どの行がどの部品を使うかは、ソースの文字を読んで決める（id="…"・'…'・#…・const x = document.getElementById('…') の x）。実行中の対応は、枠の中で実際に起きたことを知らせてもらう。
    ・ソースは「編集」で書き換えられ、「反映」で動き直す。書き換えたソースは、この端末にだけ覚える（`am_vplab`）。
    ・コンソールの決まり：本体の作品・Undo・保存（snap／ser／US／AC／LAYERS／DOC）には触れない。保存先は `am_vplab*` だけ（メモ帳の `am_memo` にも触れない）。
+     ただし例外が1つだけ：本体の設定の窓口 SETAPI（2481-setapi.js。上限・見た目・動画の重さ。台帳Z-308）。枠の中のページは appSettings で、範囲を確かめたうえで読み書きできる（変えるには、動かすたびに初回だけ許可を聞き、ログに残す）。
    ・ソース・名前・記録の文字は、必ず textContent で出す（HTMLとして解釈しない）。 */
 const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',get MAXSRC(){return limOr('vps')},get MAXVAL(){return limOr('vpv')},get MAXKEYS(){return limOr('vpk')},   /* 既定は制限なし。設定した時だけ働く（01-limits.js・台帳Z-295） */
   src:'',an:null,frame:null,ready:false,mode:'run',editing:false,selId:null,selLine:null,H:{},B:null,bt:0,log:[],el:null,name:''};
@@ -9549,8 +9551,13 @@ function vplShim(INIT){
   EA.call(window,'resize',function(){if(selIds.length)render()});
   EA.call(window,'scroll',function(){if(selIds.length)render()},true);
   EA.call(window,'load',function(){live=1;var a=[].slice.call(document.querySelectorAll('[id]')).map(function(e){return String(e.id)}).filter(function(i){return i.indexOf('__vp')!==0}).slice(0,200);send({k:'ready',ids:a})});
+  /* 本体の設定の窓口（台帳Z-308）：appSettings.list()／get(id)／set(id,値)。返事は Promise（{ok:true,…}か{ok:false,reason}）。出力したHTMLには無いので、使う前に typeof appSettings で確かめる */
+  var rq=0,pr={};
+  var ask=function(op,id,v){return new Promise(function(res){var r=++rq;pr[r]=res;send({k:'cfg',op:op,id:id,v:v,rid:r})})};
+  try{Object.defineProperty(window,'appSettings',{configurable:true,value:Object.freeze({list:function(){return ask('list')},get:function(id){return ask('get',String(id))},set:function(id,v){return ask('set',String(id),v)}})})}catch(e){}
   /* 親からの指示 */
   EA.call(window,'message',function(e){if(e.source!==P)return;var d=e.data;if(!d||d.vp!==1)return;
+    if(d.k==='cfgr'){var f=pr[d.rid];if(f){delete pr[d.rid];f(d.res)}return}
     if(d.k==='mode'){mode=d.m==='insp'?'insp':'run';try{if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()}catch(x){}}
     else if(d.k==='sel'){selIds=Array.isArray(d.ids)?d.ids.map(String).slice(0,50):[];render()}
   });
@@ -9605,7 +9612,7 @@ function vplLoadSrc(){
   VPL.src=s||VP_SAMPLE;
 }
 function vplRun(){
-  VPL.an=vplAnalyze(VPL.src);VPL.H={};VPL.ready=false;VPL.B=null;
+  VPL.an=vplAnalyze(VPL.src);VPL.H={};VPL.ready=false;VPL.B=null;VPL.cfgOk=null;   /* 設定を変える許可は、動かし直すたびに聞き直す（台帳Z-308） */
   const box=vplQ('#vpView');box.innerHTML='';
   const f=document.createElement('iframe');
   f.setAttribute('sandbox','allow-scripts');   /* 同じ出所にしない（本体に触れさせない） */
@@ -9782,12 +9789,29 @@ function vplOnMsg(e){
       if(id)vplSelId(id);
       else{VPL.selId=null;VPL.selLine=null;vplSync(false);vplQ('#vpInfo').textContent='この部品には id が付いていないので、ソースの行と結べません'+(str(m.tag,20)?'（'+str(m.tag,20)+'）':'')+'。'}
       break}
+    case'cfg':{vplCfgReq(m);break}   /* 本体の設定の窓口（台帳Z-308）。読むのは自由、変えるのは、動かすたびに初回だけ許可を聞く */
     case'err':{
       const line=vplLn(m.line),msg=str(m.msg,300);
       vplMsg('実行中の誤り'+(line>=0?'（'+(line+1)+'行目）':'')+'：'+msg,1);
       if(line>=0)vplFlashLines([line],'vpng');
       vplBatch().err=msg+(line>=0?'（'+(line+1)+'行目）':'');break}
   }
+}
+function vplCfgReq(m){
+  const rid=Math.floor(+m.rid),reply=res=>vplSend({k:'cfgr',rid,res});
+  if(!(rid>0))return;
+  if(typeof SETAPI==='undefined'){reply({ok:false,reason:'設定の窓口が使えません'});return}
+  const op=m.op,id=typeof m.id==='string'?m.id.slice(0,64):'';
+  if(op==='list'){reply({ok:true,items:SETAPI.list()});return}
+  if(op==='get'){reply(SETAPI.get(id));return}
+  if(op!=='set'){reply({ok:false,reason:'知らない操作です'});return}
+  if(typeof m.v!=='number'&&typeof m.v!=='string'){reply({ok:false,reason:'値は、数か文字で渡してください'});return}
+  const it=SETAPI.item(id);
+  if(!it){reply({ok:false,reason:'知らない設定です：'+id});return}
+  if(VPL.cfgOk==null)VPL.cfgOk=confirm('このページが、本体の設定（上限・見た目・動画の重さ）を変えようとしています。許可しますか？\n\n許可すると、このページを動かしている間、設定を変えられます。変わった設定は端末に覚えられ、背景・出力タブの「⚙ 動作」などで元に戻せます。（読むだけなら、確認はありません）');
+  if(!VPL.cfgOk){reply({ok:false,reason:'このページには、設定を変えることを許可していません'});return}
+  const r=SETAPI.set(id,m.v);reply(r);
+  if(r.ok&&r.before!==r.value)vplLogAdd('本体の設定「'+it.label+'」を、このページが '+r.before+' → '+r.value+' に変えた');
 }
 function vplSnapKeys(key){let n=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(VPL.LSS)===0&&k!==VPL.LSS+key)n++}}catch(_){}return n}
 addEventListener('message',vplOnMsg);
@@ -9898,6 +9922,7 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
     sc.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('vpl')){e.preventDefault();vplSelLine(+e.target.dataset.n)}});
     paneGrab(vplQ('#vpGrabV'),{host:el,name:'--vpfh',key:'vpfh',measure:()=>vplQ('#vpFrame')?vplQ('#vpFrame').offsetHeight:340,min:120});
     paneGrab(vplQ('#vpGrabS'),{host:el,name:'--vpsh',key:'vpsh',measure:()=>vplQ('#vpScript').offsetHeight,min:100});
+    if(typeof vpCfgMount==='function')vpCfgMount(vplQ('#ftHost'));   /* 本体の設定の窓口（台帳Z-308）：畳んだ枠を1つ足す（上の列は変えない） */
     if(typeof ftMount==='function')ftMount(vplQ('#ftHost'));   /* 機能コレクション（台帳Z-288）：上の列は変えず、畳んだ枠を1つ足す */
     armTips(el);
   }
@@ -10139,6 +10164,25 @@ const MANPAGES=[
 </ul>
 <h4>出す</h4>
 <ul><li><b>💾 HTMLで出力</b>：いま動いているソースそのままを、1つのHTMLファイルとして保存します（反映していない書き換えは含まれません）。単独でブラウザで開けます。</li></ul>
+<h4>モード一覧との行き来</h4>
+<ul>
+<li>右の縁から出す<b>モード一覧</b>の「📥 HTMLを足す」で、拾ってきた・自分で作ったHTMLを、そのまま1つのモードとして足せます（複数ファイルを一度に）。足したモードは、各項目の「💾 HTMLで出力」で、元のHTMLそのままの単品として書き出せます。</li>
+<li>各項目の「🧩 ビジュアルプログラミングで開く」で、そのモードのソースを読んで書き換えられます。逆に、ビジュアルプログラミングのいまのソースは、モード一覧の「🧩 ビジュアルプログラミングのいまのソースを足す」でモードにできます。足したモードは「🗑」で外せます。</li>
+<li>足したモードは、隔離した枠で動きます。本体には触れず、外へも通信しません。</li>
+</ul>
+<h4>できること／まだできないこと（正直に）</h4>
+<ul>
+<li><b>できる</b>：HTML・CSS・JavaScriptを動かしながら読む／部品とソースの行を結んで調べる／ソースを書き換えて反映する／HTMLで出力する／モード一覧との行き来／機能コレクション（取り出す・貯める・足す・派生する・外す）／本体の設定（上限・見た目・動画の重さ）を、ここから調べて変える。</li>
+<li><b>まだできない</b>：処理をブロックと線で並べ替える編集／ゲームを作るための専用部品／本体のお絵かき・編集・アニメーション・物理を、最新のまま参照してこの場で直す・出力を編集する／組み込みのモードを1つずつ書き出す・合体する／外のサイト（CDN）を許す切り替え／本体の設定のうち、上限・見た目・動画の重さ以外（ペン・色調整・液体など）を、ビジュアルプログラミングから操作すること。いずれも作る予定として控えてあり、作る前に、何をどこまで渡してよいか確かめます。</li>
+<li>本体（お絵かきそのもの）は、ここで読み込んでも<b>動かして試すだけ</b>で、本体の画面や保存には反映されません。</li>
+</ul>
+<h4>⚙ 本体の設定を、ここから調べる・変える</h4>
+<ul>
+<li>ビジュアルプログラミングの「⚙ 本体の設定」（畳んだ欄）を開くと、<b>上限・見た目・動画の重さ</b>の設定が一覧で出て、そのまま数や選択肢を変えられます（背景・出力タブの「⚙ 動作」と同じ設定です。端末に覚えられます）。範囲外・数でない値は変わらず、理由が出ます。目安を超える上限や「0＝制限なし」にする時は、確認が出ます（やめると変わりません）。</li>
+<li>画面の中で動かしているページからは、<code>appSettings.list()</code>（一覧）・<code>appSettings.get("limit.cv")</code>（いまの値）・<code>appSettings.set("limit.cv", 6000)</code>（変える）で使えます。どれも結果を待つ書き方（Promise）で、<code>{ok:true,…}</code>か<code>{ok:false,reason}</code>が返ります。<b>読むのは確認なし、変えるのは、ページを動かすたびに初回だけ「許可しますか？」</b>と聞きます（許可しないと変わりません）。変えた内容は、ログに残ります。</li>
+<li>💾で出力したHTMLには、<code>appSettings</code>は入りません（本体の外では動かないため）。使う前に<code>typeof appSettings</code>で確かめてください。</li>
+<li>使えるのは、この一覧の設定だけです。作品・Undo・保存には触れません。</li>
+</ul>
 <h4>🧰 機能コレクション</h4>
 <p>開いているHTMLから、ひとまとまりの機能（例：計算の部品・ペン先の処理）を取り出して貯め、別のHTMLへ足せます。くわしくは、マニュアルの「機能コレクション」を見てください（🧰を開くと、最初に手順も出ます）。</p>
 <h4>注意（碌でもないことになりやすい所）</h4>
@@ -10147,7 +10191,7 @@ const MANPAGES=[
 <li><b>大きなHTMLは、開くのも書き換えも重くなります</b>。重い時は、必要な部分だけを別のHTMLに分けてください（🧰の取り出しが使えます）。</li>
 <li>HTMLを読み込むと、それまでの書き換え・保存した文字は入れ替わります（上書きする前に確認が出ます）。必要なら先に💾で出力してください。</li>
 <li>画面の中のページが覚えられる量などの制限は、<b>初めは無し</b>です。入れたい時は、⚙動作の「上限の設定」で数を入れます（0＝制限なし）。超えると、止めて理由を知らせます。</li>
-<li>画面の中のページは、本体に触れず、外へも通信できません。「本体を直接直す」場所ではありません。</li>
+<li>画面の中のページは、本体の作品・保存には触れず、外へも通信できません。「本体を直接直す」場所ではありません。触れるのは、上の「本体の設定」（上限・見た目・動画の重さ）だけで、変えるには許可が要ります。</li>
 <li>スマホの指での使い心地は未確認です。</li>
 </ul>
 <h4>困った時</h4>
@@ -14118,6 +14162,102 @@ function ftRenderEdit(box,p){
     const run=await ftSmoke(d);const m=ftMerge({items:d.safety.items,level:d.safety.level},run);d.safety={level:m.level,items:m.items,t:Date.now(),run:run.errs.length?'誤りあり':run.skipped?'省略':'誤りなし'};
     const ok=ftSave();FTC.msg='別の版として保存しました：'+d.name+'（元の「'+p.name+'」はそのまま）。検査：'+ftLv[d.safety.level]+(ok?'':'。この端末に保存しきれませんでした');ftRender()},'直した中身を、別の版として保存する（元は残る）');
   const row=ftE('div','ftrow');row.append(chk,sv,ftBtn('やめる',()=>{FTC.edit=null;ftRender()}));v.append(row,res);box.append(v)}
+/* ===== 本体の設定の窓口 SETAPI（台帳Z-308。2026-11-21）=====
+   目的：ビジュアルプログラミング（VP）から、Claudeを介さずに、本体の細かい設定（上限・見た目・動画の重さ）を調べて変えられるようにする。
+   ・1項目＝ id・group・label・kind（number／choice）・範囲（min／max／choices）・note・get()・set(v)。新しい項目は、ここの add を1行足すだけ。
+   ・書き込みは、本体の設定欄（⚙ 動作など）が使っているのと同じ道を通す（欄の入力→change）。だから、目安を超える値・「制限なし」にする時の確認（台帳Z-16）、端末への保存、画面の更新が、そのまま働く。
+   ・範囲は、本体側で確かめる（数でない・範囲外・選択肢にない値は、変えずに理由を返す）。枠の中のページの言うことは信用しない。
+   ・本体の作品・Undo・保存には触れない（設定は、元から端末に覚える設定だけ）。
+   ・枠の中のページからは appSettings.list()／get(id)／set(id,値)（2466-vp-lab.js）。変えるには、ページを動かすたびに初回だけ許可を聞く。
+   ・VPの「⚙ 本体の設定」の欄は、同じ窓口の画面（一覧・値の変更・ページから使う書き方）。 */
+const SETAPI={items:[],by:{},ready:false};
+function setapiLab(id,fb){const e=$(id),r=e&&e.closest('.row'),l=r&&r.querySelector('.lab');return l?l.textContent.trim():fb}
+function setapiInit(){
+  if(SETAPI.ready)return;SETAPI.ready=true;
+  const add=it=>{SETAPI.items.push(it);SETAPI.by[it.id]=it};
+  /* 数の設定：欄の値を入れて change を起こす（確認・保存・更新は、欄の側の処理に任せる）。欄が無ければ、直接入れる */
+  const viaInput=(id,fn)=>v=>{const e=$(id);if(e){e.value=v;e.dispatchEvent(new Event('change'))}else fn(v)};
+  const LIMS=[['pen','limPen','ペンなどの細かさの上限（長辺）','px'],['blk','limBlk','白紙1枚の画素数の上限','画素'],['tex','limTex','質感・統合の画素数の上限','画素'],['pins','limPins','動く歪みの針の数（超えたら注意）','本'],
+    ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],
+    ['vps','limVps','VPのソースの文字数の上限','字'],['vpv','limVpv','VPが保存する1つの値の文字数の上限','字'],['vpk','limVpk','VPが保存する保存先の数の上限','個']];
+  for(const[k,id,lab,u]of LIMS)add({id:'limit.'+k,group:'上限',label:setapiLab(id,lab)||lab,kind:'number',min:0,max:1e10,step:1,unit:u,
+    note:'0＝制限なし。目安を超える値・0にする時は、確認のポップアップが出ます（やめると変わりません）。',
+    get:()=>LIM[k],set:viaInput(id,v=>{LIM[k]=v;limSave()})});
+  const VDS_=[['warn','vdWarnN','動画の効果の数（超えたら注意）','個'],['cap','vdCapS','動画の歪みの細かさ（画面。長辺）','px'],['capExp','vdCapE','動画の歪みの細かさ（書き出し。長辺）','px'],['exMax','vdExMax','動画の書き出しの総画素数の上限','画素']];
+  for(const[k,id,lab,u]of VDS_)add({id:'video.'+k,group:'動画の重さ',label:lab,kind:'number',min:0,max:1e10,step:1,unit:u,
+    note:'0＝無し（動画の歪みの細かさは、0＝動画そのまま。とても重いことがあります）。',
+    get:()=>VD[k],set:viaInput(id,v=>{VD[k]=v;vdSetSave()})});
+  const SKL={skin:'テーマ（配色）',font:'文字の書体',round:'角の丸み',dens:'余白の密度',icon:'アイコンの種類'};
+  for(const k in SKIN.T)add({id:'skin.'+k,group:'見た目',label:SKL[k]||k,kind:'choice',choices:SKIN.T[k].map(x=>[x[0],x[1]]),
+    note:'「自動」＝テーマに合わせる。',get:()=>SKIN.cur[k],set:v=>{skinSet(k,v)}});
+  add({id:'import.size',group:'画像の置き方',label:setapiLab('impm','画像を置く大きさ'),kind:'choice',choices:[['orig','原寸（キャンバスより大きい時は、キャンバスを広げる）'],['fit','キャンバスの約半分に縮めて置く（従来）']],
+    note:'画像を追加した時に置く大きさ。元の絵のデータは変わりません。',get:()=>IMP.mode,set:v=>{const e=$('impm');if(e){e.value=v;e.dispatchEvent(new Event('change'))}else{IMP.mode=v;try{localStorage.setItem('am_import',v)}catch(_){}}}});
+  add({id:'ui.method',group:'見た目',label:'操作の方式',kind:'choice',choices:[['box','枠（道具箱。キャンバスが広い）'],['win','窓（従来の操作窓）']],
+    note:'変えると、画面の作りが切り替わります。',get:()=>UIM.m,set:v=>{uiSet(v)}});
+}
+SETAPI.item=function(id){setapiInit();return Object.prototype.hasOwnProperty.call(SETAPI.by,id)?SETAPI.by[id]:null};
+/* 外へ渡す形（関数は渡さない）。value＝いまの値 */
+SETAPI.view=function(it){const o={id:it.id,group:it.group,label:it.label,kind:it.kind,note:it.note,value:it.get()};
+  if(it.kind==='number'){o.min=it.min;o.max=it.max;o.step=it.step;o.unit=it.unit}else o.choices=it.choices.map(c=>[c[0],c[1]]);return o};
+SETAPI.list=function(){setapiInit();return SETAPI.items.map(SETAPI.view)};
+SETAPI.get=function(id){const it=SETAPI.item(id);if(!it)return{ok:false,reason:'知らない設定です：'+String(id).slice(0,64)};return Object.assign({ok:true},SETAPI.view(it))};
+/* 値を確かめて入れる。入れた後の値を読み直し、頼んだ値と違えば（確認でやめた等）ok:false で、いまの値を返す */
+SETAPI.set=function(id,v){
+  const it=SETAPI.item(id);if(!it)return{ok:false,reason:'知らない設定です：'+String(id).slice(0,64)};
+  const before=it.get();let want;
+  if(it.kind==='number'){
+    const n=typeof v==='number'?v:(typeof v==='string'&&v.trim()!==''?Number(v):NaN);
+    if(!Number.isFinite(n))return{ok:false,reason:'数で指定してください',value:before};
+    want=Math.round(n);
+    if(want<it.min||want>it.max)return{ok:false,reason:'範囲は '+it.min+' 〜 '+it.max+' です',value:before,min:it.min,max:it.max};
+  }else{
+    if(typeof v!=='string'||!it.choices.some(c=>c[0]===v))return{ok:false,reason:'選べる値は '+it.choices.map(c=>c[0]).join('・')+' です',value:before,choices:it.choices.map(c=>c[0])};
+    want=v;
+  }
+  if(want===before)return{ok:true,id,before,value:before};
+  try{it.set(want)}catch(e){return{ok:false,reason:'変えられませんでした',value:it.get()}}
+  const after=it.get();
+  if(after!==want)return{ok:false,reason:'変わりませんでした（確認でやめた、または反映できませんでした）',value:after};
+  return{ok:true,id,before,value:after};
+};
+
+/* ---- VPの「⚙ 本体の設定」欄（畳んだ枠。上の列は変えない） ---- */
+function vpCfgMount(host){
+  if(!host||host.querySelector('#vpCfg'))return;
+  const d=document.createElement('details');d.className='vphelp';d.id='vpCfg';
+  const sm=document.createElement('summary');sm.textContent='⚙ 本体の設定（上限・見た目・動画の重さ）を、ここから調べる・変える';d.appendChild(sm);
+  const n1=document.createElement('div');n1.className='note';
+  n1.textContent='本体の細かい設定を、ここで直接変えられます（背景・出力タブの「⚙ 動作」と同じ設定です）。左のビューワーで動かすページからも、appSettings で読み書きできます（変えるには、動かすたびに初回だけ許可を聞きます）。';d.appendChild(n1);
+  const box=document.createElement('div');box.id='vpCfgList';d.appendChild(box);
+  const grab=document.createElement('div');grab.className='vpgrab';grab.id='vpCfgGrab';grab.setAttribute('role','separator');grab.tabIndex=0;
+  grab.setAttribute('aria-label','設定の一覧の高さ。ドラッグで変える（矢印キーでも変えられます。ダブルクリックで元の高さ）');grab.title='ドラッグで、一覧の高さを変える（ダブルクリックで元の高さ）';d.appendChild(grab);
+  const msg=document.createElement('div');msg.className='note';msg.id='vpCfgMsg';msg.hidden=true;d.appendChild(msg);
+  const n2=document.createElement('div');n2.className='note';
+  n2.textContent='ページから使う書き方：appSettings.list()＝一覧、appSettings.get("limit.cv")＝いまの値、appSettings.set("limit.cv", 6000)＝変える（どれも Promise で、{ok:true,…} か {ok:false,reason} が返ります）。💾で出力したHTMLには appSettings はありません（使う前に typeof appSettings で確かめてください）。';d.appendChild(n2);
+  host.appendChild(d);
+  const say=(t,bad)=>{msg.textContent=t||'';msg.hidden=!t;msg.style.color=bad?'#c0392b':''};
+  const render=()=>{
+    box.textContent='';let g='';
+    for(const it of SETAPI.list()){
+      if(it.group!==g){g=it.group;const h=document.createElement('h4');h.style.cssText='margin:8px 0 2px;font-size:13px';h.textContent=g;box.appendChild(h)}
+      const row=document.createElement('div');row.className='row';row.dataset.sid=it.id;
+      const lab=document.createElement('span');lab.className='lab';lab.textContent=it.label;row.appendChild(lab);
+      let c;
+      if(it.kind==='number'){c=document.createElement('input');c.type='number';c.className='num';c.min=it.min;c.step=it.step;c.inputMode='numeric';c.style.width='96px';c.value=it.value}
+      else{c=document.createElement('select');for(const[v,t]of it.choices){const o=document.createElement('option');o.value=v;o.textContent=t;c.appendChild(o)}c.value=it.value}
+      c.setAttribute('aria-label',it.label+'（'+it.id+'）');
+      c.addEventListener('change',()=>{const r=SETAPI.set(it.id,c.value);
+        if(r.ok&&r.before===r.value)return;   /* 変化なし（欄を作り直す時に、外れた欄からもう一度 change が来ることがある。知らせを消さない） */
+        if(r.ok)say('「'+it.label+'」を '+r.before+' → '+r.value+' に変えました。');
+        else say('「'+it.label+'」は変えられません：'+r.reason,1);
+        render()});
+      row.appendChild(c);
+      const cd=document.createElement('span');cd.className='note';cd.style.margin='0';cd.textContent=(it.unit?it.unit+'　':'')+it.id;row.appendChild(cd);
+      box.appendChild(row)}
+  };
+  d.addEventListener('toggle',()=>{if(d.open){say('');render()}});
+  if(typeof paneGrab==='function')paneGrab(grab,{host:VPL.el,name:'--cfgh',key:'cfgh',measure:()=>box.offsetHeight,min:80});
+}
 /* ===== 自由帳（台帳Z-221）。起動時の状態を決めるので、manifestの最後に置く =====
    起動時の既定＝「自由帳」：A4縦・150dpi（白紙の既定と同じ）の白紙1枚が紙いっぱいにあり、ペンが選ばれ、ペンの補正が弱くオンの状態。
    ・作品ファイルを開いた時・「復元」を押した時は、その作品が優先（ここは起動時の1回だけ）。起動時は自動保存（am_auto）を上書きしない（dirtyProjを立てない）。
