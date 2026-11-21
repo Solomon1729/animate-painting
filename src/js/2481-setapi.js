@@ -23,7 +23,7 @@ function setapiInit(){
   for(const[k,id,lab,u]of VDS_)add({id:'video.'+k,group:'動画の重さ',label:lab,kind:'number',min:0,max:1e10,step:1,unit:u,
     note:'0＝無し（動画の歪みの細かさは、0＝動画そのまま。とても重いことがあります）。',
     get:()=>VD[k],set:viaInput(id,v=>{VD[k]=v;vdSetSave()})});
-  const SKL={skin:'テーマ（配色）',font:'文字の書体',round:'角の丸み',dens:'余白の密度',icon:'アイコンの種類'};
+  const SKL={skin:'テーマ（配色）',font:'文字の書体',round:'角の丸み',dens:'余白の密度',fs:'文字の大きさ',icon:'アイコンの種類'};
   for(const k in SKIN.T)add({id:'skin.'+k,group:'見た目',label:SKL[k]||k,kind:'choice',choices:SKIN.T[k].map(x=>[x[0],x[1]]),
     note:'「自動」＝テーマに合わせる。',get:()=>SKIN.cur[k],set:v=>{skinSet(k,v)}});
   add({id:'import.size',group:'画像の置き方',label:setapiLab('impm','画像を置く大きさ'),kind:'choice',choices:[['orig','原寸（キャンバスより大きい時は、キャンバスを広げる）'],['fit','キャンバスの約半分に縮めて置く（従来）']],

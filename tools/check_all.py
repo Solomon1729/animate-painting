@@ -20,7 +20,7 @@ HTML = os.path.abspath(opt('--html', 'index.html')); JOBS = int(opt('--jobs', 3)
 VERBOSE = '--verbose' in argv
 # ブラウザの検査（python。引数＝結合HTML）。新しい検査は、ここに名前を1つ足す
 PY = ['adj_same*', 'assist', 'clone', 'commit', 'compare', 'eraser_tabs', 'export_view', 'features', 'fixes', 'foundation', 'frontend', 'hidden_limits',
-      'import_limits', 'jaggy', 'liquid', 'merge', 'mode_parts', 'modes', 'phys_contactpt', 'phys_link', 'phys_pick', 'phys_std', 'phys_tray', 'phys_view', 'physics',
+      'density', 'import_limits', 'jaggy', 'liquid', 'merge', 'mode_parts', 'modes', 'phys_contactpt', 'phys_link', 'phys_pick', 'phys_std', 'phys_tray', 'phys_view', 'physics',
       'pinadd*', 'pixel_view', 'rot90', 'rotate', 'select', 'setapi', 'size_manual', 'skin', 'timelapse', 'toolbox', 'ui', 'undo_bite', 'vdseq', 'vdswap',
       'viewer_quality', 'vp', 'warppen', 'winx']
 # node の検査（エンジン・核。ブラウザ不要）：(名前, 引数)

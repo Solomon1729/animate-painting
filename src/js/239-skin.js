@@ -1,6 +1,6 @@
 /* ===== 見た目（スキン・文字・角の丸み・密度・アイコン）。台帳Z-186 =====
    UIの一時設定：作品・Undo・保存には入れず、localStorage（am_skin）にだけ覚える。
-   CSSは styles.css 先頭の変数（--rk 角の丸み／--bw 枠線／--dp 余白／--fw 太字／--font／--ei 絵文字）。<html> の data-skin／font／round／dens／icon に反映する（'auto'＝属性なし＝スキンまかせ）。
+   CSSは styles.css 先頭の変数（--rk 角の丸み／--bw 枠線／--dp 余白（ボタン・行）／--sp 余白全体／--fs 文字の大きさ／--fw 太字／--font／--ei 絵文字）。<html> の data-skin／font／round／dens／fs／icon に反映する（'auto'＝属性なし＝スキンまかせ）。
    ちらつき防止のため、同じ読み込みを document-prefix.html の先頭でも行う（ここは画面の部品とつなぐ側）。
    増やす時：SKIN.T の表に1行足し、styles.css に :root[data-…="…"]{…} を1行足す。 */
 const SKIN={
@@ -9,10 +9,11 @@ const SKIN={
     skin:[['auto','自動（端末の明暗に合わせる）'],['light','ライト'],['dark','ダーク'],['graphite','グラファイト'],['paper','ペーパー'],['contrast','ハイコントラスト'],['pop','ポップ（従来の見た目）']],
     font:[['auto','テーマに合わせる'],['gothic','ゴシック'],['maru','丸ゴシック'],['serif','明朝']],
     round:[['auto','テーマに合わせる'],['sharp','角ばる'],['soft','ふつう'],['round','丸い']],
-    dens:[['auto','テーマに合わせる'],['compact','コンパクト'],['std','ふつう'],['comfy','ゆったり']],
+    dens:[['auto','自動（スマホは詰めて表示）'],['tight','ぎっしり'],['compact','コンパクト'],['std','ふつう'],['comfy','ゆったり']],
+    fs:[['auto','自動（スマホは少し小さく）'],['xs','極小（86%）'],['s','小さめ（93%）'],['std','ふつう（100%）'],['l','大きめ（108%）'],['xl','大（116%）']],
     icon:[['auto','テーマに合わせる'],['color','カラー絵文字'],['mono','単色']]},
-  IDS:{skin:['skS','skq'],font:['skF'],round:['skR'],dens:['skD'],icon:['skI']},   /* 設定 → それを操作する<select>（背景・出力タブと👁メニューの2か所） */
-  cur:{skin:'auto',font:'auto',round:'auto',dens:'auto',icon:'auto'}};
+  IDS:{skin:['skS','skq'],font:['skF'],round:['skR'],dens:['skD'],fs:['skT'],icon:['skI']},   /* 設定 → それを操作する<select>（背景・出力タブと👁メニューの2か所） */
+  cur:{skin:'auto',font:'auto',round:'auto',dens:'auto',fs:'auto',icon:'auto'}};
 const skinOk=(k,v)=>!!SKIN.T[k]&&SKIN.T[k].some(x=>x[0]===v);
 function skinRead(){try{const o=JSON.parse(localStorage.getItem(SKIN.LS)||'null');if(o&&typeof o==='object')for(const k in SKIN.T)if(skinOk(k,o[k]))SKIN.cur[k]=o[k]}catch(_){}}
 /* 丸ゴシック（Zen Maru Gothic）は、使う時だけ読み込む（既定の見た目では外部へ通信しない）。早い読み込み（document-prefix.html）と同じ条件 */
