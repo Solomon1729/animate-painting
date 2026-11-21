@@ -9,7 +9,8 @@ function maskedImg(l,S,Cs){
     if(!editing){const bt=l.bite.getContext('2d');
       for(const C of Cs){const Sc=S0*C.size;
         bt.setTransform(new DOMMatrix().scale(MR/S).translate(S/2,S/2).multiply(cur.inverse()).multiply(C.M).translate(-Sc/2,-Sc/2).scale(Sc/MR));
-        bt.drawImage(C.mask,0,0)}}
+        bt.drawImage(C.mask,0,0)}
+      l.bitev=(l.bitev|0)+1}   /* 食べ跡が変わった印（Undoの履歴が、変わった時だけ複製する。台帳Z-163） */
     octx.setTransform(cur);octx.drawImage(l.bite,-S/2,-S/2,S,S);
   }else for(const C of Cs){const Sc=S0*C.size;octx.setTransform(C.M);octx.drawImage(C.mask,-Sc/2,-Sc/2,Sc,Sc)}
   octx.globalCompositeOperation='source-over';octx.globalAlpha=1;

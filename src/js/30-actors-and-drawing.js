@@ -1,4 +1,4 @@
-function setImg(l,im){l.img=im;l.cv=null;l.base=null;l.pen=null;l.sd=null;adjDirty(l);if(l.bite)l.bite=nb()}
+function setImg(l,im){l.img=im;l.cv=null;l.base=null;l.pen=null;l.sd=null;adjDirty(l);if(l.bite){l.bite=nb();l.bitev=(l.bitev|0)+1}}
 function txtCv(t,col){const f='bold 96px sans-serif',m=document.createElement('canvas').getContext('2d');m.font=f;
   const c=document.createElement('canvas');c.width=Math.ceil(m.measureText(t||' ').width)+40;c.height=140;const g=c.getContext('2d');
   g.font=f;g.textBaseline='middle';g.lineJoin='round';g.lineWidth=14;g.strokeStyle='#fff';g.strokeText(t,20,72);g.fillStyle=col;g.fillText(t,20,72);return c}

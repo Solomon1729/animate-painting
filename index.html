@@ -1611,7 +1611,7 @@ function lfPadSet(e){if(!sel)return;const r=$('fxPad').getBoundingClientRect(),v
 function adjReset(){
   if(!sel)return;pushUndo();{const a=ensureAdj(sel);COLK.forEach(k=>a[k]=0)}sel._adjDirty=true;sel._adjC=null;sel.adjmv=(sel.adjmv||0);adjDirty(sel);paintFrame();adjUi();
 }
-function setImg(l,im){l.img=im;l.cv=null;l.base=null;l.pen=null;l.sd=null;adjDirty(l);if(l.bite)l.bite=nb()}
+function setImg(l,im){l.img=im;l.cv=null;l.base=null;l.pen=null;l.sd=null;adjDirty(l);if(l.bite){l.bite=nb();l.bitev=(l.bitev|0)+1}}
 function txtCv(t,col){const f='bold 96px sans-serif',m=document.createElement('canvas').getContext('2d');m.font=f;
   const c=document.createElement('canvas');c.width=Math.ceil(m.measureText(t||' ').width)+40;c.height=140;const g=c.getContext('2d');
   g.font=f;g.textBaseline='middle';g.lineJoin='round';g.lineWidth=14;g.strokeStyle='#fff';g.strokeText(t,20,72);g.fillStyle=col;g.fillText(t,20,72);return c}
@@ -1811,7 +1811,8 @@ function maskedImg(l,S,Cs){
     if(!editing){const bt=l.bite.getContext('2d');
       for(const C of Cs){const Sc=S0*C.size;
         bt.setTransform(new DOMMatrix().scale(MR/S).translate(S/2,S/2).multiply(cur.inverse()).multiply(C.M).translate(-Sc/2,-Sc/2).scale(Sc/MR));
-        bt.drawImage(C.mask,0,0)}}
+        bt.drawImage(C.mask,0,0)}
+      l.bitev=(l.bitev|0)+1}   /* 食べ跡が変わった印（Undoの履歴が、変わった時だけ複製する。台帳Z-163） */
     octx.setTransform(cur);octx.drawImage(l.bite,-S/2,-S/2,S,S);
   }else for(const C of Cs){const Sc=S0*C.size;octx.setTransform(C.M);octx.drawImage(C.mask,-Sc/2,-Sc/2,Sc,Sc)}
   octx.globalCompositeOperation='source-over';octx.globalAlpha=1;
@@ -5076,6 +5077,9 @@ function setSel(l){
   $('em').style.display='none';$('emTgl').style.display=l.sp?'none':'';
   const ex=$('ex');ex.innerHTML='';
   ex.appendChild(tog('向きを反転',0,()=>{l.face*=-1}));
+  /* 90度ずつ回す（台帳Z-133）。角度のバーの吸着（−180・−90・0・90・180）と同じ値になる。−180〜180の範囲に収める */
+  const turn=d=>()=>{pushUndo();let r=Math.round((l.rot||0)+d);r=((r+180)%360+360)%360-180;if(r===-180)r=180;l.rot=r;$('rt').value=r;$('rtv').textContent=r+'°'};
+  const bl=tog('⟲ 左に90°',0,turn(-90)),br=tog('⟳ 右に90°',0,turn(90));bl.setAttribute('aria-label','左に90度回す');br.setAttribute('aria-label','右に90度回す');ex.appendChild(bl);ex.appendChild(br);
   scnUi();
   const s=document.createElement('select');s.setAttribute('aria-label','対象');
   s.innerHTML='<option value="">対象なし</option>'+AC.filter(a=>a!==l).map(o=>`<option value="${o.id}"${l.toType!=='layer'&&l.to===o.id?' selected':''}>${o.name}</option>`).join('')+LAYERS.map(y=>`<option value="L${y.id}"${l.toType==='layer'&&l.to===y.id?' selected':''}>🗂 ${y.name}</option>`).join('');
@@ -5099,7 +5103,7 @@ $('sz').oninput=e=>{sel.size=+e.target.value;$('szv').textContent='×'+sel.size.
 $('rt').oninput=e=>{sel.rot=+e.target.value;$('rtv').textContent=sel.rot+'°'};
 $('kp').oninput=e=>{sel.keep=+e.target.value};
 $('eat').onclick=()=>{sel.eat=!sel.eat;$('eat').classList.toggle('on',sel.eat);$('rst').style.display=sel.eat?'':'none'};
-$('rst').onclick=()=>{sel.bite=nb()};
+$('rst').onclick=()=>{sel.bite=nb();sel.bitev=(sel.bitev|0)+1};
 $('ca').onclick=()=>{const c=pc();if(c){c.mask.getContext('2d').clearRect(0,0,MR,MR);c.hasMask=false}};
 $('bs').oninput=e=>{brushMask=+e.target.value};
 
@@ -6325,6 +6329,8 @@ function snapImg(){
   let k=+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
   /* 画素が大きすぎる時は倍率を下げる（上限LIM.exp。0＝制限なし。台帳Z-98） */
   if(bw*bh*k*k>limOr('exp')){const k2=Math.max(1,Math.floor(Math.sqrt(limOr('exp')/(bw*bh))));if(k2<k){note('画素が大きすぎる（上限 '+Math.round(LIM.exp/1e4)+'万画素）ので、倍率を'+k2+'×に下げて保存します（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);k=k2}}
+  /* 書き出しは、いつも紙全体を出す（拡大・移動していても。台帳Z-239。以前は、見ている範囲だけが同じ画素数で出ていた）。画面の拡大・移動は、終わったら元に戻す */
+  const z0={s:Z.s,x:Z.x,y:Z.y};Z.s=1;Z.x=0;Z.y=0;
   hk=k;adjHQ=true;fit();
   try{
     paintFrame();
@@ -6333,7 +6339,7 @@ function snapImg(){
       const t=document.createElement('canvas');t.width=cv.width;t.height=cv.height;t.getContext('2d').drawImage(cv,0,0);
       outPdf(t,'アクションメーカー');
     }else cv.toBlob(b=>{if(b)showOut(URL.createObjectURL(b),'img',jpg?'jpg':'png')},jpg?'image/jpeg':'image/png',.92);
-  }finally{adjHQ=false;hk=0;fit()}
+  }finally{adjHQ=false;hk=0;Z.s=z0.s;Z.x=z0.x;Z.y=z0.y;fit();paintFrame()}
 }
 $('snap').onclick=snapImg;$('sn2').onclick=snapImg;
 
@@ -6388,7 +6394,7 @@ const SKIP=new Set(['img','cv','mask','bm','sm','bite','base','pen','adjm','lfm'
 const dmFrz=a=>{if(!a.dm)return null;const f=a._dmf,v=a.dmv|0;if(f&&f.v===v&&f.n===a.dm.n)return f.d;const d=a.dm.d.slice();a._dmf={v,n:a.dm.n,d};return d};
 function frz(a,k,vk){const c=a[k];if(!c)return null;const f=a['_f'+k],v=a[vk]||0;if(f&&f.v===v)return f.c;const t=cloneC(c);a['_f'+k]={v,c:t};return t}
 function snap(){
-  const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:a.bite,adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
+  const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:frz(a,'bite','bitev'),adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
   const B={m:BG.m,c:BG.c,c2:BG.c2,b:BG.b,img:BG.img,v:BG.v||0};
   const sc=scnSnapStr();   /* 物理の実験（SCN。空なら''）。実行中の状態RUNは入れない＝Undoは時間を巻き戻さない */
   /* V＝その時のビューワー（拡大・位置）。詳細設定でオンの時だけ、元に戻す／やり直すで使う（UVW）。sigには入れない（見え方だけの違いでは履歴を増やさない） */
@@ -6398,7 +6404,7 @@ function bgUi(){$('bg1').value=BG.c;$('bg2').value=BG.c2;$('bgm').value=BG.m;$('
 function restore(sn){
   AC=sn.acs.map(s=>{const a=s.p;for(const k in a.ch)a.ch[k].ph=0;for(const p of a.pins)p.ph=0;
     a.img=s.img;a.cv=null;if(s.cv){a.cv=cloneC(s.cv);a.img=a.cv}
-    a.mask=s.mask?cloneC(s.mask):nb();a.bm=s.bm?cloneC(s.bm):null;a.bite=s.bite||nb();a.adjm=s.adjm?cloneC(s.adjm):null;a.hasAdjM=!!a.adjm;a.lfm=s.lfm?cloneC(s.lfm):null;a.hasLFM=!!a.lfm;
+    a.mask=s.mask?cloneC(s.mask):nb();a.bm=s.bm?cloneC(s.bm):null;a.bite=s.bite?cloneC(s.bite):nb();a.adjm=s.adjm?cloneC(s.adjm):null;a.hasAdjM=!!a.adjm;a.lfm=s.lfm?cloneC(s.lfm):null;a.hasLFM=!!a.lfm;
     a.dm=s.dm?{n:s.dm.n,d:s.dm.d.slice()}:null;a.sd=null;a.wo=null;a.base=null;a.pen=null;a._adjC=null;a._adjRef=null;a._adjDirty=true;a.dirty=true;a.wd=true;a.wx=0;a.wy=0;
     if(s.base){a.base=cloneC(s.base);a._bw=a.base.width;a._bh=a.base.height;a.pen=s.pen?cloneC(s.pen):null;recompose(a)}
     return a});

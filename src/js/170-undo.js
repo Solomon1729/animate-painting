@@ -6,7 +6,7 @@ const SKIP=new Set(['img','cv','mask','bm','sm','bite','base','pen','adjm','lfm'
 const dmFrz=a=>{if(!a.dm)return null;const f=a._dmf,v=a.dmv|0;if(f&&f.v===v&&f.n===a.dm.n)return f.d;const d=a.dm.d.slice();a._dmf={v,n:a.dm.n,d};return d};
 function frz(a,k,vk){const c=a[k];if(!c)return null;const f=a['_f'+k],v=a[vk]||0;if(f&&f.v===v)return f.c;const t=cloneC(c);a['_f'+k]={v,c:t};return t}
 function snap(){
-  const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:a.bite,adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
+  const acs=AC.map(a=>({p:JSON.parse(JSON.stringify(a,(k,v)=>(SKIP.has(k)||k[0]==='_')?undefined:v)),img:a.cv?null:a.img,cv:a.base?null:frz(a,'cv','cvv'),base:frz(a,'base','bsv'),pen:frz(a,'pen','pnv'),mask:frz(a,'mask','mkv'),bm:frz(a,'bm','bmv'),bite:frz(a,'bite','bitev'),adjm:frz(a,'adjm','adjmv'),lfm:frz(a,'lfm','lfmv'),dm:a.dm?{n:a.dm.n,d:dmFrz(a)}:null}));
   const B={m:BG.m,c:BG.c,c2:BG.c2,b:BG.b,img:BG.img,v:BG.v||0};
   const sc=scnSnapStr();   /* 物理の実験（SCN。空なら''）。実行中の状態RUNは入れない＝Undoは時間を巻き戻さない */
   /* V＝その時のビューワー（拡大・位置）。詳細設定でオンの時だけ、元に戻す／やり直すで使う（UVW）。sigには入れない（見え方だけの違いでは履歴を増やさない） */
@@ -16,7 +16,7 @@ function bgUi(){$('bg1').value=BG.c;$('bg2').value=BG.c2;$('bgm').value=BG.m;$('
 function restore(sn){
   AC=sn.acs.map(s=>{const a=s.p;for(const k in a.ch)a.ch[k].ph=0;for(const p of a.pins)p.ph=0;
     a.img=s.img;a.cv=null;if(s.cv){a.cv=cloneC(s.cv);a.img=a.cv}
-    a.mask=s.mask?cloneC(s.mask):nb();a.bm=s.bm?cloneC(s.bm):null;a.bite=s.bite||nb();a.adjm=s.adjm?cloneC(s.adjm):null;a.hasAdjM=!!a.adjm;a.lfm=s.lfm?cloneC(s.lfm):null;a.hasLFM=!!a.lfm;
+    a.mask=s.mask?cloneC(s.mask):nb();a.bm=s.bm?cloneC(s.bm):null;a.bite=s.bite?cloneC(s.bite):nb();a.adjm=s.adjm?cloneC(s.adjm):null;a.hasAdjM=!!a.adjm;a.lfm=s.lfm?cloneC(s.lfm):null;a.hasLFM=!!a.lfm;
     a.dm=s.dm?{n:s.dm.n,d:s.dm.d.slice()}:null;a.sd=null;a.wo=null;a.base=null;a.pen=null;a._adjC=null;a._adjRef=null;a._adjDirty=true;a.dirty=true;a.wd=true;a.wx=0;a.wy=0;
     if(s.base){a.base=cloneC(s.base);a._bw=a.base.width;a._bh=a.base.height;a.pen=s.pen?cloneC(s.pen):null;recompose(a)}
     return a});
