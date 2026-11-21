@@ -265,7 +265,9 @@ def g_magnet(p):
       const pendingAfterMoves=M.pending,cheap=Math.max(...T);  /* 動かした時は記録だけ（探索はしない） */
       return{pendingAfterMoves,cheap}})()""")
     chk('カーソルを動かした時は、探索せず行き先を記録するだけ（最大%.2fms）' % r['cheap'], r['pendingAfterMoves'] and r['cheap'] < 5, r)
-    pg.wait_for_timeout(250)
+    for _ in range(30):   # 次のフレームで進む（並列で重い時は遅れるので、最大3秒待つ）
+        pg.wait_for_timeout(100)
+        if not pg.evaluate('SEL.mg.pending'): break
     r = pg.evaluate("({p:SEL.mg.pending,n:SEL.mg.live&&SEL.mg.live.length})")
     chk('次のフレームで探索が進み、経路が出る（経路 %s 点）' % r['n'], (not r['p']) and r['n'] and r['n'] > 20, r)
     r = pg.evaluate("""(()=>{
