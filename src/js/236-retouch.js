@@ -419,7 +419,7 @@ const rtUnion=(a,b)=>{if(!a)return b;if(!b)return a;const x0=Math.min(a.x,b.x),y
 /* ---- なぞり（pdown・pointermove・endAllから）---- */
 function rtDown(q,e,l){
   RT.st=null;RT.pv=null;
-  const M=rtM();ensureBase(l);const bw=l._bw,bh=l._bh,a=penXY(l,q,bw,bh);
+  const M=rtM();ensureBase(l);const bw=l._bw,bh=l._bh,a=penXYW(l,q,bw,bh);
   RT.last={x:q.x,y:q.y};
   if(M.src){
     const have=RT.src&&RT.src.l===l&&RT.src.bw===bw&&RT.src.bh===bh;
@@ -436,7 +436,7 @@ function rtDown(q,e,l){
 function rtAt(q,l){
   const st=RT.st;if(!st||st.l!==l)return;
   RT.last={x:q.x,y:q.y};
-  const a=penXY(l,q,st.bw,st.bh);
+  const a=penXYW(l,q,st.bw,st.bh);
   if(st.stamp){st.cx=a.x;st.cy=a.y;rtPv(st);return}
   const dx=a.x-st.lx,dy=a.y-st.ly,len=Math.hypot(dx,dy);if(len<1e-6)return;
   let step=Math.max(1,st.R*st.sp);if(len/step>60)step=len/60;
@@ -481,7 +481,7 @@ function rtOverlay(){
   if(M.src&&RT.src&&RT.src.l===l&&RT.src.bw===bw&&RT.src.bh===bh){
     let bx=RT.src.x,by=RT.src.y;
     if(st&&st.off){bx=st.cx+st.off.dx;by=st.cy+st.off.dy}
-    else if(hp&&RT.off&&RT.al){const a=penXY(l,hp,bw,bh);bx=a.x+RT.off.dx;by=a.y+RT.off.dy}
+    else if(hp&&RT.off&&RT.al){const a=penXYW(l,hp,bw,bh);bx=a.x+RT.off.dx;by=a.y+RT.off.dy}
     const s=rtB2S(l,bx,by,bw,bh);
     ring(s.x,s.y,dia,'#ffd23f',[5,4],1.5);
     ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.moveTo(s.x-9,s.y);ctx.lineTo(s.x+9,s.y);ctx.moveTo(s.x,s.y-9);ctx.lineTo(s.x,s.y+9);ctx.stroke();

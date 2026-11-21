@@ -65,24 +65,46 @@ const dirtyRect=(x0,y0,x1,y1,bs)=>{const r=bs/2+3;return{x:Math.min(x0,x1)-r,y:M
 /* 画面の点q→ペン層（base/pen）の画素。絵はS×Sの正方形の中に縦横比を保って収まる（img()）ので、長辺の画素数mを基準にする。
    正方形なら u*bw, v*bh と同じ。非正方形で u*bw, v*bh とすると、短辺の方向でペン先が指からずれる（台帳Z-124、2026-10-11に確認：横長800×400で指の位置の約半分に寄っていた） */
 function penXY(l,q,bw,bh){const a=loc(l,q),m=Math.max(bw,bh);return{x:(a.u-.5)*m+bw/2,y:(a.v-.5)*m+bh/2}}
+/* 歪んだ絵の上に描く時は、「見えている位置」に線が出るよう、指の位置（出力側）を、元画像側の位置に直す（台帳Z-82。以前は歪みの分だけ指から線がずれた）。
+   歪みは 元画像 → メッシュ → ピン の順（逆写像）なので、出力側(u,v) → ピンの逆写像 → メッシュのずれ の順にたどる（120-warp.jsのpinUV・meshAt）。
+   ペン・消しゴム・修整のように、元画像の画素に直接描くものだけがこれを使う（選択範囲・マスクは、歪みのない表示のまま描くので、penXYのまま） */
+function warpSrcUV(l,u,v){
+  if(!hasWarp(l)||warpRaw)return[u,v];
+  if(l.pins&&l.pins.length){const r=pinUV(pinsNow(l.pins),u,v);u=r[0];v=r[1]}
+  if(l.dm){const d=meshAt(l.dm,u,v);u+=d[0];v+=d[1]}
+  return[u,v];
+}
+function penXYW(l,q,bw,bh){const a=loc(l,q),w=warpSrcUV(l,a.u,a.v),m=Math.max(bw,bh);return{x:(w[0]-.5)*m+bw/2,y:(w[1]-.5)*m+bh/2}}
+/* 画面の点列qs（nullは飛ばす）→元画像の画素の点列。歪んでいる時は、隣り合う点の間を約4pxごとに刻んで写す
+   （歪みの変化が急な所で、2点を直線で結ぶと、線が指の道からふくらむため） */
+function penPathW(l,qs,bw,bh){
+  const out=[],wp=hasWarp(l)&&!warpRaw;let pv=null;
+  for(const q of qs){
+    if(!q)continue;
+    if(pv&&wp){const n=Math.min(64,Math.ceil(Math.hypot(q.x-pv.x,q.y-pv.y)/4));for(let i=1;i<n;i++){const t=i/n;out.push(penXYW(l,{x:pv.x+(q.x-pv.x)*t,y:pv.y+(q.y-pv.y)*t},bw,bh))}}
+    out.push(penXYW(l,q,bw,bh));pv=q;
+  }
+  return out;
+}
 function penAt(q,l){
   if(!l||!l.M)return;
   if(paOn()){paPush(q,l);return}  /* ペンの補正がオン：点列を溜め、指を離した時にpaCommitが描く（台帳Z-108） */
-  ensureBase(l);const bw=l._bw,bh=l._bh,a=penXY(l,q,bw,bh),x=a.x,y=a.y,bs=pw*Math.min(bw,bh)/128,px=lp?lp.x:x,py=lp?lp.y:y;
+  ensureBase(l);const bw=l._bw,bh=l._bh,pts=penPathW(l,[lp&&lp.q,q],bw,bh),a=pts[pts.length-1],x=a.x,y=a.y,bs=pw*Math.min(bw,bh)/128,px=lp?lp.x:x,py=lp?lp.y:y;
+  let rx0=Math.min(px,x),ry0=Math.min(py,y),rx1=Math.max(px,x),ry1=Math.max(py,y);for(const t of pts){if(t.x<rx0)rx0=t.x;if(t.x>rx1)rx1=t.x;if(t.y<ry0)ry0=t.y;if(t.y>ry1)ry1=t.y}
   if(tool==='ieraser'){
     const base=l.base,g=base.getContext('2d');
     g.globalCompositeOperation='destination-out';g.globalAlpha=eraseStrength;g.lineWidth=bs;g.lineCap=g.lineJoin='round';
-    g.beginPath();g.moveTo(px,py);g.lineTo(x,y);g.stroke();
+    g.beginPath();g.moveTo(px,py);for(const t of pts)g.lineTo(t.x,t.y);g.stroke();
     /* 「画像ごと」＝その画像の絵ぜんぶ。元の絵だけでなく、その上に描いた線（ペン層）も消える（消去の既定を画像ごとにした＝Z-305。以前は描いた線が残った） */
     const pn=l.pen&&l.pen.width===bw&&l.pen.height===bh;
-    if(pn){const h=l.pen.getContext('2d');h.globalCompositeOperation='destination-out';h.globalAlpha=eraseStrength;h.lineWidth=bs;h.lineCap=h.lineJoin='round';h.beginPath();h.moveTo(px,py);h.lineTo(x,y);h.stroke()}
-    lp={x,y};bumpBP(l,1,pn?1:0);recompose(l,dirtyRect(px,py,x,y,bs));return;
+    if(pn){const h=l.pen.getContext('2d');h.globalCompositeOperation='destination-out';h.globalAlpha=eraseStrength;h.lineWidth=bs;h.lineCap=h.lineJoin='round';h.beginPath();h.moveTo(px,py);for(const t of pts)h.lineTo(t.x,t.y);h.stroke()}
+    lp={x,y,q};bumpBP(l,1,pn?1:0);recompose(l,dirtyRect(rx0,ry0,rx1,ry1,bs));return;
   }
   if(!l.pen||l.pen.width!==bw||l.pen.height!==bh){l.pen=allocCanvas(bw,bh,'ペン');}
   const g=l.pen.getContext('2d');
   g.globalCompositeOperation=tool==='eraser'?'destination-out':'source-over';
   g.globalAlpha=tool==='eraser'?eraseStrength:1;g.strokeStyle=g.fillStyle=pcol;g.lineWidth=bs;g.lineCap=g.lineJoin='round';
-  g.beginPath();g.moveTo(px,py);g.lineTo(x,y);g.stroke();lp={x,y};bumpBP(l,0,1);recompose(l,dirtyRect(px,py,x,y,bs));
+  g.beginPath();g.moveTo(px,py);for(const t of pts)g.lineTo(t.x,t.y);g.stroke();lp={x,y,q};bumpBP(l,0,1);recompose(l,dirtyRect(rx0,ry0,rx1,ry1,bs));
 }
 $('pcol').oninput=e=>{pcol=e.target.value};$('ps').oninput=e=>{pw=+e.target.value};$('es').oninput=e=>{eraseStrength=+e.target.value};
 document.querySelectorAll('#tp [id^="adj"]').forEach(e=>{if(e.type==='range'&&e.id!=='adjBs')e.oninput=()=>{if(!sel)return;const map={adjBr:'brightness',adjCo:'contrast',adjSa:'saturation',adjHu:'hue',adjTe:'temperature',adjHi:'highlights',adjSh:'shadows',adjWh:'whites',adjBl:'blacks'},k=map[e.id];if(!k)return;ensureAdj(sel)[k]=+e.value;adjDirty(sel);adjUi()};if(e.type==='range'&&e.id!=='adjBs')e.onpointerdown=()=>{pushUndo()}});

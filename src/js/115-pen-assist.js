@@ -152,7 +152,7 @@ function paCommit(){
   const S=PS;PS=null;if(!S||!S.l||!S.pts.length)return;
   const l=S.l;if(!l.M||!AC.includes(l))return;
   const sh=S.pts.length>=3?paShape(S.pts,PA.L,PA.C,PA.K):{out:S.pts,kind:'raw'};
-  ensureBase(l);const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=sh.out.map(q=>penXY(l,q,bw,bh)),inb=S.tool==='ieraser';
+  ensureBase(l);const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=penPathW(l,sh.out,bw,bh),inb=S.tool==='ieraser';
   let g;
   if(inb){g=l.base.getContext('2d');g.globalCompositeOperation='destination-out';g.globalAlpha=eraseStrength}
   else{
@@ -175,7 +175,7 @@ function paCommit(){
 let _paSc=null;
 function paRasterPreview(l,o){
   if(hasWarp(l)||!l.base||!l._bw)return false;
-  const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=o.map(q=>penXY(l,q,bw,bh)),r=bs/2+2;
+  const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=o.map(q=>penXYW(l,q,bw,bh)),r=bs/2+2;
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of P){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
   x0=Math.max(0,Math.floor(x0-r));y0=Math.max(0,Math.floor(y0-r));x1=Math.min(bw,Math.ceil(x1+r));y1=Math.min(bh,Math.ceil(y1+r));
   const rw=x1-x0,rh=y1-y0;if(rw<=0||rh<=0)return true;  /* 画像の外だけをなぞっている（確定しても何も描かれない） */
