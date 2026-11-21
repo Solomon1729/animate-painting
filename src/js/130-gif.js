@@ -28,7 +28,7 @@ $('gif').onclick=()=>{
   if(gf){gf.stop();return}
   const tw=Math.min(360,cv.width),th=Math.round(cv.height*tw/cv.width),t=document.createElement('canvas');t.width=tw;t.height=th;
   const g=t.getContext('2d',{willReadFrequently:true}),fr=[];
-  const iv=setInterval(()=>{g.drawImage(cv,0,0,tw,th);fr.push(quant(g.getImageData(0,0,tw,th).data,tw,th));$('rtx').textContent=fr.length+'コマ';if(fr.length>=120&&gf)gf.stop()},1000/12);
+  const iv=setInterval(()=>{g.drawImage(cv,0,0,tw,th);fr.push(quant(g.getImageData(0,0,tw,th).data,tw,th));$('rtx').textContent=fr.length+'コマ';const gm=limOr('gif');if(fr.length>=gm&&gf){note('GIF録画は、上限の'+gm+'コマ（約'+Math.round(gm/12*10)/10+'秒）で止めて、そこまでをGIFにしました。⚙ 動作の「GIF録画のコマ数の上限」で変えられます（0＝制限なし）',6000);gf.stop()}},1000/12);   /* 上限は設定にできる（台帳Z-260・Z-253の4点セット） */
   gf={stop(){clearInterval(iv);gf=null;$('gif').textContent='🎞 GIF';$('gif').classList.remove('on');$('rtx').textContent='変換中…';
     setTimeout(()=>{if(fr.length){showOut(URL.createObjectURL(gifBlob(fr,tw,th,8)),'img','gif')}$('rtx').textContent=''},30)}};
   $('gif').textContent='⏹ 停止';$('gif').classList.add('on');

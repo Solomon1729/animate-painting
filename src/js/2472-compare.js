@@ -289,7 +289,7 @@ function inkList(t){return CM.ink[t.it.key]||(CM.ink[t.it.key]=[])}
 function inkChanged(key){
   for(const t of CM.tiles.values())if(t.it.key===key)draw(t);
   const it=CM.items.find(i=>i.key===key);if(it)thUi(it);saveInk();status();penUi()}
-function inkPush(op){CM.undo.push(op);if(CM.undo.length>300)CM.undo.shift()}
+function inkPush(op){CM.undo.push(op)}   /* 元に戻す回数に上限は付けない（1回ぶんは、線の記録だけで軽い。台帳Z-260） */
 function penDown(t,e){
   const[x,y]=imgPt(t,e),s=scaleOf(t),L=inkList(t);
   if(CM.pen.erase){const st={erase:true,t,del:[],r:Math.max(10/s,CM.pen.w/s)};eraseAt(st,x,y);return st}

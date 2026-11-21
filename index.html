@@ -1217,6 +1217,7 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="row"><span class="lab">動く歪み（ピン）の注意を出す数</span><input id="limPins" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動く歪み（ピン）の注意を出す数（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個。既定 24。超えても足せます（注意だけ）。0＝出さない</span></div>
     <div class="row"><span class="lab">操作の履歴（元に戻す）の上限</span><input id="limUndo" class="num" type="number" min="0" step="16" inputmode="numeric" aria-label="操作の履歴（元に戻す）の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">MB。既定 256。超えると古い履歴から消えます。0＝制限なし</span></div>
     <div class="row"><span class="lab">液体の粒の数の上限</span><input id="limLiq" class="num" type="number" min="0" step="100" inputmode="numeric" aria-label="液体の粒の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（1つの液体の絵ごと）。既定 1500。超えると古い水から消えます。0＝制限なし</span></div>
+    <div class="row"><span class="lab">GIF録画のコマ数の上限</span><input id="limGif" class="num" type="number" min="0" step="12" inputmode="numeric" aria-label="GIF録画のコマ数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">コマ（1秒に12コマ）。既定 120（約10秒）。超えると録画が止まり、そこまでをGIFにします。大きくするほどメモリを使います。0＝制限なし</span></div>
     <div class="row"><span class="lab">ビジュアルプログラミングのソースの文字数</span><input id="limVps" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングのソースの文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（読み込むHTML・編集して反映するソース）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
     <div class="row"><span class="lab">ビジュアルプログラミングの保存する1つの値</span><input id="limVpv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存する1つの値の文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（枠の中のページが覚える1つの値の長さ）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
     <div class="row"><span class="lab">ビジュアルプログラミングの保存先の数</span><input id="limVpk" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存先の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（枠の中のページが覚える名前の数）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
@@ -1283,7 +1284,7 @@ function emo(t){const c=document.createElement('canvas');c.width=c.height=320;co
    ・limOr(k)＝使う側が見る値（0なら Infinity）。使う所：ペン等の作業の細かさ pen（110・30）／白紙 blk（30）／質感・統合 tex（20・225・226）／
      動く歪み pins（120。超えたら注意だけ。止めない）／Undoの履歴 undo（170。MB）／キャンバス cv・exp（235・160・220）／液体の粒の数 liq（2473。超えたら古い水から消す）／ビジュアルプログラミングの文字数 vps・保存する1つの値の文字数 vpv・保存先の数 vpk（2466。**既定は0＝制限なし**。設定した時だけ、超えると止めて知らせる）。
    ・ブラウザ自身の上限（Canvasの1辺の最大・総画素）は、ここでは変えられない。大きくしすぎると、真っ白になったり落ちたりする端末がある（マニュアル「遅い場合の対処・上限」）。 */
-const LIM={pen:4096,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6,liq:1500,vps:0,vpv:0,vpk:0};
+const LIM={pen:4096,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6,liq:1500,gif:120,vps:0,vpv:0,vpk:0};
 const LIM_D=Object.assign({},LIM);
 try{const q=JSON.parse(localStorage.getItem('am_limits')||'null');if(q&&typeof q==='object')for(const k in LIM)if(q[k]!==undefined&&q[k]!==null&&q[k]!==''&&Number.isFinite(+q[k])&&+q[k]>=0)LIM[k]=+q[k]}catch(_){}
 const limOr=k=>LIM[k]>0?LIM[k]:Infinity;
@@ -1292,7 +1293,7 @@ const LIM_WARN={pen:[8192,'ペンなどで編集する細かさ（長辺）','px
 function limWarn(k,v){const w=LIM_WARN[k];if(!w)return'';if(v>0&&v<=w[0])return'';
   return '「'+w[1]+'の上限」を '+(v===0?'制限なし':v.toLocaleString()+' '+w[2])+' にします。\n\n大きくすると、動作が遅くなったり、端末によっては止まる・画面が真っ白になることがあります（目安：'+w[0].toLocaleString()+' '+w[2]+'まで）。\n\nそれでも変えますか？（「上限の設定」で、いつでも戻せます）'}
 function limSave(){try{localStorage.setItem('am_limits',JSON.stringify(LIM))}catch(_){}}
-[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']].forEach(([id,k])=>{
+[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']].forEach(([id,k])=>{
   const e=$(id);if(!e)return;e.value=LIM[k];
   /* 大きすぎる値・制限なし（0）にする時は、確かめてから変える（台帳Z-16）。打っている途中（input）では保存せず、確定（change）で聞く。やめたら元の値に戻る */
   const on=ev=>{const v=parseFloat(e.value);if(!(v>=0))return;const r=Math.round(v),w=limWarn(k,r);
@@ -1300,7 +1301,7 @@ function limSave(){try{localStorage.setItem('am_limits',JSON.stringify(LIM))}cat
     LIM[k]=r;limSave()};
   e.addEventListener('input',on);e.addEventListener('change',on);
 });
-{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
+{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
 
 /* 動きの基本: 往復(方向つき)・回転・のび縮み × 波形。全波形は -1〜+1 */
 const K=[['m','往復',4,.05],['r','回転',360,5],['s','のび縮み',.5,.02]];
@@ -6163,7 +6164,7 @@ $('gif').onclick=()=>{
   if(gf){gf.stop();return}
   const tw=Math.min(360,cv.width),th=Math.round(cv.height*tw/cv.width),t=document.createElement('canvas');t.width=tw;t.height=th;
   const g=t.getContext('2d',{willReadFrequently:true}),fr=[];
-  const iv=setInterval(()=>{g.drawImage(cv,0,0,tw,th);fr.push(quant(g.getImageData(0,0,tw,th).data,tw,th));$('rtx').textContent=fr.length+'コマ';if(fr.length>=120&&gf)gf.stop()},1000/12);
+  const iv=setInterval(()=>{g.drawImage(cv,0,0,tw,th);fr.push(quant(g.getImageData(0,0,tw,th).data,tw,th));$('rtx').textContent=fr.length+'コマ';const gm=limOr('gif');if(fr.length>=gm&&gf){note('GIF録画は、上限の'+gm+'コマ（約'+Math.round(gm/12*10)/10+'秒）で止めて、そこまでをGIFにしました。⚙ 動作の「GIF録画のコマ数の上限」で変えられます（0＝制限なし）',6000);gf.stop()}},1000/12);   /* 上限は設定にできる（台帳Z-260・Z-253の4点セット） */
   gf={stop(){clearInterval(iv);gf=null;$('gif').textContent='🎞 GIF';$('gif').classList.remove('on');$('rtx').textContent='変換中…';
     setTimeout(()=>{if(fr.length){showOut(URL.createObjectURL(gifBlob(fr,tw,th,8)),'img','gif')}$('rtx').textContent=''},30)}};
   $('gif').textContent='⏹ 停止';$('gif').classList.add('on');
@@ -8763,7 +8764,7 @@ function tlRecStop(quiet){
     if(s){TLA.rec.add(s);tlRecN()}},true);
   /* キャンバスのなぞり（見せるだけ。再生では作品に反映しない） */
   cv.addEventListener('pointerdown',e=>{if(!TLA.rec||TL.busy||e.isTrusted===false)return;const r=cv.getBoundingClientRect();TLA.stroke={t0:performance.now(),r,p:[[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,0]],lt:0}},true);
-  cv.addEventListener('pointermove',e=>{const s=TLA.stroke;if(!s||!TLA.rec)return;const t=Math.round(performance.now()-s.t0);if(t-s.lt<40||s.p.length>=60)return;s.lt=t;s.p.push([+((e.clientX-s.r.left)/s.r.width).toFixed(4),+((e.clientY-s.r.top)/s.r.height).toFixed(4),t])},true);
+  cv.addEventListener('pointermove',e=>{const s=TLA.stroke;if(!s||!TLA.rec)return;const t=Math.round(performance.now()-s.t0);if(t-s.lt<40)return;   /* 1本の線の長さに上限は付けない（以前は60点＝約2.4秒で途切れた。台帳Z-260） */s.lt=t;s.p.push([+((e.clientX-s.r.left)/s.r.width).toFixed(4),+((e.clientY-s.r.top)/s.r.height).toFixed(4),t])},true);
   const end=()=>{const s=TLA.stroke;TLA.stroke=null;if(!s||!TLA.rec)return;const p=s.p.map(q=>[+q[0].toFixed(4),+q[1].toFixed(4),q[2]]);if(p.length<2)p.push([p[0][0],p[0][1],300]);
     const say='キャンバスをなぞる（動きの目安。再生では作品に反映しません）';TLA.rec.add({k:'gesture',cat:'ui',path:p,say,how:['キャンバスの上を、指の印のとおりになぞる'],blk:{c:'ui',t:'キャンバスをなぞる',f:[{l:'点の数',v:String(p.length)}]}});tlRecN()};
   ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,end,true));
@@ -10064,6 +10065,7 @@ const MANPAGES=[
 <li><b>質感・統合を計算する総画素 1200万</b>：超えると、質感を省いて表示し、注意を出します。確定で質感を焼き込めない時も、注意を出します。</li>
 <li><b>動く歪み（ピン）24個</b>：これは「数の制限」ではなく、「超えると重くなることがある」という注意を出す数です。超えても足せます。</li>
 <li><b>液体の粒の数 1500個（液体の絵1つごと）</b>：超えると、古い水から消え、注意を1回出します（ふつうの流れは、数十〜数百個で足ります。細かい粒にすると増えます）。0＝制限なし。</li>
+<li><b>GIF録画 120コマ（約10秒。1秒に12コマ）</b>：超えると録画が止まり、そこまでをGIFにして、注意を出します（コマが増えるほどメモリを使います）。0＝制限なし。</li>
 <li><b>操作の履歴（元に戻す）256 MB</b>：超えると、古い履歴から消えます（初めて消える時に、注意を1回出します）。</li>
 <li><b>ビジュアルプログラミングの文字数・保存する値・保存先の数</b>：制限はありません（初めは0＝制限なし）。大きなHTML（本体そのものなど）も読み込めますが、大きいほど開くのに時間がかかります。数を入れると、超えた時に止めて、理由を知らせます。</li>
 <li><b>動画の効果の数</b>：制限はありません。「効果の注意を出す数」（初めは8）を超えると、注意が出ます。</li>
@@ -11646,7 +11648,7 @@ function inkList(t){return CM.ink[t.it.key]||(CM.ink[t.it.key]=[])}
 function inkChanged(key){
   for(const t of CM.tiles.values())if(t.it.key===key)draw(t);
   const it=CM.items.find(i=>i.key===key);if(it)thUi(it);saveInk();status();penUi()}
-function inkPush(op){CM.undo.push(op);if(CM.undo.length>300)CM.undo.shift()}
+function inkPush(op){CM.undo.push(op)}   /* 元に戻す回数に上限は付けない（1回ぶんは、線の記録だけで軽い。台帳Z-260） */
 function penDown(t,e){
   const[x,y]=imgPt(t,e),s=scaleOf(t),L=inkList(t);
   if(CM.pen.erase){const st={erase:true,t,del:[],r:Math.max(10/s,CM.pen.w/s)};eraseAt(st,x,y);return st}
@@ -14206,7 +14208,7 @@ function setapiInit(){
   /* 数の設定：欄の値を入れて change を起こす（確認・保存・更新は、欄の側の処理に任せる）。欄が無ければ、直接入れる */
   const viaInput=(id,fn)=>v=>{const e=$(id);if(e){e.value=v;e.dispatchEvent(new Event('change'))}else fn(v)};
   const LIMS=[['pen','limPen','ペンなどの細かさの上限（長辺）','px'],['blk','limBlk','白紙1枚の画素数の上限','画素'],['tex','limTex','質感・統合の画素数の上限','画素'],['pins','limPins','動く歪みの針の数（超えたら注意）','本'],
-    ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],
+    ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],['gif','limGif','GIF録画のコマ数の上限','コマ'],
     ['vps','limVps','VPのソースの文字数の上限','字'],['vpv','limVpv','VPが保存する1つの値の文字数の上限','字'],['vpk','limVpk','VPが保存する保存先の数の上限','個']];
   for(const[k,id,lab,u]of LIMS)add({id:'limit.'+k,group:'上限',label:setapiLab(id,lab)||lab,kind:'number',min:0,max:1e10,step:1,unit:u,
     note:'0＝制限なし。目安を超える値・0にする時は、確認のポップアップが出ます（やめると変わりません）。',
