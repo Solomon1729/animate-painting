@@ -221,6 +221,9 @@ $('vdRm').onclick=()=>{
   if(VD.url)URL.revokeObjectURL(VD.url);
   VD.url='';VD.ok=false;$('vdInfo').textContent='動画を外しました。';vdUi();
 };
+/* 動画を全画面で見る（台帳Z-301①）：既にある枠の「全画面」へ切り替えるだけ。動画の色の効果・ぼかし等は、枠の切り替えでも描画がそのままかける（検査 check_vdmax.py）。もう一度押すと、前の枠へ戻る */
+function vdMaxUi(){const b=$('vdMax');if(!b)return;const on=frameMode==='f';b.textContent=on?'⛶ 全画面をやめる':'⛶ 動画を全画面で見る';b.setAttribute('aria-pressed',on?'true':'false')}
+$('vdMax').onclick=()=>{if(!VD.ok){note('先に動画を読み込んでください');return}setFrame(frameMode==='f'?(frPrev&&frPrev!=='f'?frPrev:'b'):'f');vdMaxUi()};
 $('vdFit').onclick=()=>{const g=vdGeom();if(!g){note('先に動画を読み込んでください');return}setCanvasSize(g.vw,g.vh);vdUi()};
 setInterval(()=>{   /* 再生位置の表示 */
   const d=VD.ok?vdV.duration:0,t=VD.ok?vdV.currentTime:0;

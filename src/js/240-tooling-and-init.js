@@ -136,6 +136,7 @@ function setFrame(m,init){
   document.querySelectorAll('#frSeg [data-fr]').forEach(b=>b.classList.toggle('on',b.dataset.fr===m));
   try{const d=document.documentElement;if(m==='f'){d.requestFullscreen&&d.requestFullscreen().catch(()=>{})}else if(document.fullscreenElement)document.exitFullscreen()}catch(_){}
   if(!init){up();if(!vLock){Z.s=1;Z.x=0;Z.y=0}}
+  try{vdMaxUi()}catch(_){}   /* 動画タブの「全画面で見る」の表示（枠を別の所で変えても合わせる） */
   fit(true);if(!init){frame(sel);tpClamp()}   /* 枠の切り替えは明示の操作：紙の高さの基準を測り直す（台帳Z-115） */
 }
 /* 枠「大」の間、紙は窓の上下では伸縮しない（台帳Z-115）。窓を動かしたあとで、紙を今の枠に合わせ直したい時は、「大」を押し直す（他の枠は今までどおり何もしない） */

@@ -5,7 +5,7 @@
      いまの組み込みのモード（編集・アニメーション／コンソール1〜3）を、同じ形で出し入れできる部品にしていくための、最初の一歩。
    ・取り込んだHTMLは、**隔離した枠**（`iframe sandbox="allow-scripts"`。`allow-same-origin`は付けない）で動く。本体の作品・Undo・保存・メモ・ビジュアルプログラミングの保存には、一切触れない。
      外への通信（CDNなど）は、ビジュアルプログラミングと同じく止める（CSP）。取り込む時に、外を指す記述があれば知らせる。
-     枠の中のlocalStorage／sessionStorageは、隔離した枠では使えないので、同じ形の「その場だけ」の物を差し込む（閉じる・開き直すと消える）。
+     枠の中のlocalStorageは、隔離した枠では使えないので、同じ形の物を差し込み、書かれた内容をこの端末（`am_modeparts`の項目ごとの`ls`）に覚える＝開き直しても残る（台帳Z-287。消すのは「🧹 保存内容を消す」）。sessionStorageは「その場だけ」（閉じると消える）。
    ・保存：この端末の `am_modeparts` だけ（作品・Undo・保存には入れない）。版番号`v`と、知らないキーは捨てずに書き戻す。**大きさの決め打ちの上限は置かない**（端末が覚えきれない時は、その場だけ使えるとして知らせる）。
    ・足す：モード一覧の「📥 HTMLを足す」（複数のファイルを一度に）。出す：各項目の「💾 HTMLで出力」＝取り込んだ元のHTMLそのまま（単独で開ける）。
      ビジュアルプログラミングとの行き来：各項目の「🧩 ビジュアルプログラミングで開く」／一覧の「🧩 ビジュアルプログラミングのいまのソースを足す」。
@@ -27,16 +27,18 @@ function partLoad(){
     let id=typeof q.id==='string'&&/^p[a-z0-9]{4,24}$/.test(q.id)?q.id:'';
     if(!id||seen.has(id))id=partNewId();
     seen.add(id);
-    const x={};for(const k of Object.keys(q))if(!['id','name','html','t'].includes(k))x[k]=q[k];
-    PART.list.push({id,name:partCleanName(q.name)||'HTML',html:q.html,t:+q.t||0,x});
+    const x={};for(const k of Object.keys(q))if(!['id','name','html','t','ls'].includes(k))x[k]=q[k];
+    PART.list.push({id,name:partCleanName(q.name)||'HTML',html:q.html,t:+q.t||0,ls:partCleanLs(q.ls),x});
   }
 }
 function partSave(){
-  const body=Object.assign({},PART.x,{v:PART.v,parts:PART.list.map(p=>Object.assign({},p.x,{id:p.id,name:p.name,html:p.html,t:p.t}))});
+  const body=Object.assign({},PART.x,{v:PART.v,parts:PART.list.map(p=>Object.assign({},p.x,{id:p.id,name:p.name,html:p.html,t:p.t},Object.keys(p.ls||{}).length?{ls:p.ls}:{}))});
   try{localStorage.setItem(PART.LS,JSON.stringify(body));PART.err=0;return true}catch(_){PART.err=1;return false}
 }
+/* 枠の中のlocalStorageの内容（文字→文字だけ。個数・大きさの決め打ちの上限は置かない） */
+function partCleanLs(o){const r={};if(o&&typeof o==='object'&&!Array.isArray(o))for(const k of Object.keys(o))if(typeof o[k]==='string')r[k]=o[k];return r}
 function partNewId(){let id;do{id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}while(PART.list.some(p=>p.id===id));return id}
-const partCleanName=s=>String(s==null?'':s).replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,40);
+const partCleanName=s=>String(s==null?'':s).replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim();   /* 名前に文字数の上限は置かない（台帳Z-260。書き出しのファイル名だけは、OSの都合で別に切る） */
 function partTitleOf(html,file){
   let t='';
   try{t=partCleanName(new DOMParser().parseFromString(html,'text/html').title)}   /* 解析用の文書は、中のスクリプトを動かさない。&amp;なども文字に直る */
@@ -47,15 +49,15 @@ const partIsHtml=s=>/<\s*(!doctype|html|head|body|script|style|canvas|svg|div|p|
 const partHasExternal=s=>/\b(?:src|href)\s*=\s*["']?(?:https?:)?\/\//i.test(s)||/\bimport\s*[^;]*\bfrom\s*["']https?:/i.test(s)||/@import\s+(?:url\()?["']?https?:/i.test(s);
 
 /* ---- 枠へ入れる文書：先頭に、通信を止める印（CSP）と、その場だけの保存の差し替えを足す ---- */
-function partShim(){
-  function mk(){var d=Object.create(null);var s={getItem:function(k){k=String(k);return k in d?d[k]:null},setItem:function(k,v){d[String(k)]=String(v)},removeItem:function(k){delete d[String(k)]},clear:function(){d=Object.create(null)},key:function(i){var a=Object.keys(d);return i<a.length?a[i]:null}};Object.defineProperty(s,'length',{get:function(){return Object.keys(d).length}});return s};
-  var a=mk(),b=mk();
+function partShim(init){
+  function mk(save){var d=Object.create(null);if(save&&init)for(var q in init)d[q]=String(init[q]);var tm=0;function push(){if(!save)return;clearTimeout(tm);tm=setTimeout(function(){try{var o={};for(var k in d)o[k]=d[k];parent.postMessage({partLs:1,ls:o},'*')}catch(e){}},250)}var s={getItem:function(k){k=String(k);return k in d?d[k]:null},setItem:function(k,v){d[String(k)]=String(v);push()},removeItem:function(k){delete d[String(k)];push()},clear:function(){d=Object.create(null);push()},key:function(i){var a=Object.keys(d);return i<a.length?a[i]:null}};Object.defineProperty(s,'length',{get:function(){return Object.keys(d).length}});return s};
+  var a=mk(true),b=mk(false);
   try{Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return a}})}catch(e){};
   try{Object.defineProperty(window,'sessionStorage',{configurable:true,get:function(){return b}})}catch(e){};
 }
-function partDoc(src){
+function partDoc(src,ls){
   const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; media-src data: blob:; font-src data:; base-uri \'none\'; form-action \'none\'">';
-  const shim='<script>('+partShim.toString().replace(/\n\s*/g,' ')+')()<\/script>';
+  const shim='<script>('+partShim.toString().replace(/\n\s*/g,' ')+')('+JSON.stringify(partCleanLs(ls)).replace(/</g,'\\u003c')+')<\/script>';
   const add=csp+shim;
   const m=/<head(\s[^>]*)?>/i.exec(src)||/<html(\s[^>]*)?>/i.exec(src);
   if(m){const e=m.index+m[0].length;return src.slice(0,e)+add+src.slice(e)}
@@ -78,9 +80,17 @@ function partRegister(p){
       f.className='partframe';f.title=p.name+'（取り込んだHTML）';
       el.appendChild(f);p._f=f;
     },
-    enter(){const q=PART.list.find(x=>x.id===p.id);if(q&&q._f)q._f.srcdoc=partDoc(q.html)},
+    enter(){const q=PART.list.find(x=>x.id===p.id);if(q&&q._f)q._f.srcdoc=partDoc(q.html,q.ls)},
     leave(){const q=PART.list.find(x=>x.id===p.id);if(q&&q._f)q._f.srcdoc='<!doctype html><title></title>'}});   /* 空にして止める */
 }
+/* 枠の中のlocalStorageの書き込みを受ける（その枠からだけ。台帳Z-287）。覚えきれない時は、1回だけ知らせる */
+addEventListener('message',e=>{
+  const m=e.data;if(!m||m.partLs!==1||!m.ls||typeof m.ls!=='object')return;
+  const q=PART.list.find(x=>x._f&&x._f.contentWindow&&x._f.contentWindow===e.source);if(!q)return;
+  const ls=partCleanLs(m.ls);if(JSON.stringify(ls)===JSON.stringify(q.ls||{}))return;
+  q.ls=ls;
+  if(!partSave()){if(!PART.lsWarn){PART.lsWarn=1;partMsg('「'+q.name+'」の保存内容は、この端末では覚えきれないので、画面を閉じると消えます。',1)}}
+});
 function partFind(id){return PART.list.find(p=>p.id===id)||null}
 
 /* ---- 足す ---- */
@@ -131,6 +141,27 @@ function partRemove(id){
   partMsg('「'+p.name+'」をモード一覧から外しました。'+(saved?'':'（この端末の保存は書き換えられませんでした）'),!saved);
   modeUi();
 }
+/* 名前を変える（台帳Z-287）：一覧・コンソールの見出し・枠の題を、まとめて合わせる。空の名前は受け付けない */
+function partRename(id,name){
+  const p=partFind(id),nm=partCleanName(name);if(!p||!nm)return false;
+  if(nm===p.name)return true;
+  p.name=nm;
+  const m=MODES.find(x=>x.id==='part:'+id);if(m)m.name=nm;
+  const l=CONSOLE.labs.find(x=>x.id==='part:'+id);if(l){l.name=nm;l.title='🧱 '+nm}
+  if(p._f)p._f.title=nm+'（取り込んだHTML）';
+  const saved=partSave();
+  partMsg('名前を「'+nm+'」に変えました。'+(saved?'':'（この端末の保存は書き換えられませんでした）'),!saved);
+  if(modeIsOpen())modeUi();
+  return true;
+}
+function partClearLs(id){
+  const p=partFind(id);if(!p)return false;
+  if(!Object.keys(p.ls||{}).length){partMsg('「'+p.name+'」が覚えている保存内容は、ありません。',0);return true}
+  if(!confirm('「'+p.name+'」が覚えている保存内容（そのページが書き込んだ記録）を、この端末から消します。\nHTMLそのものは消えません。開いている間は、次に開き直した時から空で始まります。'))return false;
+  p.ls={};const saved=partSave();
+  partMsg('「'+p.name+'」の保存内容を消しました。'+(saved?'':'（この端末の保存は書き換えられませんでした）'),!saved);
+  return true;
+}
 function partToVP(id){
   const p=partFind(id);if(!p)return;
   if(typeof vplSetSource!=='function'||typeof VPL==='undefined')return;
@@ -156,6 +187,8 @@ function partActions(m){
   const mk=(t,aria,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.setAttribute('aria-label',aria);b.onclick=fn;d.appendChild(b)};
   mk('💾 HTMLで出力',m.name+'を、単品のHTMLファイルとして出力する',()=>partExport(id));
   mk('🧩 ビジュアルプログラミングで開く',m.name+'を、ビジュアルプログラミングで開く',()=>partToVP(id));
+  mk('✏ 名前を変える',m.name+'の名前を変える',()=>{const p=partFind(id);if(!p)return;const v=prompt('モード一覧に出す名前（書き出すHTMLの中身は変わりません）',p.name);if(v==null)return;if(!partRename(id,v))partMsg('名前が空です。変えていません。',1)});
+  mk('🧹 保存内容を消す',m.name+'が覚えている保存内容を消す',()=>partClearLs(id));
   mk('🗑 外す',m.name+'を、モード一覧から外す',()=>partRemove(id));
   return d;
 }
@@ -171,7 +204,7 @@ function partAddBar(){
     b.setAttribute('aria-label','ビジュアルプログラミングで動いているいまのソースを、モード一覧に足す');b.onclick=partFromVP;d.appendChild(b);
   }
   const n=document.createElement('div');n.className='note';n.id='mdpmsg';n.setAttribute('role','status');n.textContent=PART.msg;n.dataset.warn=PART.err?'1':'0';d.appendChild(n);
-  const h=document.createElement('div');h.className='note';h.textContent='拾ってきたHTML・他で作ったHTMLを足せます。隔離した枠で動くので、本体の作品には触れません。外のサイト（CDNなど）への通信は止めています。';d.appendChild(h);
+  const h=document.createElement('div');h.className='note';h.textContent='拾ってきたHTML・他で作ったHTMLを足せます。隔離した枠で動くので、本体の作品には触れません。外のサイト（CDNなど）への通信は止めています。HTMLが localStorage に書いた内容（ゲームの記録など）は、この端末に覚えて、開き直しても残ります（消す時は「🧹 保存内容を消す」。作品には入りません）。';d.appendChild(h);
   return d;
 }
 
