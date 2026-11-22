@@ -298,6 +298,7 @@ body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソ
 .vpgrab:hover,.vpgrab:focus-visible,.vpgrab.drag{background:var(--acc)}
 @media (pointer:coarse){.vpgrab{flex-basis:16px;height:16px}}
 .vpbar b{margin-right:calc(var(--sp,1)*2px)}
+.vpbar :is(button,.file,select),.vpseg button{min-height:30px}   /* スマホの自動（余白約70%）でも、押す所は30px以上（台帳Z-300。check_vp・check_densityが見る） */
 .vpseg{display:inline-flex;gap:calc(var(--sp,1)*4px)}
 .vpseg button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .vpview{background:#fff;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);overflow:hidden}

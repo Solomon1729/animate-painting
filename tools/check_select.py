@@ -80,6 +80,8 @@ class S:
     def __init__(self, p, w=420, h=900):
         self.b = p.chromium.launch()
         self.pg = self.b.new_page(viewport={'width': w, 'height': h})
+        # 検査の前提：画素の位置・値を決め打ちしているので、編集の細かさは従来（最小512）に固定する（既定は1024。台帳Z-125。既定の動きは check_brush_scale.py が見る）
+        self.pg.add_init_script("try{localStorage.setItem('am_limits',JSON.stringify({penmin:512}))}catch(e){}")
         self.errs = []
         self.pg.on('pageerror', lambda e: self.errs.append(str(e)[:200]))
         self.pg.on('dialog', lambda d: d.dismiss())

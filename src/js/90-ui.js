@@ -64,6 +64,7 @@ function setSel(l){
   sel=l;chips();frame(l);
   $('nm').value=l.name;
   adjUi();
+  try{brSync()}catch(_){}   /* 太さのバー：絵ごとに「1画素の細さ」が違うので、下限・数値を合わせ直す（台帳Z-125） */
   $('sz').max=Math.max(6,Math.ceil(l.size));$('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
   $('em').innerHTML='';
   (l.sp?[]:EPAL).forEach(x=>{const b=document.createElement('button');b.textContent=x;b.setAttribute('aria-label',EDESC[x]||x);armTip(b);b.onclick=()=>{setImg(l,emo(x));chips();$('em').style.display='none'};$('em').appendChild(b)});
@@ -98,4 +99,3 @@ $('kp').oninput=e=>{sel.keep=+e.target.value};
 $('eat').onclick=()=>{sel.eat=!sel.eat;$('eat').classList.toggle('on',sel.eat);$('rst').style.display=sel.eat?'':'none'};
 $('rst').onclick=()=>{sel.bite=nb();sel.bitev=(sel.bitev|0)+1};
 $('ca').onclick=()=>{const c=pc();if(c){c.mask.getContext('2d').clearRect(0,0,MR,MR);c.hasMask=false}};
-$('bs').oninput=e=>{brushMask=+e.target.value};

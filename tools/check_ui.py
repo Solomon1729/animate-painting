@@ -459,7 +459,7 @@ def g_sizehint(p):
     s = Sess(p); pg = s.pg
     pg.evaluate("""(()=>{const c=document.createElement('canvas');c.width=c.height=200;const g=c.getContext('2d');g.fillStyle='#223';g.fillRect(0,0,200,200);add(null,c,{size:1})})()"""); pg.wait_for_timeout(500)
     st = lambda: pg.evaluate("szhState(performance.now())")
-    fire = lambda i, v: pg.evaluate("([id,v])=>{const r=document.getElementById(id);r.value=v;r.dispatchEvent(new Event('input',{bubbles:true}))}", [i, v])
+    fire = lambda i, v: pg.evaluate("([id,v])=>{const r=document.getElementById(id);if(typeof THK!=='undefined'&&THK[id]){brSet(id,v);r.value=brPos(id,THK[id].get())}else r.value=v;r.dispatchEvent(new Event('input',{bubbles:true}))}", [i, v])   # 太さのバーは対数の位置で動く（台帳Z-125）。値で指定して、位置を合わせてから input を起こす
     chk('何もしていない時は出ない', st() is None, st())
     for i, v, fn in [('ps', 20, 'paBrushPx(sel)'), ('adjBs', 40, "maskBrushPx(sel,40)"), ('bs', 20, "maskBrushPx(sel,20)"), ('bbs', 30, "maskBrushPx(sel,30)"), ('pbs', 25, "maskBrushPx(sel,25)"), ('wbS', 150, '150')]:
         fire(i, v); pg.wait_for_timeout(60)

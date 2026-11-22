@@ -110,7 +110,8 @@ function rtFoot(st,cx,cy){
 }
 /* 重み（0〜1）：硬さ＝内側は全力、外へなめらかに0へ。強さと、囲み（あれば）を掛ける */
 function rtWeights(st,cx,cy,f,sMul){
-  const R=st.R,hd=st.hd,w=f.w,h=f.h,W=new Float32Array(w*h),sel=st.selA,bw=st.bw,s=sMul===undefined?st.gs:sMul;
+  /* 半径1画素未満（絵の1画素の太さ）は、縁をなだらかにすると、画素の中心に届かず何も起きない。硬さ100として、円の面積の割合（アンチエイリアス）で重みにする（台帳Z-125） */
+  const R=st.R,hd=R<1?1:st.hd,w=f.w,h=f.h,W=new Float32Array(w*h),sel=st.selA,bw=st.bw,s=sMul===undefined?st.gs:sMul;
   for(let j=0;j<h;j++){const dy=f.y+j+.5-cy;for(let i=0;i<w;i++){
     const dx=f.x+i+.5-cx,d=Math.sqrt(dx*dx+dy*dy);let m;
     if(hd>=.995){m=R-d+.5}else{const t=d/R;if(t>=1)continue;if(t<=hd)m=1;else{const u=(1-t)/(1-hd);m=u*u*(3-2*u)}}
@@ -329,7 +330,7 @@ const rtHpRms=dv=>{dv.sort((a,b)=>a-b);const m=dv[dv.length>>1],c=Math.max(2.5*m
 let RTG=0;
 const rtTileStat=()=>RTG||(RTG=(()=>{const t=rtNoiseTile(),dv=[];for(let y=2;y<510;y+=3)for(let x=2;x<510;x+=3){let q=0;for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++)q+=t[((y+b)<<9)|(x+a)];dv.push(Math.abs(t[(y<<9)|x]-q/25))}return rtHpRms(dv)||1})());
 function rtFillDab(st,cx,cy,f,W){
-  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,R2=R*R*.9;
+  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,R2=Math.max(R*R*.9,.51);   /* 半径1画素未満でも、いちばん近い画素の中心は必ず穴に入る（台帳Z-125） */
   const k=Math.max(1,Math.ceil(Math.max(w2,h2)/RT_FILL_LOW)),lw=Math.ceil(w2/k),lh=Math.ceil(h2/k),C=new Float32Array(lw*lh*3),A=new Float32Array(lw*lh),sd=Math.max(1,Math.floor(k/3));
   let nk=0;
   /* 粗い格子の1セルは、k×k画素の平均。k≧3なら、画素を間引いて（sd画素おき）集める（円の外の色はなめらかなので十分）。 */
@@ -520,7 +521,7 @@ function rtUi(){
   $('rtMode').value=RT.mode;$('rtStyleRow').style.display=has?'':'none';$('rtSrcBox').style.display=has?'':'none';
   $('rtStyle').value=RT.style;$('rtAl').checked=RT.al;$('rtFlip').checked=RT.flip;$('rtSel').checked=RT.useSel;
   const set=(id,v)=>{const e=$(id);e.value=v;if(e._n)e._n.value=e.value};
-  set('rtRot',RT.rot);set('rtSc',RT.sc);set('rtS',RT.s);set('rtH',RT.h);set('rtG',Math.round(RT.gs[RT.mode]*100));
+  set('rtRot',RT.rot);set('rtSc',RT.sc);brUi('rtS');set('rtH',RT.h);set('rtG',Math.round(RT.gs[RT.mode]*100));
   $('rtPRow').style.display=M.pl?'':'none';if(M.pl){$('rtPL').textContent=M.pl;set('rtP',Math.round(RT.ps[RT.mode]*100))}
   const s=RT.src&&sel&&RT.src.l===sel;
   $('rtSrcSt').textContent=RT.setting?'基準点にする所を、絵の上でタップしてください':s?'基準点：決めてあります（Alt＋クリックでも置き直せます）':'基準点：まだ決めていません';
@@ -535,7 +536,6 @@ $('rtSel').onchange=e=>{RT.useSel=e.target.checked;if(RT.useSel&&sel&&!sel.hasSm
 $('rtSet').onclick=()=>{RT.setting=!RT.setting;rtUi();if(RT.setting)note('絵の上で、写し元にしたい所をタップしてください',2600)};
 $('rtRot').oninput=e=>{RT.rot=+e.target.value};
 $('rtSc').oninput=e=>{RT.sc=+e.target.value};
-$('rtS').oninput=e=>{RT.s=+e.target.value};
 $('rtH').oninput=e=>{RT.h=+e.target.value};
 $('rtG').oninput=e=>{RT.gs[RT.mode]=+e.target.value/100};
 $('rtP').oninput=e=>{RT.ps[RT.mode]=+e.target.value/100};

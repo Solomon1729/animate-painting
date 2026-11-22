@@ -196,13 +196,13 @@
       <div class="row"><span class="lab">回転</span><input id="rtRot" type="range" min="-180" max="180" step="1" value="0" data-snap="0" aria-label="写し元の回転（度）"></div>
       <div class="row"><span class="lab">拡大</span><input id="rtSc" type="range" min="25" max="400" step="1" value="100" data-snap="100" aria-label="写し元の拡大・縮小（%）"></div>
     </div>
-    <div class="row"><span class="lab">太さ</span><input id="rtS" type="range" min="1" max="60" step="0.5" value="12" aria-label="修整ブラシの太さ"></div>
+    <div class="row"><span class="lab">太さ</span><input id="rtS" type="range" min="0" max="1000" step="1" value="706" aria-label="修整ブラシの太さ"></div>
     <div class="row"><span class="lab">硬さ</span><input id="rtH" type="range" min="0" max="100" step="1" value="50" aria-label="修整ブラシの硬さ（高いほど縁までしっかり効く）"></div>
     <div class="row"><span class="lab">強さ</span><input id="rtG" type="range" min="1" max="100" step="1" value="100" aria-label="修整の強さ"></div>
     <div class="row" id="rtPRow"><span class="lab" id="rtPL">なじませる幅</span><input id="rtP" type="range" min="0" max="100" step="1" value="35" aria-label="方式ごとの調整（なじませる幅・滑らかさなど）"></div>
     <div class="row"><label class="opt"><input type="checkbox" id="rtSel" aria-label="切り抜きタブで囲んだ範囲の中だけに効かせる">囲んだ範囲の中だけ</label></div>
     <div class="note" id="rtNote"></div></div>
-    <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0.1" max="40" value="10" aria-label="ペンの太さ"></div>
+    <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0" max="1000" step="1" value="769" aria-label="ペンの太さ"></div>
     <div class="grp alt" id="paBox"><div class="gh">📏 ペンの補正（0＝補正なし。ペン・消しゴムに効く）</div>
     <div class="row"><span class="lab">直線補正</span><input id="paL" type="range" min="0" max="100" step="1" value="0" aria-label="直線補正の強さ（0で補正なし。強いほど、まっすぐな線に直します）"></div>
     <div class="row"><span class="lab">曲線補正</span><input id="paC" type="range" min="0" max="100" step="1" value="0" aria-label="曲線補正の強さ（0で補正なし。強いほど、選んだ種類の曲線に直します）"></div>
@@ -220,7 +220,7 @@
     <div class="grp alt" id="adjRange"><div class="gh">📍 適用範囲（開いているタブの調整だけに効く）</div>
     <div class="row tools"><button id="adjScAll">全体に効かせる</button><button id="adjScRng">範囲を指定する</button></div>
     <div class="row tools" id="adjRngRow"><button id="adjPaint">塗る</button><button id="adjErase">消す</button><button id="adjAll">全面を範囲に</button><button id="adjClear">範囲をクリア</button></div>
-    <div class="row" id="adjBsRow"><span class="lab">太さ</span><input id="adjBs" type="range" min="1" max="80" step="1" value="20" aria-label="範囲ブラシの太さ"></div>
+    <div class="row" id="adjBsRow"><span class="lab">太さ</span><input id="adjBs" type="range" min="0" max="1000" step="1" value="727" aria-label="範囲ブラシの太さ"></div>
     <div class="row"><button id="adjShow">範囲を表示</button><span class="lab">なじみ</span><input id="adjFe" type="range" min="0" max="100" step="1" value="0" aria-label="範囲の境界のなじみ"><b class="v" id="adjFev">0</b></div>
     <div class="note">「全体に効かせる」は選んだオブジェクト全体に適用します。「範囲を指定する」に切り替えると、塗った所だけに効きます（塗った範囲は全体に戻しても残り、切り替えで再び使えます）。全体から一部だけ除きたいときは「全面を範囲に」→「消す」。範囲は色調整と質感・局所で別々に持ちます。調整値は元画像に焼き込まず保持します。</div></div>
     <div class="grp alt"><div class="gh">🎨 色調整</div>
@@ -265,13 +265,13 @@
   <div class="tab" data-tab="mk">
     <div class="grp"><div class="gh">🖌 マスク（他のオブジェクトを隠して消す）</div>
     <div class="row tools"><button data-tool="mouth" class="on">🖌 マスク塗り</button><button data-tool="mouthx">マスクを消す</button></div>
-    <div class="row" id="tb"><span class="lab">太さ</span><input id="bs" type="range" min="1" max="40" step="1" value="14" aria-label="ブラシの太さ"><button id="ca">全部消す</button></div>
+    <div class="row" id="tb"><span class="lab">太さ</span><input id="bs" type="range" min="0" max="1000" step="1" value="760" aria-label="ブラシの太さ"><button id="ca">全部消す</button></div>
     <div class="row" id="mv1"><span class="lab" style="min-width:0">マスク内の見え方</span><input id="kp" type="range" min="0" max="0.8" step="0.05" value="0" aria-label="マスク内の見え方（0で透明）"></div>
     <div class="row" id="mv2"><button id="eat">消えた部分を残す</button><button id="rst" style="display:none">もとにもどす</button></div>
     <div class="note">「マスク塗り」は、選んでいるオブジェクト自身に、隠す領域を描きます。他のオブジェクトを「配置」タブの「対象」でこのオブジェクトに向け、「対象のマスクで隠す」をオンにすると、ここに入った部分が消えます。</div></div>
     <div class="grp alt"><div class="gh">〰️ ぼかし（見た目をぼかす。マスクとは別物です）</div>
     <div class="row" id="bmr"><button data-tool="bpaint">🖌 ぼかす所を塗る</button><button data-tool="bpaintx">消す</button><button id="bfill">全体を塗る</button><button id="bmc">全部消す</button></div>
-    <div class="row"><span class="lab">塗る太さ</span><input id="bbs" type="range" min="1" max="40" step="1" value="14" aria-label="ぼかしを塗る太さ（マスクとは別設定）"></div>
+    <div class="row"><span class="lab">塗る太さ</span><input id="bbs" type="range" min="0" max="1000" step="1" value="760" aria-label="ぼかしを塗る太さ（マスクとは別設定）"></div>
     <div class="row"><span class="lab">ぼかし</span><input id="bl" type="range" min="0" max="30" step="1" value="0" aria-label="ぼかし"><b class="v" id="blv"></b></div>
     <div class="row"><button id="bshow">範囲を表示</button><button id="bcmp">👁 ぼかし前を見る（押している間）</button></div>
     <div class="row"><button id="bbake">🧊 ぼかしを画像に統合</button></div>
@@ -282,7 +282,7 @@
     <div class="sec">① 範囲を選ぶ</div>
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
     <div class="row tools"><button data-tool="pwand" aria-label="自動選択（タップした所と近い色でつながった範囲を選ぶ）">✨ 自動選択</button><button data-tool="pmag" aria-label="マグネット選択（輪郭に吸い付く線で囲む）">🧲 マグネット</button><button data-tool="ppoly" aria-label="輪郭を編集（選んだ範囲の輪郭の頂点を動かして直す）">◇ 輪郭を編集</button></div>
-    <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
+    <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="0" max="1000" step="1" value="760" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
     <div class="grp alt" id="selBox"><div class="gh">選び方の設定</div>
       <div class="row"><span class="lab">今の選択と</span><select id="selMode" aria-label="新しく選んだ範囲を、今の選択とどう合わせるか"><option value="new" selected>置き換える</option><option value="add">足す</option><option value="sub">引く</option></select></div>
       <div class="row" id="selTolRow"><span class="lab">許容差</span><input id="selTol" type="range" min="2" max="60" step="1" value="18" aria-label="自動選択の許容差（大きいほど、違う色まで同じ範囲として選ぶ）"></div>
@@ -510,6 +510,7 @@
     <div class="row"><span class="lab">キャンバスの長辺の上限</span><input id="limCv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="キャンバスの長辺の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px。既定 8192。0＝制限なし</span></div>
     <div class="row"><span class="lab">キャンバス・書き出しの総画素の上限</span><input id="limExp" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="キャンバス・書き出しの総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 25000000。0＝制限なし</span></div>
     <div class="row"><span class="lab">ペンなどで編集する細かさの上限</span><input id="limPen" class="num" type="number" min="0" step="256" inputmode="numeric" aria-label="ペンなどで編集する細かさの上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px（長辺）。既定 4096。これより大きい絵は、ペン・修整・色調整などを使い始める時に縮みます。0＝縮めない</span></div>
+    <div class="row"><span class="lab">小さい絵を編集する時の最小の細かさ</span><input id="limPenMin" class="num" type="number" min="0" step="256" inputmode="numeric" aria-label="小さい絵を編集する時の最小の細かさ（長辺。0＝絵の実解像度のまま）" style="width:96px"><span class="note" style="margin:0">px（長辺）。既定 1024。これより小さい絵は、ペン・修整などを使い始める時に、この細かさまで引き上げて細い線をきれいに描けるようにします（絵は少しなめらかになり、メモリ・保存サイズ・元に戻すの量が増えます）。0＝引き上げない（絵の実解像度のまま）</span></div>
     <div class="row"><span class="lab">白紙の総画素の上限</span><input id="limBlk" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="白紙の総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 8000000。0＝制限なし</span></div>
     <div class="row"><span class="lab">質感・統合を計算する画素の上限</span><input id="limTex" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="質感・統合を計算する画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 12000000。超えると質感を省きます。0＝制限なし</span></div>
     <div class="row"><span class="lab">動く歪み（ピン）の注意を出す数</span><input id="limPins" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動く歪み（ピン）の注意を出す数（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個。既定 24。超えても足せます（注意だけ）。0＝出さない</span></div>

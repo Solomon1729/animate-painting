@@ -215,7 +215,7 @@ def run(p):
     pg.evaluate("undo()"); pg.wait_for_timeout(60)
 
     # 歪みのある絵：補正した線も歪みを通して出る（例外が出ない）
-    pg.evaluate("()=>{const l=sel;l.pins=[{t:'f',x:.3,y:.3,r:.2,a:0,vx:0,vy:0}];l.wd=true}"); pg.wait_for_timeout(100)
+    pg.evaluate("()=>{const l=sel;l.pins=[{t:'f',x:.3,y:.3,r:.2,a:0,vx:0,vy:0,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5,ph:0}];l.wd=true}"); pg.wait_for_timeout(100)
     setpa(pg, 100, 0); stroke(pg, w)
     chk('歪みのある絵：補正した線を描いても例外が出ない', pg.evaluate(INK, 'line')['n'] > 100 and not errs, errs[:2])
     pg.evaluate("undo()"); pg.evaluate("sel.pins=[];sel.wd=true"); setpa(pg, 0, 0)

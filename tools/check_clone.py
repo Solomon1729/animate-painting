@@ -74,6 +74,8 @@ class S:
     def __init__(self, p, w=420, h=900):
         self.b = p.chromium.launch()
         self.pg = self.b.new_page(viewport={'width': w, 'height': h})
+        # 検査の前提：画素の位置・値を決め打ちしているので、編集の細かさは従来（最小512）に固定する（既定は1024。台帳Z-125。既定の動きは check_brush_scale.py が見る）
+        self.pg.add_init_script("try{localStorage.setItem('am_limits',JSON.stringify({penmin:512}))}catch(e){}")
         self.errs = []
         self.pg.on('pageerror', lambda e: self.errs.append(str(e)[:200]))
         self.pg.on('dialog', lambda d: d.dismiss())
@@ -298,7 +300,7 @@ def g_misc(p):
     chk('ロック中のレイヤーには効かない', pg.evaluate("CK.hash()") == h0)
     pg.evaluate("LAYERS[0].locked=false")
     # 歪み併用
-    s.setup('step', mode='blur'); pg.evaluate("()=>{RT.s=24;RT.gs.blur=1;rtUi();sel.pins=[{t:'f',x:.3,y:.3,r:.2,a:0,vx:0,vy:0}];sel.wd=true}"); pg.wait_for_timeout(150)
+    s.setup('step', mode='blur'); pg.evaluate("()=>{RT.s=24;RT.gs.blur=1;rtUi();sel.pins=[{t:'f',x:.3,y:.3,r:.2,a:0,vx:0,vy:0,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5,ph:0}];sel.wd=true}"); pg.wait_for_timeout(150)
     h0 = pg.evaluate("CK.hash()"); s.stroke([(300, 240), (340, 240)], steps=8)
     chk('歪んでいる絵にも効く（エラーなし）', pg.evaluate("CK.hash()") != h0 and not s.errs, s.errs[:1])
     # 0個
@@ -330,7 +332,7 @@ def g_ui(p):
     s.stroke([(150, 150), (150, 150)], steps=1)
     chk('タップで基準点が置き直され、状態が戻る', pg.evaluate("RT.setting===false&&Math.abs(RT.src.x-150)<3"))
     # 太さの目安
-    pg.evaluate("()=>{const r=$('rtS');r.value=30;r.dispatchEvent(new Event('input',{bubbles:true}))}")
+    pg.evaluate("()=>{const r=$('rtS');brSet('rtS',30);r.value=brPos('rtS',30);r.dispatchEvent(new Event('input',{bubbles:true}))}")
     st = pg.evaluate("szhState(performance.now())")
     chk('太さのバーを動かすと目安の輪が出る（直径＝実際の太さ）', bool(st) and abs(st['d'] - pg.evaluate("rtBrushPx(sel)")) < .6, st)
     # 拡大窓

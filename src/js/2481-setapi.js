@@ -13,7 +13,7 @@ function setapiInit(){
   const add=it=>{SETAPI.items.push(it);SETAPI.by[it.id]=it};
   /* 数の設定：欄の値を入れて change を起こす（確認・保存・更新は、欄の側の処理に任せる）。欄が無ければ、直接入れる */
   const viaInput=(id,fn)=>v=>{const e=$(id);if(e){e.value=v;e.dispatchEvent(new Event('change'))}else fn(v)};
-  const LIMS=[['pen','limPen','ペンなどの細かさの上限（長辺）','px'],['blk','limBlk','白紙1枚の画素数の上限','画素'],['tex','limTex','質感・統合の画素数の上限','画素'],['pins','limPins','動く歪みの針の数（超えたら注意）','本'],
+  const LIMS=[['pen','limPen','ペンなどの細かさの上限（長辺）','px'],['penmin','limPenMin','小さい絵を編集する時の最小の細かさ（長辺。0＝実解像度のまま）','px'],['blk','limBlk','白紙1枚の画素数の上限','画素'],['tex','limTex','質感・統合の画素数の上限','画素'],['pins','limPins','動く歪みの針の数（超えたら注意）','本'],
     ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],['gif','limGif','GIF録画のコマ数の上限','コマ'],
     ['vps','limVps','VPのソースの文字数の上限','字'],['vpv','limVpv','VPが保存する1つの値の文字数の上限','字'],['vpk','limVpk','VPが保存する保存先の数の上限','個']];
   for(const[k,id,lab,u]of LIMS)add({id:'limit.'+k,group:'上限',label:setapiLab(id,lab)||lab,kind:'number',min:0,max:1e10,step:1,unit:u,

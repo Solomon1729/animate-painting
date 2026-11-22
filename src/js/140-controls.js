@@ -4,6 +4,7 @@ function refine(r,st){const f=st>=1?.1:+(st/10).toFixed(5);r.dataset.f=f;r.datas
 function enh(root){
   root.querySelectorAll('input[type=range]:not([data-e])').forEach(r=>{
     r.dataset.e=1;if(!r.dataset.f)refine(r,+r.step||1);r.dataset.d=r.hasAttribute('value')?r.getAttribute('value'):r.value;scrubBind(r);
+    if(typeof THK!=='undefined'&&THK[r.id]){brEnh(r);const v0=r.parentNode.querySelector('.v');if(v0)v0.style.display='none';return}   /* 太さのバー：−＋と数値の欄は「絵の画素」で動く別の作り（110-pen-and-text.js。台帳Z-125） */
     const bt=(t,d)=>{const b=document.createElement('button');b.type='button';b.className='stp';b.textContent=t;b.setAttribute('aria-label',d>0?'増やす':'減らす');
       const go=(m=1)=>{r.value=cl(+(+r.value+d*m*(+r.dataset.f)).toFixed(5),+r.min,+r.max);r.dispatchEvent(new Event('input',{bubbles:true}))};
       let t1,t2,n=0;const stop=()=>{clearTimeout(t1);clearInterval(t2)};

@@ -20,7 +20,7 @@ HTML = os.path.abspath(opt('--html', 'index.html')); JOBS = int(opt('--jobs', 3)
 VERBOSE = '--verbose' in argv
 # ブラウザの検査（python。引数＝結合HTML）。新しい検査は、ここに名前を1つ足す
 PY = ['adj_same*', 'assist', 'clone', 'commit', 'compare', 'eraser_tabs', 'export_view', 'features', 'fixes', 'foundation', 'frontend', 'hidden_limits',
-      'density', 'import_limits', 'jaggy', 'liquid', 'merge', 'mode_parts', 'modes', 'phys_contactpt', 'phys_link', 'phys_pick', 'phys_std', 'phys_tray', 'phys_view', 'physics',
+      'density', 'brush_scale', 'import_limits', 'jaggy', 'liquid', 'merge', 'mode_parts', 'modes', 'phys_contactpt', 'phys_link', 'phys_pick', 'phys_std', 'phys_tray', 'phys_view', 'physics',
       'pinadd*', 'pixel_view', 'rot90', 'rotate', 'select', 'setapi', 'size_manual', 'skin', 'timelapse', 'toolbox', 'ui', 'undo_bite', 'vdmax', 'vdseq', 'vdswap',
       'viewer_quality', 'vp', 'warppen', 'winx']
 # node の検査（エンジン・核。ブラウザ不要）：(名前, 引数)
@@ -64,7 +64,7 @@ def run(t):
     except subprocess.TimeoutExpired as e: out = 'タイムアウト（900秒）'; rc = 124
     ms = re.findall(r'OK\s+(\d+)\s+NG\s+(\d+)', out)
     okn, ngn = (int(ms[-1][0]), int(ms[-1][1])) if ms else (None, None)
-    bad = rc != 0 or (ngn or 0) > 0 or '\nNG ' in out or re.search(r'^NG ', out, re.M) is not None or 'NGあり' in out
+    bad = rc != 0 or (ngn or 0) > 0 or re.search(r'^NG\s+(?!0\b)', out, re.M) is not None or 'NGあり' in out   # 「NG 0 / 21」（edge_warpのまとめ）は失敗ではない
     return n, not bad, okn, ngn, round(time.time() - t0), out
 res = []
 pre = []

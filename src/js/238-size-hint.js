@@ -9,10 +9,10 @@ const SZH={id:null,t:0,down:false,HOLD:700,FADE:250,
   /* バーのid → (オブジェクトl)＝画面上の直径px。0以下なら出さない */
   map:{
     ps:l=>paBrushPx(l),
-    adjBs:l=>maskBrushPx(l,+$('adjBs').value),
-    bs:l=>maskBrushPx(l,+$('bs').value),
-    bbs:l=>maskBrushPx(l,+$('bbs').value),
-    pbs:l=>maskBrushPx(l,+$('pbs').value),
+    adjBs:l=>maskBrushPx(l,adjBrush),
+    bs:l=>maskBrushPx(l,brushMask),
+    bbs:l=>maskBrushPx(l,brushBlur),
+    pbs:l=>maskBrushPx(l,brushParts),
     wbS:()=>+$('wbS').value,
     rtS:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0,
     rtP:l=>typeof rtReachScreen==='function'?rtReachScreen(l):0   /* 修整の「なじませる幅・ぼかす広さ・滑らかさ」＝効きが及ぶ範囲（点線の輪。方式が大きさでない時は0＝出さない。台帳Z-228） */
@@ -48,5 +48,10 @@ function sizeHintDraw(){
   ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();
   ctx.lineWidth=1.6;ctx.strokeStyle='#ffffff';ctx.stroke();ctx.setLineDash([]);
   ctx.beginPath();ctx.arc(cx,cy,2,0,6.2832);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.stroke();
+  /* 太さのバー（THK）：絵の画素での直径を、輪の下に数で添える（細さが「1画素」かどうかが分かる。台帳Z-125） */
+  if(typeof THK!=='undefined'&&THK[s.id]){
+    const t=brNum(brPx(s.id,THK[s.id].get()))+' px（絵の画素）',y=cy+Math.max(r,6)+16;
+    ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,.55)';ctx.strokeText(t,cx,y);ctx.fillStyle='#fff';ctx.fillText(t,cx,y);
+  }
   ctx.restore();
 }

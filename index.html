@@ -306,6 +306,7 @@ body.dropping iframe{pointer-events:none}   /* ドラッグ中だけ、コンソ
 .vpgrab:hover,.vpgrab:focus-visible,.vpgrab.drag{background:var(--acc)}
 @media (pointer:coarse){.vpgrab{flex-basis:16px;height:16px}}
 .vpbar b{margin-right:calc(var(--sp,1)*2px)}
+.vpbar :is(button,.file,select),.vpseg button{min-height:30px}   /* スマホの自動（余白約70%）でも、押す所は30px以上（台帳Z-300。check_vp・check_densityが見る） */
 .vpseg{display:inline-flex;gap:calc(var(--sp,1)*4px)}
 .vpseg button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .vpview{background:#fff;border:var(--bw,1px) solid var(--line);border-radius:calc(var(--rk,1)*10px);overflow:hidden}
@@ -908,13 +909,13 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
       <div class="row"><span class="lab">回転</span><input id="rtRot" type="range" min="-180" max="180" step="1" value="0" data-snap="0" aria-label="写し元の回転（度）"></div>
       <div class="row"><span class="lab">拡大</span><input id="rtSc" type="range" min="25" max="400" step="1" value="100" data-snap="100" aria-label="写し元の拡大・縮小（%）"></div>
     </div>
-    <div class="row"><span class="lab">太さ</span><input id="rtS" type="range" min="1" max="60" step="0.5" value="12" aria-label="修整ブラシの太さ"></div>
+    <div class="row"><span class="lab">太さ</span><input id="rtS" type="range" min="0" max="1000" step="1" value="706" aria-label="修整ブラシの太さ"></div>
     <div class="row"><span class="lab">硬さ</span><input id="rtH" type="range" min="0" max="100" step="1" value="50" aria-label="修整ブラシの硬さ（高いほど縁までしっかり効く）"></div>
     <div class="row"><span class="lab">強さ</span><input id="rtG" type="range" min="1" max="100" step="1" value="100" aria-label="修整の強さ"></div>
     <div class="row" id="rtPRow"><span class="lab" id="rtPL">なじませる幅</span><input id="rtP" type="range" min="0" max="100" step="1" value="35" aria-label="方式ごとの調整（なじませる幅・滑らかさなど）"></div>
     <div class="row"><label class="opt"><input type="checkbox" id="rtSel" aria-label="切り抜きタブで囲んだ範囲の中だけに効かせる">囲んだ範囲の中だけ</label></div>
     <div class="note" id="rtNote"></div></div>
-    <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0.1" max="40" value="10" aria-label="ペンの太さ"></div>
+    <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0" max="1000" step="1" value="769" aria-label="ペンの太さ"></div>
     <div class="grp alt" id="paBox"><div class="gh">📏 ペンの補正（0＝補正なし。ペン・消しゴムに効く）</div>
     <div class="row"><span class="lab">直線補正</span><input id="paL" type="range" min="0" max="100" step="1" value="0" aria-label="直線補正の強さ（0で補正なし。強いほど、まっすぐな線に直します）"></div>
     <div class="row"><span class="lab">曲線補正</span><input id="paC" type="range" min="0" max="100" step="1" value="0" aria-label="曲線補正の強さ（0で補正なし。強いほど、選んだ種類の曲線に直します）"></div>
@@ -932,7 +933,7 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="grp alt" id="adjRange"><div class="gh">📍 適用範囲（開いているタブの調整だけに効く）</div>
     <div class="row tools"><button id="adjScAll">全体に効かせる</button><button id="adjScRng">範囲を指定する</button></div>
     <div class="row tools" id="adjRngRow"><button id="adjPaint">塗る</button><button id="adjErase">消す</button><button id="adjAll">全面を範囲に</button><button id="adjClear">範囲をクリア</button></div>
-    <div class="row" id="adjBsRow"><span class="lab">太さ</span><input id="adjBs" type="range" min="1" max="80" step="1" value="20" aria-label="範囲ブラシの太さ"></div>
+    <div class="row" id="adjBsRow"><span class="lab">太さ</span><input id="adjBs" type="range" min="0" max="1000" step="1" value="727" aria-label="範囲ブラシの太さ"></div>
     <div class="row"><button id="adjShow">範囲を表示</button><span class="lab">なじみ</span><input id="adjFe" type="range" min="0" max="100" step="1" value="0" aria-label="範囲の境界のなじみ"><b class="v" id="adjFev">0</b></div>
     <div class="note">「全体に効かせる」は選んだオブジェクト全体に適用します。「範囲を指定する」に切り替えると、塗った所だけに効きます（塗った範囲は全体に戻しても残り、切り替えで再び使えます）。全体から一部だけ除きたいときは「全面を範囲に」→「消す」。範囲は色調整と質感・局所で別々に持ちます。調整値は元画像に焼き込まず保持します。</div></div>
     <div class="grp alt"><div class="gh">🎨 色調整</div>
@@ -977,13 +978,13 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
   <div class="tab" data-tab="mk">
     <div class="grp"><div class="gh">🖌 マスク（他のオブジェクトを隠して消す）</div>
     <div class="row tools"><button data-tool="mouth" class="on">🖌 マスク塗り</button><button data-tool="mouthx">マスクを消す</button></div>
-    <div class="row" id="tb"><span class="lab">太さ</span><input id="bs" type="range" min="1" max="40" step="1" value="14" aria-label="ブラシの太さ"><button id="ca">全部消す</button></div>
+    <div class="row" id="tb"><span class="lab">太さ</span><input id="bs" type="range" min="0" max="1000" step="1" value="760" aria-label="ブラシの太さ"><button id="ca">全部消す</button></div>
     <div class="row" id="mv1"><span class="lab" style="min-width:0">マスク内の見え方</span><input id="kp" type="range" min="0" max="0.8" step="0.05" value="0" aria-label="マスク内の見え方（0で透明）"></div>
     <div class="row" id="mv2"><button id="eat">消えた部分を残す</button><button id="rst" style="display:none">もとにもどす</button></div>
     <div class="note">「マスク塗り」は、選んでいるオブジェクト自身に、隠す領域を描きます。他のオブジェクトを「配置」タブの「対象」でこのオブジェクトに向け、「対象のマスクで隠す」をオンにすると、ここに入った部分が消えます。</div></div>
     <div class="grp alt"><div class="gh">〰️ ぼかし（見た目をぼかす。マスクとは別物です）</div>
     <div class="row" id="bmr"><button data-tool="bpaint">🖌 ぼかす所を塗る</button><button data-tool="bpaintx">消す</button><button id="bfill">全体を塗る</button><button id="bmc">全部消す</button></div>
-    <div class="row"><span class="lab">塗る太さ</span><input id="bbs" type="range" min="1" max="40" step="1" value="14" aria-label="ぼかしを塗る太さ（マスクとは別設定）"></div>
+    <div class="row"><span class="lab">塗る太さ</span><input id="bbs" type="range" min="0" max="1000" step="1" value="760" aria-label="ぼかしを塗る太さ（マスクとは別設定）"></div>
     <div class="row"><span class="lab">ぼかし</span><input id="bl" type="range" min="0" max="30" step="1" value="0" aria-label="ぼかし"><b class="v" id="blv"></b></div>
     <div class="row"><button id="bshow">範囲を表示</button><button id="bcmp">👁 ぼかし前を見る（押している間）</button></div>
     <div class="row"><button id="bbake">🧊 ぼかしを画像に統合</button></div>
@@ -994,7 +995,7 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="sec">① 範囲を選ぶ</div>
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
     <div class="row tools"><button data-tool="pwand" aria-label="自動選択（タップした所と近い色でつながった範囲を選ぶ）">✨ 自動選択</button><button data-tool="pmag" aria-label="マグネット選択（輪郭に吸い付く線で囲む）">🧲 マグネット</button><button data-tool="ppoly" aria-label="輪郭を編集（選んだ範囲の輪郭の頂点を動かして直す）">◇ 輪郭を編集</button></div>
-    <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
+    <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="0" max="1000" step="1" value="760" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
     <div class="grp alt" id="selBox"><div class="gh">選び方の設定</div>
       <div class="row"><span class="lab">今の選択と</span><select id="selMode" aria-label="新しく選んだ範囲を、今の選択とどう合わせるか"><option value="new" selected>置き換える</option><option value="add">足す</option><option value="sub">引く</option></select></div>
       <div class="row" id="selTolRow"><span class="lab">許容差</span><input id="selTol" type="range" min="2" max="60" step="1" value="18" aria-label="自動選択の許容差（大きいほど、違う色まで同じ範囲として選ぶ）"></div>
@@ -1222,6 +1223,7 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="row"><span class="lab">キャンバスの長辺の上限</span><input id="limCv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="キャンバスの長辺の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px。既定 8192。0＝制限なし</span></div>
     <div class="row"><span class="lab">キャンバス・書き出しの総画素の上限</span><input id="limExp" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="キャンバス・書き出しの総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 25000000。0＝制限なし</span></div>
     <div class="row"><span class="lab">ペンなどで編集する細かさの上限</span><input id="limPen" class="num" type="number" min="0" step="256" inputmode="numeric" aria-label="ペンなどで編集する細かさの上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px（長辺）。既定 4096。これより大きい絵は、ペン・修整・色調整などを使い始める時に縮みます。0＝縮めない</span></div>
+    <div class="row"><span class="lab">小さい絵を編集する時の最小の細かさ</span><input id="limPenMin" class="num" type="number" min="0" step="256" inputmode="numeric" aria-label="小さい絵を編集する時の最小の細かさ（長辺。0＝絵の実解像度のまま）" style="width:96px"><span class="note" style="margin:0">px（長辺）。既定 1024。これより小さい絵は、ペン・修整などを使い始める時に、この細かさまで引き上げて細い線をきれいに描けるようにします（絵は少しなめらかになり、メモリ・保存サイズ・元に戻すの量が増えます）。0＝引き上げない（絵の実解像度のまま）</span></div>
     <div class="row"><span class="lab">白紙の総画素の上限</span><input id="limBlk" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="白紙の総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 8000000。0＝制限なし</span></div>
     <div class="row"><span class="lab">質感・統合を計算する画素の上限</span><input id="limTex" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="質感・統合を計算する画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 12000000。超えると質感を省きます。0＝制限なし</span></div>
     <div class="row"><span class="lab">動く歪み（ピン）の注意を出す数</span><input id="limPins" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動く歪み（ピン）の注意を出す数（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個。既定 24。超えても足せます（注意だけ）。0＝出さない</span></div>
@@ -1292,26 +1294,26 @@ function emo(t){const c=document.createElement('canvas');c.width=c.height=320;co
    絵を勝手に縮めたり、操作の境目を黙って設けたりしない。ここは、既にあった上限を、設定で変えられるようにまとめたもの（0＝制限なし）。
    ・LIM（端末に覚える am_limits。作品・Undo・保存には入れない）。入れ物は、背景・出力タブの「⚙ 動作」の「上限の設定」。
    ・limOr(k)＝使う側が見る値（0なら Infinity）。使う所：ペン等の作業の細かさ pen（110・30）／白紙 blk（30）／質感・統合 tex（20・225・226）／
-     動く歪み pins（120。超えたら注意だけ。止めない）／Undoの履歴 undo（170。MB）／キャンバス cv・exp（235・160・220）／液体の粒の数 liq（2473。超えたら古い水から消す）／ビジュアルプログラミングの文字数 vps・保存する1つの値の文字数 vpv・保存先の数 vpk（2466。**既定は0＝制限なし**。設定した時だけ、超えると止めて知らせる）。
+     小さい絵の最小の細かさ penmin（110。0＝絵の実解像度のまま。台帳Z-125）／動く歪み pins（120。超えたら注意だけ。止めない）／Undoの履歴 undo（170。MB）／キャンバス cv・exp（235・160・220）／液体の粒の数 liq（2473。超えたら古い水から消す）／ビジュアルプログラミングの文字数 vps・保存する1つの値の文字数 vpv・保存先の数 vpk（2466。**既定は0＝制限なし**。設定した時だけ、超えると止めて知らせる）。
    ・ブラウザ自身の上限（Canvasの1辺の最大・総画素）は、ここでは変えられない。大きくしすぎると、真っ白になったり落ちたりする端末がある（マニュアル「遅い場合の対処・上限」）。 */
-const LIM={pen:4096,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6,liq:1500,gif:120,vps:0,vpv:0,vpk:0};
+const LIM={pen:4096,penmin:1024,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6,liq:1500,gif:120,vps:0,vpv:0,vpk:0};
 const LIM_D=Object.assign({},LIM);
 try{const q=JSON.parse(localStorage.getItem('am_limits')||'null');if(q&&typeof q==='object')for(const k in LIM)if(q[k]!==undefined&&q[k]!==null&&q[k]!==''&&Number.isFinite(+q[k])&&+q[k]>=0)LIM[k]=+q[k]}catch(_){}
 const limOr=k=>LIM[k]>0?LIM[k]:Infinity;
 /* 大きすぎる上限の目安（これを超える・0＝制限なしにする時に、忠告を出す）。ブラウザや端末の限界に近い値 */
-const LIM_WARN={pen:[8192,'ペンなどで編集する細かさ（長辺）','px'],blk:[3e7,'白紙1枚の画素数','画素'],tex:[3e7,'質感・統合の画素数','画素'],cv:[16384,'キャンバスの長辺','px'],exp:[1e8,'キャンバスの合計画素数','画素'],undo:[2048,'Undoの履歴','MB']};
+const LIM_WARN={pen:[8192,'ペンなどで編集する細かさ（長辺）','px'],penmin:[4096,'小さい絵を編集する時の最小の細かさ（長辺）','px'],blk:[3e7,'白紙1枚の画素数','画素'],tex:[3e7,'質感・統合の画素数','画素'],cv:[16384,'キャンバスの長辺','px'],exp:[1e8,'キャンバスの合計画素数','画素'],undo:[2048,'Undoの履歴','MB']};
 function limWarn(k,v){const w=LIM_WARN[k];if(!w)return'';if(v>0&&v<=w[0])return'';
   return '「'+w[1]+'の上限」を '+(v===0?'制限なし':v.toLocaleString()+' '+w[2])+' にします。\n\n大きくすると、動作が遅くなったり、端末によっては止まる・画面が真っ白になることがあります（目安：'+w[0].toLocaleString()+' '+w[2]+'まで）。\n\nそれでも変えますか？（「上限の設定」で、いつでも戻せます）'}
 function limSave(){try{localStorage.setItem('am_limits',JSON.stringify(LIM))}catch(_){}}
-[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']].forEach(([id,k])=>{
+[['limPen','pen'],['limPenMin','penmin'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']].forEach(([id,k])=>{
   const e=$(id);if(!e)return;e.value=LIM[k];
   /* 大きすぎる値・制限なし（0）にする時は、確かめてから変える（台帳Z-16）。打っている途中（input）では保存せず、確定（change）で聞く。やめたら元の値に戻る */
   const on=ev=>{const v=parseFloat(e.value);if(!(v>=0))return;const r=Math.round(v),w=limWarn(k,r);
     if(w){if(ev&&ev.type!=='change')return;if(!confirm(w)){e.value=LIM[k];return}}
-    LIM[k]=r;limSave()};
+    LIM[k]=r;limSave();if(typeof brSync==='function'){try{brSync()}catch(_){}}};
   e.addEventListener('input',on);e.addEventListener('change',on);
 });
-{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
+{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limPenMin','penmin'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
 
 /* 動きの基本: 往復(方向つき)・回転・のび縮み × 波形。全波形は -1〜+1 */
 const K=[['m','往復',4,.05],['r','回転',360,5],['s','のび縮み',.5,.02]];
@@ -5082,6 +5084,7 @@ function setSel(l){
   sel=l;chips();frame(l);
   $('nm').value=l.name;
   adjUi();
+  try{brSync()}catch(_){}   /* 太さのバー：絵ごとに「1画素の細さ」が違うので、下限・数値を合わせ直す（台帳Z-125） */
   $('sz').max=Math.max(6,Math.ceil(l.size));$('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
   $('em').innerHTML='';
   (l.sp?[]:EPAL).forEach(x=>{const b=document.createElement('button');b.textContent=x;b.setAttribute('aria-label',EDESC[x]||x);armTip(b);b.onclick=()=>{setImg(l,emo(x));chips();$('em').style.display='none'};$('em').appendChild(b)});
@@ -5116,7 +5119,6 @@ $('kp').oninput=e=>{sel.keep=+e.target.value};
 $('eat').onclick=()=>{sel.eat=!sel.eat;$('eat').classList.toggle('on',sel.eat);$('rst').style.display=sel.eat?'':'none'};
 $('rst').onclick=()=>{sel.bite=nb();sel.bitev=(sel.bitev|0)+1};
 $('ca').onclick=()=>{const c=pc();if(c){c.mask.getContext('2d').clearRect(0,0,MR,MR);c.hasMask=false}};
-$('bs').oninput=e=>{brushMask=+e.target.value};
 
 
 /* 背景 */
@@ -5173,7 +5175,8 @@ $('rc2').onclick=()=>$('rec').click();
 /* 上限はLIM（01-limits.js）：pen＝ペン等の作業の長辺px（0＝縮めない）、undo＝Undo履歴のMB */
 function workDims(l,cap=limOr('pen')){
   const im=l.img,iw=im.naturalWidth||im.width||512,ih=im.naturalHeight||im.height||512,long=Math.max(iw,ih);
-  const L=Math.max(512,Math.min(cap,Math.round(long))),k=L/long;
+  /* 小さい絵は、細い線もきれいに描けるよう、最小の細かさ LIM.penmin（既定1024。0＝引き上げない）まで引き上げる。上限capは超えない（台帳Z-125。以前は固定512） */
+  const lo=Math.min(LIM.penmin>0?LIM.penmin:1,cap),L=Math.max(lo,Math.min(cap,Math.round(long))),k=L/long;
   return{w:Math.max(1,Math.round(iw*k)),h:Math.max(1,Math.round(ih*k))};
 }
 function allocCanvas(w,h,label,cpu){
@@ -5198,13 +5201,15 @@ function ensureBase(l){
   if(l.base)return l.base;
   const d=l._bd=workDims(l),c=allocCanvas(d.w,d.h,'ペン');
   const im=l.img,iw=im.naturalWidth||im.width||1,ih=im.naturalHeight||im.height||1,k=Math.min(c.width/iw,c.height/ih);
-  c.getContext('2d').drawImage(im,(c.width-iw*k)/2,(c.height-ih*k)/2,iw*k,ih*k);
+  {const g0=c.getContext('2d');if(k>1){g0.imageSmoothingEnabled=true;g0.imageSmoothingQuality='high'}g0.drawImage(im,(c.width-iw*k)/2,(c.height-ih*k)/2,iw*k,ih*k)}
   l._bw=c.width;l._bh=c.height;l.base=c;
   /* 縮んだ時は、必ず知らせる（台帳Z-252。黙って縮めない）。続けて何枚も起こる時は、4秒に1回 */
   if(k<.999&&Date.now()-penNoted>4000){penNoted=Date.now();note('大きい絵（'+iw+'×'+ih+' px）なので、編集のために '+c.width+'×'+c.height+' px に縮めました（上限 '+(LIM.pen>0?LIM.pen+' px':'なし')+'。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。編集しないかぎり、元の絵はそのままです）',12000)}
+  if(k>1.001&&!penUpNoted){penUpNoted=1;note('小さい絵（'+iw+'×'+ih+' px）なので、細い線もきれいに描けるよう '+c.width+'×'+c.height+' px に引き上げました（絵は少しなめらかになります。最小の細かさは、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます。0＝引き上げません）',12000)}
   return c;
 }
-let penNoted=0;
+/* 小さい絵を引き上げた時も、必ず知らせる（台帳Z-125。規則10の「注意を1回」。ページを開いてから1回） */
+let penNoted=0,penUpNoted=0;
 const bumpBP=(l,b,p)=>{if(b)l.bsv=(l.bsv||0)+1;if(p)l.pnv=(l.pnv||0)+1};
 function recompose(l,rect){
   const bw=l._bw||l.base?.width||512,bh=l._bh||l.base?.height||512;
@@ -5276,7 +5281,57 @@ function penAt(q,l){
   g.globalAlpha=tool==='eraser'?eraseStrength:1;g.strokeStyle=g.fillStyle=pcol;g.lineWidth=bs;g.lineCap=g.lineJoin='round';
   g.beginPath();g.moveTo(px,py);for(const t of pts)g.lineTo(t.x,t.y);g.stroke();lp={x,y,q};bumpBP(l,0,1);recompose(l,dirtyRect(rx0,ry0,rx1,ry1,bs));
 }
-$('pcol').oninput=e=>{pcol=e.target.value};$('ps').oninput=e=>{pw=+e.target.value};$('es').oninput=e=>{eraseStrength=+e.target.value};
+$('pcol').oninput=e=>{pcol=e.target.value};$('es').oninput=e=>{eraseStrength=+e.target.value};
+/* ===== 太さバーの目盛り（2026-11-22、台帳Z-125）=====
+   ペン・消しゴム・修整（モザイクなど全方式）・範囲ブラシ（色調整・質感）・マスク類（ぼかす所・囲む・口など）の「太さ」のバーは、どれも同じ目盛りで動く。
+   ・バーは「対数の位置」（0〜THKS.N）。小さい所でも大きい所でも、同じ動きで同じ割合だけ変わる＝1画素の細さから太さの最大まで、1本のバーで使える（直線のバーだと、細い所がバーの端に詰まって使えない）。
+   ・値そのもの（pw・RT.s・adjBrush・brushMask・brushBlur・brushParts）の意味は今までと同じ。下限は「今までの下限」と「その絵の1画素」の細い方
+     （小さい絵は今までどおり、大きい絵は1画素まで細くできる。マスクは、マスクの1画素＝直径1まで）。
+   ・数値の欄は「絵の画素での太さ（直径）」。−＋は1画素ずつ（マスクはマスクの1画素ぶん）、長押しで加速。縦に離して動かす微調整・既定値への吸着はそのまま効く。
+   ・プログラムから値を入れる時は brSet(id,値)（バーを直接いじらない）。新しい太さのバーは THK に1行足す（tools/check_brush_scale.py が、画面の太さのバーが表に入っているかを数える）。
+   ・マスクは縦横512（MR）の細かさなので、それより細くはできない（台帳Ω-ξ）。 */
+const THKS={N:1000};
+const THK={
+  ps:{get:()=>pw,set:v=>{pw=v},max:40,min0:.1,def:10,kind:'img'},
+  rtS:{get:()=>RT.s,set:v=>{RT.s=v},max:60,min0:1,def:12,kind:'img'},
+  adjBs:{get:()=>adjBrush,set:v=>{adjBrush=v},max:80,min0:.5,def:20,kind:'mask'},
+  bs:{get:()=>brushMask,set:v=>{brushMask=v},max:40,min0:.5,def:14,kind:'mask'},
+  bbs:{get:()=>brushBlur,set:v=>{brushBlur=v},max:40,min0:.5,def:14,kind:'mask'},
+  pbs:{get:()=>brushParts,set:v=>{brushParts=v},max:40,min0:.5,def:14,kind:'mask'}
+};
+function brDims(l){if(!l)return{w:512,h:512};if(l.base)return{w:l.base.width,h:l.base.height};try{return workDims(l)}catch(_){return{w:512,h:512}}}
+function brMin(id,l){const t=THK[id];if(t.kind!=='img')return t.min0;const d=brDims(l===undefined?sel:l);return Math.min(t.min0,128/Math.max(1,Math.min(d.w,d.h)))}
+const brPos=(id,v)=>{const a=brMin(id),b=THK[id].max;return !(v>a)?0:v>=b?THKS.N:Math.round(THKS.N*Math.log(v/a)/Math.log(b/a))};
+const brVal=(id,p)=>{const a=brMin(id),b=THK[id].max;return p<=0?a:p>=THKS.N?b:a*Math.pow(b/a,p/THKS.N)};
+/* 太さの値 ⇔ 絵の画素での直径 */
+function brPx(id,v){const d=brDims(sel);return THK[id].kind==='img'?v*Math.min(d.w,d.h)/128:2*v*Math.max(d.w,d.h)/MR}
+function brFromPx(id,px){const d=brDims(sel);return THK[id].kind==='img'?px*128/Math.min(d.w,d.h):px*MR/(2*Math.max(d.w,d.h))}
+const brNum=px=>+px.toFixed(px<10?1:0);
+function brUi(id,fromSlider){
+  const r=$(id),t=THK[id];if(!r)return;
+  const px=brPx(id,t.get());
+  if(!fromSlider){const p=brPos(id,t.get());if(+r.value!==p)r.value=p}
+  const n=r._bn;if(n&&document.activeElement!==n)n.value=brNum(px);
+  r.setAttribute('aria-valuetext',brNum(px)+' px');
+}
+function brSet(id,v){const t=THK[id];v=Math.min(t.max,Math.max(brMin(id),+v));if(!(v>0))return;t.set(v);brUi(id)}
+/* 絵を選び直した・上限の設定を変えた時：下限が変わるので、値が下限より小さければ下限へ、バーの位置・数値・既定値の吸着先を合わせ直す */
+function brSync(){for(const id in THK){const t=THK[id],r=$(id);if(!r)continue;const a=brMin(id);if(t.get()<a)t.set(a);r.dataset.d=String(brPos(id,t.def));brUi(id)}}
+for(const id in THK){const r=$(id);if(r)r.oninput=()=>{THK[id].set(brVal(id,+r.value));brUi(id,1)}}
+/* −＋と数値の欄（140-controls.js の enh が、太さのバーに対して呼ぶ。ほかのバーの作りと同じ見た目） */
+function brEnh(r){
+  const id=r.id,t=THK[id];
+  const step=()=>t.kind==='img'?1:brPx(id,.5)-brPx(id,0);
+  const move=(d,m)=>{const px=brPx(id,t.get())+d*m*step();brSet(id,brFromPx(id,Math.max(1e-6,px)))};
+  const bt=(txt,d)=>{const b=document.createElement('button');b.type='button';b.className='stp';b.textContent=txt;b.setAttribute('aria-label',d>0?'太くする':'細くする');
+    let t1,t2,n=0;const stop=()=>{clearTimeout(t1);clearInterval(t2)};
+    b.onpointerdown=e=>{e.preventDefault();n=0;move(d,1);t1=setTimeout(()=>{t2=setInterval(()=>{n++;move(d,n>34?25:n>16?6:1)},70)},380)};
+    b.onpointerup=b.onpointerleave=b.onpointercancel=stop;return b};
+  const n=document.createElement('input');n.type='number';n.className='num';n.inputMode='decimal';n.step='any';n.min='0';
+  n.setAttribute('aria-label',(r.getAttribute('aria-label')||'太さ')+'（数値入力。絵の画素での直径）');n.title='絵の画素での太さ（直径）。数を打って決められます';
+  n.onchange=()=>{const px=parseFloat(n.value);if(!(px>0)){n.value=brNum(brPx(id,t.get()));return}brSet(id,brFromPx(id,px));n.value=brNum(brPx(id,t.get()))};
+  r.before(bt('−',-1));r.after(bt('＋',1),n);r._bn=n;
+}
 document.querySelectorAll('#tp [id^="adj"]').forEach(e=>{if(e.type==='range'&&e.id!=='adjBs')e.oninput=()=>{if(!sel)return;const map={adjBr:'brightness',adjCo:'contrast',adjSa:'saturation',adjHu:'hue',adjTe:'temperature',adjHi:'highlights',adjSh:'shadows',adjWh:'whites',adjBl:'blacks'},k=map[e.id];if(!k)return;ensureAdj(sel)[k]=+e.value;adjDirty(sel);adjUi()};if(e.type==='range'&&e.id!=='adjBs')e.onpointerdown=()=>{pushUndo()}});
 document.querySelectorAll('#fxEff [data-fx]').forEach(b=>b.onclick=()=>{lfSel=b.dataset.fx;lfUi()});
 LFR.forEach(([id,k])=>{const e=$(id);e.oninput=()=>{if(!sel)return;ensureLF(sel)[lfSel][k]=+e.value;adjDirty(sel);lfUi()};e.onpointerdown=()=>{pushUndo()}});
@@ -5287,7 +5342,6 @@ $('fxResetAll').onclick=()=>{if(!sel)return;pushUndo();sel.lf=null;ensureLF(sel)
 $('adjScAll').onclick=()=>setScope(false);$('adjScRng').onclick=()=>setScope(true);
 $('adjPaint').onclick=()=>{adjMode=adjMode==='paint'?'':'paint';if(adjMode)setScope(true);setTool('move');adjUi()};
 $('adjErase').onclick=()=>{adjMode=adjMode==='erase'?'':'erase';if(adjMode)setScope(true);setTool('move');adjUi()};
-$('adjBs').oninput=e=>{adjBrush=+e.target.value};
 $('adjAll').onclick=()=>adjAll(true);$('adjClear').onclick=()=>adjAll(false);
 $('adjReset').onclick=adjReset;$('adjShow').onclick=()=>{adjShow=!adjShow;adjUi();paintFrame()};
 $('tx').oninput=e=>{if(sel.txt!=null){sel.txt=e.target.value;setImg(sel,txtCv(sel.txt,sel.tcol))}};
@@ -6201,6 +6255,7 @@ function refine(r,st){const f=st>=1?.1:+(st/10).toFixed(5);r.dataset.f=f;r.datas
 function enh(root){
   root.querySelectorAll('input[type=range]:not([data-e])').forEach(r=>{
     r.dataset.e=1;if(!r.dataset.f)refine(r,+r.step||1);r.dataset.d=r.hasAttribute('value')?r.getAttribute('value'):r.value;scrubBind(r);
+    if(typeof THK!=='undefined'&&THK[r.id]){brEnh(r);const v0=r.parentNode.querySelector('.v');if(v0)v0.style.display='none';return}   /* 太さのバー：−＋と数値の欄は「絵の画素」で動く別の作り（110-pen-and-text.js。台帳Z-125） */
     const bt=(t,d)=>{const b=document.createElement('button');b.type='button';b.className='stp';b.textContent=t;b.setAttribute('aria-label',d>0?'増やす':'減らす');
       const go=(m=1)=>{r.value=cl(+(+r.value+d*m*(+r.dataset.f)).toFixed(5),+r.min,+r.max);r.dispatchEvent(new Event('input',{bubbles:true}))};
       let t1,t2,n=0;const stop=()=>{clearTimeout(t1);clearInterval(t2)};
@@ -6321,7 +6376,6 @@ function drawPins(l,S){
 function syncBm(){$('bshow').classList.toggle('on',showBm)}
 $('bshow').onclick=()=>{showBm=!showBm;syncBm()};
 $('bfill').onclick=()=>fillSel('bm','#3b82f6');
-$('bbs').oninput=e=>{brushBlur=+e.target.value};
 $('bbake').onclick=()=>{
   const l=sel;if(!l||!l.hasBm||!l.blur){note('先にぼかしを塗って、強さを付けてください');return}
   pushUndo();
@@ -6521,7 +6575,7 @@ addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnVal
 let asFail=0,asNext=0;
 function autosave(){if(!dirtyProj||TL.busy||Date.now()<asNext)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;asFail=0;asNext=0;if(!nw)$('rs').style.display=''}catch(_){asFail++;asNext=Date.now()+Math.min(20000*Math.pow(2,asFail),300000);if(asFail===1)note('この作品は大きくて、ブラウザの自動保存に入りません。消えないよう、ときどき「💾 保存」で作品ファイルに書き出してください',9000)}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
-function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document)}
+function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document);try{brSync()}catch(_){}}
 
 /* ===== ヒント(ポップアップ) ===== */
 $('hq').onclick=()=>{$('hint').hidden=!$('hint').hidden;clearTimeout(hto)};$('hx').onclick=()=>{$('hint').hidden=true};
@@ -6803,7 +6857,6 @@ $('pclr').onclick=()=>{if(sel.sm)sel.sm.getContext('2d').clearRect(0,0,MR,MR);se
 $('pclrh').onclick=()=>{CL.length=0;renderTray()};
 $('ptf').oninput=e=>{ptFeather=+e.target.value;$('ptfv').textContent=ptFeather};
 $('pthl').onchange=e=>{ptHole=e.target.value};$('ppos').onchange=e=>{ptPos=e.target.value};$('ptnow').onchange=e=>{ptNow=e.target.checked};$('ptmo').onchange=e=>{ptInh=e.target.checked};$('ptfill').onchange=e=>{ptFill=e.target.value};
-$('pbs').oninput=e=>{brushParts=+e.target.value};
 
 /* ===== 選択の強化（切り抜きタブ）=====
    台帳Z-87（自動選択・マグネット・輪郭吸着）・Z-91⑤・Z-127（明暗の傾き）・Z-129（輪郭を頂点列で持つ）・Z-142（分割）・Z-145（輪郭を掴んで編集）。部品は112-imgops.js（IO）。
@@ -7741,7 +7794,8 @@ function rtFoot(st,cx,cy){
 }
 /* 重み（0〜1）：硬さ＝内側は全力、外へなめらかに0へ。強さと、囲み（あれば）を掛ける */
 function rtWeights(st,cx,cy,f,sMul){
-  const R=st.R,hd=st.hd,w=f.w,h=f.h,W=new Float32Array(w*h),sel=st.selA,bw=st.bw,s=sMul===undefined?st.gs:sMul;
+  /* 半径1画素未満（絵の1画素の太さ）は、縁をなだらかにすると、画素の中心に届かず何も起きない。硬さ100として、円の面積の割合（アンチエイリアス）で重みにする（台帳Z-125） */
+  const R=st.R,hd=R<1?1:st.hd,w=f.w,h=f.h,W=new Float32Array(w*h),sel=st.selA,bw=st.bw,s=sMul===undefined?st.gs:sMul;
   for(let j=0;j<h;j++){const dy=f.y+j+.5-cy;for(let i=0;i<w;i++){
     const dx=f.x+i+.5-cx,d=Math.sqrt(dx*dx+dy*dy);let m;
     if(hd>=.995){m=R-d+.5}else{const t=d/R;if(t>=1)continue;if(t<=hd)m=1;else{const u=(1-t)/(1-hd);m=u*u*(3-2*u)}}
@@ -7960,7 +8014,7 @@ const rtHpRms=dv=>{dv.sort((a,b)=>a-b);const m=dv[dv.length>>1],c=Math.max(2.5*m
 let RTG=0;
 const rtTileStat=()=>RTG||(RTG=(()=>{const t=rtNoiseTile(),dv=[];for(let y=2;y<510;y+=3)for(let x=2;x<510;x+=3){let q=0;for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++)q+=t[((y+b)<<9)|(x+a)];dv.push(Math.abs(t[(y<<9)|x]-q/25))}return rtHpRms(dv)||1})());
 function rtFillDab(st,cx,cy,f,W){
-  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,R2=R*R*.9;
+  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,R2=Math.max(R*R*.9,.51);   /* 半径1画素未満でも、いちばん近い画素の中心は必ず穴に入る（台帳Z-125） */
   const k=Math.max(1,Math.ceil(Math.max(w2,h2)/RT_FILL_LOW)),lw=Math.ceil(w2/k),lh=Math.ceil(h2/k),C=new Float32Array(lw*lh*3),A=new Float32Array(lw*lh),sd=Math.max(1,Math.floor(k/3));
   let nk=0;
   /* 粗い格子の1セルは、k×k画素の平均。k≧3なら、画素を間引いて（sd画素おき）集める（円の外の色はなめらかなので十分）。 */
@@ -8151,7 +8205,7 @@ function rtUi(){
   $('rtMode').value=RT.mode;$('rtStyleRow').style.display=has?'':'none';$('rtSrcBox').style.display=has?'':'none';
   $('rtStyle').value=RT.style;$('rtAl').checked=RT.al;$('rtFlip').checked=RT.flip;$('rtSel').checked=RT.useSel;
   const set=(id,v)=>{const e=$(id);e.value=v;if(e._n)e._n.value=e.value};
-  set('rtRot',RT.rot);set('rtSc',RT.sc);set('rtS',RT.s);set('rtH',RT.h);set('rtG',Math.round(RT.gs[RT.mode]*100));
+  set('rtRot',RT.rot);set('rtSc',RT.sc);brUi('rtS');set('rtH',RT.h);set('rtG',Math.round(RT.gs[RT.mode]*100));
   $('rtPRow').style.display=M.pl?'':'none';if(M.pl){$('rtPL').textContent=M.pl;set('rtP',Math.round(RT.ps[RT.mode]*100))}
   const s=RT.src&&sel&&RT.src.l===sel;
   $('rtSrcSt').textContent=RT.setting?'基準点にする所を、絵の上でタップしてください':s?'基準点：決めてあります（Alt＋クリックでも置き直せます）':'基準点：まだ決めていません';
@@ -8166,7 +8220,6 @@ $('rtSel').onchange=e=>{RT.useSel=e.target.checked;if(RT.useSel&&sel&&!sel.hasSm
 $('rtSet').onclick=()=>{RT.setting=!RT.setting;rtUi();if(RT.setting)note('絵の上で、写し元にしたい所をタップしてください',2600)};
 $('rtRot').oninput=e=>{RT.rot=+e.target.value};
 $('rtSc').oninput=e=>{RT.sc=+e.target.value};
-$('rtS').oninput=e=>{RT.s=+e.target.value};
 $('rtH').oninput=e=>{RT.h=+e.target.value};
 $('rtG').oninput=e=>{RT.gs[RT.mode]=+e.target.value/100};
 $('rtP').oninput=e=>{RT.ps[RT.mode]=+e.target.value/100};
@@ -8278,10 +8331,10 @@ const SZH={id:null,t:0,down:false,HOLD:700,FADE:250,
   /* バーのid → (オブジェクトl)＝画面上の直径px。0以下なら出さない */
   map:{
     ps:l=>paBrushPx(l),
-    adjBs:l=>maskBrushPx(l,+$('adjBs').value),
-    bs:l=>maskBrushPx(l,+$('bs').value),
-    bbs:l=>maskBrushPx(l,+$('bbs').value),
-    pbs:l=>maskBrushPx(l,+$('pbs').value),
+    adjBs:l=>maskBrushPx(l,adjBrush),
+    bs:l=>maskBrushPx(l,brushMask),
+    bbs:l=>maskBrushPx(l,brushBlur),
+    pbs:l=>maskBrushPx(l,brushParts),
     wbS:()=>+$('wbS').value,
     rtS:l=>typeof rtBrushPx==='function'?rtBrushPx(l):0,
     rtP:l=>typeof rtReachScreen==='function'?rtReachScreen(l):0   /* 修整の「なじませる幅・ぼかす広さ・滑らかさ」＝効きが及ぶ範囲（点線の輪。方式が大きさでない時は0＝出さない。台帳Z-228） */
@@ -8317,6 +8370,11 @@ function sizeHintDraw(){
   ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();
   ctx.lineWidth=1.6;ctx.strokeStyle='#ffffff';ctx.stroke();ctx.setLineDash([]);
   ctx.beginPath();ctx.arc(cx,cy,2,0,6.2832);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.stroke();
+  /* 太さのバー（THK）：絵の画素での直径を、輪の下に数で添える（細さが「1画素」かどうかが分かる。台帳Z-125） */
+  if(typeof THK!=='undefined'&&THK[s.id]){
+    const t=brNum(brPx(s.id,THK[s.id].get()))+' px（絵の画素）',y=cy+Math.max(r,6)+16;
+    ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.lineWidth=3.5;ctx.strokeStyle='rgba(0,0,0,.55)';ctx.strokeText(t,cx,y);ctx.fillStyle='#fff';ctx.fillText(t,cx,y);
+  }
   ctx.restore();
 }
 /* ===== 見た目（スキン・文字・角の丸み・密度・アイコン）。台帳Z-186 =====
@@ -10057,7 +10115,7 @@ const MANPAGES=[
 <li>「レイヤーとオブジェクト」の一覧：いちばん上にキャンバスのpx、各オブジェクトの下に「元の絵 ○×○ px／キャンバス上 ○×○ px」、各レイヤーの右にその絵が占める範囲（動き・物理を含めない目安）。</li>
 </ul>`},
   {id:'slow',title:'遅い場合の対処・上限',
-   live:()=>{const L=LIM,f=v=>v>0?String(v):'なし（制限なし）';return '上限の設定（いまの値）\nキャンバス 長辺 '+f(L.cv)+' px／総画素 '+f(L.exp)+'\nペン等の編集 長辺 '+f(L.pen)+' px／白紙 総画素 '+f(L.blk)+'\n質感・統合 総画素 '+f(L.tex)+'／ピンの注意 '+(L.pins>0?L.pins+' 個':'出さない')+'／履歴 '+(L.undo>0?L.undo+' MB':'なし')+'／液体の粒 '+f(L.liq)+' 個（1つの液体ごと）\nビジュアルプログラミング：ソース '+f(L.vps)+' 字／保存する1つの値 '+f(L.vpv)+' 字／保存先 '+f(L.vpk)+' 個\n動画：効果の注意 '+(VD.warn>0?VD.warn+' 個':'出さない')+'／歪みの細かさ 画面 '+f(VD.cap)+' px・書き出し '+f(VD.capExp)+' px／書き出しの上限 '+f(VD.exMax)+' 画素'},
+   live:()=>{const L=LIM,f=v=>v>0?String(v):'なし（制限なし）';return '上限の設定（いまの値）\nキャンバス 長辺 '+f(L.cv)+' px／総画素 '+f(L.exp)+'\nペン等の編集 長辺 '+f(L.pen)+' px・小さい絵は最小 '+(L.penmin>0?L.penmin+' px':'引き上げない')+'／白紙 総画素 '+f(L.blk)+'\n質感・統合 総画素 '+f(L.tex)+'／ピンの注意 '+(L.pins>0?L.pins+' 個':'出さない')+'／履歴 '+(L.undo>0?L.undo+' MB':'なし')+'／液体の粒 '+f(L.liq)+' 個（1つの液体ごと）\nビジュアルプログラミング：ソース '+f(L.vps)+' 字／保存する1つの値 '+f(L.vpv)+' 字／保存先 '+f(L.vpk)+' 個\n動画：効果の注意 '+(VD.warn>0?VD.warn+' 個':'出さない')+'／歪みの細かさ 画面 '+f(VD.cap)+' px・書き出し '+f(VD.capExp)+' px／書き出しの上限 '+f(VD.exMax)+' 画素'},
    html:()=>
 `<p><b>このアプリは、絵や動画を勝手に劣化させたり、操作に境目を作ったりしない方針です。</b>容量や速さのために上限が要る所は、①超えたら注意を出す　②小さく説明する　③背景・出力タブの「⚙ 動作」で変えられる　④このページに書く、の4つをそろえます。数の制限そのもの（効果は何個まで、など）は設けていません。</p>
 <p><b>大きすぎる値にする時の確かめ：</b>「ペン等の編集」「白紙」「質感・統合」「キャンバス」「Undoの履歴」の上限を、目安（例：ペン等の編集 8,192 px、キャンバス長辺 16,384 px）を超える値や「0＝制限なし」にして確定すると、理由と目安つきのポップアップが出ます。「キャンセル」なら元の値のままです。値を打っている途中では出ません。</p>
@@ -10097,6 +10155,15 @@ const MANPAGES=[
 <li><b>書き出し・「焼き込み」は、長辺3200pxまで</b>：これより大きい絵は、歪みの部分が3200pxの細かさで計算されます。</li>
 <li><b>焼き込みを何度も重ねると、そのたびに少しずつボケます</b>：歪みは、焼き込むまでは元の絵と歪みの情報を別々に持つので、焼き込みは最後に1回にします。</li>
 <li>歪みのかかった絵に、ペン・消しゴム・修整で描く時は、見えている位置に描けます（元の絵の画素に描くので、あとで歪みを変えると、描いた線も一緒に動きます）。</li>
+</ul>
+<h4>ペン・修整・ブラシの太さと細かさ（台帳Z-125）</h4>
+<ul>
+<li><b>太さのバーは、細い所も太い所も同じ動きで変わります</b>（ペン・消しゴム・修整のすべての方式・範囲ブラシ・「ぼかす所を塗る」「囲む」など）。バーの真ん中は、細い端と太い端の中間の「割合」です。細く描きたい時は、バーの左寄りで、太く描きたい時は右寄りで動かします。</li>
+<li><b>バーの横の数の欄は「絵の画素での太さ（直径）」</b>です。数を打って決められ、−＋で1画素ずつ増減します（長押しで速く）。つまみを押したまま縦に離すと、さらに細かく動かせます（今までどおり）。</li>
+<li><b>いちばん細い端＝その絵の1画素</b>です。大きい絵（例：3000×2000）ではペン・修整とも1画素まで細くできます（ペンは今までの下限より細くなります）。細い線を引きたい時は、絵を拡大してから、数の欄に1〜2を打つと描きやすくなります。太い端は今までと同じです。</li>
+<li><b>範囲ブラシ（色調整・質感）・「ぼかす所を塗る」・「囲む」は、「マスク」の1画素まで</b>です。マスクは縦横512の細かさなので、大きい絵ではその1画素が絵の数画素にあたります（数の欄がその画素数で出ます）。それより細くはできません。</li>
+<li><b>小さい絵は、細かく描けるように引き上げます</b>：長辺が1024pxに満たない絵は、ペン・修整などを使い始める時に、長辺1024pxの細かさに引き上げてから描きます（絵は少しなめらかになります。メモリ・保存サイズ・元に戻すの量が増えます）。背景・出力タブの「⚙ 動作」の「小さい絵を編集する時の最小の細かさ」で変えられます（0＝引き上げない＝絵の実解像度のまま）。長辺が1024px以上の絵は変わりません。</li>
+<li>歪みブラシは、画面の大きさ（px）で決める別の道具なので、対象外です（歪みの網目の細かさ以下にはできません）。</li>
 </ul>
 <h4>遅いと感じたら</h4>
 <ul>
@@ -14263,7 +14330,7 @@ function setapiInit(){
   const add=it=>{SETAPI.items.push(it);SETAPI.by[it.id]=it};
   /* 数の設定：欄の値を入れて change を起こす（確認・保存・更新は、欄の側の処理に任せる）。欄が無ければ、直接入れる */
   const viaInput=(id,fn)=>v=>{const e=$(id);if(e){e.value=v;e.dispatchEvent(new Event('change'))}else fn(v)};
-  const LIMS=[['pen','limPen','ペンなどの細かさの上限（長辺）','px'],['blk','limBlk','白紙1枚の画素数の上限','画素'],['tex','limTex','質感・統合の画素数の上限','画素'],['pins','limPins','動く歪みの針の数（超えたら注意）','本'],
+  const LIMS=[['pen','limPen','ペンなどの細かさの上限（長辺）','px'],['penmin','limPenMin','小さい絵を編集する時の最小の細かさ（長辺。0＝実解像度のまま）','px'],['blk','limBlk','白紙1枚の画素数の上限','画素'],['tex','limTex','質感・統合の画素数の上限','画素'],['pins','limPins','動く歪みの針の数（超えたら注意）','本'],
     ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],['gif','limGif','GIF録画のコマ数の上限','コマ'],
     ['vps','limVps','VPのソースの文字数の上限','字'],['vpv','limVpv','VPが保存する1つの値の文字数の上限','字'],['vpk','limVpk','VPが保存する保存先の数の上限','個']];
   for(const[k,id,lab,u]of LIMS)add({id:'limit.'+k,group:'上限',label:setapiLab(id,lab)||lab,kind:'number',min:0,max:1e10,step:1,unit:u,

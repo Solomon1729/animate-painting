@@ -62,4 +62,4 @@ addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnVal
 let asFail=0,asNext=0;
 function autosave(){if(!dirtyProj||TL.busy||Date.now()<asNext)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;asFail=0;asNext=0;if(!nw)$('rs').style.display=''}catch(_){asFail++;asNext=Date.now()+Math.min(20000*Math.pow(2,asFail),300000);if(asFail===1)note('この作品は大きくて、ブラウザの自動保存に入りません。消えないよう、ときどき「💾 保存」で作品ファイルに書き出してください',9000)}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
-function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document)}
+function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document);try{brSync()}catch(_){}}
