@@ -14,7 +14,7 @@ function setapiInit(){
   /* 数の設定：欄の値を入れて change を起こす（確認・保存・更新は、欄の側の処理に任せる）。欄が無ければ、直接入れる */
   const viaInput=(id,fn)=>v=>{const e=$(id);if(e){e.value=v;e.dispatchEvent(new Event('change'))}else fn(v)};
   const LIMS=[['pen','limPen','ペンなどの細かさの上限（長辺）','px'],['penmin','limPenMin','小さい絵を編集する時の最小の細かさ（長辺。0＝実解像度のまま）','px'],['blk','limBlk','白紙1枚の画素数の上限','画素'],['tex','limTex','質感・統合の画素数の上限','画素'],['pins','limPins','動く歪みの針の数（超えたら注意）','本'],
-    ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],['gif','limGif','GIF録画のコマ数の上限','コマ'],
+    ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],['gif','limGif','GIF録画のコマ数の上限','コマ'],['gifw','limGifW','GIFの幅（出力の大きさが今までどおりの時。0＝画面の大きさのまま）','px'],['rec','limRec','録画の長さの上限','秒'],
     ['vps','limVps','VPのソースの文字数の上限','字'],['vpv','limVpv','VPが保存する1つの値の文字数の上限','字'],['vpk','limVpk','VPが保存する保存先の数の上限','個']];
   for(const[k,id,lab,u]of LIMS)add({id:'limit.'+k,group:'上限',label:setapiLab(id,lab)||lab,kind:'number',min:0,max:1e10,step:1,unit:u,
     note:'0＝制限なし。目安を超える値・0にする時は、確認のポップアップが出ます（やめると変わりません）。',
@@ -28,6 +28,10 @@ function setapiInit(){
     note:'「自動」＝テーマに合わせる。',get:()=>SKIN.cur[k],set:v=>{skinSet(k,v)}});
   add({id:'import.size',group:'画像の置き方',label:setapiLab('impm','画像を置く大きさ'),kind:'choice',choices:[['orig','原寸（キャンバスより大きい時は、キャンバスを広げる）'],['fit','キャンバスの約半分に縮めて置く（従来）']],
     note:'画像を追加した時に置く大きさ。元の絵のデータは変わりません。',get:()=>IMP.mode,set:v=>{const e=$('impm');if(e){e.value=v;e.dispatchEvent(new Event('change'))}else{IMP.mode=v;try{localStorage.setItem('am_import',v)}catch(_){}}}});
+  add({id:'output.size',group:'書き出し',label:setapiLab('osz','出力の大きさ'),kind:'choice',choices:[['auto','今までどおり（録画・GIFは画面の枠／動画タブはキャンバスのpx／静止画は倍率の欄）'],['doc','キャンバスのpx'],['img','元の画像に合わせる（選んだ絵が原寸になる倍率）'],['long','長辺を指定']],
+    note:'動画・GIF・動画タブの書き出し・静止画の大きさ。',get:()=>OUT.m,set:v=>{const e=$('osz');if(e){e.value=v;e.dispatchEvent(new Event('change'))}else{OUT.m=v;outSave()}}});
+  add({id:'output.long',group:'書き出し',label:'出力の大きさ：長辺（「長辺を指定」の時のpx）',kind:'number',min:1,max:1e5,step:1,unit:'px',
+    note:'キャンバスの縦横比のまま、長辺をこのpxにします。大きすぎる時は、総画素の上限で縮めて知らせます。',get:()=>OUT.L,set:v=>{const e=$('oszl');if(e){e.value=v;e.dispatchEvent(new Event('input'))}else{OUT.L=Math.round(v);outSave()}}});
   add({id:'ui.method',group:'見た目',label:'操作の方式',kind:'choice',choices:[['box','枠（道具箱。キャンバスが広い）'],['win','窓（従来の操作窓）']],
     note:'変えると、画面の作りが切り替わります。',get:()=>UIM.m,set:v=>{uiSet(v)}});
 }

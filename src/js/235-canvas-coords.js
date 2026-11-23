@@ -22,6 +22,7 @@ function canvasUi(){
   if(a!==$('cvw'))$('cvw').value=w;if(a!==$('cvh'))$('cvh').value=h;
   $('cvnote').textContent=DOC.w?'キャンバス '+DOC.w+'×'+DOC.h+' px。静止画の1×がこの大きさです（座標もこのpxで測ります）。':'自動：画面の枠に合わせます（今は約 '+w+'×'+h+' px）。操作窓を動かしても、紙は伸び縮みしません（合わせ直すには、枠の「大」を押し直す）。大きさを決めると、書き出しも座標もその大きさになります。';
   $('cvauto').disabled=!DOC.w;
+  if(typeof outUi==='function')outUi();
   [...$('sq').options].forEach(o=>{const k=+o.value;o.textContent=k+'×（'+Math.round(w*k)+'×'+Math.round(h*k)+'px）'});
 }
 $('cvset').onclick=()=>{const w=+$('cvw').value,h=+$('cvh').value;if(!(w>=CV_MIN&&h>=CV_MIN)){note('幅と高さは '+CV_MIN+' px 以上の数で入れてください');return}setCanvasSize(w,h)};

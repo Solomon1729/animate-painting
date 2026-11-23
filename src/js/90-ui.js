@@ -64,6 +64,7 @@ function setSel(l){
   sel=l;chips();frame(l);
   $('nm').value=l.name;
   adjUi();
+  try{outUi()}catch(_){}   /* 出力の大きさ：「元の画像に合わせる」は、選んでいる絵で決まる（台帳Z-112） */
   try{brSync()}catch(_){}   /* 太さのバー：絵ごとに「1画素の細さ」が違うので、下限・数値を合わせ直す（台帳Z-125） */
   $('sz').max=Math.max(6,Math.ceil(l.size));$('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
   $('em').innerHTML='';

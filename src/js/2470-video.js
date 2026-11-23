@@ -482,15 +482,16 @@ window.addEventListener('pointercancel',vdDragEnd,true);
    縮める時は、書き出しの欄に必ず知らせる（vdSizeNote）。設定は、背景・出力タブの⚙動作 */
 function vdExK(){return DOC.w>0&&VD.exMax>0?Math.min(1,Math.sqrt(VD.exMax/(DOC.w*DOC.h))):DOC.w>0?1:0}
 function vdOutSize(){
-  const hk0=vdExK();
-  return DOC.w>0?[Math.round(DOC.w*hk0),Math.round(DOC.h*hk0)]:[Math.round((W||0)*(dpr||1)),Math.round((H||0)*(dpr||1))];
+  const p=outPlan('vd');   /* 出力の大きさ（台帳Z-112）。今までどおり＝キャンバスのpx（上限VD.exMax）／画面の枠の時は画面の画素 */
+  return p.k>0?[p.w,p.h]:[Math.round((W||0)*(dpr||1)),Math.round((H||0)*(dpr||1))];
 }
 function vdSizeNote(){
   if(VD.rec)return;
   const[w,h]=vdOutSize(),g=vdGeom();let s='書き出す大きさ：'+w+'×'+h+' px。書き出し中は、この画面を開いたままにしてください（別のタブやアプリに切り替えると、描画が止まります）。書き出しの間は、再生の速さを×1にします。';
   if(g&&Math.abs(w/h-g.vw/g.vh)>.02)s+=' 動画と縦横比が違うので余白が入ります（「📐 キャンバスを動画の大きさにする」で合わせられます）。';
-  else if(g&&DOC.w===0)s+=' 画面の枠の大きさで出ます。元の画質で出すには「📐 キャンバスを動画の大きさにする」を押してください。';
-  if(DOC.w>0&&vdExK()<1)s+=' 【注意】キャンバスが '+DOC.w+'×'+DOC.h+' px と大きいので、書き出しは縮みます（上限 '+Math.round(VD.exMax/1e4)+'万画素）。縮めたくない時は、背景・出力タブの「⚙ 動作」の「動画の書き出しの上限」を大きく（0＝縮めない）してください。大きいと、録画できない端末があります。';
+  else if(g&&DOC.w===0&&OUT.m==='auto')s+=' 画面の枠の大きさで出ます。元の画質で出すには「📐 キャンバスを動画の大きさにする」を押してください。';
+  if(OUT.m!=='auto'){const p=outPlan('vd');s+=' 出力の大きさは「'+({doc:'キャンバスのpx',img:'元の画像に合わせる',long:'長辺を指定'}[OUT.m]||'')+'」（背景・出力タブで変えられます）。'+(p.cut?'【注意】'+outCutText(p):'')}
+  else if(DOC.w>0&&vdExK()<1)s+=' 【注意】キャンバスが '+DOC.w+'×'+DOC.h+' px と大きいので、書き出しは縮みます（上限 '+Math.round(VD.exMax/1e4)+'万画素）。縮めたくない時は、背景・出力タブの「⚙ 動作」の「動画の書き出しの上限」を大きく（0＝縮めない）してください。大きいと、録画できない端末があります。';
   const n=$('vdExNote');if(n.textContent!==s)n.textContent=s;
 }
 const vdSeekTo=t=>new Promise(res=>{
@@ -511,7 +512,7 @@ async function vdExport(){
   try{vdV.defaultPlaybackRate=1;vdV.playbackRate=1}catch(_){}   /* 実時間の録画なので、書き出しの間だけ×1（終わったら元の速さへ。vdFinish） */
   const R={a,b,chunks:[],zbak:{s:Z.s,x:Z.x,y:Z.y},timer:0,wl:null,done:false,abort:false,mr:null,snd:false};VD.rec=R;
   Z.s=1;Z.x=0;Z.y=0;vwNoSplit=true;VD.exp=true;
-  hk=vdExK();fit();
+  hk=outPlan('vd').k;fit();   /* 出力の大きさ（台帳Z-112）。今までどおり＝vdExK() */
   $('vdExGo').textContent='⏹ 書き出しを止める';$('vdExTx').textContent='準備中…';
   try{
     await vdSeekTo(a);

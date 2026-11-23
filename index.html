@@ -1186,6 +1186,8 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="row"><span class="lab">ぼかし</span><input id="bgb" type="range" min="0" max="30" value="0" aria-label="背景のぼかし"></div>
     </div>
     <div class="grp"><div class="gh">書き出し</div>
+    <div class="row"><span class="lab">出力の大きさ</span><select id="osz" aria-label="書き出す大きさ（動画・GIF・静止画）"><option value="auto">今までどおり</option><option value="doc">キャンバスのpx</option><option value="img">元の画像に合わせる</option><option value="long">長辺を指定</option></select><input id="oszl" class="num" type="number" min="1" step="100" inputmode="numeric" aria-label="長辺のpx" style="width:84px" hidden><span class="note" style="margin:0" id="oszu" hidden>px</span></div>
+    <div class="note" id="oszn"></div>
     <div class="row"><span class="lab">動画</span><button id="rec">⏺ 動画</button><button id="gif">🎞 GIF</button><span id="rtx" class="note" style="margin:0"></span></div>
     <div class="row"><span class="lab">静止画</span><select id="sq" aria-label="倍率"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select><select id="sf" aria-label="形式"><option value="png">PNG</option><option value="jpg">JPEG</option><option value="pdf">PDF</option></select><button id="snap">📷 保存</button></div>
     <div class="row"><span class="lab">選んだ絵</span><button id="pexp" aria-label="選んでいるオブジェクトだけを、色調整・質感・ぼかし込みの原寸で保存（透明な余白は切り詰める）">📷 このオブジェクトだけ保存</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
@@ -1230,6 +1232,8 @@ body.ubox #tbxD:not([hidden]){position:sticky;top:0;z-index:2;cursor:move;backgr
     <div class="row"><span class="lab">操作の履歴（元に戻す）の上限</span><input id="limUndo" class="num" type="number" min="0" step="16" inputmode="numeric" aria-label="操作の履歴（元に戻す）の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">MB。既定 256。超えると古い履歴から消えます。0＝制限なし</span></div>
     <div class="row"><span class="lab">液体の粒の数の上限</span><input id="limLiq" class="num" type="number" min="0" step="100" inputmode="numeric" aria-label="液体の粒の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（1つの液体の絵ごと）。既定 1500。超えると古い水から消えます。0＝制限なし</span></div>
     <div class="row"><span class="lab">GIF録画のコマ数の上限</span><input id="limGif" class="num" type="number" min="0" step="12" inputmode="numeric" aria-label="GIF録画のコマ数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">コマ（1秒に12コマ）。既定 120（約10秒）。超えると録画が止まり、そこまでをGIFにします。大きくするほどメモリを使います。0＝制限なし</span></div>
+    <div class="row"><span class="lab">GIFの幅（今までどおりの時）</span><input id="limGifW" class="num" type="number" min="0" step="60" inputmode="numeric" aria-label="GIFの幅（出力の大きさが今までどおりの時。0＝画面の大きさのまま）" style="width:96px"><span class="note" style="margin:0">px。既定 360。「出力の大きさ」が今までどおりの時、GIFはこの幅まで縮めて作ります（縮める時は知らせます）。0＝縮めない。「出力の大きさ」を選んだ時は、この設定によらず、選んだ大きさで作ります。大きいほど、メモリを使います</span></div>
+    <div class="row"><span class="lab">録画の長さの上限</span><input id="limRec" class="num" type="number" min="0" step="30" inputmode="numeric" aria-label="録画の長さの上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">秒。既定 60。超えると録画が止まり、そこまでを保存します（止めた時は知らせます）。長くするほど、メモリを使います。0＝制限なし</span></div>
     <div class="row"><span class="lab">ビジュアルプログラミングのソースの文字数</span><input id="limVps" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングのソースの文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（読み込むHTML・編集して反映するソース）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
     <div class="row"><span class="lab">ビジュアルプログラミングの保存する1つの値</span><input id="limVpv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存する1つの値の文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（枠の中のページが覚える1つの値の長さ）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
     <div class="row"><span class="lab">ビジュアルプログラミングの保存先の数</span><input id="limVpk" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存先の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（枠の中のページが覚える名前の数）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
@@ -1294,26 +1298,26 @@ function emo(t){const c=document.createElement('canvas');c.width=c.height=320;co
    絵を勝手に縮めたり、操作の境目を黙って設けたりしない。ここは、既にあった上限を、設定で変えられるようにまとめたもの（0＝制限なし）。
    ・LIM（端末に覚える am_limits。作品・Undo・保存には入れない）。入れ物は、背景・出力タブの「⚙ 動作」の「上限の設定」。
    ・limOr(k)＝使う側が見る値（0なら Infinity）。使う所：ペン等の作業の細かさ pen（110・30）／白紙 blk（30）／質感・統合 tex（20・225・226）／
-     小さい絵の最小の細かさ penmin（110。0＝絵の実解像度のまま。台帳Z-125）／動く歪み pins（120。超えたら注意だけ。止めない）／Undoの履歴 undo（170。MB）／キャンバス cv・exp（235・160・220）／液体の粒の数 liq（2473。超えたら古い水から消す）／ビジュアルプログラミングの文字数 vps・保存する1つの値の文字数 vpv・保存先の数 vpk（2466。**既定は0＝制限なし**。設定した時だけ、超えると止めて知らせる）。
+     小さい絵の最小の細かさ penmin（110。0＝絵の実解像度のまま。台帳Z-125）／動く歪み pins（120。超えたら注意だけ。止めない）／Undoの履歴 undo（170。MB）／キャンバス cv・exp（235・160・220）／液体の粒の数 liq（2473。超えたら古い水から消す）／GIFの幅 gifw（130。今までどおりの時だけ。既定360）・録画の長さ rec（100。秒。既定60。台帳Z-112）／ビジュアルプログラミングの文字数 vps・保存する1つの値の文字数 vpv・保存先の数 vpk（2466。**既定は0＝制限なし**。設定した時だけ、超えると止めて知らせる）。
    ・ブラウザ自身の上限（Canvasの1辺の最大・総画素）は、ここでは変えられない。大きくしすぎると、真っ白になったり落ちたりする端末がある（マニュアル「遅い場合の対処・上限」）。 */
-const LIM={pen:4096,penmin:1024,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6,liq:1500,gif:120,vps:0,vpv:0,vpk:0};
+const LIM={pen:4096,penmin:1024,blk:8e6,tex:12e6,pins:24,undo:256,cv:8192,exp:25e6,liq:1500,gif:120,gifw:360,rec:60,vps:0,vpv:0,vpk:0};
 const LIM_D=Object.assign({},LIM);
 try{const q=JSON.parse(localStorage.getItem('am_limits')||'null');if(q&&typeof q==='object')for(const k in LIM)if(q[k]!==undefined&&q[k]!==null&&q[k]!==''&&Number.isFinite(+q[k])&&+q[k]>=0)LIM[k]=+q[k]}catch(_){}
 const limOr=k=>LIM[k]>0?LIM[k]:Infinity;
 /* 大きすぎる上限の目安（これを超える・0＝制限なしにする時に、忠告を出す）。ブラウザや端末の限界に近い値 */
-const LIM_WARN={pen:[8192,'ペンなどで編集する細かさ（長辺）','px'],penmin:[4096,'小さい絵を編集する時の最小の細かさ（長辺）','px'],blk:[3e7,'白紙1枚の画素数','画素'],tex:[3e7,'質感・統合の画素数','画素'],cv:[16384,'キャンバスの長辺','px'],exp:[1e8,'キャンバスの合計画素数','画素'],undo:[2048,'Undoの履歴','MB']};
+const LIM_WARN={pen:[8192,'ペンなどで編集する細かさ（長辺）','px'],penmin:[4096,'小さい絵を編集する時の最小の細かさ（長辺）','px'],blk:[3e7,'白紙1枚の画素数','画素'],tex:[3e7,'質感・統合の画素数','画素'],cv:[16384,'キャンバスの長辺','px'],exp:[1e8,'キャンバスの合計画素数','画素'],undo:[2048,'Undoの履歴','MB'],gifw:[2048,'GIFの幅','px'],rec:[600,'録画の長さ','秒']};
 function limWarn(k,v){const w=LIM_WARN[k];if(!w)return'';if(v>0&&v<=w[0])return'';
   return '「'+w[1]+'の上限」を '+(v===0?'制限なし':v.toLocaleString()+' '+w[2])+' にします。\n\n大きくすると、動作が遅くなったり、端末によっては止まる・画面が真っ白になることがあります（目安：'+w[0].toLocaleString()+' '+w[2]+'まで）。\n\nそれでも変えますか？（「上限の設定」で、いつでも戻せます）'}
 function limSave(){try{localStorage.setItem('am_limits',JSON.stringify(LIM))}catch(_){}}
-[['limPen','pen'],['limPenMin','penmin'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']].forEach(([id,k])=>{
+[['limPen','pen'],['limPenMin','penmin'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limGifW','gifw'],['limRec','rec'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']].forEach(([id,k])=>{
   const e=$(id);if(!e)return;e.value=LIM[k];
   /* 大きすぎる値・制限なし（0）にする時は、確かめてから変える（台帳Z-16）。打っている途中（input）では保存せず、確定（change）で聞く。やめたら元の値に戻る */
   const on=ev=>{const v=parseFloat(e.value);if(!(v>=0))return;const r=Math.round(v),w=limWarn(k,r);
     if(w){if(ev&&ev.type!=='change')return;if(!confirm(w)){e.value=LIM[k];return}}
-    LIM[k]=r;limSave();if(typeof brSync==='function'){try{brSync()}catch(_){}}};
+    LIM[k]=r;limSave();if(typeof brSync==='function'){try{brSync()}catch(_){}}if(typeof outUi==='function'){try{outUi()}catch(_){}}};
   e.addEventListener('input',on);e.addEventListener('change',on);
 });
-{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limPenMin','penmin'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
+{const b=$('limReset');if(b)b.onclick=()=>{Object.assign(LIM,LIM_D);limSave();for(const[id,k]of[['limPen','pen'],['limPenMin','penmin'],['limBlk','blk'],['limTex','tex'],['limPins','pins'],['limUndo','undo'],['limCv','cv'],['limExp','exp'],['limLiq','liq'],['limGif','gif'],['limGifW','gifw'],['limRec','rec'],['limVps','vps'],['limVpv','vpv'],['limVpk','vpk']]){const e=$(id);if(e)e.value=LIM[k]}note('上限の設定を、初めの値に戻しました')}}
 
 /* 動きの基本: 往復(方向つき)・回転・のび縮み × 波形。全波形は -1〜+1 */
 const K=[['m','往復',4,.05],['r','回転',360,5],['s','のび縮み',.5,.02]];
@@ -5084,6 +5088,7 @@ function setSel(l){
   sel=l;chips();frame(l);
   $('nm').value=l.name;
   adjUi();
+  try{outUi()}catch(_){}   /* 出力の大きさ：「元の画像に合わせる」は、選んでいる絵で決まる（台帳Z-112） */
   try{brSync()}catch(_){}   /* 太さのバー：絵ごとに「1画素の細さ」が違うので、下限・数値を合わせ直す（台帳Z-125） */
   $('sz').max=Math.max(6,Math.ceil(l.size));$('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
   $('em').innerHTML='';
@@ -5157,17 +5162,91 @@ function showOut(url,kind,ext,prev){  /* prev＝画像として見せるURL（PD
   o.append(el,a);flagOutput();
 }
 $('snap').onclick=()=>cv.toBlob(b=>b&&showOut(URL.createObjectURL(b),'img','png'),'image/png');
+/* ===== 出力の大きさ（台帳Z-112）：録画・GIF・動画タブの書き出し・静止画の大きさを、書き出す時に選ぶ =====
+   ・今までどおり（auto）：録画・GIFは画面の枠の大きさ（GIFは幅 LIM.gifw まで）／動画タブはキャンバスのpx（総画素 VD.exMax まで）／静止画は倍率の欄どおり
+   ・キャンバスのpx（doc）：キャンバスの大きさそのまま（自動の時は、画面の枠のpx）
+   ・元の画像に合わせる（img）：選んでいる絵（無ければ、一番下の絵）が、1画素＝1画素の原寸になる倍率でキャンバス全体を出す。絵は縮まず、色調整・質感・ぼかし・歪み・動きなどの編集は、そのまま効く。
+     元の絵より小さく見せている時だけ大きくする（大きく見せている時は、キャンバスのpxより小さくしない）
+   ・長辺を指定（long）：キャンバスの縦横比のまま、長辺をこのpxにする
+   大きすぎる時の縮み：動画（録画・動画タブ）＝総画素 VD.exMax（⚙動作の「動画の書き出しの上限」）／GIF・静止画＝総画素 LIM.exp。縮める時は、必ず知らせる。
+   書き出しの間だけ hk（キャンバスの画素の倍率）を変え、拡大・移動は等倍に戻す（終わったら元へ）。端末に覚える（am_out）。作品・Undo・保存には入れない */
+const OUT={m:'auto',L:2048};
+try{const q=JSON.parse(localStorage.getItem('am_out')||'null');if(q&&typeof q==='object'){if(['auto','doc','img','long'].includes(q.m))OUT.m=q.m;if(q.L>0)OUT.L=Math.round(q.L)}}catch(_){}
+function outSave(){try{localStorage.setItem('am_out',JSON.stringify(OUT))}catch(_){}}
+/* 「元の画像」にする絵：選んでいる絵、無ければ一番下の絵 */
+function outImgLayer(){return(typeof sel!=='undefined'&&sel&&sel.img)?sel:(AC.find(l=>l&&l.img)||null)}
+/* 種類（rec・gif・vd・snap）ごとの出力の計画。k＝hkに入れる倍率（0＝今までどおり＝触らない）。w・h＝出る大きさ。cut＝上限で縮めたか（'vd'＝動画の上限／'exp'＝総画素の上限）。why＝説明 */
+function outPlan(kind){
+  const bw=DOC.w||Math.round(W||0),bh=DOC.h||Math.round(H||0),r={k:0,w:0,h:0,cut:'',why:'',img:null,m:OUT.m};
+  if(!(bw>0&&bh>0))return r;
+  let k=0;
+  if(OUT.m==='auto'){
+    if(kind==='vd'){k=vdExK();if(k>0&&k<1)r.cut='vd'}
+    else if(kind==='snap')k=Math.max(1,+$('sq').value||1);
+    else{r.w=Math.round(W||bw);r.h=Math.round(H||bh);return r}
+    if(k<=0){r.w=bw;r.h=bh;return r}
+  }else if(OUT.m==='doc')k=1;
+  else if(OUT.m==='long')k=Math.max(1,OUT.L)/Math.max(bw,bh);
+  else{
+    const l=outImgLayer();r.img=l;
+    if(l){const[iw,ih]=imgPx(l),[dw,dh]=objCvPx(l);if(iw>0&&dw>0){k=Math.max(1,Math.max(iw,ih)/Math.max(dw,dh))}}
+    if(!(k>0)){k=1;r.why='絵がまだ無いので、キャンバスのpxで出します'}
+  }
+  if(OUT.m!=='auto'){
+    /* 総画素の上限（動画＝VD.exMax、GIF・静止画＝LIM.exp。0＝制限なし）。ブラウザのCanvasの限界は、ここでは変えられない */
+    const lim=(kind==='rec'||kind==='vd')?(VD.exMax>0?VD.exMax:Infinity):limOr('exp'),kk=Math.sqrt(lim/(bw*bh));
+    if(k>kk){k=Math.max(kk,.05);r.cut=(kind==='rec'||kind==='vd')?'vd':'exp'}
+  }
+  r.k=k;r.w=Math.max(1,Math.round(bw*k));r.h=Math.max(1,Math.round(bh*k));return r;
+}
+/* 縮んだ時の、短い説明（書き出しの始めに知らせる・欄に出す） */
+function outCutText(p){
+  if(!p.cut)return'';
+  return p.cut==='vd'?'大きすぎるので '+p.w+'×'+p.h+' px に縮めます（動画の書き出しの上限 '+(VD.exMax>0?Math.round(VD.exMax/1e4)+'万画素':'')+'。変えるには、背景・出力タブの「⚙ 動作」の「動画の書き出しの上限」）':'大きすぎるので '+p.w+'×'+p.h+' px に縮めます（総画素の上限 '+Math.round(limOr('exp')/1e4)+'万画素。変えるには、背景・出力タブの「⚙ 動作」の「キャンバス・書き出しの総画素の上限」）';
+}
+/* 書き出しの間だけ、倍率hkを変えて、拡大・移動を等倍にする。戻り値は、元へ戻す（outEnd）ための控え。今までどおり（k＝0）なら何も触らない（null） */
+function outBegin(kind){
+  const p=outPlan(kind);if(!(p.k>0)||OUT.m==='auto')return null;
+  const o={hk,z:{s:Z.s,x:Z.x,y:Z.y}};Z.s=1;Z.x=0;Z.y=0;hk=p.k;fit();return o;
+}
+function outEnd(o){if(!o)return;hk=o.hk;Z.s=o.z.s;Z.x=o.z.x;Z.y=o.z.y;fit()}
+/* 欄の表示：選んでいる方式と、動画・GIF・静止画で出る大きさ */
+function outUi(){
+  try{outUi_()}catch(_){}   /* 起動の途中（動画の部品がまだ無い間）に呼ばれても、止まらない。起動の最後（initExtra）で、もう一度出す */
+}
+function outUi_(){
+  const e=$('osz');if(!e)return;
+  if(e.value!==OUT.m)e.value=OUT.m;$('oszl').hidden=$('oszu').hidden=OUT.m!=='long';if(document.activeElement!==$('oszl'))$('oszl').value=OUT.L;
+  const n=$('oszn');if(!n)return;
+  const pr=outPlan('rec'),pg=outPlan('gif'),pv=outPlan('vd'),ps=outPlan('snap');
+  const sz=p=>p.w>0?p.w+'×'+p.h:'—';
+  let t;
+  if(OUT.m==='auto')t='今までどおり：録画・GIFは画面の枠の大きさ（GIFは幅'+(LIM.gifw>0?LIM.gifw+'pxまで':'そのまま')+'）、動画タブの書き出しは '+sz(pv)+' px、静止画は倍率の欄どおり（'+sz(ps)+' px）で出ます。';
+  else{
+    t='動画 '+sz(pr)+'／GIF '+sz(pg)+'／動画タブの書き出し '+sz(pv)+'／静止画 '+sz(ps)+' px で出ます。';
+    if(OUT.m==='img'){const l=pr.img;t=(l?'元の画像（'+(l.name||'選んだ絵')+'：'+imgPx(l).join('×')+'）が原寸になる倍率。':'')+t}
+    const w=[pr,pg,pv,ps].find(p=>p.cut);if(w)t+=' 一部は大きすぎるので縮みます（総画素の上限。⚙動作で変えられます）。';
+    if(pr.why)t+=' '+pr.why+'。';
+    t+=' 書き出しの間は、拡大・移動を等倍にして、紙の全体を出します。大きいと、書き出し中の動きがカクつくことがあります。';
+  }
+  if(n.textContent!==t)n.textContent=t;
+}
+{const e=$('osz');if(e){e.value=OUT.m;e.onchange=()=>{OUT.m=e.value;outSave();outUi();if(typeof vdSizeNote==='function'&&typeof VD!=='undefined'&&VD.ok)try{vdSizeNote()}catch(_){}};
+  $('oszl').oninput=()=>{const v=parseInt($('oszl').value);if(v>0){OUT.L=v;outSave();outUi()}}}}
 let mr=null,chunks=[];
 function setRec(on){$('rec').textContent=on?'⏹ 停止':'⏺ 録画';$('rec').classList.toggle('on',on);$('rc2').textContent=on?'⏹ 録画を止める':'⏺ 録画';$('rc2').classList.toggle('rec',on);$('mna').classList.toggle('rec',on);if(!on)$('rtx').textContent=''}
 $('rec').onclick=()=>{
   if(mr){mr.stop();return}
   if(!cv.captureStream||!window.MediaRecorder){$('rtx').textContent='この端末は録画に未対応です';return}
   const mt=['video/webm;codecs=vp9','video/webm','video/mp4'].find(t=>MediaRecorder.isTypeSupported(t))||'';
-  try{mr=new MediaRecorder(cv.captureStream(30),mt?{mimeType:mt,videoBitsPerSecond:6e6}:{})}catch(_){$('rtx').textContent='録画を始められませんでした';mr=null;return}
+  /* 出力の大きさ（台帳Z-112）：選んだ大きさにしてから、Canvasの映像を取る。縮める時は、始めに知らせる */
+  const po=outPlan('rec'),o=outBegin('rec');if(o&&po.cut)note('録画：'+outCutText(po),9000);
+  try{mr=new MediaRecorder(cv.captureStream(30),mt?{mimeType:mt,videoBitsPerSecond:6e6}:{})}catch(_){outEnd(o);$('rtx').textContent='録画を始められませんでした';mr=null;return}
   chunks=[];mr.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-  mr.onstop=()=>{clearInterval(tm);const t=mr.mimeType||mt||'video/webm';showOut(URL.createObjectURL(new Blob(chunks,{type:t})),'video',t.includes('mp4')?'mp4':'webm');mr=null;setRec(false)};
+  mr.onstop=()=>{clearInterval(tm);const t=mr.mimeType||mt||'video/webm';outEnd(o);showOut(URL.createObjectURL(new Blob(chunks,{type:t})),'video',t.includes('mp4')?'mp4':'webm');mr=null;setRec(false)};
   mr.start();setRec(true);const t0=Date.now();
-  tm=setInterval(()=>{const q=(Date.now()-t0)/1000;$('rtx').textContent=q.toFixed(0)+'秒';if(q>=60&&mr)mr.stop()},500);
+  /* 録画の長さの上限 LIM.rec（秒。0＝制限なし。台帳Z-112。以前は60秒で、知らせず止めていた）。止める時は、理由と変え方を知らせる */
+  tm=setInterval(()=>{const q=(Date.now()-t0)/1000;$('rtx').textContent=q.toFixed(0)+'秒';const lm=limOr('rec');if(q>=lm&&mr){note('録画は、上限の'+LIM.rec+'秒で止めて、そこまでを保存しました（上限は、背景・出力タブの「⚙ 動作」の「録画の長さの上限」で変えられます。0＝制限なし）',9000);mr.stop()}},500);
 };
 $('rc2').onclick=()=>$('rec').click();
 
@@ -6226,13 +6305,20 @@ function gifBlob(fr,w,h,dl){
 let gf=null;
 $('gif').onclick=()=>{
   if(gf){gf.stop();return}
-  const tw=Math.min(360,cv.width),th=Math.round(cv.height*tw/cv.width),t=document.createElement('canvas');t.width=tw;t.height=th;
-  const g=t.getContext('2d',{willReadFrequently:true}),fr=[];
+  /* 出力の大きさ（台帳Z-112）：選んだ大きさにしてから、コマを取る。今までどおりの時は、幅 LIM.gifw（既定360。0＝画面の大きさのまま）まで縮めて取る。GIFの形式の上限（1辺65535）は超えない */
+  const po=outPlan('gif'),o=outBegin('gif'),lw=OUT.m==='auto'?limOr('gifw'):Infinity;
+  if(o&&po.cut)note('GIF：'+outCutText(po),9000);
+  const tw=Math.max(1,Math.min(lw,cv.width,65535)),th=Math.max(1,Math.min(65535,Math.round(cv.height*tw/cv.width))),t=document.createElement('canvas');t.width=tw;t.height=th;
+  if(tw<cv.width&&OUT.m==='auto'&&LIM.gifw>0&&!gifwNoted){gifwNoted=true;note('GIFは、幅'+tw+'pxに縮めて作ります（⚙ 動作の「GIFの幅」で変えられます。0＝画面の大きさのまま。背景・出力タブの「出力の大きさ」を選ぶと、その大きさで作ります）',9000)}
+  const g=t.getContext('2d',{willReadFrequently:true}),fr=[],t0=performance.now();
   const iv=setInterval(()=>{g.drawImage(cv,0,0,tw,th);fr.push(quant(g.getImageData(0,0,tw,th).data,tw,th));$('rtx').textContent=fr.length+'コマ';const gm=limOr('gif');if(fr.length>=gm&&gf){note('GIF録画は、上限の'+gm+'コマ（約'+Math.round(gm/12*10)/10+'秒）で止めて、そこまでをGIFにしました。⚙ 動作の「GIF録画のコマ数の上限」で変えられます（0＝制限なし）',6000);gf.stop()}},1000/12);   /* 上限は設定にできる（台帳Z-260・Z-253の4点セット） */
-  gf={stop(){clearInterval(iv);gf=null;$('gif').textContent='🎞 GIF';$('gif').classList.remove('on');$('rtx').textContent='変換中…';
-    setTimeout(()=>{if(fr.length){showOut(URL.createObjectURL(gifBlob(fr,tw,th,8)),'img','gif')}$('rtx').textContent=''},30)}};
+  gf={stop(){clearInterval(iv);gf=null;outEnd(o);$('gif').textContent='🎞 GIF';$('gif').classList.remove('on');$('rtx').textContent='変換中…';
+    /* コマの間隔（1/100秒）：大きい画面で取るのが追いつかない時も、実際の速さで再生されるよう、取れた時間÷コマ数にする（ふつうは8＝1秒に12コマ） */
+    const dl=fr.length?Math.min(100,Math.max(2,Math.round((performance.now()-t0)/fr.length/10))):8;
+    setTimeout(()=>{if(fr.length){showOut(URL.createObjectURL(gifBlob(fr,tw,th,dl)),'img','gif')}$('rtx').textContent=''},30)}};
   $('gif').textContent='⏹ 停止';$('gif').classList.add('on');
 };
+let gifwNoted=false;
 document.querySelectorAll('#tabs [data-t]').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 $('addt').onclick=()=>addSpecial('t');$('addd').onclick=()=>addBlank();
 /* 白紙の大きさのスロット（台帳Z-117・Z-126）：選んだ紙の大きさが、「＋白紙」「＋白紙レイヤー」の両方で使われる */
@@ -6391,9 +6477,10 @@ $('bmc').onclick=()=>{if(sel.bm)sel.bm.getContext('2d').clearRect(0,0,MR,MR);sel
 
 /* ===== 静止画(高解像度) ===== */
 function snapImg(){
-  let k=+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
+  const po=outPlan('snap');let k=po.k||+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
+  if(po.cut)note('静止画：'+outCutText(po),9000);   /* 出力の大きさ（台帳Z-112）で選んだ大きさが大きすぎる時の縮み */
   /* 画素が大きすぎる時は倍率を下げる（上限LIM.exp。0＝制限なし。台帳Z-98） */
-  if(bw*bh*k*k>limOr('exp')){const k2=Math.max(1,Math.floor(Math.sqrt(limOr('exp')/(bw*bh))));if(k2<k){note('画素が大きすぎる（上限 '+Math.round(LIM.exp/1e4)+'万画素）ので、倍率を'+k2+'×に下げて保存します（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);k=k2}}
+  if(OUT.m==='auto'&&bw*bh*k*k>limOr('exp')){const k2=Math.max(1,Math.floor(Math.sqrt(limOr('exp')/(bw*bh))));if(k2<k){note('画素が大きすぎる（上限 '+Math.round(LIM.exp/1e4)+'万画素）ので、倍率を'+k2+'×に下げて保存します（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);k=k2}}
   /* 書き出しは、いつも紙全体を出す（拡大・移動していても。台帳Z-239。以前は、見ている範囲だけが同じ画素数で出ていた）。画面の拡大・移動は、終わったら元に戻す */
   const z0={s:Z.s,x:Z.x,y:Z.y};Z.s=1;Z.x=0;Z.y=0;
   hk=k;adjHQ=true;fit();
@@ -6575,7 +6662,7 @@ addEventListener('beforeunload',e=>{if(dirtyProj){e.preventDefault();e.returnVal
 let asFail=0,asNext=0;
 function autosave(){if(!dirtyProj||TL.busy||Date.now()<asNext)return;const nw=PROJ.v>PROJ.V;try{localStorage.setItem(nw?'am_auto_newer':'am_auto',ser());dirtyProj=false;asFail=0;asNext=0;if(!nw)$('rs').style.display=''}catch(_){asFail++;asNext=Date.now()+Math.min(20000*Math.pow(2,asFail),300000);if(asFail===1)note('この作品は大きくて、ブラウザの自動保存に入りません。消えないよう、ときどき「💾 保存」で作品ファイルに書き出してください',9000)}}
 setInterval(autosave,20000);addEventListener('pagehide',autosave);
-function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document);try{brSync()}catch(_){}}
+function initExtra(){try{if(localStorage.getItem('am_auto'))$('rs').style.display=''}catch(_){}enh(document);try{brSync()}catch(_){}try{outUi()}catch(_){}}
 
 /* ===== ヒント(ポップアップ) ===== */
 $('hq').onclick=()=>{$('hint').hidden=!$('hint').hidden;clearTimeout(hto)};$('hx').onclick=()=>{$('hint').hidden=true};
@@ -7578,6 +7665,7 @@ function canvasUi(){
   if(a!==$('cvw'))$('cvw').value=w;if(a!==$('cvh'))$('cvh').value=h;
   $('cvnote').textContent=DOC.w?'キャンバス '+DOC.w+'×'+DOC.h+' px。静止画の1×がこの大きさです（座標もこのpxで測ります）。':'自動：画面の枠に合わせます（今は約 '+w+'×'+h+' px）。操作窓を動かしても、紙は伸び縮みしません（合わせ直すには、枠の「大」を押し直す）。大きさを決めると、書き出しも座標もその大きさになります。';
   $('cvauto').disabled=!DOC.w;
+  if(typeof outUi==='function')outUi();
   [...$('sq').options].forEach(o=>{const k=+o.value;o.textContent=k+'×（'+Math.round(w*k)+'×'+Math.round(h*k)+'px）'});
 }
 $('cvset').onclick=()=>{const w=+$('cvw').value,h=+$('cvh').value;if(!(w>=CV_MIN&&h>=CV_MIN)){note('幅と高さは '+CV_MIN+' px 以上の数で入れてください');return}setCanvasSize(w,h)};
@@ -8458,7 +8546,7 @@ function setTool(t){tool=t;paint=t==='mouth'||t==='mouthx';erase=t==='mouthx';bp
   if(pcolPk)pcolPk.style.display=t==='pen'?'':'none';
   if(t!=='move'&&!seen[t]){seen[t]=1;$('hint').hidden=false;clearTimeout(hto);hto=setTimeout(()=>{$('hint').hidden=true},4500)}}
 const TT={adj:()=>'move',fx:()=>'move',pt:()=>lastPart,pl:()=>'move',mo:()=>'move',bg:()=>'move',ph:()=>'move',wp:()=>'warp',dr:()=>lastPen,mk:()=>lastMask};
-function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag')}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();if(t==='ph')scnUi();else if(typeof scnObjBtn==='function')scnObjBtn();if(typeof dvSync==='function')dvSync(t);tabCenter(t);setTool(TT[t]())}
+function setTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.tab===t));document.querySelectorAll('#tabs [data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='bg'){const b=document.querySelector('#tabs [data-t="bg"]');if(b)b.classList.remove('flag');try{outUi()}catch(_){}}adjMode='';if(t==='adj'||t==='fx'){rngT=t;const T=document.querySelector('.tab[data-tab="'+t+'"]');T.insertBefore($('adjRange'),T.firstChild);T.appendChild($('cmBox'))}adjUi();if(t==='ph')scnUi();else if(typeof scnObjBtn==='function')scnObjBtn();if(typeof dvSync==='function')dvSync(t);tabCenter(t);setTool(TT[t]())}
 /* 選んだタブを、タブの帯の中央へ寄せる（帯は横に流れて上に固定される。台帳Z-233）。帯の外は動かさないので、scrollIntoViewは使わない */
 function tabCenter(t){const ts=$('tabs'),b=ts&&ts.querySelector('[data-t="'+t+'"]');if(!b||ts.scrollWidth<=ts.clientWidth)return;ts.scrollLeft=Math.max(0,b.offsetLeft-(ts.clientWidth-b.offsetWidth)/2)}
 document.querySelectorAll('#tp [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
@@ -10103,6 +10191,16 @@ const MANPAGES=[
 <li>静止画は、キャンバスのpx×倍率の大きさに、絵の元のデータから描き直します。元の絵がキャンバス上の大きさより小さいと、引き伸ばされて粗く見えます。細かく出したい時は、元の絵が大きいものを使うか、倍率（2×・3×）を上げます。</li>
 <li>ペン・修整・統合などを使うと、長辺が4096 pxを超える絵は、使い始めに4096 px以内へ縮みます（編集しないかぎり元のままです）。縮んだ時は必ず知らせます。この4096 pxは、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます（0＝縮めない）。</li>
 </ul>
+<h4>動画・GIF・静止画を書き出す大きさ（背景・出力タブの「出力の大きさ」）</h4>
+<ul>
+<li><b>今までどおり</b>：録画・GIFは画面の枠の大きさ（GIFは幅360 pxまで）／動画タブの書き出しはキャンバスのpx／静止画は倍率の欄どおり。</li>
+<li><b>キャンバスのpx</b>：動画・GIF・静止画のすべてを、キャンバスのpxそのままで出します。</li>
+<li><b>元の画像に合わせる</b>：選んでいる絵（選んでいなければ一番下の絵）が、1画素＝1画素の原寸になる倍率で、キャンバス全体を出します。<b>絵は縮まず、色調整・質感・ぼかし・歪み・動きなどの編集は、そのまま効きます</b>。元の絵より小さく見せている時だけ大きく出し、大きく見せている時は、キャンバスのpxより小さくしません。欄に、出る大きさが出ます。</li>
+<li><b>長辺を指定</b>：キャンバスの縦横比のまま、長辺を入れたpxにします。</li>
+<li>選んだ大きさが大きすぎる時は、動画（録画・動画タブ）は「動画の書き出しの上限」、GIF・静止画は「キャンバス・書き出しの総画素の上限」まで縮めて、始めに知らせます。どちらも「⚙ 動作」で変えられます（0＝縮めない）。</li>
+<li>選んだ大きさで書き出す間は、拡大・移動を等倍にして、紙の全体を出します（終わると元に戻ります）。大きいほど重く、書き出し中の動きがカクつくことがあります。GIFは、取れた速さのまま再生されるよう、コマの間隔を実際の時間に合わせます。</li>
+<li>「〜したい時」：<b>元の写真の細かさのまま動画にしたい</b>→「元の画像に合わせる」／<b>SNSなどの指定のpxで出したい</b>→「長辺を指定」／<b>軽く試したい</b>→「今までどおり」。選んでいる絵だけを原寸で透明のまま保存したい時は、「選んだ絵」の「このオブジェクトだけ保存」です。</li>
+</ul>
 <h4>キャンバスを絵に合わせる</h4>
 <ul>
 <li>画像を原寸で置く設定（初め）では、キャンバスより大きい画像を入れると、自動でキャンバスが広がります。</li>
@@ -10115,7 +10213,7 @@ const MANPAGES=[
 <li>「レイヤーとオブジェクト」の一覧：いちばん上にキャンバスのpx、各オブジェクトの下に「元の絵 ○×○ px／キャンバス上 ○×○ px」、各レイヤーの右にその絵が占める範囲（動き・物理を含めない目安）。</li>
 </ul>`},
   {id:'slow',title:'遅い場合の対処・上限',
-   live:()=>{const L=LIM,f=v=>v>0?String(v):'なし（制限なし）';return '上限の設定（いまの値）\nキャンバス 長辺 '+f(L.cv)+' px／総画素 '+f(L.exp)+'\nペン等の編集 長辺 '+f(L.pen)+' px・小さい絵は最小 '+(L.penmin>0?L.penmin+' px':'引き上げない')+'／白紙 総画素 '+f(L.blk)+'\n質感・統合 総画素 '+f(L.tex)+'／ピンの注意 '+(L.pins>0?L.pins+' 個':'出さない')+'／履歴 '+(L.undo>0?L.undo+' MB':'なし')+'／液体の粒 '+f(L.liq)+' 個（1つの液体ごと）\nビジュアルプログラミング：ソース '+f(L.vps)+' 字／保存する1つの値 '+f(L.vpv)+' 字／保存先 '+f(L.vpk)+' 個\n動画：効果の注意 '+(VD.warn>0?VD.warn+' 個':'出さない')+'／歪みの細かさ 画面 '+f(VD.cap)+' px・書き出し '+f(VD.capExp)+' px／書き出しの上限 '+f(VD.exMax)+' 画素'},
+   live:()=>{const L=LIM,f=v=>v>0?String(v):'なし（制限なし）';return '上限の設定（いまの値）\nキャンバス 長辺 '+f(L.cv)+' px／総画素 '+f(L.exp)+'\nペン等の編集 長辺 '+f(L.pen)+' px・小さい絵は最小 '+(L.penmin>0?L.penmin+' px':'引き上げない')+'／白紙 総画素 '+f(L.blk)+'\n質感・統合 総画素 '+f(L.tex)+'／ピンの注意 '+(L.pins>0?L.pins+' 個':'出さない')+'／履歴 '+(L.undo>0?L.undo+' MB':'なし')+'／液体の粒 '+f(L.liq)+' 個（1つの液体ごと）\nビジュアルプログラミング：ソース '+f(L.vps)+' 字／保存する1つの値 '+f(L.vpv)+' 字／保存先 '+f(L.vpk)+' 個\nGIFの幅 '+(L.gifw>0?L.gifw+' px（今までどおりの時）':'縮めない')+'／録画の長さ '+(L.rec>0?L.rec+' 秒':'制限なし')+'\n動画：効果の注意 '+(VD.warn>0?VD.warn+' 個':'出さない')+'／歪みの細かさ 画面 '+f(VD.cap)+' px・書き出し '+f(VD.capExp)+' px／書き出しの上限 '+f(VD.exMax)+' 画素'},
    html:()=>
 `<p><b>このアプリは、絵や動画を勝手に劣化させたり、操作に境目を作ったりしない方針です。</b>容量や速さのために上限が要る所は、①超えたら注意を出す　②小さく説明する　③背景・出力タブの「⚙ 動作」で変えられる　④このページに書く、の4つをそろえます。数の制限そのもの（効果は何個まで、など）は設けていません。</p>
 <p><b>大きすぎる値にする時の確かめ：</b>「ペン等の編集」「白紙」「質感・統合」「キャンバス」「Undoの履歴」の上限を、目安（例：ペン等の編集 8,192 px、キャンバス長辺 16,384 px）を超える値や「0＝制限なし」にして確定すると、理由と目安つきのポップアップが出ます。「キャンセル」なら元の値のままです。値を打っている途中では出ません。</p>
@@ -10135,6 +10233,8 @@ const MANPAGES=[
 <li><b>質感・統合を計算する総画素 1200万</b>：超えると、質感を省いて表示し、注意を出します。確定で質感を焼き込めない時も、注意を出します。</li>
 <li><b>動く歪み（ピン）24個</b>：これは「数の制限」ではなく、「超えると重くなることがある」という注意を出す数です。超えても足せます。</li>
 <li><b>液体の粒の数 1500個（液体の絵1つごと）</b>：超えると、古い水から消え、注意を1回出します（ふつうの流れは、数十〜数百個で足ります。細かい粒にすると増えます）。0＝制限なし。</li>
+<li><b>GIFの幅 360 px（「出力の大きさ」が今までどおりの時だけ）</b>：この幅まで縮めてGIFを作り、縮める時は注意を1回出します。0＝縮めない（画面の大きさのまま）。「出力の大きさ」を選んだ時は、選んだ大きさで作ります。</li>
+<li><b>録画の長さ 60秒</b>：超えると録画が止まり、そこまでを保存して、注意を出します（長いほどメモリを使います）。0＝制限なし。</li>
 <li><b>GIF録画 120コマ（約10秒。1秒に12コマ）</b>：超えると録画が止まり、そこまでをGIFにして、注意を出します（コマが増えるほどメモリを使います）。0＝制限なし。</li>
 <li><b>操作の履歴（元に戻す）256 MB</b>：超えると、古い履歴から消えます（初めて消える時に、注意を1回出します）。</li>
 <li><b>ビジュアルプログラミングの文字数・保存する値・保存先の数</b>：制限はありません（初めは0＝制限なし）。大きなHTML（本体そのものなど）も読み込めますが、大きいほど開くのに時間がかかります。数を入れると、超えた時に止めて、理由を知らせます。</li>
@@ -10155,6 +10255,7 @@ const MANPAGES=[
 <li><b>書き出し・「焼き込み」は、長辺3200pxまで</b>：これより大きい絵は、歪みの部分が3200pxの細かさで計算されます。</li>
 <li><b>焼き込みを何度も重ねると、そのたびに少しずつボケます</b>：歪みは、焼き込むまでは元の絵と歪みの情報を別々に持つので、焼き込みは最後に1回にします。</li>
 <li>歪みのかかった絵に、ペン・消しゴム・修整で描く時は、見えている位置に描けます（元の絵の画素に描くので、あとで歪みを変えると、描いた線も一緒に動きます）。</li>
+<li>歪みのかかった絵に、範囲（色調整・質感・ぼかす所・部分マスクのブラシ）を塗る時は、塗った範囲が<b>歪む前の絵の位置</b>に当たります（歪みと一緒に動く＝絵の一部として扱う、という意味です）。歪みが大きくて、見えている位置に効かせたい時は、先に「焼き込み」で歪みを絵に確定してから塗ってください（確定後は、見えている位置と絵の位置が同じになります）。</li>
 </ul>
 <h4>ペン・修整・ブラシの太さと細かさ（台帳Z-125）</h4>
 <ul>
@@ -11185,15 +11286,16 @@ window.addEventListener('pointercancel',vdDragEnd,true);
    縮める時は、書き出しの欄に必ず知らせる（vdSizeNote）。設定は、背景・出力タブの⚙動作 */
 function vdExK(){return DOC.w>0&&VD.exMax>0?Math.min(1,Math.sqrt(VD.exMax/(DOC.w*DOC.h))):DOC.w>0?1:0}
 function vdOutSize(){
-  const hk0=vdExK();
-  return DOC.w>0?[Math.round(DOC.w*hk0),Math.round(DOC.h*hk0)]:[Math.round((W||0)*(dpr||1)),Math.round((H||0)*(dpr||1))];
+  const p=outPlan('vd');   /* 出力の大きさ（台帳Z-112）。今までどおり＝キャンバスのpx（上限VD.exMax）／画面の枠の時は画面の画素 */
+  return p.k>0?[p.w,p.h]:[Math.round((W||0)*(dpr||1)),Math.round((H||0)*(dpr||1))];
 }
 function vdSizeNote(){
   if(VD.rec)return;
   const[w,h]=vdOutSize(),g=vdGeom();let s='書き出す大きさ：'+w+'×'+h+' px。書き出し中は、この画面を開いたままにしてください（別のタブやアプリに切り替えると、描画が止まります）。書き出しの間は、再生の速さを×1にします。';
   if(g&&Math.abs(w/h-g.vw/g.vh)>.02)s+=' 動画と縦横比が違うので余白が入ります（「📐 キャンバスを動画の大きさにする」で合わせられます）。';
-  else if(g&&DOC.w===0)s+=' 画面の枠の大きさで出ます。元の画質で出すには「📐 キャンバスを動画の大きさにする」を押してください。';
-  if(DOC.w>0&&vdExK()<1)s+=' 【注意】キャンバスが '+DOC.w+'×'+DOC.h+' px と大きいので、書き出しは縮みます（上限 '+Math.round(VD.exMax/1e4)+'万画素）。縮めたくない時は、背景・出力タブの「⚙ 動作」の「動画の書き出しの上限」を大きく（0＝縮めない）してください。大きいと、録画できない端末があります。';
+  else if(g&&DOC.w===0&&OUT.m==='auto')s+=' 画面の枠の大きさで出ます。元の画質で出すには「📐 キャンバスを動画の大きさにする」を押してください。';
+  if(OUT.m!=='auto'){const p=outPlan('vd');s+=' 出力の大きさは「'+({doc:'キャンバスのpx',img:'元の画像に合わせる',long:'長辺を指定'}[OUT.m]||'')+'」（背景・出力タブで変えられます）。'+(p.cut?'【注意】'+outCutText(p):'')}
+  else if(DOC.w>0&&vdExK()<1)s+=' 【注意】キャンバスが '+DOC.w+'×'+DOC.h+' px と大きいので、書き出しは縮みます（上限 '+Math.round(VD.exMax/1e4)+'万画素）。縮めたくない時は、背景・出力タブの「⚙ 動作」の「動画の書き出しの上限」を大きく（0＝縮めない）してください。大きいと、録画できない端末があります。';
   const n=$('vdExNote');if(n.textContent!==s)n.textContent=s;
 }
 const vdSeekTo=t=>new Promise(res=>{
@@ -11214,7 +11316,7 @@ async function vdExport(){
   try{vdV.defaultPlaybackRate=1;vdV.playbackRate=1}catch(_){}   /* 実時間の録画なので、書き出しの間だけ×1（終わったら元の速さへ。vdFinish） */
   const R={a,b,chunks:[],zbak:{s:Z.s,x:Z.x,y:Z.y},timer:0,wl:null,done:false,abort:false,mr:null,snd:false};VD.rec=R;
   Z.s=1;Z.x=0;Z.y=0;vwNoSplit=true;VD.exp=true;
-  hk=vdExK();fit();
+  hk=outPlan('vd').k;fit();   /* 出力の大きさ（台帳Z-112）。今までどおり＝vdExK() */
   $('vdExGo').textContent='⏹ 書き出しを止める';$('vdExTx').textContent='準備中…';
   try{
     await vdSeekTo(a);
@@ -14331,7 +14433,7 @@ function setapiInit(){
   /* 数の設定：欄の値を入れて change を起こす（確認・保存・更新は、欄の側の処理に任せる）。欄が無ければ、直接入れる */
   const viaInput=(id,fn)=>v=>{const e=$(id);if(e){e.value=v;e.dispatchEvent(new Event('change'))}else fn(v)};
   const LIMS=[['pen','limPen','ペンなどの細かさの上限（長辺）','px'],['penmin','limPenMin','小さい絵を編集する時の最小の細かさ（長辺。0＝実解像度のまま）','px'],['blk','limBlk','白紙1枚の画素数の上限','画素'],['tex','limTex','質感・統合の画素数の上限','画素'],['pins','limPins','動く歪みの針の数（超えたら注意）','本'],
-    ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],['gif','limGif','GIF録画のコマ数の上限','コマ'],
+    ['undo','limUndo','Undoの履歴の量','MB'],['cv','limCv','キャンバスの長辺の上限','px'],['exp','limExp','書き出しの画素数の上限','画素'],['liq','limLiq','液体の粒の数の上限','個'],['gif','limGif','GIF録画のコマ数の上限','コマ'],['gifw','limGifW','GIFの幅（出力の大きさが今までどおりの時。0＝画面の大きさのまま）','px'],['rec','limRec','録画の長さの上限','秒'],
     ['vps','limVps','VPのソースの文字数の上限','字'],['vpv','limVpv','VPが保存する1つの値の文字数の上限','字'],['vpk','limVpk','VPが保存する保存先の数の上限','個']];
   for(const[k,id,lab,u]of LIMS)add({id:'limit.'+k,group:'上限',label:setapiLab(id,lab)||lab,kind:'number',min:0,max:1e10,step:1,unit:u,
     note:'0＝制限なし。目安を超える値・0にする時は、確認のポップアップが出ます（やめると変わりません）。',
@@ -14345,6 +14447,10 @@ function setapiInit(){
     note:'「自動」＝テーマに合わせる。',get:()=>SKIN.cur[k],set:v=>{skinSet(k,v)}});
   add({id:'import.size',group:'画像の置き方',label:setapiLab('impm','画像を置く大きさ'),kind:'choice',choices:[['orig','原寸（キャンバスより大きい時は、キャンバスを広げる）'],['fit','キャンバスの約半分に縮めて置く（従来）']],
     note:'画像を追加した時に置く大きさ。元の絵のデータは変わりません。',get:()=>IMP.mode,set:v=>{const e=$('impm');if(e){e.value=v;e.dispatchEvent(new Event('change'))}else{IMP.mode=v;try{localStorage.setItem('am_import',v)}catch(_){}}}});
+  add({id:'output.size',group:'書き出し',label:setapiLab('osz','出力の大きさ'),kind:'choice',choices:[['auto','今までどおり（録画・GIFは画面の枠／動画タブはキャンバスのpx／静止画は倍率の欄）'],['doc','キャンバスのpx'],['img','元の画像に合わせる（選んだ絵が原寸になる倍率）'],['long','長辺を指定']],
+    note:'動画・GIF・動画タブの書き出し・静止画の大きさ。',get:()=>OUT.m,set:v=>{const e=$('osz');if(e){e.value=v;e.dispatchEvent(new Event('change'))}else{OUT.m=v;outSave()}}});
+  add({id:'output.long',group:'書き出し',label:'出力の大きさ：長辺（「長辺を指定」の時のpx）',kind:'number',min:1,max:1e5,step:1,unit:'px',
+    note:'キャンバスの縦横比のまま、長辺をこのpxにします。大きすぎる時は、総画素の上限で縮めて知らせます。',get:()=>OUT.L,set:v=>{const e=$('oszl');if(e){e.value=v;e.dispatchEvent(new Event('input'))}else{OUT.L=Math.round(v);outSave()}}});
   add({id:'ui.method',group:'見た目',label:'操作の方式',kind:'choice',choices:[['box','枠（道具箱。キャンバスが広い）'],['win','窓（従来の操作窓）']],
     note:'変えると、画面の作りが切り替わります。',get:()=>UIM.m,set:v=>{uiSet(v)}});
 }
