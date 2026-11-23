@@ -472,16 +472,16 @@ const LQK={
   drip:{lab:'蛇口（垂らす）',sp:[.117,.134],pre:{kind:'drip',on:true,w:9,v0:0,gap:1.1,visc:.2,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
   drop:{lab:'水滴',sp:[0,.36],pre:{kind:'drop',on:true,w:22,v0:.1,gap:2.4,visc:.05,size:1,lnk:.6,col:'#8fd0f4',tr:.9,rip:.8,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
   tear:{lab:'涙',sp:[-.12,.1],pre:{kind:'tear',on:true,w:3,v0:.05,gap:1.8,visc:.3,size:.8,lnk:.6,col:'#cfe9f7',tr:.93,rip:.9,ic:true,fl:.8,pit:22,pl:.5,pool:'floor'}},
-  burst:{lab:'ぶつける',sp:[0,0],pre:{kind:'burst',on:true,w:30,v0:2.4,gap:2.4,visc:.55,size:1,lnk:.8,col:'#c8281e',tr:.15,rip:.65,ic:true,fl:.8,pit:22,pl:.3,pool:'floor',ang:180,dep:70,spr:32,jit:.6,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
-  spray:{lab:'吹きかける',sp:[0,-.34],pre:{kind:'spray',on:true,w:4,v0:2.2,gap:1,visc:.03,size:.5,lnk:.3,col:'#f1d98a',tr:.8,rip:.95,ic:true,fl:.8,pit:22,pl:.5,pool:'floor',ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}}};
-/* 液体の種類：選ぶと、色・透明さ・ねばり・付き方・にごり・出し方がまとめて切り替わる（位置・床の設定は変えない）。
+  burst:{lab:'ぶつける（飛び散る）',sp:[0,0],pre:{kind:'burst',on:true,w:30,v0:2.4,gap:2.4,visc:.1,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,ic:true,fl:.8,pit:22,pl:.5,pool:'floor',ang:180,dep:70,spr:32,jit:.4,yld:0,adh:.6,dry:.3,sc:0,foam:.3}},
+  spray:{lab:'吹きかける',sp:[0,-.34],pre:{kind:'spray',on:true,w:4,v0:2.2,gap:1,visc:.05,size:.5,lnk:.3,col:'#7ec3ec',tr:.88,rip:.9,ic:true,fl:.8,pit:22,pl:.5,pool:'floor',ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:0,foam:.3}}};
+/* 液体の「性質のひな形」：選ぶと、ねばり・つながり・波紋・止まる強さ・付く量・乾く速さ・にごり・あわ だけが切り替わる（色・透明さ・出し方・位置・床は変えない。特定の物の名前は使わない。台帳Z-295）。
+   どの値も画面のつまみで自由に変えられる。作り方の例（何を、どのくらいにするか）はマニュアル「液体」。
    yld＝止まる強さ（大きいほど、付いたまま垂れない）／adh＝付く量／dry＝乾く速さ／sc＝にごり／foam＝あわ／jit＝粒の大きさのばらつき／spr＝広がり */
-const LQM={
-  water:{lab:'水',kind:'pour',o:{w:2,v0:.45,visc:.1,size:1,lnk:.6,col:'#7ec3ec',tr:.88,rip:.7,pl:.5,ang:0,dep:0,spr:0,jit:0,yld:0,adh:.6,dry:.3,sc:0,foam:.3}},
-  champagne:{lab:'シャンパン',kind:'spray',o:{w:8,v0:2.2,visc:.03,size:.5,lnk:.25,col:'#f0c25a',tr:.62,rip:.95,pl:.5,ang:180,dep:55,spr:34,jit:.3,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}},
-  tomato:{lab:'トマト',kind:'burst',o:{w:30,v0:2.4,gap:2.4,visc:.55,size:1,lnk:.8,col:'#c8281e',tr:.15,rip:.65,pl:.3,ang:180,dep:70,spr:32,jit:.6,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
-  ice:{lab:'アイスクリーム',kind:'burst',o:{w:20,v0:2,gap:2.4,visc:.92,size:1,lnk:.8,col:'#f7ead8',tr:.04,rip:.35,pl:.05,ang:180,dep:65,spr:40,jit:.5,yld:.85,adh:3.2,dry:0,sc:1,foam:0}},
-  mayo:{lab:'マヨネーズ',kind:'pour',o:{w:3,v0:.25,visc:.95,size:.9,lnk:1.1,col:'#f2e3b0',tr:.06,rip:.75,pl:.04,ang:0,dep:0,spr:0,jit:0,yld:.9,adh:2.5,dry:0,sc:1,foam:0}}};
+const LQP={
+  thin:{lab:'さらさら',o:{visc:.1,lnk:.6,rip:.7,yld:0,adh:.6,dry:.3,sc:0,foam:.3}},
+  foam:{lab:'あわ立つ',o:{visc:.03,lnk:.25,rip:.95,yld:0,adh:.6,dry:.5,sc:.1,foam:1.5}},
+  thick:{lab:'とろみ',o:{visc:.55,lnk:.8,rip:.65,yld:.45,adh:2.4,dry:0,sc:.9,foam:0}},
+  paste:{lab:'ねっとり（形が残る）',o:{visc:.93,lnk:1,rip:.5,yld:.88,adh:2.8,dry:0,sc:1,foam:0}}};
 const LQ={sc:null,id:null,F:null,D:null,key:'',sig:'',was:false,fc:0};
 function lqRR(g,x,y,w,h,r){g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}   /* 角丸の四角（古い端末にroundRectが無いため自前） */
 /* 水の出る場所の絵（自分で描く＝端末の絵文字の違いで出る場所がずれないように） */
@@ -527,10 +527,10 @@ function lqSetIcon(l,kind){const ic=lqIcon(kind);
   l.dirty=true}
 function lqHex(s){const m=/^#?([0-9a-f]{6})$/i.exec(s||'');const v=m?parseInt(m[1],16):0x2f9bff;return[v>>16&255,v>>8&255,v&255]}
 /* 液体の絵を足す。選んだ状態にする */
-function liqAdd(kind,mat){
-  const M=mat&&LQM[mat];if(M)kind=M.kind;const K=LQK[kind];if(!K)return null;
+function liqAdd(kind,prop){
+  const M=prop&&LQP[prop];const K=LQK[kind];if(!K)return null;
   if(typeof pushUndo==='function')pushUndo();
-  const n=AC.filter(a=>a.liq).length,a=add(null,lqIcon(kind),{liq:Object.assign({},K.pre,M?M.o:{},M?{mat}:{}),fx:.28+.22*(n%3),fy:.12+.05*Math.floor(n/3%3),size:.7});
+  const n=AC.filter(a=>a.liq).length,a=add(null,lqIcon(kind),{liq:Object.assign({},K.pre,M?M.o:{}),fx:.28+.22*(n%3),fy:.12+.05*Math.floor(n/3%3),size:.7});
   a.name=K.lab+a.id;return a;
 }
 /* 描く：絵が描かれる時（draw()）に呼ばれる。水の出る場所を覚え、水があれば描く。変換は絵の変換のまま呼ばれ、水は紙の座標で描く。
@@ -624,7 +624,11 @@ function lqSync(){
   $('lqSprRow').style.display=bs?'':'none';lqSet('lqSpr',q.spr==null?25:q.spr);$('lqSprv').textContent=Math.round(q.spr==null?25:q.spr)+'°';
   lqSet('lqYld',q.yld||0);$('lqYldv').textContent=Math.round((q.yld||0)*100)+'%';
   lqSet('lqAdh',q.adh==null?.6:q.adh);$('lqAdhv').textContent=(+(q.adh==null?.6:q.adh)).toFixed(1);
-  if($('lqMat').value!==(q.mat||'water'))$('lqMat').value=q.mat||'water';
+  lqSet('lqDry',q.dry==null?.3:q.dry);$('lqDryv').textContent=Math.round((q.dry==null?.3:q.dry)*100)+'%';
+  lqSet('lqSc',q.sc||0);$('lqScv').textContent=Math.round((q.sc||0)*100)+'%';
+  lqSet('lqFo',q.foam==null?.3:q.foam);$('lqFov').textContent=Math.round((q.foam==null?.3:q.foam)*100)+'%';
+  lqSet('lqJi',q.jit||0);$('lqJiv').textContent=Math.round((q.jit||0)*100)+'%';
+  if($('lqMat').value!=='')$('lqMat').value='';   /* ひな形は「選んだ時に値を入れる」だけ。いまの状態の名前は出さない */
   $('lqHold').textContent=q.hold?'▶ 動かす':'❄ その場で止める';
   $('lqV').max=bs?4:1.2;
   lqSet('lqFl',q.fl==null?.8:q.fl);$('lqFlv').textContent=Math.round((q.fl==null?.8:q.fl)*100)+'%';
@@ -653,15 +657,16 @@ function lqBind(){
   const ic=$('lqIc');if(ic)ic.addEventListener('change',()=>{const l=lqSel();if(l){l.liq.ic=ic.checked;LQ.sig=JSON.stringify(l.liq)}});
   num('lqAng','ang',v=>Math.round(v)+'°');num('lqDep','dep',v=>(v>0?'手前へ ':v<0?'奥へ ':'')+Math.abs(Math.round(v))+'°');num('lqSpr','spr',v=>Math.round(v)+'°');
   num('lqYld','yld',v=>Math.round(v*100)+'%');num('lqAdh','adh',v=>v.toFixed(1));
-  $('lqMat').onchange=()=>{const l=lqSel(),M=LQM[$('lqMat').value];if(!l||!M)return;if(typeof pushUndo==='function')pushUndo();
-    const q=l.liq,k0=q.kind;Object.assign(q,M.o,{kind:M.kind,mat:$('lqMat').value});if(k0!==q.kind)lqSetIcon(l,q.kind);l._lq=null;lqSync()};
+  num('lqDry','dry',v=>Math.round(v*100)+'%');num('lqSc','sc',v=>Math.round(v*100)+'%');num('lqFo','foam',v=>Math.round(v*100)+'%');num('lqJi','jit',v=>Math.round(v*100)+'%');
+  $('lqMat').onchange=()=>{const l=lqSel(),M=LQP[$('lqMat').value];if(!M)return;if(!l){$('lqMat').value='';return}if(typeof pushUndo==='function')pushUndo();
+    Object.assign(l.liq,M.o);l._lq=null;lqSync()};   /* 性質の値だけを入れる（色・出し方・種類のアイコンは変えない） */
   $('lqHold').onclick=()=>{const l=lqSel();if(!l)return;l.liq.hold=!l.liq.hold;lqSync()};
   $('lqClrCt').onclick=()=>{const l=lqSel();if(l&&l._lq)l._lq.ct=null};
   $('lqDel').onclick=()=>{const l=lqSel();if(!l)return;if(typeof pushUndo==='function')pushUndo();sel=l;del()};
-  [['lqAddTom','tomato'],['lqAddChm','champagne'],['lqAddIce','ice'],['lqAddMay','mayo']].forEach(([id,m])=>{$(id).onclick=()=>{liqAdd(null,m);setTab('lq')}});
+  $('lqHelp').onclick=()=>{if(typeof manOpen==='function')manOpen('liq')};
   $('lqOn').onclick=()=>{const l=lqSel();if(!l)return;l.liq.on=!l.liq.on;lqSync()};
   $('lqClr').onclick=()=>{const l=lqSel();if(l&&l._lq){const c=l._lq.ct;l._lq=LIQ.mk();l._lq.ct=c}};   /* 空中と床の水を消す（かかった跡は残す） */
-  [['lqAddPour','pour'],['lqAddDrip','drip'],['lqAddDrop','drop'],['lqAddTear','tear']].forEach(([id,k])=>{$(id).onclick=()=>{liqAdd(k);setTab('lq')}});
+  [['lqAddPour','pour'],['lqAddDrip','drip'],['lqAddDrop','drop'],['lqAddTear','tear'],['lqAddBurst','burst'],['lqAddSpray','spray']].forEach(([id,k])=>{$(id).onclick=()=>{liqAdd(k);setTab('lq')}});
 }
 TT.lq=()=>'move';
 lqBind();

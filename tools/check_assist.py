@@ -187,6 +187,15 @@ def run(p):
     chk('消しゴム＋直線補正：インクが減る', n1 < n0 * 0.5, {'before': n0, 'after': n1})
     pg.evaluate("setTool('pen')"); setpa(pg, 0, 0)
 
+    # 画像ごと消しゴム（Z-305：消去の既定）は、その上に描いた線（ペン層）も消す。補正オフ・オン（直線）の両方
+    for (L0, nm) in ((0, '補正オフ'), (100, '直線補正')):
+        setpa(pg, 0, 0); stroke(pg, [(w[0][0], w[0][1]), (w[-1][0], w[0][1])])
+        n0 = pg.evaluate(INK, 'line')['n']
+        pg.evaluate("setTool('ieraser');eraseStrength=1"); setpa(pg, L0, 0); stroke(pg, wobbly_line(R, 5) if L0 else [(w[0][0], w[0][1]), (w[-1][0], w[0][1])])
+        n1 = pg.evaluate(INK, 'line')['n']
+        chk('消しゴム（画像ごと）＋%s：描いた線（ペン層）も消える（Z-305）' % nm, n0 > 50 and n1 < n0 * 0.5, {'before': n0, 'after': n1})
+        pg.evaluate("setTool('pen')"); setpa(pg, 0, 0); pg.evaluate("undo();undo()"); pg.wait_for_timeout(60)
+
     # 画像ごと消しゴム：baseが変わる（bsvが進む）
     bs0 = pg.evaluate("sel.bsv||0")
     pg.evaluate("setTool('ieraser');eraseStrength=1"); setpa(pg, 100, 0); stroke(pg, wobbly_line(R, 5))
@@ -206,7 +215,7 @@ def run(p):
     pg.evaluate("undo()"); pg.wait_for_timeout(60)
 
     # 歪みのある絵：補正した線も歪みを通して出る（例外が出ない）
-    pg.evaluate("()=>{const l=sel;l.pins=[{t:'f',x:.3,y:.3,r:.2,a:0,vx:0,vy:0}];l.wd=true}"); pg.wait_for_timeout(100)
+    pg.evaluate("()=>{const l=sel;l.pins=[{t:'f',x:.3,y:.3,r:.2,a:0,vx:0,vy:0,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5,ph:0}];l.wd=true}"); pg.wait_for_timeout(100)
     setpa(pg, 100, 0); stroke(pg, w)
     chk('歪みのある絵：補正した線を描いても例外が出ない', pg.evaluate(INK, 'line')['n'] > 100 and not errs, errs[:2])
     pg.evaluate("undo()"); pg.evaluate("sel.pins=[];sel.wd=true"); setpa(pg, 0, 0)
@@ -269,6 +278,20 @@ def run(p):
         chk('直線100%%（%s）：仮表示の始点・終点が、指の位置のまま（ずれ %.2f／%.2f px）' % (nm, e0, e1), o['k'] == 'line' and e0 < .5 and e1 < .5, o)
         e2 = pg.evaluate("""([qx,qy])=>{const l=sel,c=l.pen;if(!c)return -1;const p=penXY(l,{x:qx,y:qy},c.width,c.height);return c.getContext('2d').getImageData(Math.round(p.x),Math.round(p.y),1,1).data[3]}""", list(fb))
         chk('直線100%%（%s）：確定後も、指を離した位置にインクがある' % nm, e2 > 200, e2)
+        pg.evaluate("undo()"); pg.wait_for_timeout(60)
+    # 円弧100%：終点は、指の位置のまま（台帳Z-259）。指が、円からすこし外れた所で終わっても
+    setpa(pg, 0, 100, 'arc')
+    for nm, f in (('円弧（終わりが外へ）', lambda t: (cx0 + 70 * math.cos(math.pi * (1 - .7 * t)) + (8 * t * t), cy0 - 70 * math.sin(math.pi * (1 - .7 * t)) + (6 * t * t))),
+                  ('円弧（終わりが内へ）', lambda t: (cx0 + 70 * math.cos(math.pi * (1 - .7 * t)) - (9 * t * t), cy0 - 70 * math.sin(math.pi * (1 - .7 * t)) - (7 * t * t)))):
+        pts = [f(i / 50) for i in range(51)]
+        pg.mouse.move(*pts[0]); pg.mouse.down()
+        for q in pts[1:]: pg.mouse.move(*q)
+        pg.wait_for_timeout(120)
+        o = pg.evaluate("PS&&PS.out?{k:PS.kind,a:PS.out[0],b:PS.out[PS.out.length-1],n:PS.pts.length}:null")
+        pg.mouse.up(); pg.wait_for_timeout(80)
+        fa, fb = qs(*pts[0]), qs(*pts[-1])
+        e0 = math.hypot(o['a']['x'] - fa[0], o['a']['y'] - fa[1]); e1 = math.hypot(o['b']['x'] - fb[0], o['b']['y'] - fb[1])
+        chk('円弧100%%（%s）：仮表示の始点・終点が、指の位置のまま（ずれ %.2f／%.2f px）' % (nm, e0, e1), o['k'] == 'arc' and e0 < .5 and e1 < .5, o)
         pg.evaluate("undo()"); pg.wait_for_timeout(60)
     # ぐるぐる（5周）・往復を、弱い直線補正（50%）で：直線扱いにしない＝生のまま（始点も終点も指のまま、点も減らさない）
     setpa(pg, 50, 0, 'quad')

@@ -12,7 +12,7 @@
 const UIM={m:'box',LS:'am_ui',TB:'am_tbx'};
 const TBX_TOOLS=[
   {id:'pen',ico:'✏️',lab:'ペン',tab:'dr',tool:'pen'},
-  {id:'eraser',ico:'🧽',lab:'消去',full:'消しゴム',tab:'dr',tool:'eraser'},
+  {id:'eraser',ico:'🧽',lab:'消去',full:'消しゴム',tab:'dr',tool:'ieraser'},
   {id:'pl',ico:'✥',lab:'配置',tab:'pl'},
   {id:'add',ico:'＋',lab:'画像',act:'add'},
   {id:'ph',ico:'🌍',lab:'物理',tab:'ph'},
@@ -77,7 +77,7 @@ function tbxTap(id){
   const t=TBX_BY[id];if(!t)return;
   if(TBX.edit)return;   /* 整理中は、押しても道具を使わない（ドラッグで並べ替える） */
   if(t.act==='add'){$('qadd').click();return}
-  setTab(t.tab);if(t.tool)setTool(t.tool);
+  setTab(t.tab);if(t.tool)setTool(id==='eraser'&&(tool==='eraser'||tool==='ieraser')?tool:t.tool);   /* 消去：既定は「画像ごと」（Z-305）。すでに消しゴムなら、その種類のまま。描いた分だけの消しゴムは、⚙の詳細の道具の行から選ぶ */
   if(TBX.det)TBX.det=id;
   tbxSync()}
 function tbxOpen(id){

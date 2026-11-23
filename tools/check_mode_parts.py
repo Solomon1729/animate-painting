@@ -51,7 +51,7 @@ def ev(pg, js):
 
 
 SER = "()=>{const s=ser();return typeof s==='string'?s:JSON.stringify(s)}"
-BASE_IDS = ['edit', 'phys', 'cons1', 'cons2', 'cons3']
+BASE_IDS = ['edit', 'cons1', 'cons2', 'cons3']
 
 PAGE_A = '''<!doctype html><html><head><meta charset="utf-8"><title>電卓の試作</title></head><body>
 <div id="out">未実行</div><script>
@@ -97,10 +97,10 @@ with sync_playwright() as p:
     print('--- H1 既存が変わらない')
     ctx, pg, errs = new(b)
     load(pg)
-    chk('取り込みが無い時、モードの項目は今までの5つのまま', ids(pg) == BASE_IDS, ids(pg))
+    chk('取り込みが無い時、モードの項目は今までの4つのまま', ids(pg) == BASE_IDS, ids(pg))
     open_list(pg)
     r = ev(pg, "()=>({n:document.querySelectorAll('#mdl .mdi').length,add:!!document.querySelector('#mdl .mdadd #mdpfile'),act:document.querySelectorAll('#mdl .mdact').length,vp:!!document.querySelector('#mdpvp')})")
-    chk('一覧に、今までの5項目と「HTMLを足す」だけが出る（操作の列は無い）', r['n'] == 5 and r['add'] and r['act'] == 0, r)
+    chk('一覧に、今までの4項目と「HTMLを足す」だけが出る（操作の列は無い）', r['n'] == 4 and r['add'] and r['act'] == 0, r)
     chk('コンソール2を開く前は、「ビジュアルプログラミングのいまのソースを足す」は出ない', not r['vp'])
     chk('取り込みが無い時、端末に何も書かない', ev(pg, "()=>localStorage.getItem('am_modeparts')") is None)
     s0 = ev(pg, SER)
@@ -117,19 +117,19 @@ with sync_playwright() as p:
     s0 = ev(pg, SER)
     add(pg, [f('a.html', PAGE_A), f('my tool.html', PAGE_B)])
     m = ids(pg)
-    chk('2つ同時に足せる（項目が7つ）', len(m) == 7 and m[:5] == BASE_IDS and all(x.startswith('part:') for x in m[5:]), m)
+    chk('2つ同時に足せる（項目が6つ）', len(m) == 6 and m[:4] == BASE_IDS and all(x.startswith('part:') for x in m[4:]), m)
     names = ev(pg, "()=>MODES.filter(m=>m.part).map(m=>m.name)")
     chk('名前は、<title>があればそれ、無ければファイル名（拡張子なし）', names == ['電卓の試作', 'my tool'], names)
     st = store(pg)
     chk('端末に、版1・2つ・元のHTMLそのまま・文字コードを直した形で覚える', st and st['v'] == 1 and len(st['parts']) == 2 and st['parts'][0]['html'] == PAGE_A and st['parts'][1]['html'] == PAGE_B, st and {k: (v if k != 'parts' else len(v)) for k, v in st.items()})
-    chk('一覧に、項目ごとの操作（出力・ビジュアルプログラミングで開く・外す）が出る', ev(pg, "()=>[...document.querySelectorAll('#mdl .mdact')].map(d=>d.querySelectorAll('button').length)") == [3, 3])
+    chk('一覧に、項目ごとの操作（出力・VPで開く・名前を変える・保存内容を消す・外す）が出る', ev(pg, "()=>[...document.querySelectorAll('#mdl .mdact')].map(d=>d.querySelectorAll('button').length)") == [5, 5])
     chk('足したことを知らせる文が出る', '2個のHTML' in ev(pg, "()=>document.getElementById('mdpmsg').textContent"), ev(pg, "()=>document.getElementById('mdpmsg').textContent"))
     chk('作品・Undo・保存は変わらない', ev(pg, SER) == s0)
     add(pg, [{'name': 'note.txt', 'mimeType': 'text/plain', 'buffer': 'ただの文章です。タグはありません。'.encode('utf-8')}])
-    chk('HTMLでないファイルは足さない（理由を知らせる・項目は増えない）', len(ids(pg)) == 7 and 'HTMLではない' in ev(pg, "()=>document.getElementById('mdpmsg').textContent"))
+    chk('HTMLでないファイルは足さない（理由を知らせる・項目は増えない）', len(ids(pg)) == 6 and 'HTMLではない' in ev(pg, "()=>document.getElementById('mdpmsg').textContent"))
     add(pg, [f('ext.html', PAGE_EXT)])
     msg = ev(pg, "()=>document.getElementById('mdpmsg').textContent")
-    chk('外のサイトを指す記述があると、動かないことを知らせる', len(ids(pg)) == 8 and '外のサイト' in msg, msg)
+    chk('外のサイトを指す記述があると、動かないことを知らせる', len(ids(pg)) == 7 and '外のサイト' in msg, msg)
     add(pg, [f('sj.html', SJIS, 'cp932')])
     chk('Shift_JISのHTMLも文字化けせず足せる', ev(pg, "()=>MODES[MODES.length-1].name") == '日本語の題' and 'こんにちは' in store(pg)['parts'][-1]['html'])
     big = '<!doctype html><title>大きい</title><p>' + 'a' * 3000000 + '</p>'
@@ -137,7 +137,7 @@ with sync_playwright() as p:
     chk('大きさの決め打ちの上限は無い（3MBのHTMLも足せる）', ev(pg, "()=>MODES[MODES.length-1].name") == '大きい')
     open_list(pg) if not ev(pg, "()=>modeIsOpen()") else None
     ev(pg, "()=>{const i=MODES.findIndex(m=>m.name==='大きい');partRemove(MODES[i].part)}")
-    chk('取り込んだ数だけ、項目の並びは増える（組み込みの5つは先頭のまま）', ids(pg)[:5] == BASE_IDS and len(ids(pg)) == 9, ids(pg))
+    chk('取り込んだ数だけ、項目の並びは増える（組み込みの4つは先頭のまま）', ids(pg)[:4] == BASE_IDS and len(ids(pg)) == 8, ids(pg))
     chk('ページのエラーは出ない', not errs, errs)
     ctx.close()
 
@@ -190,7 +190,7 @@ with sync_playwright() as p:
         pg.click('#mdl .mdact >> nth=1 >> text=HTMLで出力')
     raw2 = open(d.value.path(), 'rb').read().decode('utf-8')
     chk('Shift_JISで取り込んだものは、UTF-8に直した文字で出る（単独で開ける）', 'こんにちは' in raw2 and '<title>日本語の題</title>' in raw2)
-    chk('出力しても、一覧・保存は変わらない', len(ids(pg)) == 7 and len(store(pg)['parts']) == 2)
+    chk('出力しても、一覧・保存は変わらない', len(ids(pg)) == 6 and len(store(pg)['parts']) == 2)
     ctx.close()
 
     # ---------------- H5 ビジュアルプログラミングとの行き来 ----------------
@@ -223,18 +223,18 @@ with sync_playwright() as p:
     load(pg)
     add(pg, [f('a.html', PAGE_A), f('b.html', PAGE_B)])
     pg.reload(); pg.wait_for_timeout(600)
-    chk('再読み込みしても、取り込んだモードが一覧に残る', len(ids(pg)) == 7 and ev(pg, "()=>MODES.filter(m=>m.part).map(m=>m.name)") == ['電卓の試作', 'b'], ids(pg))
+    chk('再読み込みしても、取り込んだモードが一覧に残る', len(ids(pg)) == 6 and ev(pg, "()=>MODES.filter(m=>m.part).map(m=>m.name)") == ['電卓の試作', 'b'], ids(pg))
     ev(pg, "()=>modeSet(MODES.find(m=>m.part).id)"); pg.wait_for_timeout(500)
     fr = pg.query_selector('.partframe').content_frame()
     chk('再読み込みのあとも、開いて動く', fr.evaluate("()=>document.getElementById('out').textContent") == '動いた:3')
     ev(pg, "()=>modeOpen()"); pg.wait_for_timeout(100)
     pg.click('#mdl .mdact >> nth=0 >> text=外す'); pg.wait_for_timeout(300)
-    chk('開いているモードを外すと、コンソールが閉じて、項目が消える', ev(pg, "()=>CONSOLE.isOpen()") is False and len(ids(pg)) == 6)
+    chk('開いているモードを外すと、コンソールが閉じて、項目が消える', ev(pg, "()=>CONSOLE.isOpen()") is False and len(ids(pg)) == 5)
     chk('外した分は、端末の保存からも消える・もう1つは残る', [x['name'] for x in store(pg)['parts']] == ['b'])
     chk('外した分のコンソールの登録・枠も無くなる', ev(pg, "()=>!CONSOLE.labs.some(l=>l.id.startsWith('part:p')&&l.name==='電卓の試作')&&!document.querySelector('.partframe[title^=\"電卓\"]')"))
     pg.reload(); pg.wait_for_timeout(500)
     chk('再読み込みしても、外した分は戻らない', ev(pg, "()=>MODES.filter(m=>m.part).map(m=>m.name)") == ['b'])
-    chk('組み込みの5つは、いつも先頭にそのまま', ids(pg)[:5] == BASE_IDS)
+    chk('組み込みの4つは、いつも先頭にそのまま', ids(pg)[:4] == BASE_IDS)
     chk('ページのエラーは出ない', not errs, errs)
     ctx.close()
 
@@ -261,7 +261,7 @@ with sync_playwright() as p:
     load(pg)
     add(pg, [f('a.html', PAGE_A)])
     msg = ev(pg, "()=>document.getElementById('mdpmsg').textContent")
-    chk('保存できない端末でも足せて、その場では開ける。覚えきれないことを知らせる', len(ids(pg)) == 6 and '覚えきれない' in msg, msg)
+    chk('保存できない端末でも足せて、その場では開ける。覚えきれないことを知らせる', len(ids(pg)) == 5 and '覚えきれない' in msg, msg)
     pg.click('#mdl .mdi[data-mode^="part:"]'); pg.wait_for_timeout(500)
     chk('その場では動く', pg.query_selector('.partframe').content_frame().evaluate("()=>document.getElementById('out').textContent") == '動いた:3')
     chk('ページのエラーは出ない', not errs, errs)
@@ -279,6 +279,65 @@ with sync_playwright() as p:
     chk('題名の&lt;などは文字に直って出る（&lt;のまま出ない）', '&lt;' not in r['names'][1] and r['names'][1].startswith('<img'), r['names'])
     pg.click('#mdl .mdi[data-mode^="part:"] >> nth=0'); pg.wait_for_timeout(300)
     chk('見出しにも、タグは解釈されずに出る', ev(pg, "()=>$('cstl').querySelectorAll('img').length") == 0 and ev(pg, "()=>typeof window.__x") == 'undefined')
+    chk('ページのエラーは出ない', not errs, errs)
+    ctx.close()
+
+    # ---------------- H10 名前の変更・保存内容の記憶（台帳Z-287）----------------
+    print('--- H10 名前の変更・保存内容の記憶')
+    PAGE_L = '<!doctype html><title>記録つき</title><body><div id="o"></div><script>window.__init=localStorage.getItem("c");localStorage.setItem("c",String((+localStorage.getItem("c")||0)+1));localStorage.setItem("w","<\\/script><b>x</b>");document.getElementById("o").textContent="init="+window.__init;</script></body>'
+    LONG = 'とても長い名前の部品' * 8
+    PAGE_LONG = '<!doctype html><title>' + LONG + '</title><p>x</p>'
+    ctx, pg, errs = new(b)
+    load(pg); add(pg, [f('l.html', PAGE_L), f('b.html', PAGE_B), f('long.html', PAGE_LONG)])
+    names = ev(pg, "()=>MODES.filter(m=>m.part).map(m=>m.name)")
+    chk('名前に文字数の上限は無い（80字の題が、そのまま名前になる）', names[2] == LONG and len(LONG) == 80, names)
+    def opn(i):
+        ev(pg, "()=>modeSet(MODES.filter(m=>m.part)[%d].id)" % i); pg.wait_for_timeout(700)
+        ev(pg, "()=>{document.querySelectorAll('.partframe').forEach(e=>e.removeAttribute('data-tt'));PART.list[%d]._f.setAttribute('data-tt','1')}" % i)   # 項目ごとに枠が別。いま開いた項目の枠を選ぶ
+        return pg.query_selector('.partframe[data-tt]').content_frame()
+    fr = opn(0)
+    chk('1回目：初めは空（init=null）', fr.evaluate("()=>window.__init") is None)
+    pg.wait_for_timeout(600)
+    st = store(pg)
+    chk('枠の中の書き込みを、端末に覚える（c=1・</script>を含む値もそのまま）', st['parts'][0].get('ls') == {'c': '1', 'w': '</script><b>x</b>'}, st['parts'][0].get('ls'))
+    chk('覚えるのは、取り込んだ項目ごと（ほかの項目には入らない）', 'ls' not in st['parts'][1] and 'ls' not in st['parts'][2])
+    ev(pg, "()=>modeSet('cons1')"); pg.wait_for_timeout(300)
+    fr = opn(0)
+    chk('開き直すと、前の記録が残っている（init=1）', fr.evaluate("()=>window.__init") == '1' and fr.evaluate("()=>document.getElementById('o').textContent") == 'init=1', fr.evaluate("()=>window.__init"))
+    pg.wait_for_timeout(600); pg.reload(); pg.wait_for_timeout(600)
+    fr = opn(0)
+    chk('画面を読み込み直しても、記録が残っている（init=2）', fr.evaluate("()=>window.__init") == '2', fr.evaluate("()=>window.__init"))
+    fr2 = opn(1)
+    chk('別の項目からは、見えない（別の項目の枠で c を読むと空）', fr2.evaluate("()=>localStorage.getItem('c')") is None)
+    chk('本体の保存（作品の保存キー）に、枠の中の記録が混ざらない', ev(pg, "()=>localStorage.getItem('c')") is None and ev(pg, "()=>localStorage.getItem('w')") is None)
+    ev(pg, "()=>window.postMessage({partLs:1,ls:{evil:'1'}},'*')"); pg.wait_for_timeout(300)
+    chk('枠以外から来た「保存内容」の知らせは、受け付けない', 'evil' not in (store(pg)['parts'][0].get('ls') or {}) and all('evil' not in (q.get('ls') or {}) for q in store(pg)['parts']))
+    chk('文字以外の値は覚えない', ev(pg, "()=>JSON.stringify(partCleanLs({a:1,b:'x',c:null,d:{e:1}}))") == '{"b":"x"}')
+    # 消す
+    open_list(pg)
+    pg.click('#mdl .mdi[data-mode^="part:"] >> nth=0'); pg.wait_for_timeout(100)
+    ev(pg, "()=>modeOpen()"); pg.wait_for_timeout(150)
+    pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdact')][0].querySelectorAll('button')[3].click()"); pg.wait_for_timeout(300)
+    chk('「🧹 保存内容を消す」で、その項目の記録だけ消える（HTMLは残る）', 'ls' not in store(pg)['parts'][0] and store(pg)['parts'][0]['html'] == PAGE_L)
+    fr = opn(0)
+    chk('消したあとに開くと、空から始まる（init=null）', fr.evaluate("()=>window.__init") is None)
+    # 名前の変更
+    open_list(pg)
+    ev(pg, "()=>{window.prompt=()=>'  新しい\\n名前  '}")
+    pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdact')][0].querySelectorAll('button')[2].click()"); pg.wait_for_timeout(300)
+    r = ev(pg, "()=>({m:MODES.find(m=>m.part).name,l:CONSOLE.labs.find(l=>l.id.startsWith('part:')).title,s:JSON.parse(localStorage.getItem('am_modeparts')).parts[0].name,list:[...document.querySelectorAll('#mdl .mdi')].map(e=>e.textContent).join('|')})")
+    chk('名前を変えると、一覧・コンソールの見出し・端末の保存が、まとめて変わる（空白・改行は整える）', r['m'] == '新しい 名前' and r['l'] == '🧱 新しい 名前' and r['s'] == '新しい 名前' and '新しい 名前' in r['list'], r)
+    ev(pg, "()=>{window.prompt=()=>'   '}")
+    pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdact')][0].querySelectorAll('button')[2].click()"); pg.wait_for_timeout(300)
+    chk('空の名前は受け付けず、元の名前のまま', ev(pg, "()=>MODES.find(m=>m.part).name") == '新しい 名前')
+    ev(pg, "()=>{window.prompt=()=>null}")
+    pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdact')][0].querySelectorAll('button')[2].click()"); pg.wait_for_timeout(200)
+    chk('やめる（キャンセル）と、変わらない', ev(pg, "()=>MODES.find(m=>m.part).name") == '新しい 名前')
+    ev(pg, "()=>{window.prompt=()=>'" + LONG + "'}")
+    pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdact')][0].querySelectorAll('button')[2].click()"); pg.wait_for_timeout(200)
+    chk('長い名前にも、上限は無い（80字のまま）', ev(pg, "()=>MODES.find(m=>m.part).name") == LONG)
+    fr = opn(0)
+    chk('名前を変えたあとも、動く・書き出すHTMLの中身は元のまま', ev(pg, "()=>partFind(MODES.find(m=>m.part).part).html") == PAGE_L and fr.evaluate("()=>document.getElementById('o')!==null"))
     chk('ページのエラーは出ない', not errs, errs)
     ctx.close()
 

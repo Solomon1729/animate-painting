@@ -1,4 +1,4 @@
-function setImg(l,im){l.img=im;l.cv=null;l.base=null;l.pen=null;l.sd=null;adjDirty(l);if(l.bite)l.bite=nb()}
+function setImg(l,im){l.img=im;l.cv=null;l.base=null;l.pen=null;l.sd=null;adjDirty(l);if(l.bite){l.bite=nb();l.bitev=(l.bitev|0)+1}}
 function txtCv(t,col){const f='bold 96px sans-serif',m=document.createElement('canvas').getContext('2d');m.font=f;
   const c=document.createElement('canvas');c.width=Math.ceil(m.measureText(t||' ').width)+40;c.height=140;const g=c.getContext('2d');
   g.font=f;g.textBaseline='middle';g.lineJoin='round';g.lineWidth=14;g.strokeStyle='#fff';g.strokeText(t,20,72);g.fillStyle=col;g.fillText(t,20,72);return c}
@@ -16,9 +16,18 @@ function addSpecial(k){
 const PAPER={A1:[594,841],A2:[420,594],A3:[297,420],A4:[210,297],A5:[148,210],A6:[105,148],B1:[728,1030],B2:[515,728],B3:[364,515],B4:[257,364],B5:[182,257],B6:[128,182]};
 const BLK_MIN=8;   /* 上限はLIM.pen・LIM.blk（01-limits.js） */
 const BLS={p:'A4',land:false,dpi:150,w:1024,h:1024};
-function blankDims(){
+/* 画面の形の紙（台帳Z-306・起動時の自由帳）：今のビューワー（#wrap）と同じ縦横比で、画素数はA4（今のdpi）以上。画面いっぱいに紙が広がる（上下左右に紙の外の余白が出ない）。
+   A4縦で始めると、横長の画面（PC）では紙が細い帯になり、縦長の画面（スマホ）でも上下に余白が出ていた。ビューワーが測れない時はA4縦。 */
+function screenDims(){
+  const m=PAPER.A4,w0=m[0]/25.4*BLS.dpi,h0=m[1]/25.4*BLS.dpi,r=$('wrap').getBoundingClientRect();
+  if(!(r.width>40&&r.height>40))return{w:Math.round(w0),h:Math.round(h0)};
+  const dp=Math.min(devicePixelRatio||1,2),a=r.width/r.height,area=Math.max(w0*h0,r.width*r.height*dp*dp);   /* 画素数＝A4と同じか、画面の実画素（高精細な画面でぼやけない）の大きい方。上限はblankDimsが掛ける */
+  return{w:Math.round(Math.sqrt(area*a)),h:Math.round(Math.sqrt(area/a))};
+}
+function blankDims(sc){
   let w,h;
-  if(BLS.p==='sq'){w=h=512}
+  if(sc||BLS.p==='scr'){const d=screenDims();w=d.w;h=d.h}
+  else if(BLS.p==='sq'){w=h=512}
   else if(BLS.p==='px'){w=BLS.w;h=BLS.h}
   else{const m=PAPER[BLS.p]||PAPER.A4;w=m[0]/25.4*BLS.dpi;h=m[1]/25.4*BLS.dpi;if(BLS.land)[w,h]=[h,w]}
   w=Math.max(BLK_MIN,Math.round(w)||0);h=Math.max(BLK_MIN,Math.round(h)||0);
@@ -29,10 +38,10 @@ function blankDims(){
 /* 白紙を足した時、その範囲を、次の操作（どこかを押す・キーを打つ）まで、枠（点線）＋薄い市松で見せる（台帳Z-118）。
    白紙は透明で見えないため。表示だけ：作品・Undo・保存には入れず、静止画の書き出し・PDF（hk・adjHQ中）には描かない。足すボタンからだけ（読み込み・デモでは出さない）。 */
 const BLK={a:null};let _blkPat=null;
-function addBlank(){
-  const d=blankDims(),a=addSpecial('d');
+function addBlank(sc){
+  const d=blankDims(sc),a=addSpecial("d");
   a.cv.width=d.w;a.cv.height=d.h;   /* 足したばかりの透明な絵なので、大きさを変えても失うものはない */
-  if(BLS.p!=='sq')a.name='白紙'+a.id+' '+(BLS.p==='px'?d.w+'×'+d.h:BLS.p+(BLS.land?'（横）':''));
+  if(BLS.p!=='sq')a.name='白紙'+a.id+' '+(BLS.p==='px'?d.w+'×'+d.h:BLS.p==='scr'?'画面の形':BLS.p+(BLS.land?'（横）':''));
   BLK.a=a;
   if(d.cut)note('大きすぎるので '+d.w+'×'+d.h+' px に縮めました（上限：長辺'+LIM.pen+'px・合計'+LIM.blk/1e6+'百万画素。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);
   return a}
@@ -69,7 +78,15 @@ function fit(redo){
   let rh=r.height;   /* 紙を収める箱の高さ */
   if(big){if(redo===true||!(FITB.h>0)||Math.abs(FITB.w-r.width)>1){FITB.w=r.width;FITB.h=r.height}rh=FITB.h}else FITB.h=0;
   let nW,nH,nD,cw,ch,sw,sh,sm;
-  if(DOC.w>0&&DOC.h>0){
+  const rk=hk?0:VR&3,odd=rk&1;   /* ビューワーの回転（書き出し中は回さない）（Z-307）：90度・270度の時は、回した後の外接の箱（高さnW×幅nH）を枠に収める。回す前の箱は、中心を枠の中心に合わせる */
+  const rm=(nW,nH)=>{const ml=(r.width-nW)/2;return fs?((rh-nH)/2)+'px auto 0 '+ml+'px':((nW-nH)/2)+'px auto '+((nW-nH)/2)+'px '+ml+'px'};
+  if(DOC.w>0&&DOC.h>0&&odd){
+    const a=DOC.w/DOC.h,mh=fs?Math.max(1,rh):Math.max(160,innerHeight*.8);let w=Math.max(1,mh),h=w/a;if(h>r.width){h=Math.max(1,r.width);w=h*a}
+    nW=Math.max(1,w);nH=Math.max(1,nW/a);nD=hk?DOC.w*hk/nW:Math.min(devicePixelRatio||1,2);
+    cw=Math.round(nW*nD);ch=Math.round(nH*nD);sw=nW+'px';sh=nH+'px';sm=rm(nW,nH);
+  }else if(odd){
+    nD=hk||Math.min(devicePixelRatio||1,2);nW=Math.max(1,Math.round(fs?rh:r.width));nH=Math.max(1,Math.round(r.width));cw=nW*nD;ch=nH*nD;sw=nW+'px';sh=nH+'px';sm=rm(nW,nH);
+  }else if(DOC.w>0&&DOC.h>0){
     /* 指定サイズ：縦横比を保って枠に収める。W・Hは小数のまま持ち、書き出し（hk）ではキャンバスの画素数をちょうどDOC.w×hk・DOC.h×hkにする（四捨五入の1pxのずれを出さない） */
     const a=DOC.w/DOC.h;let w=Math.max(1,r.width),h=w/a;const mh=fs?Math.max(1,rh):Math.max(160,innerHeight*.8);if(h>mh){h=mh;w=h*a}
     nW=Math.max(1,w);nH=Math.max(1,nW/a);nD=hk?DOC.w*hk/nW:Math.min(devicePixelRatio||1,2);
@@ -78,7 +95,8 @@ function fit(redo){
     nD=hk||Math.min(devicePixelRatio||1,2);nW=Math.max(1,Math.round(r.width));nH=fs?Math.max(1,Math.round(rh)):nW;cw=nW*nD;ch=nH*nD;sw='';sh=nH+'px';sm='';
   }
   /* 同じ大きさなら何もしない（枠の高さが変わるたびに呼ばれるが、cvの幅・高さを代入するたびに絵が消えるので、変わらない時は触らない） */
-  const sig=[nW,nH,nD,cw,ch,sw,sh,sm].join('|');
+  cv.style.transform=rk?'rotate('+rk*90+'deg)':'';
+  const sig=[nW,nH,nD,cw,ch,sw,sh,sm,rk].join('|');
   if(!MGR&&sig===FITLAST&&cv.width===Math.floor(cw)&&cv.height===Math.floor(ch)&&oc.width===cv.width&&oc.height===cv.height)return;
   W=nW;H=nH;dpr=nD;
   cv.width=cw;cv.height=ch;cv.style.width=sw;cv.style.height=sh;cv.style.margin=sm;
@@ -90,7 +108,11 @@ function fit(redo){
    「見えている中央」「見えている下端」を使う処理（ズームの中心・画像を置く位置・太さの目安・拡大窓・座標のラベル）は、W/2・Hではなくこれを使う（台帳Z-115） */
 function vis(){
   const r=$('wrap').getBoundingClientRect(),c=cv.getBoundingClientRect(),w=W||1,h=H||1;
-  const x0=Math.max(0,r.left-c.left),y0=Math.max(0,r.top-c.top),x1=Math.min(w,r.right-c.left),y1=Math.min(h,r.bottom-c.top);
+  let X0=r.left-c.left,Y0=r.top-c.top,X1=r.right-c.left,Y1=r.bottom-c.top;
+  if(VR&3){   /* 回している時は、枠の四隅を回す前の座標に戻して、その外接の箱を見る */
+    const q=[[r.left,r.top],[r.right,r.top],[r.left,r.bottom],[r.right,r.bottom]].map(p=>cvLoc(p[0],p[1],c));
+    X0=Math.min(...q.map(p=>p.x));X1=Math.max(...q.map(p=>p.x));Y0=Math.min(...q.map(p=>p.y));Y1=Math.max(...q.map(p=>p.y))}
+  const x0=Math.max(0,X0),y0=Math.max(0,Y0),x1=Math.min(w,X1),y1=Math.min(h,Y1);
   return x1>x0+1&&y1>y0+1?{x0,y0,x1,y1,cx:(x0+x1)/2,cy:(y0+y1)/2}:{x0:0,y0:0,x1:w,y1:h,cx:w/2,cy:h/2};
 }
 

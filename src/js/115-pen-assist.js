@@ -60,7 +60,24 @@ function paFitArc(P,L){
   let sweep=ang[n-1]-ang[0];
   if(Math.hypot(P[n-1].x-A.x,P[n-1].y-A.y)<.18*L&&Math.abs(sweep)>1.5*Math.PI)sweep=(sweep<0?-1:1)*2*Math.PI;
   let e=0;for(const q of P){const d=Math.hypot(q.x-cx,q.y-cy)-r;e+=d*d}
-  return{rms:Math.sqrt(e/n),F:P.map(q=>({x:cx+r*Math.cos(ang[0]+sweep*q.t),y:cy+r*Math.sin(ang[0]+sweep*q.t)}))};
+  const rms=Math.sqrt(e/n),closed=Math.abs(Math.abs(sweep)-2*Math.PI)<1e-9;
+  /* 描く円弧：閉じた円でない時は、**始点と終点（指のいる位置）の両方を通る円**に当てはめ直す（台帳Z-259。直線の終点＝指の位置と同じ考え方）。
+     中心は始点と終点を結ぶ線の垂直二等分線の上（s＝その上の位置）。点の距離のずれの二乗和が最小になるsを、自由な円の中心の位置から黄金分割で探す。
+     形の似かた（rms）は、従来どおり自由な円（強さの許容の目盛りが変わらない）。極端に大きな円になる時は従来の円のまま。 */
+  let cc={x:cx,y:cy},rr=r,a0=ang[0],sw=sweep;
+  const B=P[n-1],dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy);
+  if(!closed&&len>1e-3&&len>.05*L){
+    const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,nx=-dy/len,ny=dx/len,s0=(cx-mx)*nx+(cy-my)*ny;
+    const cost=sv=>{const x=mx+nx*sv,y=my+ny*sv,rv=Math.hypot(len/2,sv);let c=0;for(const q of P){const d=Math.hypot(q.x-x,q.y-y)-rv;c+=d*d}return c};
+    let lo=s0-Math.max(Math.abs(s0)*.5,len*.5),hi=s0+Math.max(Math.abs(s0)*.5,len*.5);const g=.6180339887;
+    let m1=hi-g*(hi-lo),m2=lo+g*(hi-lo),f1=cost(m1),f2=cost(m2);
+    for(let i=0;i<40;i++){if(f1<f2){hi=m2;m2=m1;f2=f1;m1=hi-g*(hi-lo);f1=cost(m1)}else{lo=m1;m1=m2;f1=f2;m2=lo+g*(hi-lo);f2=cost(m2)}}
+    const sb=(lo+hi)/2,r2=Math.hypot(len/2,sb);
+    if(isFinite(r2)&&r2>0&&r2<=L*8){
+      const c2={x:mx+nx*sb,y:my+ny*sb};let t=Math.atan2(A.y-c2.y,A.x-c2.x);const an2=[t];
+      for(let i=1;i<n;i++){const u=Math.atan2(P[i].y-c2.y,P[i].x-c2.x);let d=u-an2[i-1];while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;an2.push(an2[i-1]+d)}
+      cc=c2;rr=r2;a0=an2[0];sw=an2[n-1]-an2[0]}}
+  return{rms,F:P.map(q=>({x:cc.x+rr*Math.cos(a0+sw*q.t),y:cc.y+rr*Math.sin(a0+sw*q.t)}))};
 }
 function paBez(c,t){
   const u=1-t;
@@ -135,7 +152,7 @@ function paCommit(){
   const S=PS;PS=null;if(!S||!S.l||!S.pts.length)return;
   const l=S.l;if(!l.M||!AC.includes(l))return;
   const sh=S.pts.length>=3?paShape(S.pts,PA.L,PA.C,PA.K):{out:S.pts,kind:'raw'};
-  ensureBase(l);const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=sh.out.map(q=>penXY(l,q,bw,bh)),inb=S.tool==='ieraser';
+  ensureBase(l);const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=penPathW(l,sh.out,bw,bh),inb=S.tool==='ieraser';
   let g;
   if(inb){g=l.base.getContext('2d');g.globalCompositeOperation='destination-out';g.globalAlpha=eraseStrength}
   else{
@@ -146,8 +163,11 @@ function paCommit(){
   g.lineWidth=bs;g.lineCap=g.lineJoin='round';g.beginPath();g.moveTo(P[0].x,P[0].y);
   if(P.length===1)g.lineTo(P[0].x,P[0].y);else for(let i=1;i<P.length;i++)g.lineTo(P[i].x,P[i].y);
   g.stroke();
+  const pn=inb&&l.pen&&l.pen.width===bw&&l.pen.height===bh;   /* 画像ごと消しゴムは、描いた線（ペン層）も消す（penAtと同じ。Z-305） */
+  if(pn){const h=l.pen.getContext('2d');h.globalCompositeOperation='destination-out';h.globalAlpha=eraseStrength;h.lineWidth=bs;h.lineCap=h.lineJoin='round';h.beginPath();h.moveTo(P[0].x,P[0].y);
+    if(P.length===1)h.lineTo(P[0].x,P[0].y);else for(let i=1;i<P.length;i++)h.lineTo(P[i].x,P[i].y);h.stroke()}
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of P){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
-  bumpBP(l,inb?1:0,inb?0:1);recompose(l,dirtyRect(x0,y0,x1,y1,bs));
+  bumpBP(l,inb?1:0,inb?(pn?1:0):1);recompose(l,dirtyRect(x0,y0,x1,y1,bs));
 }
 /* ペンの仮表示を、**離したあと（ペン層の解像度）と同じ見た目**で出す（2026-10-11ユーザー指摘「直線がボケる」）。
    画面の解像度でベクター描画すると、くっきり見えていた線が、離した瞬間にペン層の解像度（小さい画像・拡大表示で粗い）でボケて見える。
@@ -155,7 +175,7 @@ function paCommit(){
 let _paSc=null;
 function paRasterPreview(l,o){
   if(hasWarp(l)||!l.base||!l._bw)return false;
-  const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=o.map(q=>penXY(l,q,bw,bh)),r=bs/2+2;
+  const bw=l._bw,bh=l._bh,bs=pw*Math.min(bw,bh)/128,P=o.map(q=>penXYW(l,q,bw,bh)),r=bs/2+2;
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of P){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
   x0=Math.max(0,Math.floor(x0-r));y0=Math.max(0,Math.floor(y0-r));x1=Math.min(bw,Math.ceil(x1+r));y1=Math.min(bh,Math.ceil(y1+r));
   const rw=x1-x0,rh=y1-y0;if(rw<=0||rh<=0)return true;  /* 画像の外だけをなぞっている（確定しても何も描かれない） */

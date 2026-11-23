@@ -79,7 +79,7 @@ with sync_playwright() as p:
     chk('先に足した液体は「注ぐ」', a0 == 'pour')
     open_lq(pg)
     chk('液体タブを開くと、操作の欄が出る', pg.evaluate("()=>!document.getElementById('lqCtl').hidden"))
-    for i in ('lqFl', 'lqPt', 'lqPl', 'lqTk', 'lqTr', 'lqSz', 'lqLk', 'lqAng', 'lqDep', 'lqMat', 'lqAddTom', 'lqAddChm', 'lqAddIce', 'lqAddMay', 'lqHold', 'lqClrCt', 'lqDel'):
+    for i in ('lqFl', 'lqPt', 'lqPl', 'lqTk', 'lqTr', 'lqSz', 'lqLk', 'lqAng', 'lqDep', 'lqMat', 'lqAddBurst', 'lqAddSpray', 'lqDry', 'lqSc', 'lqFo', 'lqJi', 'lqHelp', 'lqHold', 'lqClrCt', 'lqDel'):
         chk(f'操作の部品がある（{i}）', pg.evaluate("i=>!!document.getElementById(i)", i))
     # つながり・粒の大きさ（細かさ）は、粘性とは別に動かせて、水に伝わる
     pg.evaluate("()=>{const e=document.getElementById('lqLk');e.value=1.1;e.dispatchEvent(new Event('input',{bubbles:true}))}")
@@ -88,10 +88,26 @@ with sync_playwright() as p:
     chk('「粒の大きさ」を動かすと、水に伝わる', abs(pg.evaluate("()=>AC.filter(a=>a.liq)[0].liq.size") - .6) < .02)
     pg.evaluate("()=>{const e=document.getElementById('lqSz');e.value=1;e.dispatchEvent(new Event('input',{bubbles:true}))}")
     pg.evaluate("()=>{const e=document.getElementById('lqLk');e.value=.6;e.dispatchEvent(new Event('input',{bubbles:true}))}")
-    for m in ('tomato', 'champagne', 'ice', 'mayo'):
+    # 特定の物の名前は画面に出さない。性質（ねばり・止まる強さなど）の組み合わせで表す（台帳Z-295）
+    tabtxt = pg.evaluate("()=>document.querySelector('.tab[data-tab=lq]').innerText+[...document.querySelectorAll('.tab[data-tab=lq] [aria-label]')].map(e=>e.getAttribute('aria-label')).join('')")
+    chk('液体タブに、特定の物の名前（トマト・シャンパン・アイス・マヨネーズ）が出ていない', not any(w in tabtxt for w in ('トマト', 'シャンパン', 'アイス', 'マヨ')))
+    for kind in ('burst', 'spray'):
         n0 = pg.evaluate("()=>AC.filter(a=>a.liq).length")
-        pg.evaluate("m=>liqAdd(null,m)", m)
-        chk(f'液体の種類を足せる（{m}）', pg.evaluate("()=>AC.filter(a=>a.liq).length") == n0 + 1 and pg.evaluate("()=>AC.filter(a=>a.liq).slice(-1)[0].liq.mat") == m)
+        pg.evaluate("k=>liqAdd(k)", kind)
+        r = pg.evaluate("()=>{const q=AC.filter(a=>a.liq).slice(-1)[0].liq;return {n:AC.filter(a=>a.liq).length,kind:q.kind,col:q.col,visc:q.visc,yld:q.yld}}")
+        chk(f'一般の出し方で足せる（{kind}）：中立の液体（水に近い）で始まる', r['n'] == n0 + 1 and r['kind'] == kind and r['col'] == '#7ec3ec' and r['visc'] <= .1 and r['yld'] == 0, r)
+    pg.evaluate("()=>{const a=AC.filter(a=>a.liq).slice(-1)[0];sel=a;setTab('lq')}")
+    pg.wait_for_timeout(300)
+    b = pg.evaluate("()=>{const q=sel.liq;return {col:q.col,kind:q.kind,ang:q.ang}}")
+    pg.evaluate("()=>{const e=document.getElementById('lqMat');e.value='paste';e.dispatchEvent(new Event('change',{bubbles:true}))}")
+    pg.wait_for_timeout(200)
+    a2 = pg.evaluate("()=>{const q=sel.liq;return {col:q.col,kind:q.kind,ang:q.ang,visc:q.visc,yld:q.yld,adh:q.adh,sel:document.getElementById('lqMat').value}}")
+    chk('性質のひな形（ねっとり）：ねばり・止まる強さ・付く量が入り、色・出し方・向きは変わらない', a2['visc'] > .9 and a2['yld'] > .8 and a2['adh'] > 2 and a2['col'] == b['col'] and a2['kind'] == b['kind'] and a2['ang'] == b['ang'] and a2['sel'] == '', a2)
+    for k, kid, lim in (('dry', 'lqDry', .5), ('sc', 'lqSc', .5), ('foam', 'lqFo', .5), ('jit', 'lqJi', .5)):
+        pg.evaluate("([id,v])=>{const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}", [kid, lim])
+        chk(f'新しいつまみ「{k}」が、選んでいる液体に伝わる', abs(pg.evaluate("k=>sel.liq[k]", k) - lim) < .02)
+    pg.evaluate("()=>{sel.liq.mat='tomato';lqSync()}")
+    chk('昔の作品の種類（mat）が付いていても、誤りなく開く', pg.evaluate("()=>document.getElementById('lqMat').value") == '')
     pg.evaluate("()=>{const L=AC.filter(a=>a.liq);for(const a of L.slice(1))a.liq.on=false;sel=L[0]}")
 
     # ---------- 水が描かれる／止めると消える ----------

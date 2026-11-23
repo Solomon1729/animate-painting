@@ -25,11 +25,24 @@ function ftMount(host){
   d.append(body,grab);host.append(d);FTC.root=d;ftSummary();
   d.addEventListener('toggle',()=>{if(d.open)ftRender()});
   paneGrab(grab,{host:VPL.el,name:'--ftbh',key:'ftbh',measure:()=>body.offsetHeight,min:100})}
+/* はじめに読む使い方（📖マニュアルへの入口つき）。閉じた状態はこの画面を開いている間だけ覚える */
+function ftGuide(){
+  const d=document.createElement('details');d.className='ftguide';d.open=!FTC.guideShut;
+  d.append(ftE('summary','','📖 使い方（はじめに読む）'));
+  const ol=ftE('ol','');
+  ['上の「📂 HTMLを読み込む」で、取り出したいHTMLを開く（読むだけ。そのHTMLは変わりません）。',
+   '左で、取り出したい部品や関数に印を付け（中心になるものを1つか少数）、「取り出して検査」。選んだものと、つながるものだけが集まります。',
+   '検査を見る：✔使える／⚠警告あり／✖動かない。⚠✖には、理由と直し方が出ます。',
+   '✔か⚠なら「コレクションに保存」。別のHTMLを開いて、右から「いまのHTMLへ足す」で使い回せます。',
+   '取り出しただけでは、何も保存されません。「保存」を押したものだけが、コレクションに入ります。'].forEach(t=>ol.append(ftE('li','',t)));
+  d.append(ol,ftBtn('📖 マニュアルを開く',()=>{if(typeof manOpen==='function')manOpen('feat')},'マニュアルの「機能コレクション」を開く'));
+  d.addEventListener('toggle',()=>{FTC.guideShut=!d.open});
+  return d}
 function ftRender(){
   if(!FTC.root)return;ftSummary();
   if(!FTC.root.open)return;
   const body=FTC.root.querySelector('#ftBody'),keep=body.scrollTop;
-  body.replaceChildren();
+  body.replaceChildren();body.append(ftGuide());
   if(FTC.msg){const m=ftE('div','note ftmsg',FTC.msg);m.setAttribute('role','status');body.append(m)}
   if(FTC.err)body.append(ftE('div','note ftmsg','この端末に保存しきれませんでした。開いている間だけ使えます（JSONを書き出しておくと安全です）'));
   if(FTC.skipped)body.append(ftE('div','note ftmsg',FTC.skipped<0?'保存の中身が読めなかったので、別のキー（am_featurepacks_bad）へ残しました':'読めない項目が'+FTC.skipped+'件あったので、保存の元の文字を別のキー（am_featurepacks_bad）へ残しました'));
@@ -43,7 +56,7 @@ function ftRenderApp(sec){
   sec.append(ftE('div','note','ビジュアルプログラミングで開いているHTML（読むだけ。ここからは変わりません）。取り出したい部品や関数に印を付けてください。'));
   const info=ftE('div','ftrow');
   info.append(ftE('span','',(A.title?'「'+A.title+'」':'（題名なし）')+'　要素 '+A.H.byId.size+' ／ 処理 '+A.units.length));
-  info.append(ftBtn('↻ 読み直す',()=>{FTC.ac=null;FTC.res=null;ftRender()},'開いているHTMLを読み直す'));
+  info.append(ftBtn('↻ 読み直す',()=>{FTC.ac=null;FTC.res=null;FTC.sel.keep.clear();ftRender()},'開いているHTMLを読み直す'));
   sec.append(info);
   const skip=new Set(['script','style','link','meta','title','head','html','body','br','hr']);
   const els=A.H.all.filter(n=>n.attrs.id&&!skip.has(n.tag));
@@ -72,6 +85,22 @@ function ftRenderApp(sec){
     cb.setAttribute('aria-label',nm+' を取り出す対象にする');cb.onchange=()=>{cb.checked?FTC.sel.fns.add(nm):FTC.sel.fns.delete(nm)};
     lb.append(cb,document.createTextNode(' '+({fn:'関数',class:'クラス',var:'変数',win:'window.'}[u.kind]||'')+' '+u.names.join('、')));g2.append(lb)}
   sec.append(g2);
+  /* まとめの関数（初期化・即時実行・DOMContentLoadedなど）の中にある関数・変数も、選べるようにする（台帳Z-304） */
+  const lo=ftLocals(A).filter(h=>h.names.some(n=>!A.declMap.has(n)));
+  if(lo.length){
+    const g3=ftE('div','ftgroup');g3.append(ftE('div','ftgh','まとめの関数の中にある処理'));
+    g3.append(ftE('div','note','ひとかたまりの関数（初期化など）の中にある関数・変数です。選ぶと、その部分だけを取り出します。'));
+    for(const h of lo){
+      const dt=ftE('details','ftblock');dt.style.setProperty('--d',0);
+      const s=ftE('summary','',(h.host?h.host+' の中':'（名前のない関数）の中')+'　'+h.names.length+'個');dt.append(s);
+      const inner=ftE('div','ftinner');
+      for(const nm of h.names){
+        if(A.declMap.has(nm))continue;
+        const lb=ftE('label','ftfn'),cb=ftE('input');cb.type='checkbox';cb.checked=FTC.sel.fns.has(nm);
+        cb.setAttribute('aria-label',nm+' を取り出す対象にする');cb.onchange=()=>{cb.checked?FTC.sel.fns.add(nm):FTC.sel.fns.delete(nm)};
+        lb.append(cb,document.createTextNode(' '+nm));inner.append(lb)}
+      dt.append(inner);g3.append(dt)}
+    sec.append(g3)}
   const nr=ftE('div','ftrow'),ni=ftE('input');ni.type='text';ni.id='ftName';ni.placeholder='機能の名前（空なら選んだ名前）';ni.value=FTC.nameTxt||'';ni.setAttribute('aria-label','機能の名前');
   ni.oninput=()=>{FTC.nameTxt=ni.value};
   nr.append(ni,ftBtn('🔍 取り出して検査',ftDoExtract,'印を付けたものとつながっているものを集めて、動くかを検査する','ftmain'));sec.append(nr);
@@ -80,15 +109,28 @@ function ftRenderApp(sec){
   if(FTC.res)ftRenderRes(sec)}
 async function ftDoExtract(){
   if(!FTC.sel.ids.size&&!FTC.sel.fns.size){FTC.msg='取り出す要素か関数を、1つ以上選んでください';FTC.res=null;ftRender();return}
-  FTC.msg='';const r=ftExtract(VPL.src,{ids:[...FTC.sel.ids],fns:[...FTC.sel.fns],name:FTC.nameTxt||''},{app:ftAppNow()});
+  FTC.msg='';const r=ftExtract(VPL.src,{ids:[...FTC.sel.ids],fns:[...FTC.sel.fns],keep:[...FTC.sel.keep],name:FTC.nameTxt||''},{app:ftAppNow()});
   FTC.res=r;FTC.run=null;FTC.busy=r.report.level!=='ng';ftRender();
   if(FTC.busy){const mine=FTC.res;const run=await ftSmoke(r.pack);if(FTC.res===mine)FTC.run=run;FTC.busy=false;ftRender()}}
 function ftRenderRes(sec){
   const r=FTC.res,m=ftMerge(r.report,FTC.run),box=ftE('div','ftres');
   box.append(ftE('h4','fth','検査の結果'),ftBadge(m.level));
+  box.append(ftE('div','note',m.level==='ng'?'動かない、または必要なものが足りないので、保存も使用もできません。下の理由を直してください（「下書き」で保存して、「✎ 派生」で直せます）。':m.level==='warn'?'動きますが、下の注意を確かめてから、保存・使用してください。':'動かして確かめ、誤りは出ませんでした。保存して、別のHTMLへ足せます。'));
   const st=r.stats,f=r.pack.files;
   box.append(ftE('div','note','取り出した量：HTML '+f.html.length+'字・CSS '+f.css.length+'字・JS '+f.javascript.length+'字（処理 '+st.units+'／元の '+st.all+'個）'));
   box.append(ftList(m.items));
+  /* 元のアプリの中心にある処理（含めていないもの）。必要なら1つずつ「含める」で足せる（足すと、その処理が呼ぶ先も入る） */
+  const hs=r.pack.host||[];
+  if(hs.length||FTC.sel.keep.size){
+    const hb=ftE('div','ftgroup');hb.append(ftE('div','ftgh','元のアプリの中心にある処理（含めていないもの）'));
+    hb.append(ftE('div','note','足した先に同じ名前の処理があれば、それを使います。無ければ、その呼び出しは何もしません。この機能に必要な時だけ「含める」を押してください（含めると、その処理がたどる先も一緒に入ります）。'));
+    for(const h of hs){
+      const row=ftE('div','ftrow');row.append(ftE('span','',h.name+'　（含めると 全体の約'+Math.round(h.pct*100)+'%が入る／呼び出し元 '+h.callers+'個）'));
+      row.append(ftBtn('含める',()=>{FTC.sel.keep.add(h.name);ftDoExtract()},h.name+' も取り出しに含めて、検査し直す'));hb.append(row)}
+    for(const nm of FTC.sel.keep){
+      const row=ftE('div','ftrow');row.append(ftE('span','','含めた処理：'+nm));
+      row.append(ftBtn('外す',()=>{FTC.sel.keep.delete(nm);ftDoExtract()},nm+' を含めるのをやめて、検査し直す'));hb.append(row)}
+    box.append(hb)}
   const row=ftE('div','ftrow'),ok=m.level!=='ng';
   const sv=ftBtn('💾 コレクションに保存',()=>ftSaveRes(false),ok?'この機能をコレクションに保存する':'動かないと検査されたので保存できません');sv.disabled=!ok||FTC.busy;row.append(sv);
   if(!ok){row.append(ftBtn('📝 下書きとして保存',()=>ftSaveRes(true),'動かないと分かっている機能を、使えない印つきの下書きとして保存する（足す・使うことはできない）'))}
@@ -207,7 +249,7 @@ function ftRenderPort(box,p){
   const row=ftE('div','ftrow'),go=ftBtn('足す',()=>{
     const r=ftPort(p,VPL.src);
     if(!r.ok){FTC.msg='足せませんでした：'+r.why;ftRender();return}
-    if(typeof VPL.MAXSRC==='number'&&r.html.length>VPL.MAXSRC){FTC.msg='足せませんでした：足したあとのHTMLが、ビジュアルプログラミングの大きさの目安（'+VPL.MAXSRC+'字）を超えます';ftRender();return}
+    if(typeof VPL.MAXSRC==='number'&&r.html.length>VPL.MAXSRC){FTC.msg='足せませんでした：足したあとのHTMLが、ビジュアルプログラミングの文字数の上限（'+VPL.MAXSRC+'字。背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）を超えます';ftRender();return}
     vplSetSource(r.html,true);FTC.undo={mark:r.mark,name:p.name};FTC.port=null;FTC.ac=null;
     FTC.msg='足しました：'+p.name+'（ぶつかり '+r.plan.conf.length+'件は、足す側の名前を付け替えて解決）。ビューワーとソースに反映されています。';ftRender()},'この機能を、いまのHTMLへ足す');
   go.disabled=pl.blocked||p.safety.level==='ng';

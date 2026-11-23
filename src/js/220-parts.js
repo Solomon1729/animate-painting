@@ -156,4 +156,3 @@ $('pclr').onclick=()=>{if(sel.sm)sel.sm.getContext('2d').clearRect(0,0,MR,MR);se
 $('pclrh').onclick=()=>{CL.length=0;renderTray()};
 $('ptf').oninput=e=>{ptFeather=+e.target.value;$('ptfv').textContent=ptFeather};
 $('pthl').onchange=e=>{ptHole=e.target.value};$('ppos').onchange=e=>{ptPos=e.target.value};$('ptnow').onchange=e=>{ptNow=e.target.checked};$('ptmo').onchange=e=>{ptInh=e.target.checked};$('ptfill').onchange=e=>{ptFill=e.target.value};
-$('pbs').oninput=e=>{brushParts=+e.target.value};

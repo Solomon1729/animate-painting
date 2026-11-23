@@ -1,9 +1,12 @@
 
 /* ===== 静止画(高解像度) ===== */
 function snapImg(){
-  let k=+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
+  const po=outPlan('snap');let k=po.k||+$('sq').value;const f=$('sf').value,jpg=f==='jpg',bw=DOC.w||Math.round(W),bh=DOC.h||Math.round(H);
+  if(po.cut)note('静止画：'+outCutText(po),9000);   /* 出力の大きさ（台帳Z-112）で選んだ大きさが大きすぎる時の縮み */
   /* 画素が大きすぎる時は倍率を下げる（上限LIM.exp。0＝制限なし。台帳Z-98） */
-  if(bw*bh*k*k>limOr('exp')){const k2=Math.max(1,Math.floor(Math.sqrt(limOr('exp')/(bw*bh))));if(k2<k){note('画素が大きすぎる（上限 '+Math.round(LIM.exp/1e4)+'万画素）ので、倍率を'+k2+'×に下げて保存します（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);k=k2}}
+  if(OUT.m==='auto'&&bw*bh*k*k>limOr('exp')){const k2=Math.max(1,Math.floor(Math.sqrt(limOr('exp')/(bw*bh))));if(k2<k){note('画素が大きすぎる（上限 '+Math.round(LIM.exp/1e4)+'万画素）ので、倍率を'+k2+'×に下げて保存します（上限は、背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',12000);k=k2}}
+  /* 書き出しは、いつも紙全体を出す（拡大・移動していても。台帳Z-239。以前は、見ている範囲だけが同じ画素数で出ていた）。画面の拡大・移動は、終わったら元に戻す */
+  const z0={s:Z.s,x:Z.x,y:Z.y};Z.s=1;Z.x=0;Z.y=0;
   hk=k;adjHQ=true;fit();
   try{
     paintFrame();
@@ -12,7 +15,7 @@ function snapImg(){
       const t=document.createElement('canvas');t.width=cv.width;t.height=cv.height;t.getContext('2d').drawImage(cv,0,0);
       outPdf(t,'アクションメーカー');
     }else cv.toBlob(b=>{if(b)showOut(URL.createObjectURL(b),'img',jpg?'jpg':'png')},jpg?'image/jpeg':'image/png',.92);
-  }finally{adjHQ=false;hk=0;fit()}
+  }finally{adjHQ=false;hk=0;Z.s=z0.s;Z.x=z0.x;Z.y=z0.y;fit();paintFrame()}
 }
 $('snap').onclick=snapImg;$('sn2').onclick=snapImg;
 

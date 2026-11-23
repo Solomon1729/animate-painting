@@ -64,12 +64,17 @@ function setSel(l){
   sel=l;chips();frame(l);
   $('nm').value=l.name;
   adjUi();
-  $('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
+  try{outUi()}catch(_){}   /* 出力の大きさ：「元の画像に合わせる」は、選んでいる絵で決まる（台帳Z-112） */
+  try{brSync()}catch(_){}   /* 太さのバー：絵ごとに「1画素の細さ」が違うので、下限・数値を合わせ直す（台帳Z-125） */
+  $('sz').max=Math.max(6,Math.ceil(l.size));$('sz').value=l.size;$('szv').textContent='×'+l.size.toFixed(2);$('rt').value=l.rot;$('rtv').textContent=l.rot+'°';$('bl').value=l.blur;$('blv').textContent=l.blur+'px';
   $('em').innerHTML='';
   (l.sp?[]:EPAL).forEach(x=>{const b=document.createElement('button');b.textContent=x;b.setAttribute('aria-label',EDESC[x]||x);armTip(b);b.onclick=()=>{setImg(l,emo(x));chips();$('em').style.display='none'};$('em').appendChild(b)});
   $('em').style.display='none';$('emTgl').style.display=l.sp?'none':'';
   const ex=$('ex');ex.innerHTML='';
   ex.appendChild(tog('向きを反転',0,()=>{l.face*=-1}));
+  /* 90度ずつ回す（台帳Z-133）。角度のバーの吸着（−180・−90・0・90・180）と同じ値になる。−180〜180の範囲に収める */
+  const turn=d=>()=>{pushUndo();let r=Math.round((l.rot||0)+d);r=((r+180)%360+360)%360-180;if(r===-180)r=180;l.rot=r;$('rt').value=r;$('rtv').textContent=r+'°'};
+  const bl=tog('⟲ 左に90°',0,turn(-90)),br=tog('⟳ 右に90°',0,turn(90));bl.setAttribute('aria-label','左に90度回す');br.setAttribute('aria-label','右に90度回す');ex.appendChild(bl);ex.appendChild(br);
   scnUi();
   const s=document.createElement('select');s.setAttribute('aria-label','対象');
   s.innerHTML='<option value="">対象なし</option>'+AC.filter(a=>a!==l).map(o=>`<option value="${o.id}"${l.toType!=='layer'&&l.to===o.id?' selected':''}>${o.name}</option>`).join('')+LAYERS.map(y=>`<option value="L${y.id}"${l.toType==='layer'&&l.to===y.id?' selected':''}>🗂 ${y.name}</option>`).join('');
@@ -93,6 +98,5 @@ $('sz').oninput=e=>{sel.size=+e.target.value;$('szv').textContent='×'+sel.size.
 $('rt').oninput=e=>{sel.rot=+e.target.value;$('rtv').textContent=sel.rot+'°'};
 $('kp').oninput=e=>{sel.keep=+e.target.value};
 $('eat').onclick=()=>{sel.eat=!sel.eat;$('eat').classList.toggle('on',sel.eat);$('rst').style.display=sel.eat?'':'none'};
-$('rst').onclick=()=>{sel.bite=nb()};
+$('rst').onclick=()=>{sel.bite=nb();sel.bitev=(sel.bitev|0)+1};
 $('ca').onclick=()=>{const c=pc();if(c){c.mask.getContext('2d').clearRect(0,0,MR,MR);c.hasMask=false}};
-$('bs').oninput=e=>{brushMask=+e.target.value};

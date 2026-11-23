@@ -22,6 +22,7 @@ function canvasUi(){
   if(a!==$('cvw'))$('cvw').value=w;if(a!==$('cvh'))$('cvh').value=h;
   $('cvnote').textContent=DOC.w?'キャンバス '+DOC.w+'×'+DOC.h+' px。静止画の1×がこの大きさです（座標もこのpxで測ります）。':'自動：画面の枠に合わせます（今は約 '+w+'×'+h+' px）。操作窓を動かしても、紙は伸び縮みしません（合わせ直すには、枠の「大」を押し直す）。大きさを決めると、書き出しも座標もその大きさになります。';
   $('cvauto').disabled=!DOC.w;
+  if(typeof outUi==='function')outUi();
   [...$('sq').options].forEach(o=>{const k=+o.value;o.textContent=k+'×（'+Math.round(w*k)+'×'+Math.round(h*k)+'px）'});
 }
 $('cvset').onclick=()=>{const w=+$('cvw').value,h=+$('cvh').value;if(!(w>=CV_MIN&&h>=CV_MIN)){note('幅と高さは '+CV_MIN+' px 以上の数で入れてください');return}setCanvasSize(w,h)};
@@ -94,7 +95,7 @@ function crdPlace(el,x,y,anchor){  /* (x,y)＝キャンバス内の表示位置�
 const crdSgn=n=>(n>0?'+':'')+n;
 function crdPointer(e,pressed){
   if(!CRD.on||tgt)return;  /* オブジェクトをドラッグ中は、オブジェクトのラベルだけ出す */
-  const r=cv.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,q={x:sx*W/r.width,y:sy*H/r.height},p=wp(q),el=$('crdp');
+  const c0=cvLoc(e.clientX,e.clientY),sx=c0.x,sy=c0.y,q={x:sx*W/c0.w,y:sy*H/c0.h},p=wp(q),el=$('crdp');
   if(e.type==='pointerdown'){if(e.isPrimary)CRD.st={x:p.x,y:p.y,qx:q.x,qy:q.y}}
   else if(!pressed)CRD.st=null;  /* 触れていない（マウスが動いているだけ・ペンのホバー）時は、開始座標を出さない */
   let t='x '+crdX(p.x)+'  y '+crdY(p.y);

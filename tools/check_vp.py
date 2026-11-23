@@ -294,9 +294,15 @@ with sync_playwright() as p:
     pg.fill('#vpEditTa', '   ')
     pg.click('#vpApply')
     chk('空のソースは反映しない（理由が出る・動作はそのまま）', '空' in ev(pg, MSG) and ev(pg, "()=>VPL.src") == s0, ev(pg, MSG))
+    ev(pg, "()=>{LIM.vps=200000}")   # 設定で上限を入れた時だけ止まる（既定は制限なし。台帳Z-295）
     pg.fill('#vpEditTa', '<p>' + 'あ' * 200001)
     pg.click('#vpApply')
-    chk('長すぎるソースは反映しない', '長すぎ' in ev(pg, MSG) and ev(pg, "()=>VPL.src") == s0, ev(pg, MSG))
+    chk('上限を設定した時、長すぎるソースは反映しない（設定の場所も知らせる）', '長すぎ' in ev(pg, MSG) and '上限の設定' in ev(pg, MSG) and ev(pg, "()=>VPL.src") == s0, ev(pg, MSG))
+    ev(pg, "()=>{LIM.vps=0}")
+    pg.click('#vpApply')
+    chk('既定（制限なし）では、同じ長さのソースも反映できる', '長すぎ' not in ev(pg, MSG) and ev(pg, "()=>VPL.src.length") > 200000, ev(pg, MSG))
+    apply_src(pg, s0)
+    pg.click('#vpEdit')
     pg.click('#vpCancel')
     # 新しい部品
     def add(s):
@@ -424,13 +430,13 @@ for (let i = 0; i < 60; i++) localStorage.setItem('k' + i, 'v');
 </body></html>"""
     apply_src(pg, flood)
     pg.wait_for_timeout(500)
+    chk('既定は制限なし：20万字超の保存値も預かる', ev(pg, "()=>(localStorage.getItem('am_vplab_s_big')||'').length") == 200001)
     chk('大量の「処理の登録」の知らせは、上限（500件）で止まる', ev(pg, "()=>Object.keys(VPL.H).length") <= 500)
     chk('形の違う偽の知らせを受けても、本体はエラーにならず動き続ける（<img onerror> の誤りは、わざと起こしたもの）', [e for e in errs if '__x' not in e] == [] and ev(pg, "()=>VPL.ready===true"), errs)
-    chk('長すぎる保存値（20万字超）は預からない', ev(pg, LS('am_vplab_s_big')) is None)
-    chk('保存先の数は上限（50個）で止まり、画面の上に理由が出る', ev(pg, "()=>Object.keys(localStorage).filter(k=>k.indexOf('am_vplab_s_')===0).length") == 50 and '多すぎ' in ev(pg, MSG), ev(pg, MSG))
+    chk('既定は制限なし：保存先が50個を超えても預かる', ev(pg, "()=>Object.keys(localStorage).filter(k=>k.indexOf('am_vplab_s_')===0).length") > 50, ev(pg, MSG))
     ctx.close()
 
-    for name, raw in [('規則表の形式（旧）のJSON', '{"v":1,"parts":[],"rules":[]}'), ('HTMLでない文字', 'こわれている'), ('長すぎる', '<p>' + 'あ' * 200001)]:
+    for name, raw in [('規則表の形式（旧）のJSON', '{"v":1,"parts":[],"rules":[]}'), ('HTMLでない文字', 'こわれている'), ('HTMLでない文字（2）', 'こわれている2')]:
         ctx, pg, errs = new(b, init="try{localStorage.setItem('am_vplab',%s)}catch(e){}" % json.dumps(raw))
         load(pg)
         open_lab(pg)
@@ -606,12 +612,20 @@ for (let i = 0; i < 60; i++) localStorage.setItem('k' + i, 'v');
     pg.set_input_files('#vpFile', {'name': 'note.txt', 'mimeType': 'text/plain', 'buffer': 'ただの文章です。タグはありません。'.encode('utf-8')})
     pg.wait_for_timeout(300)
     chk('HTMLでないファイルは読み込まず、理由を出す（ソースは変わらない）', ev(pg, "()=>VPL.src") == before and '読み込めません' in ev(pg, MSG) and 'HTMLファイルではない' in ev(pg, MSG), ev(pg, MSG))
+    ev(pg, "()=>{LIM.vps=200000}")   # 設定で上限を入れた時だけ止まる（既定は制限なし。台帳Z-295）
     pg.set_input_files('#vpFile', {'name': 'big.html', 'mimeType': 'text/html', 'buffer': ('<p>' + 'あ' * 200001 + '</p>').encode('utf-8')})
     pg.wait_for_timeout(400)
-    chk('長すぎるHTML（20万字超）は読み込まず、理由を出す', ev(pg, "()=>VPL.src") == before and '長すぎます' in ev(pg, MSG), ev(pg, MSG))
+    chk('上限を設定した時、長すぎるHTMLは読み込まず、理由と設定の場所を出す', ev(pg, "()=>VPL.src") == before and '長すぎます' in ev(pg, MSG) and '上限の設定' in ev(pg, MSG), ev(pg, MSG))
     pg.set_input_files('#vpFile', {'name': 'huge.html', 'mimeType': 'text/html', 'buffer': b'<p>' + b'a' * (900 * 1024) + b'</p>'})
     pg.wait_for_timeout(400)
-    chk('大きすぎるファイル（約900KB）は、中身を読まずに断る', ev(pg, "()=>VPL.src") == before and '大きすぎます' in ev(pg, MSG), ev(pg, MSG))
+    chk('上限を設定した時、大きすぎるファイルは中身を読まずに断る', ev(pg, "()=>VPL.src") == before and '大きすぎます' in ev(pg, MSG), ev(pg, MSG))
+    ev(pg, "()=>{LIM.vps=0;window.__cf0=window.confirm;window.confirm=()=>true}")
+    pg.set_input_files('#vpFile', {'name': 'huge.html', 'mimeType': 'text/html', 'buffer': b'<p>' + b'a' * (900 * 1024) + b'</p>'})
+    pg.wait_for_timeout(1500)
+    chk('既定（制限なし）では、約900KBのHTMLも読み込める', ev(pg, "()=>VPL.src.length") > 900 * 1024 and '長すぎ' not in ev(pg, MSG) and '大きすぎ' not in ev(pg, MSG), ev(pg, MSG))
+    ev(pg, "()=>{window.confirm=window.__cf0}")
+    apply_src(pg, before)
+    ev(pg, "()=>{VPL.name='my page.html'}")
     # 読み込み前の確認でやめる
     pg.evaluate("()=>{window.__cf=window.confirm;window.confirm=()=>false}")
     pg.set_input_files('#vpFile', {'name': 'other.html', 'mimeType': 'text/html', 'buffer': b'<h1 id="o">other</h1>'})
@@ -736,6 +750,8 @@ for (let i = 0; i < 60; i++) localStorage.setItem('k' + i, 'v');
         S = "()=>{const s=document.getElementById('vpScript'),t=document.getElementById('vpEditTa'),g=s.querySelector('.vpgut'),l=s.querySelector('.vpl .vpt');return {top:s.scrollTop,left:s.scrollLeft,sh:s.scrollHeight,ch:s.clientHeight,oh:s.offsetHeight,lg:document.getElementById('vpLog').offsetHeight,view:Math.round(document.getElementById('vpView').getBoundingClientRect().top),win:[scrollX,scrollY],vpl:s.querySelectorAll('.vpl').length,gut:g?g.textContent.split('\\n').length:0,n:t?t.value.split('\\n').length:0,ved:s.classList.contains('ved'),act:!!t&&document.activeElement===t,sel:t?t.selectionStart:-1,ta:t?{h:t.offsetHeight,st:t.scrollTop,sw:t.scrollWidth,cw:t.clientWidth,lh:getComputedStyle(t).lineHeight,fs:getComputedStyle(t).fontSize}:null,lh:getComputedStyle(l||s).lineHeight,fs:getComputedStyle(l||s).fontSize}}"
         n0 = ev(pg, "()=>VPL.an.lines.length")
         ev(pg, "()=>{document.getElementById('vpScript').scrollTop=300}")
+        ev(pg, "()=>document.getElementById('vpEdit').scrollIntoView({block:'center'})")   # 押す前に、ボタンを見える所へ（見えない所を押すと、検査の側が外の枠を動かしてしまう）
+        pg.wait_for_timeout(100)
         a = ev(pg, S)
         pg.click('#vpEdit')
         pg.wait_for_timeout(250)

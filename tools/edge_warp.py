@@ -79,6 +79,8 @@ with sync_playwright() as p:
     # 11 保存→読込→画面一致（メッシュ込み）
     pg.evaluate("setTab('wp');wmode='brush';wmUi();bt='push';wbUi()"); stroke([(c[0] - 60, c[1] - 10), (c[0] + 60, c[1] + 20)], 6)
     pg.evaluate("sel.pins=[];sel.ps=undefined;sel.wd=true")   # 動きのあるピンは時間で見た目が変わるので、比較の前に外す
+    # 歪みの作業解像度は「手が止まった時に必要な段階へ」履歴つきで決まる（高い段階が残ることがある。`wrPick`）。保存前後で同じ段階から比べるため、いったん段階を捨てて作り直させる（台帳Z-150：落ちていた原因は、データの違いでなく、この段階の違い）
+    pg.evaluate("sel._wr=undefined;sel.wo=null;sel.sd=null;sel._sm=null;sel.dirty=true;paintFrame()"); pg.wait_for_timeout(600)
     pg.evaluate("window.__s=ser()"); pg.wait_for_timeout(200); v = V(); pg.evaluate("pxSave('a')")
     pg.evaluate("loadProj(window.__s)"); pg.wait_for_timeout(1500); v2 = V(); pg.evaluate("pxSave('b')"); pd = pg.evaluate("pxDiff('a','b')")
     chk('11 保存→読込で歪み付きの見た目が一致', v == v2 or pd['mx'] <= 12, '(ハッシュ一致=%s 画素差=%s)' % (v == v2, pd))

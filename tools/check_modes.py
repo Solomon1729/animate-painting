@@ -79,9 +79,17 @@ with sync_playwright() as p:
     load(pg)
     st = pg.evaluate("""()=>({n:AC.length,sp:AC[0]&&AC[0].sp,name:AC[0]&&AC[0].name,doc:[DOC.w,DOC.h],tool,PA:[PA.L,PA.C],paUi:[$('paL').value,$('paC').value],
       US:US.length,dirty:dirtyProj,card:!$('startcard').hidden,tab:document.querySelector('.tab.on').dataset.tab,bg:BG.c,bd:blankDims(),
-      cvw:[AC[0].cv.width,AC[0].cv.height],sz:AC[0].size,W,H,S0,noobj:document.body.classList.contains('noobj')})""")
+      cvw:[AC[0].cv.width,AC[0].cv.height],sz:AC[0].size,W,H,S0,wr:(r=>[r.width,r.height])($('wrap').getBoundingClientRect()),noobj:document.body.classList.contains('noobj')})""")
     chk('既定は自由帳：オブジェクト1個・白紙(sp:d)・名前「自由帳」', st['n'] == 1 and st['sp'] == 'd' and st['name'] == '自由帳', st)
-    chk('紙＝A4縦150dpi（白紙の既定と同じ）で、絵の大きさも同じ', st['doc'] == [st['bd']['w'], st['bd']['h']] == st['cvw'] and st['doc'] == [1240, 1754], st['doc'])
+    chk('紙＝画面の形（ビューワーと同じ縦横比・画素数はA4以上）で、絵の大きさも同じ（Z-306）', st['doc'] == st['cvw'] and abs(st['doc'][0] / st['doc'][1] - st['wr'][0] / st['wr'][1]) < .01 and st['doc'][0] * st['doc'][1] >= 1240 * 1754 * .98, {'doc': st['doc'], 'wrap': [round(v) for v in st['wr']]})
+    for (vw, vh, nm) in ((1440, 900, 'PC 1440×900'), (1920, 1080, 'PC 1920×1080'), (390, 844, 'スマホ 390×844'), (1024, 768, 'タブレット 1024×768')):
+        c2, p2, e2 = new(b, w=vw, h=vh); p2.goto(URL); p2.wait_for_timeout(700)
+        for fm in ('b', 'f'):
+            p2.evaluate("m=>setFrame(m)", fm); p2.wait_for_timeout(250)
+            r2 = p2.evaluate("()=>{const w=$('wrap').getBoundingClientRect(),c=$('cv').getBoundingClientRect();return{ww:w.width,wh:w.height,cw:c.width,ch:c.height,iw:innerWidth,ih:innerHeight,ds:[DOC.w,DOC.h]}}")
+            chk('Z-306 起動直後の紙が、画面いっぱい（%s・枠%s：紙が枠の98%%以上、枠が画面の97%%以上）' % (nm, '大' if fm == 'b' else '全画面'),
+                r2['cw'] >= .98 * r2['ww'] and r2['ch'] >= .98 * r2['wh'] and r2['ww'] >= .97 * r2['iw'] and r2['wh'] >= .97 * r2['ih'], {k: (round(v) if isinstance(v, float) else v) for k, v in r2.items()})
+        chk('pageerror なし（Z-306）', not e2, e2[:1]); c2.close()
     chk('ペンが選ばれ、「描く」タブ・補正が弱くオン（25）・つまみも同じ値', st['tool'] == 'pen' and st['tab'] == 'dr' and st['PA'] == [25, 25] and st['paUi'] == ['25', '25'], (st['tool'], st['tab'], st['PA']))
     chk('背景は白・Undoは空・保存の「変更あり」にしていない・0個の案内は出ない', st['bg'] == '#ffffff' and st['US'] == 0 and st['dirty'] is False and st['noobj'] is False)
     chk('入口カードが出ている', st['card'] is True)
@@ -217,10 +225,10 @@ with sync_playwright() as p:
     pg.wait_for_timeout(250)
     chk('右の縁から中央へ十分に横引きすると出る', pg.evaluate(OPEN) is True)
     li = pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdi')].map(b=>[b.dataset.mode,b.disabled,b.getAttribute('aria-current')])")
-    chk('5つ：編集（いま）・物理・コンソール1（メモ帳）・コンソール2（ビジュアルプログラミング）・コンソール3（画像の見比べ）。全部押せる',
-        [x[0] for x in li] == ['edit', 'phys', 'cons1', 'cons2', 'cons3'] and li[0][2] == 'true' and all(x[1] is False for x in li), li)
+    chk('4つ：編集（いま）・コンソール1（メモ帳）・コンソール2（ビジュアルプログラミング）・コンソール3（画像の見比べ）。全部押せる',
+        [x[0] for x in li] == ['edit', 'cons1', 'cons2', 'cons3'] and li[0][2] == 'true' and all(x[1] is False for x in li), li)
     nm = pg.evaluate("()=>[...document.querySelectorAll('#mdl .mdi b')].map(b=>b.textContent)")
-    chk('名前は「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」', 'コンソール1（メモ帳）' in nm[2] and 'コンソール2（ビジュアルプログラミング）' in nm[3], nm)
+    chk('名前は「コンソール1（メモ帳）」「コンソール2（ビジュアルプログラミング）」', 'コンソール1（メモ帳）' in nm[1] and 'コンソール2（ビジュアルプログラミング）' in nm[2], nm)
     pg.keyboard.press('Escape')
     chk('Escapeで閉じる', pg.evaluate(OPEN) is False)
     touch_seq(cdp, [('touchStart', [P(406, 500)]), ('touchMove', [P(350, 500)]), ('touchMove', [P(250, 500)]), ('touchEnd', [])])
@@ -234,10 +242,8 @@ with sync_playwright() as p:
     pg.keyboard.press('Escape')
     pg.evaluate("()=>menuClose()")
     pg.evaluate("()=>modeOpen()")
-    pg.click('.mdi[data-mode=phys]')
-    chk('「物理」：編集画面の物理タブへ移り、閉じる（独立モードにはしない）', pg.evaluate("()=>document.querySelector('.tab.on').dataset.tab==='ph'&&!modeIsOpen()&&!CONSOLE.isOpen()"))
-    pg.evaluate("()=>modeOpen()")
-    chk('物理のタブにいても、「いま」は編集のまま', pg.evaluate("()=>document.querySelector('#mdl .mdi[aria-current=true]').dataset.mode") == 'edit')
+    chk('モード一覧に「物理」の項目は無い（物理は編集・アニメーションの中の物理タブ。台帳Z-295）', pg.evaluate("()=>!document.querySelector('#mdl .mdi[data-mode=phys]')&&!MODES.some(m=>m.id==='phys')&&!!document.querySelector('.tab[data-tab=ph]')"))
+    chk('「いま」は編集のまま', pg.evaluate("()=>document.querySelector('#mdl .mdi[aria-current=true]').dataset.mode") == 'edit')
     pg.keyboard.press('Escape')
     # 描くタブでペンの縁近く（帯の外）は普通に描ける
     pg.evaluate("()=>{setSel(AC[0]);setTab('dr')}")

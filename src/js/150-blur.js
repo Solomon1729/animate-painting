@@ -54,7 +54,6 @@ function drawPins(l,S){
 function syncBm(){$('bshow').classList.toggle('on',showBm)}
 $('bshow').onclick=()=>{showBm=!showBm;syncBm()};
 $('bfill').onclick=()=>fillSel('bm','#3b82f6');
-$('bbs').oninput=e=>{brushBlur=+e.target.value};
 $('bbake').onclick=()=>{
   const l=sel;if(!l||!l.hasBm||!l.blur){note('先にぼかしを塗って、強さを付けてください');return}
   pushUndo();

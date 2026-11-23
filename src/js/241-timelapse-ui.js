@@ -201,7 +201,7 @@ function tlRecStop(quiet){
     if(s){TLA.rec.add(s);tlRecN()}},true);
   /* キャンバスのなぞり（見せるだけ。再生では作品に反映しない） */
   cv.addEventListener('pointerdown',e=>{if(!TLA.rec||TL.busy||e.isTrusted===false)return;const r=cv.getBoundingClientRect();TLA.stroke={t0:performance.now(),r,p:[[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,0]],lt:0}},true);
-  cv.addEventListener('pointermove',e=>{const s=TLA.stroke;if(!s||!TLA.rec)return;const t=Math.round(performance.now()-s.t0);if(t-s.lt<40||s.p.length>=60)return;s.lt=t;s.p.push([+((e.clientX-s.r.left)/s.r.width).toFixed(4),+((e.clientY-s.r.top)/s.r.height).toFixed(4),t])},true);
+  cv.addEventListener('pointermove',e=>{const s=TLA.stroke;if(!s||!TLA.rec)return;const t=Math.round(performance.now()-s.t0);if(t-s.lt<40)return;   /* 1本の線の長さに上限は付けない（以前は60点＝約2.4秒で途切れた。台帳Z-260） */s.lt=t;s.p.push([+((e.clientX-s.r.left)/s.r.width).toFixed(4),+((e.clientY-s.r.top)/s.r.height).toFixed(4),t])},true);
   const end=()=>{const s=TLA.stroke;TLA.stroke=null;if(!s||!TLA.rec)return;const p=s.p.map(q=>[+q[0].toFixed(4),+q[1].toFixed(4),q[2]]);if(p.length<2)p.push([p[0][0],p[0][1],300]);
     const say='キャンバスをなぞる（動きの目安。再生では作品に反映しません）';TLA.rec.add({k:'gesture',cat:'ui',path:p,say,how:['キャンバスの上を、指の印のとおりになぞる'],blk:{c:'ui',t:'キャンバスをなぞる',f:[{l:'点の数',v:String(p.length)}]}});tlRecN()};
   ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,end,true));

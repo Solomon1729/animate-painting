@@ -4,7 +4,7 @@
    版`v`と、知らないキー（全体も項目ごとも）は捨てずに書き戻す。読めない中身は消さず `am_featurepacks_bad` へ写す。**決め打ちの上限は置かない**（端末が覚えきれない時は、その場だけ使えると知らせる）。
    これは本体の作品の保存形式（`ser`／`PROJ`）とは別。モードの部品（`am_modeparts`）の保存とも別。 */
 const FTC={LS:'am_featurepacks',LSB:'am_featurepacks_bad',V:1,v:1,list:[],x:{},err:0,loaded:false,skipped:0,
-  sel:{ids:new Set(),fns:new Set()},res:null,run:null,cur:null,tab:'info',port:null,edit:null,undo:null,msg:'',busy:false,ac:null,root:null,pvSeq:0,del:null};
+  sel:{ids:new Set(),fns:new Set(),keep:new Set()},res:null,run:null,cur:null,tab:'info',port:null,edit:null,undo:null,msg:'',busy:false,ac:null,root:null,pvSeq:0,del:null};
 function ftLoad(){
   if(FTC.loaded)return;FTC.loaded=true;
   let raw=null;try{raw=localStorage.getItem(FTC.LS)}catch(_){return}
@@ -34,23 +34,27 @@ function ftSmoke(pack){
   return new Promise(res=>{
     if((pack.dependencies||[]).some(d=>d&&d.src))return res({skipped:'外のライブラリが要るので、動かす確認は省いた',errs:[]});
     if(!pack.files.html.trim()&&!pack.files.javascript.trim())return res({skipped:'動かす中身が無い',errs:[]});
-    const fr=document.createElement('iframe'),errs=[];
+    const fr=document.createElement('iframe'),errs=[],perrs=[];let probed=-1;
     fr.setAttribute('sandbox','allow-scripts');fr.setAttribute('aria-hidden','true');fr.tabIndex=-1;
     fr.style.cssText='position:fixed;left:-9999px;top:0;width:480px;height:320px;border:0';
     let done=false;
-    const fin=()=>{if(done)return;done=true;removeEventListener('message',on);try{fr.remove()}catch(_){}res({errs})};
-    const on=e=>{if(e.source!==fr.contentWindow)return;const d=e.data;if(!d||d.ft!==1||typeof d.m!=='string')return;if(errs.length<20)errs.push({m:d.m.slice(0,200),l:Number.isFinite(+d.l)?+d.l:0})};
+    const fin=()=>{if(done)return;done=true;removeEventListener('message',on);try{fr.remove()}catch(_){}res({errs,perrs,probed})};
+    const on=e=>{if(e.source!==fr.contentWindow)return;const d=e.data;if(!d)return;
+      if(d.ft===2){probed=Number.isFinite(+d.n)?+d.n:0;setTimeout(fin,300);return}   /* 操作を終えた知らせ */
+      if(d.ft!==1||typeof d.m!=='string')return;const a=d.p?perrs:errs;if(a.length<20)a.push({m:d.m.slice(0,200),l:Number.isFinite(+d.l)?+d.l:0})};
     addEventListener('message',on);
-    fr.addEventListener('load',()=>setTimeout(fin,700));
-    setTimeout(fin,4000);
+    fr.addEventListener('load',()=>setTimeout(fin,2500));   /* 操作を終えた知らせが来なかった時の保険 */
+    setTimeout(fin,5000);
     const pre=typeof partShim==='function'?'<script>('+partShim.toString().replace(/\n\s*/g,' ')+')()<\/script>':'';
-    fr.srcdoc=ftDoc(pack,{pre});document.body.appendChild(fr)})}
+    fr.srcdoc=ftDoc(pack,{pre,probe:true});document.body.appendChild(fr)})}
 /* 検査の結果（読んだだけの検査＋動かした結果）をまとめる */
 function ftMerge(rep,run){
   const items=rep.items.slice();let level=rep.level;
   if(run&&run.errs&&run.errs.length){for(const e of run.errs.slice(0,5))items.push({lv:'ng',msg:'動かすと誤りが出た：'+ftClean(e.m,120)});level='ng'}
   else if(run&&run.skipped)items.push({lv:'info',msg:run.skipped});
-  else if(run)items.push({lv:'info',msg:'隔離した枠で動かして、誤りは出なかった'});
+  else if(run){
+    items.push({lv:'info',msg:'隔離した枠で動かして、読み込みの誤りは出なかった'+(run.probed>0?'。部品を'+run.probed+'個、実際に操作（押す・変える）して確かめた':'')});
+    if(run.perrs&&run.perrs.length){const u=Array.from(new Set(run.perrs.map(e=>ftClean(e.m,80))));items.push({lv:'warn',msg:'部品を操作すると誤りが出る所がある（'+run.perrs.length+'回）：'+u.slice(0,3).join(' ／ ')+'。元のアプリの状態（選んでいる絵など）が要る部分かもしれません。足した先で、その部分は使わないか、必要な処理も一緒に選んでください'});if(level==='ok')level='warn'}}
   return{level,items}}
 const ftLv={ok:'✔ 使える',warn:'⚠ 警告あり',ng:'✖ 動かない（保存・使用できない）'};
 /* ---- 出す・入れる ---- */

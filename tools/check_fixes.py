@@ -205,7 +205,7 @@ with sync_playwright() as p:
     pg.evaluate("AC.splice(0);setSel(null);setTab('dr')");pg.wait_for_timeout(200)
     dims=lambda:pg.evaluate("(()=>{const a=AC[AC.length-1];return [a.cv.width,a.cv.height,a.name]})()")
     rep('既定のスロットはA4・150dpi',pg.evaluate("[BLS.p,BLS.dpi,document.getElementById('blsz').value,document.getElementById('bldpi').value].join()")=='A4,150,A4,150')
-    rep('A1〜A6・B1〜B6・正方形・px指定が選べる',pg.evaluate("[...document.getElementById('blsz').options].map(o=>o.value).join()")=='A1,A2,A3,A4,A5,A6,B1,B2,B3,B4,B5,B6,sq,px')
+    rep('画面の形・A1〜A6・B1〜B6・正方形・px指定が選べる（Z-306で画面の形を足した）',pg.evaluate("[...document.getElementById('blsz').options].map(o=>o.value).join()")=='scr,A1,A2,A3,A4,A5,A6,B1,B2,B3,B4,B5,B6,sq,px')
     pg.evaluate("document.getElementById('addd').click()");pg.wait_for_timeout(200)
     d=dims();rep('「＋白紙レイヤー」で A4（210×297mm）@150dpi＝1240×1754px',d[0]==1240 and d[1]==1754,d)
     pg.select_option('#blsz','B4');pg.evaluate("document.getElementById('oadd2').click()");pg.wait_for_timeout(200)

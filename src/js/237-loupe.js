@@ -45,7 +45,7 @@ function lupeZoom(m,l){
   const dia=m&&l&&l.M?m.ring(l):0;
   return cl(dia>0?LUP.sz*LUP.R/100/dia:(m?m.zoom:4),LUP.ZMIN,LUP.ZMAX);
 }
-function lupePointer(e){const r=cv.getBoundingClientRect();LUP.cx=(e.clientX-r.left)*W/r.width;LUP.cy=(e.clientY-r.top)*H/r.height}
+function lupePointer(e){const c=cvLoc(e.clientX,e.clientY);LUP.cx=c.x*W/c.w;LUP.cy=c.y*H/c.h}
 cv.addEventListener('pointerdown',e=>{if(!LUP.on)return;lupePointer(e);LUP.down=true;LUP.pin=null});
 cv.addEventListener('pointermove',e=>{if(LUP.on&&LUP.down&&(pid===-1?e.isPrimary!==false:e.pointerId===pid))lupePointer(e)});
 const lupeUp=()=>{if(LUP.down&&!ptrs.size){LUP.down=false;LUP.until=performance.now()+LUP.LINGER}};

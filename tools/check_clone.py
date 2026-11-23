@@ -45,6 +45,7 @@ HELP = """window.CK={
     else if(kind==='sat'){r=150;gg=100;b=100}
     else if(kind==='hole'){const n=(rnd(x,y)-.5)*12;r=120+n;gg=160+n;b=200+n;if(x>=300&&x<340&&y>=220&&y<260){r=gg=b=0}}
     else if(kind==='opq'){const n=x<w/2?1:0;if(!n){r=gg=b=0;a=0}else{r=x*.35;gg=y*.45;b=40+(x+y)*.15}}
+    else if(kind==='gn'||kind==='gn2'){const k=kind==='gn'?6:14;if(!CK._n||CK._n.w!==w||CK._n.h!==h||CK._n.k!==k)CK._n={w,h,k,a:IO.noise(w,h,4711,.7)};const n=CK._n.a[y*w+x]*k;r=120+n;gg=160+n;b=200+n;if(kind==='gn'&&x>=300&&x<340&&y>=220&&y<260){r=gg=b=0}}   /* 写真の粒に近い（なめらかなガウス雑音）。gn＝黒い四角つき */
     else if(kind==='tex'){const n=(rnd(x,y)-.5)*30;r=110+x*.1+n;gg=130+y*.1+n;b=150+n}
     d[j]=Math.max(0,Math.min(255,r));d[j+1]=Math.max(0,Math.min(255,gg));d[j+2]=Math.max(0,Math.min(255,b));d[j+3]=a;
   }
@@ -73,6 +74,8 @@ class S:
     def __init__(self, p, w=420, h=900):
         self.b = p.chromium.launch()
         self.pg = self.b.new_page(viewport={'width': w, 'height': h})
+        # 検査の前提：画素の位置・値を決め打ちしているので、編集の細かさは従来（最小512）に固定する（既定は1024。台帳Z-125。既定の動きは check_brush_scale.py が見る）
+        self.pg.add_init_script("try{localStorage.setItem('am_limits',JSON.stringify({penmin:512}))}catch(e){}")
         self.errs = []
         self.pg.on('pageerror', lambda e: self.errs.append(str(e)[:200]))
         self.pg.on('dialog', lambda d: d.dismiss())
@@ -195,6 +198,13 @@ def g_fix(p):
     s.setup('hole', mode='fill'); pg.evaluate("RT.s=30;RT.ps.fill=1;rtUi()"); s.stroke([(320, 240), (320, 240)], steps=1)
     sd1 = pg.evaluate("CK.std(305,225,30,30)"); sdbg = pg.evaluate("CK.std(200,100,40,40)")
     chk('粒状感0はなめらか、粒状感100は周りの粒に近い', sd0 < 2.5 and sd1 > sd0 + 1.5, {'粒0': round(sd0, 2), '粒100': round(sd1, 2), '周り': round(sdbg, 2)})
+    # Z-158：粒状感50（既定）の粒は、周りの粒と同じ強さ（以前は約2倍強かった）。100なら約2倍、0なら無し。写真の粒に近い雑音（gn）で測る
+    rr = {}
+    for gp in (.5, 1.0):
+        s.setup('gn', mode='fill'); pg.evaluate("([f])=>{RT.s=30;RT.ps.fill=f;rtUi()}", [gp]); s.stroke([(320, 240), (320, 240)], steps=1)
+        rr[gp] = pg.evaluate("CK.std(305,225,30,30)") / pg.evaluate("CK.std(200,100,40,40)")
+    chk('Z-158 周りで埋める：粒状感50の粒は周りと同じ強さ（0.75〜1.25倍）', .75 <= rr[.5] <= 1.25, {'50': round(rr[.5], 2)})
+    chk('Z-158 粒状感100は50のほぼ2倍（1.6〜2.4倍）', 1.6 <= rr[1.0] / rr[.5] <= 2.4, {'100/50': round(rr[1.0] / rr[.5], 2)})
     # 滑らかにする：ノイズを減らし、輪郭は保つ
     s.setup('step', mode='smooth'); pg.evaluate("RT.s=24;RT.ps.smooth=.5;RT.gs.smooth=1;rtUi()")
     n0 = pg.evaluate("CK.std(270,225,30,30)"); c0 = pg.evaluate("CK.lum(345,225,30,30)-CK.lum(270,225,30,30)")
@@ -290,7 +300,7 @@ def g_misc(p):
     chk('ロック中のレイヤーには効かない', pg.evaluate("CK.hash()") == h0)
     pg.evaluate("LAYERS[0].locked=false")
     # 歪み併用
-    s.setup('step', mode='blur'); pg.evaluate("()=>{RT.s=24;RT.gs.blur=1;rtUi();sel.pins=[{t:'f',x:.3,y:.3,r:.2,a:0,vx:0,vy:0}];sel.wd=true}"); pg.wait_for_timeout(150)
+    s.setup('step', mode='blur'); pg.evaluate("()=>{RT.s=24;RT.gs.blur=1;rtUi();sel.pins=[{t:'f',x:.3,y:.3,r:.2,a:0,vx:0,vy:0,b:0,hz:1,w:'sin',ma:0,md:0,mw:'sin',sf:.5,ph:0}];sel.wd=true}"); pg.wait_for_timeout(150)
     h0 = pg.evaluate("CK.hash()"); s.stroke([(300, 240), (340, 240)], steps=8)
     chk('歪んでいる絵にも効く（エラーなし）', pg.evaluate("CK.hash()") != h0 and not s.errs, s.errs[:1])
     # 0個
@@ -322,7 +332,7 @@ def g_ui(p):
     s.stroke([(150, 150), (150, 150)], steps=1)
     chk('タップで基準点が置き直され、状態が戻る', pg.evaluate("RT.setting===false&&Math.abs(RT.src.x-150)<3"))
     # 太さの目安
-    pg.evaluate("()=>{const r=$('rtS');r.value=30;r.dispatchEvent(new Event('input',{bubbles:true}))}")
+    pg.evaluate("()=>{const r=$('rtS');brSet('rtS',30);r.value=brPos('rtS',30);r.dispatchEvent(new Event('input',{bubbles:true}))}")
     st = pg.evaluate("szhState(performance.now())")
     chk('太さのバーを動かすと目安の輪が出る（直径＝実際の太さ）', bool(st) and abs(st['d'] - pg.evaluate("rtBrushPx(sel)")) < .6, st)
     # 拡大窓
@@ -345,6 +355,9 @@ def g_hole(p):
     sdh = pg.evaluate("CK.std(260,200,100,80)")
     cut('grain'); sdg = pg.evaluate("CK.std(260,200,100,80)"); mg = pg.evaluate("CK.mean(260,200,100,80)")
     chk('穴埋め「粒状感つき」：粒が足される（なめらかより標準偏差が大きい）', sdg > sdh + 1.0 and mg[3] > 250, {'なめらか': round(sdh, 2), '粒つき': round(sdg, 2)})
+    s.setup('gn', mode='fill'); pg.evaluate("()=>{ptFill='grain';ptHole='core';ptFeather=0;ptPos='auto';ptNow=false;rectSel(sel,{u:.35,v:.35},{u:.65,v:.65});takePart(true)}"); pg.wait_for_timeout(150)
+    rg = pg.evaluate("CK.std(260,200,100,80)") / pg.evaluate("CK.std(20,20,100,100)")
+    chk('Z-158 穴埋め「粒状感つき」の粒も、周りと同じ強さ（0.75〜1.25倍）', .75 <= rg <= 1.25, {'穴/周り': round(rg, 2)})
     # 切って貼る：元の位置に戻る（穴を埋めない設定。Z-143・Z-144）
     s.setup('tex'); pg.evaluate("()=>{ptFill='off';ptHole='core';ptFeather=0;ptPos='orig';ptNow=false;rectSel(sel,{u:.35,v:.35},{u:.65,v:.65})}")
     before = pg.evaluate("(()=>{const c=boxCv(sel,{adj:true,full:true}).c;return Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data)})()")
@@ -354,6 +367,40 @@ def g_hole(p):
       // 元の画像と同じ解像度でないので、平均の差だけ見る
       let s=0,n=0;for(let i=0;i<d.length;i+=4){s+=d[i]+d[i+1]+d[i+2];n+=3}return{mean:s/n,size:[w,h],ac:AC.length}}""", before)
     chk('切って元の位置に貼ると、2つのオブジェクトになる', diff['ac'] == 2, diff)
+    chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
+
+
+def g_mosaic(p):
+    print('--- 10 モザイク（修整の方式。2026-11-20）')
+    s = S(p); pg = s.pg
+    def run(kind, ps=None, strokes=((320, 240),), size=40):
+        d = s.setup(kind, mode='mosaic'); pg.evaluate("([a,b])=>{RT.s=a;if(b!==null)RT.ps.mosaic=b;rtUi()}", [size, ps])
+        for (x, y) in strokes: s.stroke([(x, y), (x, y)], steps=1)
+        return d
+    runlen = "(()=>{const d=CK.get(280,240,80,1);let b=1,c=1;for(let i=1;i<80;i++){const q=i*4,r=q-4;if(d[q]===d[r]&&d[q+1]===d[r+1]&&d[q+2]===d[r+2])c++;else c=1;if(c>b)b=c}return b})()"
+    s.setup('tex', mode='mosaic'); pg.evaluate("RT.s=40;rtUi()")
+    opt = pg.evaluate("[...document.getElementById('rtMode').options].some(o=>o.value==='mosaic')"); lab = pg.evaluate("document.getElementById('rtPl')?document.getElementById('rtPl').textContent:''")
+    chk('方式の選択肢に「モザイク」があり、基準点は要らない', opt and not pg.evaluate("RTM.mosaic.src"), {'選択肢': opt})
+    s.setup('tex', mode='mosaic'); pg.evaluate("RT.s=40;rtUi()")
+    before = pg.evaluate("CK.mean(320,240,10,10)"); far0 = pg.evaluate("CK.mean(50,50,20,20)"); farsd0 = pg.evaluate("CK.std(50,50,20,20)")
+    sd_before = pg.evaluate("CK.std(320,240,10,10)")
+    s.stroke([(325, 245), (325, 245)], steps=1)
+    sd_after = pg.evaluate("CK.std(320,240,10,10)"); after = pg.evaluate("CK.mean(320,240,10,10)"); far1 = pg.evaluate("CK.mean(50,50,20,20)"); farsd1 = pg.evaluate("CK.std(50,50,20,20)")
+    chk('モザイク：ブロックの中は同じ色になる（元は粒がある→標準偏差が約0）', sd_before > 4 and sd_after < 0.6, {'前': round(sd_before, 2), '後': round(sd_after, 2)})
+    chk('モザイク：ブロックの色は、元のブロックの平均色（各色±1.5）', all(abs(before[i] - after[i]) <= 1.5 for i in range(3)), {'前': [round(v, 1) for v in before[:3]], '後': [round(v, 1) for v in after[:3]]})
+    chk('モザイク：なぞっていない所は変わらない', abs(far0[0] - far1[0]) < .01 and abs(farsd0 - farsd1) < .01, {'標準偏差': [round(farsd0, 2), round(farsd1, 2)]})
+    # 重ねてなぞっても、ブロックは変わらない（格子が絵に固定）
+    s.stroke([(327, 243), (333, 250)], steps=4)
+    after2 = pg.evaluate("CK.mean(320,240,10,10)"); sd2 = pg.evaluate("CK.std(320,240,10,10)")
+    chk('モザイク：ずらして重ねてなぞっても、同じブロック・同じ色（格子は絵に固定）', sd2 < 0.6 and all(abs(after[i] - after2[i]) <= 1.0 for i in range(3)), {'1回目': [round(v, 1) for v in after[:3]], '重ね': [round(v, 1) for v in after2[:3]]})
+    # ブロックの大きさ（調整バー）
+    run('tex', 0.0); r0 = pg.evaluate(runlen)
+    run('tex', 1.0); r1 = pg.evaluate(runlen)
+    chk('調整バーでブロックの大きさが変わる（0→小さい／1→大きい）', r0 <= 4 and r1 >= 24 and r1 > r0 * 5, {'バー0の連続': r0, 'バー1の連続': r1})
+    # 透明は透明のまま
+    run('opq', None, ((320, 240),)); a_left = pg.evaluate("CK.mean(290,235,25,10)"); a_right = pg.evaluate("CK.mean(330,235,25,10)")
+    rl = pg.evaluate("(()=>{const d=CK.get(270,240,45,1);let b=1,c=1;for(let i=1;i<45;i++){const q=i*4;if(d[q+3]>250&&d[q]===d[q-4]&&d[q+1]===d[q-3]&&d[q+2]===d[q-2])c++;else c=1;if(c>b)b=c}return b})()")
+    chk('透明な所（右半分）は透明のまま、絵のある所（左半分）だけブロックになる', a_right[3] < 1 and a_left[3] > 250 and rl >= 5, {'左α': round(a_left[3], 1), '右α': round(a_right[3], 1), '左のブロック幅': rl})
     chk('pageerror なし', not s.errs, s.errs[:1]); s.close()
 
 
@@ -372,7 +419,7 @@ def g_speed(p):
 
 def main():
     with sync_playwright() as p:
-        for g in (g_clone, g_heal, g_fix, g_tone, g_stamp, g_misc, g_ui, g_hole, g_speed):
+        for g in (g_clone, g_heal, g_fix, g_tone, g_stamp, g_misc, g_ui, g_hole, g_mosaic, g_speed):
             try: g(p)
             except Exception as e: chk('検査が途中で止まった：' + g.__name__, False, str(e)[:300])
     print('OK %d  NG %d' % tuple(OKN))

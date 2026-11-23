@@ -20,6 +20,7 @@ const RTM={
   blur  :{n:'ぼかす',g:70,pl:'ぼかす広さ',p:40,sp:.25,tip:'なぞった所をぼかします（縁もぼかすので、輪郭も溶けます）'},
   sharp :{n:'くっきりさせる',g:60,pl:'くっきり量',p:50,sp:.25,tip:'細かい所を強調して、くっきりさせます'},
   smudge:{n:'指でにじませる（スマッジ）',g:60,sp:.12,tip:'指でこするように、色を引きずってにじませます。強いほど遠くまで引きずります'},
+  mosaic:{n:'モザイク（ブロックにする）',g:100,pl:'ブロックの大きさ',p:30,sp:.25,tip:'なぞった所を、四角いブロックの平均色にします。ブロックの大きさは調整バーで（絵の大きさに合わせた比率）。ブロックの格子は絵に固定なので、重ねてなぞっても同じ形で、縞になりません。見せたくない所を隠す時に'},
   dodge :{n:'覆い焼き（明るく）',g:30,sp:.25,tip:'なぞった所を明るくします。重ねてなぞるほど明るくなります'},
   burn  :{n:'焼き込み（暗く）',g:30,sp:.25,tip:'なぞった所を暗くします。重ねてなぞるほど暗くなります'},
   vivid :{n:'スポンジ（鮮やかに）',g:30,sp:.25,tip:'なぞった所の色を鮮やかにします'},
@@ -90,7 +91,7 @@ function rtBegin(l,a){
   const M=rtM(),bw=l._bw,bh=l._bh;rtFlatten(l);
   const g=l.base.getContext('2d',{willReadFrequently:true}),work=g.getImageData(0,0,bw,bh);
   const st={l,bw,bh,g,work,mode:RT.mode,M,R:rtDia(bw,bh)/2,hd:RT.h/100,gs:RT.gs[RT.mode],ps:RT.ps[RT.mode],sp:M.sp,
-    src:(M.src||RT.mode==='smooth'||RT.mode==='jaggy'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
+    src:(M.src||RT.mode==='smooth'||RT.mode==='jaggy'||RT.mode==='blur'||RT.mode==='sharp'||RT.mode==='mosaic'||RT.mode==='dodge'||RT.mode==='burn'||RT.mode==='vivid'||RT.mode==='dull')?new Uint8ClampedArray(work.data):null,
     selA:null,tc:{},fm:null,amp:0,nzx:(Math.random()*512)|0,nzy:(Math.random()*512)|0,lx:a.x,ly:a.y,cx:a.x,cy:a.y,acc:0,carry:null,off:null,stamp:false,cos:Math.cos(RT.rot*Math.PI/180),sin:Math.sin(RT.rot*Math.PI/180),fl:RT.flip?-1:1,isc:100/Math.max(5,RT.sc),seed:(Math.random()*1e9)|0};
   if(RT.useSel&&l.hasSm&&l.sm){
     const pm=partMask(l,bw,bh,false,2),d=pm.getContext('2d',{willReadFrequently:true}).getImageData(0,0,bw,bh).data,sa=new Uint8Array(bw*bh);
@@ -109,7 +110,8 @@ function rtFoot(st,cx,cy){
 }
 /* 重み（0〜1）：硬さ＝内側は全力、外へなめらかに0へ。強さと、囲み（あれば）を掛ける */
 function rtWeights(st,cx,cy,f,sMul){
-  const R=st.R,hd=st.hd,w=f.w,h=f.h,W=new Float32Array(w*h),sel=st.selA,bw=st.bw,s=sMul===undefined?st.gs:sMul;
+  /* 半径1画素未満（絵の1画素の太さ）は、縁をなだらかにすると、画素の中心に届かず何も起きない。硬さ100として、円の面積の割合（アンチエイリアス）で重みにする（台帳Z-125） */
+  const R=st.R,hd=R<1?1:st.hd,w=f.w,h=f.h,W=new Float32Array(w*h),sel=st.selA,bw=st.bw,s=sMul===undefined?st.gs:sMul;
   for(let j=0;j<h;j++){const dy=f.y+j+.5-cy;for(let i=0;i<w;i++){
     const dx=f.x+i+.5-cx,d=Math.sqrt(dx*dx+dy*dy);let m;
     if(hd>=.995){m=R-d+.5}else{const t=d/R;if(t>=1)continue;if(t<=hd)m=1;else{const u=(1-t)/(1-hd);m=u*u*(3-2*u)}}
@@ -141,6 +143,7 @@ function rtApplyDab(st,cx,cy){
   if(md==='heal')return rtHeal(st,cx,cy,f,W);
   if(md==='fill')return rtFillDab(st,cx,cy,f,W);
   if(md==='smooth'||md==='jaggy'||md==='blur'||md==='sharp')return rtFilter(st,cx,cy,f,W);
+  if(md==='mosaic')return rtMosaic(st,f,W);
   /* 覆い焼き・焼き込み・スポンジ：画素ごと */
   for(let j=0;j<f.h;j++)for(let i=0;i<f.w;i++){
     const m=W[j*f.w+i];if(m<=0)continue;
@@ -150,6 +153,23 @@ function rtApplyDab(st,cx,cy){
     else{const y=rtLum(r,g,b),k=md==='vivid'?1.8:.2;r=rtC(y+(r-y)*k);g=rtC(y+(g-y)*k);b=rtC(y+(b-y)*k)}
     rtMix(D,p,r,g,b,a,m);
   }
+  return f;
+}
+/* モザイク：ブロックの大きさ（画像の画素）＝画像の短辺/256 を単位に、(1＋15×調整)倍（調整.3で約5.5単位。1240px幅の絵で約26px）。最小2画素。
+   ブロックの格子は画像の左上に固定（なぞり方・重ね方によらず同じ形）。色は元の絵（src）の、ブロックの中の「アルファ重みの平均」。透明な所（元のアルファ0）は変えない。 */
+const rtMosaicN=(bw,bh,p)=>Math.max(2,Math.round(Math.min(bw,bh)/256*(1+15*p)));
+function rtMosaic(st,f,W){
+  const bw=st.bw,bh=st.bh,D=st.work.data,S=st.src,n=rtMosaicN(bw,bh,st.ps),mc=st.mc||(st.mc=new Map()),nbx=Math.ceil(bw/n);
+  const blk=(bx,by)=>{const k=by*nbx+bx;let v=mc.get(k);if(v)return v;
+    const x0=bx*n,y0=by*n,x1=Math.min(bw,x0+n),y1=Math.min(bh,y0+n);let r=0,g=0,b=0,a=0;
+    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const q=(y*bw+x)*4,al=S[q+3];r+=S[q]*al;g+=S[q+1]*al;b+=S[q+2]*al;a+=al}
+    const cnt=(x1-x0)*(y1-y0);v=a>0?[r/a,g/a,b/a,a/cnt]:[0,0,0,0];mc.set(k,v);return v};
+  for(let j=0;j<f.h;j++){const y=f.y+j,by=(y/n)|0;for(let i=0;i<f.w;i++){
+    const m=W[j*f.w+i];if(m<=0)continue;
+    const x=f.x+i,p=(y*bw+x)*4,a0=S[p+3];if(a0===0)continue;
+    const v=blk((x/n)|0,by);if(v[3]<=0)continue;
+    rtMix(D,p,rtC(v[0]),rtC(v[1]),rtC(v[2]),a0,m);
+  }}
   return f;
 }
 /* 窓（打ちの範囲に余白mgを足した範囲）を画像の中に切り詰めて返す */
@@ -304,8 +324,13 @@ function rtFilter(st,cx,cy,f,W){
 const RT_FILL_LOW=96;
 let RTN=null;
 const rtNoiseTile=()=>RTN||(RTN=IO.noise(512,512,90210,.7));
+/* 粒の強さの測り方（周りの粒と、足す粒の表を、同じ式で測って比べる＝周りの粒の相関・分布の形によらず、同じ強さになる）。
+   dv＝「その画素と、周り5×5の平均との差」の絶対値の列。輪郭の外れ値は、中央値の2.5倍で頭打ちにして、二乗平均の平方根を取る。 */
+const rtHpRms=dv=>{dv.sort((a,b)=>a-b);const m=dv[dv.length>>1],c=Math.max(2.5*m,1e-6);let s=0;for(let i=0;i<dv.length;i++){const e=dv[i]<c?dv[i]:c;s+=e*e}return Math.sqrt(s/dv.length)};
+let RTG=0;
+const rtTileStat=()=>RTG||(RTG=(()=>{const t=rtNoiseTile(),dv=[];for(let y=2;y<510;y+=3)for(let x=2;x<510;x+=3){let q=0;for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++)q+=t[((y+b)<<9)|(x+a)];dv.push(Math.abs(t[(y<<9)|x]-q/25))}return rtHpRms(dv)||1})());
 function rtFillDab(st,cx,cy,f,W){
-  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,R2=R*R*.9;
+  const bw=st.bw,R=st.R,win=rtWin(st,f,Math.ceil(R*.9)+2),w2=win.w,h2=win.h,D=st.work.data,R2=Math.max(R*R*.9,.51);   /* 半径1画素未満でも、いちばん近い画素の中心は必ず穴に入る（台帳Z-125） */
   const k=Math.max(1,Math.ceil(Math.max(w2,h2)/RT_FILL_LOW)),lw=Math.ceil(w2/k),lh=Math.ceil(h2/k),C=new Float32Array(lw*lh*3),A=new Float32Array(lw*lh),sd=Math.max(1,Math.floor(k/3));
   let nk=0;
   /* 粗い格子の1セルは、k×k画素の平均。k≧3なら、画素を間引いて（sd画素おき）集める（円の外の色はなめらかなので十分）。 */
@@ -348,7 +373,7 @@ function rtGrainAmp(D,bw,bh,win,cx,cy,R2,gain,fm){
     dv.push(Math.abs(lumAt(x,y)-s/25));
   }
   if(dv.length<20)return -1;
-  dv.sort((a,b)=>a-b);const sd=1.4826*dv[dv.length>>1]*1.6,amp=sd*gain*2;return amp<.3?0:amp;
+  const amp=rtHpRms(dv)/rtTileStat()*gain*2;return amp<.3?0:amp;   /* 周りの粒の標準偏差×gain×2（gain .5＝周りと同じ強さ。表は標準偏差1） */
 }
 /* 周りの細かい粒（高周波）の強さを測り、同じ強さの粒状ノイズ（窓の大きさ）を返す。gain＝0〜1（粒状感）。粒が無い（なめらかな）絵・gain0ならnull */
 function rtGrain(px,known,w,h,gain,seed){
@@ -357,8 +382,7 @@ function rtGrain(px,known,w,h,gain,seed){
   const bl=IO.box(lum,w,h,1,2),dv=[];
   for(let i=0;i<n;i+=3)if(known[i])dv.push(Math.abs(lum[i]-bl[i]));
   if(dv.length<20)return null;
-  dv.sort((a,b)=>a-b);const sd=1.4826*dv[dv.length>>1]*1.6;   /* 中央絶対偏差から標準偏差の見積り（輪郭の外れ値に強い。box平均との差の分を補正） */
-  const amp=sd*gain*2;if(amp<.3)return null;
+  const amp=rtHpRms(dv)/rtTileStat()*gain*2;if(amp<.3)return null;   /* rtGrainAmpと同じ測り方 */
   const z=IO.noise(w,h,seed,.7);for(let i=0;i<n;i++)z[i]*=amp;return z;
 }
 /* スマッジ：筆の下の絵を「持ち運ぶ」。最初の打ちは拾うだけ。次からは、持っている絵を今の位置へ置き、持っている絵を今の絵へ少し入れ替える */
@@ -396,7 +420,7 @@ const rtUnion=(a,b)=>{if(!a)return b;if(!b)return a;const x0=Math.min(a.x,b.x),y
 /* ---- なぞり（pdown・pointermove・endAllから）---- */
 function rtDown(q,e,l){
   RT.st=null;RT.pv=null;
-  const M=rtM();ensureBase(l);const bw=l._bw,bh=l._bh,a=penXY(l,q,bw,bh);
+  const M=rtM();ensureBase(l);const bw=l._bw,bh=l._bh,a=penXYW(l,q,bw,bh);
   RT.last={x:q.x,y:q.y};
   if(M.src){
     const have=RT.src&&RT.src.l===l&&RT.src.bw===bw&&RT.src.bh===bh;
@@ -413,7 +437,7 @@ function rtDown(q,e,l){
 function rtAt(q,l){
   const st=RT.st;if(!st||st.l!==l)return;
   RT.last={x:q.x,y:q.y};
-  const a=penXY(l,q,st.bw,st.bh);
+  const a=penXYW(l,q,st.bw,st.bh);
   if(st.stamp){st.cx=a.x;st.cy=a.y;rtPv(st);return}
   const dx=a.x-st.lx,dy=a.y-st.ly,len=Math.hypot(dx,dy);if(len<1e-6)return;
   let step=Math.max(1,st.R*st.sp);if(len/step>60)step=len/60;
@@ -458,7 +482,7 @@ function rtOverlay(){
   if(M.src&&RT.src&&RT.src.l===l&&RT.src.bw===bw&&RT.src.bh===bh){
     let bx=RT.src.x,by=RT.src.y;
     if(st&&st.off){bx=st.cx+st.off.dx;by=st.cy+st.off.dy}
-    else if(hp&&RT.off&&RT.al){const a=penXY(l,hp,bw,bh);bx=a.x+RT.off.dx;by=a.y+RT.off.dy}
+    else if(hp&&RT.off&&RT.al){const a=penXYW(l,hp,bw,bh);bx=a.x+RT.off.dx;by=a.y+RT.off.dy}
     const s=rtB2S(l,bx,by,bw,bh);
     ring(s.x,s.y,dia,'#ffd23f',[5,4],1.5);
     ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.moveTo(s.x-9,s.y);ctx.lineTo(s.x+9,s.y);ctx.moveTo(s.x,s.y-9);ctx.lineTo(s.x,s.y+9);ctx.stroke();
@@ -497,7 +521,7 @@ function rtUi(){
   $('rtMode').value=RT.mode;$('rtStyleRow').style.display=has?'':'none';$('rtSrcBox').style.display=has?'':'none';
   $('rtStyle').value=RT.style;$('rtAl').checked=RT.al;$('rtFlip').checked=RT.flip;$('rtSel').checked=RT.useSel;
   const set=(id,v)=>{const e=$(id);e.value=v;if(e._n)e._n.value=e.value};
-  set('rtRot',RT.rot);set('rtSc',RT.sc);set('rtS',RT.s);set('rtH',RT.h);set('rtG',Math.round(RT.gs[RT.mode]*100));
+  set('rtRot',RT.rot);set('rtSc',RT.sc);brUi('rtS');set('rtH',RT.h);set('rtG',Math.round(RT.gs[RT.mode]*100));
   $('rtPRow').style.display=M.pl?'':'none';if(M.pl){$('rtPL').textContent=M.pl;set('rtP',Math.round(RT.ps[RT.mode]*100))}
   const s=RT.src&&sel&&RT.src.l===sel;
   $('rtSrcSt').textContent=RT.setting?'基準点にする所を、絵の上でタップしてください':s?'基準点：決めてあります（Alt＋クリックでも置き直せます）':'基準点：まだ決めていません';
@@ -512,7 +536,6 @@ $('rtSel').onchange=e=>{RT.useSel=e.target.checked;if(RT.useSel&&sel&&!sel.hasSm
 $('rtSet').onclick=()=>{RT.setting=!RT.setting;rtUi();if(RT.setting)note('絵の上で、写し元にしたい所をタップしてください',2600)};
 $('rtRot').oninput=e=>{RT.rot=+e.target.value};
 $('rtSc').oninput=e=>{RT.sc=+e.target.value};
-$('rtS').oninput=e=>{RT.s=+e.target.value};
 $('rtH').oninput=e=>{RT.h=+e.target.value};
 $('rtG').oninput=e=>{RT.gs[RT.mode]=+e.target.value/100};
 $('rtP').oninput=e=>{RT.ps[RT.mode]=+e.target.value/100};

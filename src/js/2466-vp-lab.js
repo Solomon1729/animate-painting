@@ -9,8 +9,9 @@
    ・どの行がどの部品を使うかは、ソースの文字を読んで決める（id="…"・'…'・#…・const x = document.getElementById('…') の x）。実行中の対応は、枠の中で実際に起きたことを知らせてもらう。
    ・ソースは「編集」で書き換えられ、「反映」で動き直す。書き換えたソースは、この端末にだけ覚える（`am_vplab`）。
    ・コンソールの決まり：本体の作品・Undo・保存（snap／ser／US／AC／LAYERS／DOC）には触れない。保存先は `am_vplab*` だけ（メモ帳の `am_memo` にも触れない）。
+     ただし例外が1つだけ：本体の設定の窓口 SETAPI（2481-setapi.js。上限・見た目・動画の重さ。台帳Z-308）。枠の中のページは appSettings で、範囲を確かめたうえで読み書きできる（変えるには、動かすたびに初回だけ許可を聞き、ログに残す）。
    ・ソース・名前・記録の文字は、必ず textContent で出す（HTMLとして解釈しない）。 */
-const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',MAXSRC:200000,MAXVAL:200000,MAXKEYS:50,
+const VPL={LS:'am_vplab',LSS:'am_vplab_s_',LSB:'am_vplab_bad',get MAXSRC(){return limOr('vps')},get MAXVAL(){return limOr('vpv')},get MAXKEYS(){return limOr('vpk')},   /* 既定は制限なし。設定した時だけ働く（01-limits.js・台帳Z-295） */
   src:'',an:null,frame:null,ready:false,mode:'run',editing:false,selId:null,selLine:null,H:{},B:null,bt:0,log:[],el:null,name:''};
 
 /* 見本のソース（本物のHTML・CSS・JavaScript。そのまま動く） */
@@ -279,8 +280,13 @@ function vplShim(INIT){
   EA.call(window,'resize',function(){if(selIds.length)render()});
   EA.call(window,'scroll',function(){if(selIds.length)render()},true);
   EA.call(window,'load',function(){live=1;var a=[].slice.call(document.querySelectorAll('[id]')).map(function(e){return String(e.id)}).filter(function(i){return i.indexOf('__vp')!==0}).slice(0,200);send({k:'ready',ids:a})});
+  /* 本体の設定の窓口（台帳Z-308）：appSettings.list()／get(id)／set(id,値)。返事は Promise（{ok:true,…}か{ok:false,reason}）。出力したHTMLには無いので、使う前に typeof appSettings で確かめる */
+  var rq=0,pr={};
+  var ask=function(op,id,v){return new Promise(function(res){var r=++rq;pr[r]=res;send({k:'cfg',op:op,id:id,v:v,rid:r})})};
+  try{Object.defineProperty(window,'appSettings',{configurable:true,value:Object.freeze({list:function(){return ask('list')},get:function(id){return ask('get',String(id))},set:function(id,v){return ask('set',String(id),v)}})})}catch(e){}
   /* 親からの指示 */
   EA.call(window,'message',function(e){if(e.source!==P)return;var d=e.data;if(!d||d.vp!==1)return;
+    if(d.k==='cfgr'){var f=pr[d.rid];if(f){delete pr[d.rid];f(d.res)}return}
     if(d.k==='mode'){mode=d.m==='insp'?'insp':'run';try{if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()}catch(x){}}
     else if(d.k==='sel'){selIds=Array.isArray(d.ids)?d.ids.map(String).slice(0,50):[];render()}
   });
@@ -335,7 +341,7 @@ function vplLoadSrc(){
   VPL.src=s||VP_SAMPLE;
 }
 function vplRun(){
-  VPL.an=vplAnalyze(VPL.src);VPL.H={};VPL.ready=false;VPL.B=null;
+  VPL.an=vplAnalyze(VPL.src);VPL.H={};VPL.ready=false;VPL.B=null;VPL.cfgOk=null;   /* 設定を変える許可は、動かし直すたびに聞き直す（台帳Z-308） */
   const box=vplQ('#vpView');box.innerHTML='';
   const f=document.createElement('iframe');
   f.setAttribute('sandbox','allow-scripts');   /* 同じ出所にしない（本体に触れさせない） */
@@ -496,8 +502,8 @@ function vplOnMsg(e){
       if(!op)break;
       if(op==='set'){
         const val=str(m.val,VPL.MAXVAL+1);
-        if(val.length>VPL.MAXVAL)vplMsg('保存できません：1つの値が長すぎます（'+VPL.MAXVAL+'字まで）。',1);
-        else if(vplSnapKeys(key)>=VPL.MAXKEYS)vplMsg('保存できません：保存先の数が多すぎます（'+VPL.MAXKEYS+'個まで）。',1);
+        if(val.length>VPL.MAXVAL)vplMsg('保存できません：1つの値が長すぎます（'+VPL.MAXVAL+'字まで）。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',1);
+        else if(vplSnapKeys(key)>=VPL.MAXKEYS)vplMsg('保存できません：保存先の数が多すぎます（'+VPL.MAXKEYS+'個まで）。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',1);
         else if(!vplLs.set(VPL.LSS+key,val))vplMsg('この端末では覚えられないので、画面を閉じると保存した文字は消えます。',1);
       }else if(op==='del')vplLs.del(VPL.LSS+key);
       else if(op==='clear'){try{for(const k of Object.keys(localStorage))if(k.indexOf(VPL.LSS)===0)localStorage.removeItem(k)}catch(_){}}
@@ -512,12 +518,29 @@ function vplOnMsg(e){
       if(id)vplSelId(id);
       else{VPL.selId=null;VPL.selLine=null;vplSync(false);vplQ('#vpInfo').textContent='この部品には id が付いていないので、ソースの行と結べません'+(str(m.tag,20)?'（'+str(m.tag,20)+'）':'')+'。'}
       break}
+    case'cfg':{vplCfgReq(m);break}   /* 本体の設定の窓口（台帳Z-308）。読むのは自由、変えるのは、動かすたびに初回だけ許可を聞く */
     case'err':{
       const line=vplLn(m.line),msg=str(m.msg,300);
       vplMsg('実行中の誤り'+(line>=0?'（'+(line+1)+'行目）':'')+'：'+msg,1);
       if(line>=0)vplFlashLines([line],'vpng');
       vplBatch().err=msg+(line>=0?'（'+(line+1)+'行目）':'');break}
   }
+}
+function vplCfgReq(m){
+  const rid=Math.floor(+m.rid),reply=res=>vplSend({k:'cfgr',rid,res});
+  if(!(rid>0))return;
+  if(typeof SETAPI==='undefined'){reply({ok:false,reason:'設定の窓口が使えません'});return}
+  const op=m.op,id=typeof m.id==='string'?m.id.slice(0,64):'';
+  if(op==='list'){reply({ok:true,items:SETAPI.list()});return}
+  if(op==='get'){reply(SETAPI.get(id));return}
+  if(op!=='set'){reply({ok:false,reason:'知らない操作です'});return}
+  if(typeof m.v!=='number'&&typeof m.v!=='string'){reply({ok:false,reason:'値は、数か文字で渡してください'});return}
+  const it=SETAPI.item(id);
+  if(!it){reply({ok:false,reason:'知らない設定です：'+id});return}
+  if(VPL.cfgOk==null)VPL.cfgOk=confirm('このページが、本体の設定（上限・見た目・動画の重さ）を変えようとしています。許可しますか？\n\n許可すると、このページを動かしている間、設定を変えられます。変わった設定は端末に覚えられ、背景・出力タブの「⚙ 動作」などで元に戻せます。（読むだけなら、確認はありません）');
+  if(!VPL.cfgOk){reply({ok:false,reason:'このページには、設定を変えることを許可していません'});return}
+  const r=SETAPI.set(id,m.v);reply(r);
+  if(r.ok&&r.before!==r.value)vplLogAdd('本体の設定「'+it.label+'」を、このページが '+r.before+' → '+r.value+' に変えた');
 }
 function vplSnapKeys(key){let n=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(VPL.LSS)===0&&k!==VPL.LSS+key)n++}}catch(_){}return n}
 addEventListener('message',vplOnMsg);
@@ -534,7 +557,7 @@ function vplApply(){
   const ta=vplQ('#vpEditTa');if(!ta)return;
   const s=ta.value.replace(/\r\n?/g,'\n');
   if(!s.trim()){vplMsg('反映できません：中身が空です。',1);return}
-  if(s.length>VPL.MAXSRC){vplMsg('反映できません：長すぎます（'+VPL.MAXSRC+'字まで）。',1);return}
+  if(s.length>VPL.MAXSRC){vplMsg('反映できません：長すぎます（'+VPL.MAXSRC+'字まで）。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）',1);return}
   const sc=vplQ('#vpScript'),st=sc.scrollTop,sl=sc.scrollLeft;   /* 反映しても、いま見ている所から動かさない */
   const saved=vplSetSource(s,true);sc.scrollTop=st;sc.scrollLeft=sl;
   vplMsg('反映しました。動き直しています。'+(saved?'':'（この端末では覚えられないので、画面を閉じると元に戻ります）'),saved?0:1);
@@ -568,10 +591,10 @@ async function vplImportFile(f,more){
   if(!f)return;
   if(!CONSOLE.isOpen()||CONSOLE.cur!=='vp')modeSet('cons2');   /* ビジュアルプログラミングを開く（まだ開いていなければ、ここで作る） */
   const bad=t=>{vplMsg(t,1);note(t)};
-  if(f.size>VPL.MAXSRC*4){bad('読み込めません：ファイルが大きすぎます（'+Math.round(f.size/1024)+'KB）。ソースは'+VPL.MAXSRC+'字までです。');return}
+  if(f.size>VPL.MAXSRC*4){bad('読み込めません：ファイルが大きすぎます（'+Math.round(f.size/1024)+'KB）。ソースは'+VPL.MAXSRC+'字までです。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）');return}
   let s;try{s=memoDecode(new Uint8Array(await f.arrayBuffer()))}catch(_){bad('読み込めません：ファイルを読み取れませんでした。');return}
   if(!/<\s*(!doctype|html|head|body|script|style|canvas|svg|div|p|h[1-6]|button|input|textarea|form|table|ul|ol|a|img|span|section|main)\b/i.test(s.slice(0,20000))){bad('読み込めません：HTMLファイルではないようです。');return}
-  if(s.length>VPL.MAXSRC){bad('読み込めません：ソースが長すぎます（'+s.length+'字。'+VPL.MAXSRC+'字まで）。');return}
+  if(s.length>VPL.MAXSRC){bad('読み込めません：ソースが長すぎます（'+s.length+'字。'+VPL.MAXSRC+'字まで）。（背景・出力タブの「⚙ 動作」の「上限の設定」で変えられます）');return}
   if(vplCustom()&&!confirm('いまのソースと、端末に保存した文字は消えます。「'+(f.name||'HTML')+'」を読み込みますか？'))return;
   vplClearStored();VPL.name=(f.name||'').slice(0,60);
   const saved=vplSetSource(s,true);
@@ -596,6 +619,13 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
       +'<button type="button" id="vpStPaint" aria-label="お絵かきと物理の見本から始める">🎨 お絵かき</button>'
       +'<label class="file" aria-label="HTMLファイルを読み込む（この画面へ落としても読み込めます）">📂 HTMLを読み込む<input id="vpFile" type="file" accept=".html,.htm,text/html"></label>'
       +'<button type="button" id="vpSave" aria-label="いまのソースをHTMLファイルで出力する">💾 HTMLで出力</button></div>'
+      +'<details class="vphelp" id="vpHelp"><summary>📖 使い方（はじめに読む）</summary><ol>'
+      +'<li>上の「始め方」で、見本か、自分のHTML（📂）を開きます。左が動く画面、右がそのソースです。</li>'
+      +'<li>🔍調べる：画面の部品を押すと、その部品のソースの行が光ります。行を押すと、画面の部品が光ります。</li>'
+      +'<li>✎編集で書き換えて、✔反映で動き直します。↺見本に戻す、💾HTMLで出力もできます。</li>'
+      +'<li>🧰機能コレクション（下）：開いているHTMLから、ひとまとまりの機能を取り出して、別のHTMLへ足せます。</li>'
+      +'<li>外のサイト（CDNなど）を読み込む記述は動きません。大きなHTMLは重くなります（文字数の制限は初めは無し）。</li>'
+      +'</ol><button type="button" id="vpHelpMan" aria-label="マニュアルのビジュアルプログラミングの説明を開く">📖 マニュアルを開く</button></details>'
       +'<div id="ftHost"></div>'
       +'<div class="vpgrid">'
       +'<section class="vpcol"><div class="vpbar"><b>ビューワー</b>'
@@ -606,6 +636,9 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
       +'<button type="button" id="vpEdit" aria-label="ソースコードを書き換える">✎ 編集</button><button type="button" id="vpApply" hidden aria-label="書き換えたソースコードを反映する">✔ 反映</button><button type="button" id="vpCancel" hidden aria-label="書き換えをやめる">✕ やめる</button></div>'
       +'<div class="note" id="vpMsg" style="margin:0" hidden></div><div class="vpscript vpcode" id="vpScript"></div><div class="vpgrab" id="vpGrabS" role="separator" tabindex="0" aria-label="ソースの欄の高さ。ドラッグで変える（矢印キーでも変えられます。ダブルクリックで元の高さ）" title="ドラッグで、ソースの欄の高さを変える（ダブルクリックで元に戻す）"></div><div class="vplog note" id="vpLog"></div></section></div>';
     vplLoadSrc();vplRun();vplCode();vplInfo();
+    {const hp=vplQ('#vpHelp');let seen=null;try{seen=localStorage.getItem('am_vplab_help')}catch(_){}
+      hp.open=seen==null&&innerWidth>=700;if(seen==null){try{localStorage.setItem('am_vplab_help','seen')}catch(_){}}   /* 初めて開く時だけ（広い画面で）開いておく。スマホは、縦の場所が貴重なので畳んだまま（見出しは残る） */
+      vplQ('#vpHelpMan').onclick=()=>{if(typeof manOpen==='function')manOpen('vp')}}
     vplQ('#vpStText').onclick=()=>vplStart('text');vplQ('#vpStPaint').onclick=()=>vplStart('paint');vplQ('#vpSave').onclick=vplExport;
     vplQ('#vpFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vplImportFile(f)};
     vplQ('#vpRun').onclick=()=>vplMode('run');vplQ('#vpInsp').onclick=()=>vplMode('insp');vplQ('#vpReset').onclick=vplReset;
@@ -618,6 +651,7 @@ CONSOLE.reg({id:'vp',no:2,mode:'cons2',ico:'🧩',name:'ビジュアルプログ
     sc.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('vpl')){e.preventDefault();vplSelLine(+e.target.dataset.n)}});
     paneGrab(vplQ('#vpGrabV'),{host:el,name:'--vpfh',key:'vpfh',measure:()=>vplQ('#vpFrame')?vplQ('#vpFrame').offsetHeight:340,min:120});
     paneGrab(vplQ('#vpGrabS'),{host:el,name:'--vpsh',key:'vpsh',measure:()=>vplQ('#vpScript').offsetHeight,min:100});
+    if(typeof vpCfgMount==='function')vpCfgMount(vplQ('#ftHost'));   /* 本体の設定の窓口（台帳Z-308）：畳んだ枠を1つ足す（上の列は変えない） */
     if(typeof ftMount==='function')ftMount(vplQ('#ftHost'));   /* 機能コレクション（台帳Z-288）：上の列は変えず、畳んだ枠を1つ足す */
     armTips(el);
   }

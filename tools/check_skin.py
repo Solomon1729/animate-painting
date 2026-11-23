@@ -63,7 +63,7 @@ def main():
         chk('S1 既定の文字は端末の標準ゴシック（丸ゴシックではない）', 'Zen Maru' not in t['font'].split(',')[0] and 'system-ui' in t['font'], t['font'][:60])
         chk('S1 既定の角は旧より小さく、枠線は細い', float(t['rk']) < 1 and t['bw'] == '1px', [t['rk'], t['bw']])
         chk('S1 選択欄（背景・出力タブと👁メニュー）に、テーマの7つが並ぶ', ev("()=>[$('skS').options.length,$('skq').options.length]") == [7, 7], ev("()=>[$('skS').options.length,$('skq').options.length]"))
-        chk('S1 文字・角・ゆとり・アイコンの選択欄が埋まっている', ev("()=>['skF','skR','skD','skI'].map(i=>$(i).options.length)") == [4, 4, 4, 3])
+        chk('S1 文字・角・ゆとり・アイコンの選択欄が埋まっている', ev("()=>['skF','skR','skD','skI','skT'].map(i=>$(i).options.length)") == [4, 4, 5, 3, 6])
         chk('S1 初期設定に戻すボタンは、何も変えていない間は押せない', ev("()=>$('skRst').disabled"))
         chk('S1 ページエラーなし', not errs, errs[:3])
         ctx.close()

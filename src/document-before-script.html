@@ -23,6 +23,7 @@
   <div class="vwr"><span>背景（キャンバスの外）</span><input type="color" id="vwbg" value="#8c8c8c" aria-label="背景（キャンバスの外側）の色"><button id="vwbr" aria-label="背景の色を灰色に戻す">灰色へ</button></div>
   <div class="note" id="vwnote"></div>
   <div class="cmh">補助表示</div>
+  <button id="vwrot" aria-label="ビューワーを90度回す（表示だけの回転。作品・書き出し・座標の値は変わりません。押すたびに90度ずつ回り、4回で元に戻ります。保存はしません）">⟳ ビューワーを90°回す（いま 0°）</button>
   <button id="crdb"aria-label="座標を表示（オン：キャンバスを触った所の座標と、ドラッグ中のオブジェクトの座標をpxで出す。左上が原点）" aria-pressed="false">📍 座標を表示（px）</button>
   <button id="lpb" aria-label="手元の拡大窓（オン：ペン・切り抜き・ぼかしや色調整の範囲・歪みのピンを触っている間、指の下を隅に拡大して見せる）" aria-pressed="false">🔍 手元の拡大窓</button>
   <button id="lpz" aria-label="拡大窓の倍率：自動（使っている道具の太さに合わせる）と固定を切り替える" disabled>🔍 倍率：自動（太さに合わせる）</button>
@@ -186,6 +187,7 @@
     <div class="row"><span class="lab">方式</span><select id="rtMode" aria-label="修整の方式">
       <optgroup label="写す（基準点が要る）"><option value="clone">クローン（そのまま写す）</option><option value="heal">ヒーリング（明るさを周りに合わせて写す）</option></optgroup>
       <optgroup label="直す"><option value="fill">周りで埋める（インペイント）</option><option value="smooth">滑らかにする（輪郭は保つ）</option><option value="jaggy">ジャギーをなめらかに（輪郭のギザギザ）</option><option value="blur">ぼかす</option><option value="sharp">くっきりさせる</option><option value="smudge">指でにじませる（スマッジ）</option></optgroup>
+      <optgroup label="隠す"><option value="mosaic">モザイク（ブロックにする）</option></optgroup>
       <optgroup label="明るさ・色"><option value="dodge">覆い焼き（明るく）</option><option value="burn">焼き込み（暗く）</option><option value="vivid">スポンジ（鮮やかに）</option><option value="dull">スポンジ（くすませる）</option></optgroup></select></div>
     <div class="row" id="rtStyleRow"><span class="lab">打ち方</span><select id="rtStyle" aria-label="写し方"><option value="brush">ブラシ（なぞって写す）</option><option value="stamp">スタンプ（押して離すと1回写す）</option></select></div>
     <div id="rtSrcBox">
@@ -194,13 +196,13 @@
       <div class="row"><span class="lab">回転</span><input id="rtRot" type="range" min="-180" max="180" step="1" value="0" data-snap="0" aria-label="写し元の回転（度）"></div>
       <div class="row"><span class="lab">拡大</span><input id="rtSc" type="range" min="25" max="400" step="1" value="100" data-snap="100" aria-label="写し元の拡大・縮小（%）"></div>
     </div>
-    <div class="row"><span class="lab">太さ</span><input id="rtS" type="range" min="1" max="60" step="0.5" value="12" aria-label="修整ブラシの太さ"></div>
+    <div class="row"><span class="lab">太さ</span><input id="rtS" type="range" min="0" max="1000" step="1" value="706" aria-label="修整ブラシの太さ"></div>
     <div class="row"><span class="lab">硬さ</span><input id="rtH" type="range" min="0" max="100" step="1" value="50" aria-label="修整ブラシの硬さ（高いほど縁までしっかり効く）"></div>
     <div class="row"><span class="lab">強さ</span><input id="rtG" type="range" min="1" max="100" step="1" value="100" aria-label="修整の強さ"></div>
     <div class="row" id="rtPRow"><span class="lab" id="rtPL">なじませる幅</span><input id="rtP" type="range" min="0" max="100" step="1" value="35" aria-label="方式ごとの調整（なじませる幅・滑らかさなど）"></div>
     <div class="row"><label class="opt"><input type="checkbox" id="rtSel" aria-label="切り抜きタブで囲んだ範囲の中だけに効かせる">囲んだ範囲の中だけ</label></div>
     <div class="note" id="rtNote"></div></div>
-    <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0.1" max="40" value="10" aria-label="ペンの太さ"></div>
+    <div class="row" id="pn"><input id="pcol" type="color" value="#e0245e" aria-label="ペンの色"><button class="pk" data-for="pcol" aria-label="スポイト">💧</button><span class="lab" style="min-width:0">太さ</span><input id="ps" type="range" min="0" max="1000" step="1" value="769" aria-label="ペンの太さ"></div>
     <div class="grp alt" id="paBox"><div class="gh">📏 ペンの補正（0＝補正なし。ペン・消しゴムに効く）</div>
     <div class="row"><span class="lab">直線補正</span><input id="paL" type="range" min="0" max="100" step="1" value="0" aria-label="直線補正の強さ（0で補正なし。強いほど、まっすぐな線に直します）"></div>
     <div class="row"><span class="lab">曲線補正</span><input id="paC" type="range" min="0" max="100" step="1" value="0" aria-label="曲線補正の強さ（0で補正なし。強いほど、選んだ種類の曲線に直します）"></div>
@@ -208,7 +210,7 @@
     <div class="note">なぞっている間は、補正後の線と形の名前（直線・曲線など）が仮表示され、指を離すと描かれます。強いほど強制的に整い、弱いと小さな動きが残ります（弱いほど、よく似た形の時だけ補正）。直線のつもりが曲線になる時は「直線補正」を上げるか「曲線補正」を下げてください（逆の時は反対）。</div></div>
     <div class="row"><span class="lab">文字</span><input id="tx" type="text" placeholder="文字を入力" aria-label="文字" style="flex:1;min-width:120px;font:inherit;padding:6px;border:var(--bw,2px) solid var(--line);border-radius:calc(var(--rk,1)*10px);background:var(--bg);color:inherit"><input id="tcl" type="color" value="#2b2140" aria-label="文字の色"><button class="pk" data-for="tcl" aria-label="スポイト">💧</button></div>
     <div class="row"><button id="addt">＋文字を置く</button><button id="addd">＋白紙レイヤー</button></div>
-    <div class="row" id="blrow"><span class="lab" style="min-width:0">白紙の大きさ</span><select id="blsz" aria-label="＋白紙で足す紙の大きさ（紙の規格）"><option value="A1">A1（594×841mm）</option><option value="A2">A2（420×594mm）</option><option value="A3">A3（297×420mm）</option><option value="A4" selected>A4（210×297mm）</option><option value="A5">A5（148×210mm）</option><option value="A6">A6（105×148mm）</option><option value="B1">B1（JIS 728×1030mm）</option><option value="B2">B2（JIS 515×728mm）</option><option value="B3">B3（JIS 364×515mm）</option><option value="B4">B4（JIS 257×364mm）</option><option value="B5">B5（JIS 182×257mm）</option><option value="B6">B6（JIS 128×182mm）</option><option value="sq">正方形 512×512</option><option value="px">px で指定…</option></select><button id="blor" aria-pressed="false" aria-label="紙の向き（縦・横）">縦</button><select id="bldpi" aria-label="紙の解像度（dpi）"><option value="72">72dpi</option><option value="150" selected>150dpi</option><option value="300">300dpi</option></select></div>
+    <div class="row" id="blrow"><span class="lab" style="min-width:0">白紙の大きさ</span><select id="blsz" aria-label="＋白紙で足す紙の大きさ（紙の規格）"><option value="scr">画面の形（画面いっぱい。画素数はA4と同じ）</option><option value="A1">A1（594×841mm）</option><option value="A2">A2（420×594mm）</option><option value="A3">A3（297×420mm）</option><option value="A4" selected>A4（210×297mm）</option><option value="A5">A5（148×210mm）</option><option value="A6">A6（105×148mm）</option><option value="B1">B1（JIS 728×1030mm）</option><option value="B2">B2（JIS 515×728mm）</option><option value="B3">B3（JIS 364×515mm）</option><option value="B4">B4（JIS 257×364mm）</option><option value="B5">B5（JIS 182×257mm）</option><option value="B6">B6（JIS 128×182mm）</option><option value="sq">正方形 512×512</option><option value="px">px で指定…</option></select><button id="blor" aria-pressed="false" aria-label="紙の向き（縦・横）">縦</button><select id="bldpi" aria-label="紙の解像度（dpi）"><option value="72">72dpi</option><option value="150" selected>150dpi</option><option value="300">300dpi</option></select></div>
     <div class="row" id="blcu" hidden><input id="blw" class="num" type="number" min="8" max="4096" step="1" inputmode="numeric" value="1024" aria-label="白紙の幅（px）" style="width:76px"><span>×</span><input id="blh" class="num" type="number" min="8" max="4096" step="1" inputmode="numeric" value="1024" aria-label="白紙の高さ（px）" style="width:76px"><span class="note" style="margin:0">px</span></div>
     <div class="note" id="blnote"></div>
     <div class="note">ペンで描いた線は、通常の「消しゴム」で描いた分だけ消せます（元の絵は残ります）。元の絵そのものを消したいときは「消しゴム（画像ごと）」を使ってください。文字を選んでいる間は、入力欄の変更がその文字に反映されます。</div>
@@ -218,7 +220,7 @@
     <div class="grp alt" id="adjRange"><div class="gh">📍 適用範囲（開いているタブの調整だけに効く）</div>
     <div class="row tools"><button id="adjScAll">全体に効かせる</button><button id="adjScRng">範囲を指定する</button></div>
     <div class="row tools" id="adjRngRow"><button id="adjPaint">塗る</button><button id="adjErase">消す</button><button id="adjAll">全面を範囲に</button><button id="adjClear">範囲をクリア</button></div>
-    <div class="row" id="adjBsRow"><span class="lab">太さ</span><input id="adjBs" type="range" min="1" max="80" step="1" value="20" aria-label="範囲ブラシの太さ"></div>
+    <div class="row" id="adjBsRow"><span class="lab">太さ</span><input id="adjBs" type="range" min="0" max="1000" step="1" value="727" aria-label="範囲ブラシの太さ"></div>
     <div class="row"><button id="adjShow">範囲を表示</button><span class="lab">なじみ</span><input id="adjFe" type="range" min="0" max="100" step="1" value="0" aria-label="範囲の境界のなじみ"><b class="v" id="adjFev">0</b></div>
     <div class="note">「全体に効かせる」は選んだオブジェクト全体に適用します。「範囲を指定する」に切り替えると、塗った所だけに効きます（塗った範囲は全体に戻しても残り、切り替えで再び使えます）。全体から一部だけ除きたいときは「全面を範囲に」→「消す」。範囲は色調整と質感・局所で別々に持ちます。調整値は元画像に焼き込まず保持します。</div></div>
     <div class="grp alt"><div class="gh">🎨 色調整</div>
@@ -263,13 +265,13 @@
   <div class="tab" data-tab="mk">
     <div class="grp"><div class="gh">🖌 マスク（他のオブジェクトを隠して消す）</div>
     <div class="row tools"><button data-tool="mouth" class="on">🖌 マスク塗り</button><button data-tool="mouthx">マスクを消す</button></div>
-    <div class="row" id="tb"><span class="lab">太さ</span><input id="bs" type="range" min="1" max="40" step="1" value="14" aria-label="ブラシの太さ"><button id="ca">全部消す</button></div>
+    <div class="row" id="tb"><span class="lab">太さ</span><input id="bs" type="range" min="0" max="1000" step="1" value="760" aria-label="ブラシの太さ"><button id="ca">全部消す</button></div>
     <div class="row" id="mv1"><span class="lab" style="min-width:0">マスク内の見え方</span><input id="kp" type="range" min="0" max="0.8" step="0.05" value="0" aria-label="マスク内の見え方（0で透明）"></div>
     <div class="row" id="mv2"><button id="eat">消えた部分を残す</button><button id="rst" style="display:none">もとにもどす</button></div>
     <div class="note">「マスク塗り」は、選んでいるオブジェクト自身に、隠す領域を描きます。他のオブジェクトを「配置」タブの「対象」でこのオブジェクトに向け、「対象のマスクで隠す」をオンにすると、ここに入った部分が消えます。</div></div>
     <div class="grp alt"><div class="gh">〰️ ぼかし（見た目をぼかす。マスクとは別物です）</div>
     <div class="row" id="bmr"><button data-tool="bpaint">🖌 ぼかす所を塗る</button><button data-tool="bpaintx">消す</button><button id="bfill">全体を塗る</button><button id="bmc">全部消す</button></div>
-    <div class="row"><span class="lab">塗る太さ</span><input id="bbs" type="range" min="1" max="40" step="1" value="14" aria-label="ぼかしを塗る太さ（マスクとは別設定）"></div>
+    <div class="row"><span class="lab">塗る太さ</span><input id="bbs" type="range" min="0" max="1000" step="1" value="760" aria-label="ぼかしを塗る太さ（マスクとは別設定）"></div>
     <div class="row"><span class="lab">ぼかし</span><input id="bl" type="range" min="0" max="30" step="1" value="0" aria-label="ぼかし"><b class="v" id="blv"></b></div>
     <div class="row"><button id="bshow">範囲を表示</button><button id="bcmp">👁 ぼかし前を見る（押している間）</button></div>
     <div class="row"><button id="bbake">🧊 ぼかしを画像に統合</button></div>
@@ -280,7 +282,7 @@
     <div class="sec">① 範囲を選ぶ</div>
     <div class="row tools"><button data-tool="psel" class="on">🖌 囲む</button><button data-tool="pbox">▣ 矩形</button><button data-tool="pselx">囲みを消す</button></div>
     <div class="row tools"><button data-tool="pwand" aria-label="自動選択（タップした所と近い色でつながった範囲を選ぶ）">✨ 自動選択</button><button data-tool="pmag" aria-label="マグネット選択（輪郭に吸い付く線で囲む）">🧲 マグネット</button><button data-tool="ppoly" aria-label="輪郭を編集（選んだ範囲の輪郭の頂点を動かして直す）">◇ 輪郭を編集</button></div>
-    <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="1" max="40" step="1" value="14" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
+    <div class="row"><span class="lab">太さ</span><input id="pbs" type="range" min="0" max="1000" step="1" value="760" aria-label="囲む太さ"><button id="pall">全体</button><button id="pclr">全部消す</button></div>
     <div class="grp alt" id="selBox"><div class="gh">選び方の設定</div>
       <div class="row"><span class="lab">今の選択と</span><select id="selMode" aria-label="新しく選んだ範囲を、今の選択とどう合わせるか"><option value="new" selected>置き換える</option><option value="add">足す</option><option value="sub">引く</option></select></div>
       <div class="row" id="selTolRow"><span class="lab">許容差</span><input id="selTol" type="range" min="2" max="60" step="1" value="18" aria-label="自動選択の許容差（大きいほど、違う色まで同じ範囲として選ぶ）"></div>
@@ -363,20 +365,24 @@
     <div class="grp"><div class="gh">💧 液体を足す</div>
     <div class="row"><button id="lqAddPour" type="button" aria-label="蛇口から水を注ぐ液体の絵を足す">＋蛇口（注ぐ）</button><button id="lqAddDrip" type="button" aria-label="蛇口から水を垂らす液体の絵を足す">＋蛇口（垂らす）</button></div>
     <div class="row"><button id="lqAddDrop" type="button" aria-label="水滴が落ちる液体の絵を足す">＋水滴</button><button id="lqAddTear" type="button" aria-label="涙が落ちる液体の絵を足す">＋涙</button></div>
-    <div class="row"><button id="lqAddTom" type="button" aria-label="トマトをぶつける液体の絵を足す">＋トマト（ぶつける）</button><button id="lqAddChm" type="button" aria-label="シャンパンを吹きかける液体の絵を足す">＋シャンパン</button></div>
-    <div class="row"><button id="lqAddIce" type="button" aria-label="アイスクリームが飛び散る液体の絵を足す">＋アイス</button><button id="lqAddMay" type="button" aria-label="マヨネーズを絞り出す液体の絵を足す">＋マヨネーズ</button></div>
+    <div class="row"><button id="lqAddBurst" type="button" aria-label="勢いよくぶつかって飛び散る液体の絵を足す">＋ぶつける（飛び散る）</button><button id="lqAddSpray" type="button" aria-label="細かく吹きかける液体の絵を足す">＋吹きかける</button></div>
+    <div class="note">どの液体も、足したあとに「選んでいる液体」で、ねばり・色・透明度・止まる強さ・付く量・あわ…を自由に組み合わせて、さらさらの水から形が残るペーストまで表せます。作り方の例は <button id="lqHelp" type="button" aria-label="マニュアルの液体の説明を開く">📖 マニュアル「液体」</button> にあります。</div>
     <div class="note">足した絵は、ほかの絵と同じように動かせます（位置・大きさ・向き・動き・レイヤー・元に戻す・保存）。水は、絵の向きに沿って出ます。水は「床の高さ」まで落ちて、床の上にたまります（写真の床に合わせて、高さと傾きを決めてください。絵や物体にはまだぶつかりません）。</div></div>
     <div class="grp"><div class="gh" id="lqTitle">選んでいる液体</div>
     <div class="note" id="lqNone">蛇口・水滴・涙の絵を選ぶと、ここで調整できます。</div>
     <div id="lqCtl" hidden>
     <div class="row"><button id="lqOn" type="button" aria-label="水を流す／止める">⏸ 止める</button><button id="lqClr" type="button" aria-label="空中と床の水を消す（かかった跡は残る）">水を消す</button></div>
     <div class="row"><button id="lqHold" type="button" aria-label="この液体だけ、その場で止める／動かす">❄ その場で止める</button><button id="lqClrCt" type="button" aria-label="絵の面に付いた跡だけを消す">かかった跡を消す</button><button id="lqDel" type="button" aria-label="この液体を削除する">この液体を削除</button></div>
-    <div class="row"><span class="lab">種類</span><select id="lqMat" aria-label="液体の種類（色・ねばり・付き方がまとめて変わる）"><option value="water">水</option><option value="champagne">シャンパン</option><option value="tomato">トマト</option><option value="ice">アイスクリーム</option><option value="mayo">マヨネーズ</option></select></div>
+    <div class="row"><span class="lab">性質のひな形</span><select id="lqMat" aria-label="性質のひな形を選ぶと、ねばり・つながり・波紋・止まる強さ・付く量・乾く速さ・にごり・あわの値がまとまって入ります（色・出し方は変わりません。入れたあとも、つまみで自由に変えられます）"><option value="">選ぶと値が入る…</option><option value="thin">さらさら</option><option value="foam">あわ立つ</option><option value="thick">とろみ</option><option value="paste">ねっとり（形が残る）</option></select></div>
     <div class="row"><span class="lab">向き</span><input id="lqAng" type="range" min="0" max="360" step="1" aria-label="出す向きの角度（0°が下、360°ぐるり）"><b class="v" id="lqAngv"></b></div>
     <div class="row"><span class="lab">奥行き</span><input id="lqDep" type="range" min="-90" max="90" step="1" aria-label="奥行きの向き（プラスはこちらへ向かってくる、マイナスは向こうへ向かっていく）"><b class="v" id="lqDepv"></b></div>
     <div class="row" id="lqSprRow"><span class="lab">広がり</span><input id="lqSpr" type="range" min="0" max="85" step="1" aria-label="ばらまく広がりの角度"><b class="v" id="lqSprv"></b></div>
     <div class="row"><span class="lab">止まる強さ</span><input id="lqYld" type="range" min="0" max="1" step="0.01" aria-label="絵の面に付いたあと、垂れずに止まる強さ（大きいほど付いたまま）"><b class="v" id="lqYldv"></b></div>
     <div class="row"><span class="lab">付く量</span><input id="lqAdh" type="range" min="0" max="6" step="0.1" aria-label="絵の面に付く量"><b class="v" id="lqAdhv"></b></div>
+    <div class="row"><span class="lab">乾く速さ</span><input id="lqDry" type="range" min="0" max="1" step="0.01" aria-label="絵の面に付いた跡が乾いて消える速さ（0は乾かない）"><b class="v" id="lqDryv"></b></div>
+    <div class="row"><span class="lab">にごり</span><input id="lqSc" type="range" min="0" max="1" step="0.01" aria-label="にごり（大きいほど、中が白く濁って見える）"><b class="v" id="lqScv"></b></div>
+    <div class="row"><span class="lab">あわ</span><input id="lqFo" type="range" min="0" max="2" step="0.01" aria-label="あわの量（厚い所に白い小さな粒が出る）"><b class="v" id="lqFov"></b></div>
+    <div class="row"><span class="lab">粒の大きさのばらつき</span><input id="lqJi" type="range" min="0" max="1" step="0.01" aria-label="粒の大きさのばらつき（大きいほど、大小まざる）"><b class="v" id="lqJiv"></b></div>
     <div class="row"><span class="lab" id="lqWl">流れの太さ</span><input id="lqW" type="range" min="1" max="12" step="1" aria-label="流れの太さ、または1回に出す粒の数"><b class="v" id="lqWv"></b></div>
     <div class="row"><span class="lab">勢い</span><input id="lqV" type="range" min="0" max="1.2" step="0.01" aria-label="水を出す勢い"><b class="v" id="lqVv"></b></div>
     <div class="row" id="lqGapRow"><span class="lab">間隔</span><input id="lqG" type="range" min="0.3" max="6" step="0.1" aria-label="水のかたまりを出す間隔（秒）"><b class="v" id="lqGv"></b></div>
@@ -398,6 +404,7 @@
   <div class="tab" data-tab="vd">
     <div class="grp"><div class="gh">動画を読み込む</div>
     <div class="row"><label class="file">📂 動画を選ぶ<input id="vdFile" type="file" accept="video/*"></label><button id="vdRm" aria-label="読み込んだ動画を外す">外す</button></div>
+    <div class="row"><button id="vdMax" aria-pressed="false" aria-label="動画を画面いっぱいに大きくして見る（色の効果・ぼかしなどは、そのままかかります）">⛶ 動画を全画面で見る</button><span class="note" style="margin:0">効果はそのまま。もう一度押すと戻ります。</span></div>
     <div class="row"><button id="vdBack" aria-label="最初に戻す">⏮</button><button id="vdPlay" aria-label="再生・一時停止">▶ 再生</button><span id="vdTime" class="note" style="margin:0">0:00 / 0:00</span></div>
     <div class="row"><span class="lab">速さ</span><button class="vdr" data-r="0.1" aria-label="再生の速さを0.1倍にする">×0.1</button><button class="vdr" data-r="0.25" aria-label="再生の速さを0.25倍にする">×0.25</button><button class="vdr" data-r="0.5" aria-label="再生の速さを0.5倍にする">×0.5</button><button class="vdr" data-r="1" aria-label="再生の速さを等倍にする">×1</button><input id="vdRate" class="num" type="number" step="0.05" inputmode="decimal" value="1" aria-label="再生の速さ（倍。1＝等倍。小さいほどスロー）" style="width:68px"></div>
     <div class="row"><span class="lab">コマ送り</span><button id="vdStM10" aria-label="10コマ戻る">⏪10</button><button id="vdStM1" aria-label="1コマ戻る">◀1</button><button id="vdStP1" aria-label="1コマ進む">1▶</button><button id="vdStP10" aria-label="10コマ進む">10⏩</button></div>
@@ -405,7 +412,7 @@
     <div class="row"><span class="lab">1秒のコマ数</span><input id="vdFps" class="num" type="number" step="0.001" inputmode="decimal" value="30" aria-label="動画の1秒あたりのコマ数。コマ送りと、コマ番号の指定に使う" style="width:84px"><span id="vdFpsNote" class="note" style="margin:0"></span></div>
     <div class="row"><button id="vdGrab" aria-label="いまのコマを絵（オブジェクト）にして、動画の上に重ねる">📸 このコマを絵にして重ねる</button></div>
     <div class="note">コマ送り：動画タブを開いている間は、キーボードの ← → でも1コマ、Shift＋← → で10コマ動きます。「絵にして重ねる」と、そのコマを原寸の絵として取り込み、ペン・修整・色調整などで直せます（動画の同じ位置に重なります）。</div>
-    <div class="row"><input id="vdSeek" data-e="1" type="range" min="0" max="1000" value="0" aria-label="再生位置" style="flex:1;min-width:0"></div>
+    <div class="row"><div id="vdSq" class="vdsq"><div id="vdBands" class="vdbands" aria-label="効果の時間の帯（帯をつかんで動かす・両端をつかんで伸び縮み・空いた所を押すとその時間へ）" hidden><i id="vdHead" class="vdhead"></i></div><input id="vdSeek" data-e="1" type="range" min="0" max="1000" value="0" aria-label="再生位置" style="flex:1;min-width:0"></div></div>
     <div class="row"><button id="vdFit" aria-label="キャンバスの大きさを動画の大きさ（px）に合わせる">📐 キャンバスを動画の大きさにする</button></div>
     <div class="note" id="vdInfo">動画はビューワーの背景として出ます。上にお絵かき・動き・物理を重ねられます。動画ファイルは作品ファイルには入りません（開き直したら選び直してください）。</div>
     </div>
@@ -426,7 +433,11 @@
     <div class="row"><span class="lab">高さ</span><input id="vdH" type="range" min="1" max="100" step="1" value="100" aria-label="場所の高さ（%）"></div>
     </div>
     <div class="grp"><div class="gh">色を重ねる（色シート）</div>
-    <div class="row"><span class="lab">色</span><input id="vdCc" type="color" value="#0000ff" aria-label="重ねる色"><button class="pk" data-for="vdCc" aria-label="スポイト">💧</button><select id="vdCm" aria-label="重ね方"><option value="lighten">比較（明）：黒をその色に</option><option value="screen">スクリーン：明るく</option><option value="multiply">乗算：暗く</option><option value="overlay">オーバーレイ</option><option value="soft-light">ソフトライト</option><option value="color">色（色相と彩度だけ）</option><option value="hue">色相</option><option value="darken">比較（暗）</option><option value="source-over">通常（上から塗る）</option></select></div>
+    <div class="row"><span class="lab">色</span><input id="vdCc" type="color" value="#0000ff" aria-label="重ねる色"><button class="pk" data-for="vdCc" aria-label="スポイト">💧</button><select id="vdCm" aria-label="重ね方"><option value="swap">色の入れ替え：元の色→この色</option><option value="lighten">比較（明）：黒をその色に</option><option value="screen">スクリーン：明るく</option><option value="multiply">乗算：暗く</option><option value="overlay">オーバーレイ</option><option value="soft-light">ソフトライト</option><option value="color">色（色相と彩度だけ）</option><option value="hue">色相</option><option value="darken">比較（暗）</option><option value="source-over">通常（上から塗る）</option></select></div>
+    <div class="row vdswap" hidden><span class="lab">元の色</span><input id="vdCf" type="color" value="#000000" aria-label="入れ替える前の色（この色に近い所が、上の「色」に変わる）"><button class="pk" data-for="vdCf" aria-label="スポイト">💧</button><label class="note" style="margin:0"><input type="checkbox" id="vdCks" checked> 陰影を残す</label></div>
+    <div class="row vdswap" hidden><span class="lab">許容幅</span><input id="vdCtl" type="range" min="0" max="100" step="1" value="30" aria-label="元の色にどれだけ近い色まで入れ替えるか（大きいほど広く）"></div>
+    <div class="row vdswap" hidden><span class="lab">縁のなじませ</span><input id="vdCsf" type="range" min="0" max="100" step="1" value="30" aria-label="入れ替える範囲の縁を、どれだけ薄くなじませるか"></div>
+    <div class="note vdswap" hidden>「元の色」に近い色の所だけを、上の「色」に置き換えます。「濃さ」が強さです（0だと何も変わりません）。「陰影を残す」を入れると明るさ・質感が残り、切るとべた塗りになります。広い範囲だと重くなることがあります（処理の軽さの設定に従います）。</div>
     <div class="row"><span class="lab">濃さ</span><input id="vdCa" type="range" min="0" max="100" step="1" value="0" aria-label="色を重ねる濃さ（0＝なし）"></div>
     </div>
     <div class="grp"><div class="gh">色の調整</div>
@@ -462,6 +473,8 @@
     <div class="row"><span class="lab">ぼかし</span><input id="bgb" type="range" min="0" max="30" value="0" aria-label="背景のぼかし"></div>
     </div>
     <div class="grp"><div class="gh">書き出し</div>
+    <div class="row"><span class="lab">出力の大きさ</span><select id="osz" aria-label="書き出す大きさ（動画・GIF・静止画）"><option value="auto">今までどおり</option><option value="doc">キャンバスのpx</option><option value="img">元の画像に合わせる</option><option value="long">長辺を指定</option></select><input id="oszl" class="num" type="number" min="1" step="100" inputmode="numeric" aria-label="長辺のpx" style="width:84px" hidden><span class="note" style="margin:0" id="oszu" hidden>px</span></div>
+    <div class="note" id="oszn"></div>
     <div class="row"><span class="lab">動画</span><button id="rec">⏺ 動画</button><button id="gif">🎞 GIF</button><span id="rtx" class="note" style="margin:0"></span></div>
     <div class="row"><span class="lab">静止画</span><select id="sq" aria-label="倍率"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select><select id="sf" aria-label="形式"><option value="png">PNG</option><option value="jpg">JPEG</option><option value="pdf">PDF</option></select><button id="snap">📷 保存</button></div>
     <div class="row"><span class="lab">選んだ絵</span><button id="pexp" aria-label="選んでいるオブジェクトだけを、色調整・質感・ぼかし込みの原寸で保存（透明な余白は切り詰める）">📷 このオブジェクトだけ保存</button><select id="pxf" aria-label="保存の形式"><option value="png">PNG（透明）</option><option value="pdf">PDF</option></select></div>
@@ -476,9 +489,11 @@
       <div class="skrow"><label for="skS">テーマ</label><select id="skS" aria-label="画面のテーマ（色の組み合わせ）"></select></div>
       <div class="skrow"><label for="skF">文字</label><select id="skF" aria-label="画面の文字の種類"></select></div>
       <div class="skrow"><label for="skR">角の丸み</label><select id="skR" aria-label="ボタンや枠の角の丸み"></select></div>
-      <div class="skrow"><label for="skD">ゆとり</label><select id="skD" aria-label="ボタンや行の余白（コンパクト／ゆったり）"></select></div>
+      <div class="skrow"><label for="skD">ゆとり</label><select id="skD" aria-label="ボタンや行の余白（ぎっしり／コンパクト／ゆったり）"></select></div>
+      <div class="skrow"><label for="skT">文字の大きさ</label><select id="skT" aria-label="画面の文字の大きさ（小さめ〜大）"></select></div>
       <div class="skrow"><label for="skI">アイコン</label><select id="skI" aria-label="ボタンの絵文字をカラーにするか単色にするか"></select></div>
       <div class="row"><button id="skRst" aria-label="見た目を初期設定（自動）に戻す">初期設定に戻す</button></div>
+      <div class="note">「ゆとり」「文字の大きさ」は、「自動」のままだと、スマホ（幅の狭い画面）では文字を約93%・余白を約70%に詰めて、キャンバスと操作窓を広く使います。ゆったり見たい時は「ふつう」を選びます。もっと詰めたい時は「ぎっしり」「極小」。ボタンの押しやすさの最小の大きさ（約30px）は、どの設定でも保ちます。ビジュアルプログラミングの「⚙ 本体の設定」からも変えられます（見た目→余白の密度・文字の大きさ）。</div>
       <div class="note">この端末のブラウザにだけ覚えます（作品には入りません）。</div>
     </details>
     <details class="grp" id="perfd"><summary>⚙ 動作</summary>
@@ -493,15 +508,22 @@
     <div class="note">キャンバスの画素がこれを超えると、動画の書き出しは縮みます。縮む時は、書き出しの欄に注意が出ます。大きくすると、録画できない端末があります。</div>
     <div class="note">動画の歪みは、長辺をこのpxにして計算してから拡大して重ねます。大きいほど細かく、重くなります。0＝動画そのままの細かさ（とても重いことがあります）。遅い時は、🎬メニューの「マニュアル」の「遅い場合の対処・上限」を見てください。</div>
     <h4 style="margin:10px 0 4px;font-size:13px">上限の設定</h4>
-    <div class="note">容量や速さのために、次の上限があります。超えた時は、必ず注意を出します。大きくするほど、重くなったり、端末が止まったりすることがあります（くわしくは、🎬メニューの「マニュアル」の「遅い場合の対処・上限」）。</div>
+    <div class="note">容量や速さのために、次の上限があります。超えた時は、必ず注意を出します。大きくするほど、重くなったり、端末が止まったりすることがあります。目安を超える値や「0＝制限なし」にする時は、確かめるポップアップが出ます（やめると元の値のまま）（くわしくは、🎬メニューの「マニュアル」の「遅い場合の対処・上限」）。</div>
     <div class="row"><span class="lab">キャンバスの長辺の上限</span><input id="limCv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="キャンバスの長辺の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px。既定 8192。0＝制限なし</span></div>
     <div class="row"><span class="lab">キャンバス・書き出しの総画素の上限</span><input id="limExp" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="キャンバス・書き出しの総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 25000000。0＝制限なし</span></div>
     <div class="row"><span class="lab">ペンなどで編集する細かさの上限</span><input id="limPen" class="num" type="number" min="0" step="256" inputmode="numeric" aria-label="ペンなどで編集する細かさの上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">px（長辺）。既定 4096。これより大きい絵は、ペン・修整・色調整などを使い始める時に縮みます。0＝縮めない</span></div>
+    <div class="row"><span class="lab">小さい絵を編集する時の最小の細かさ</span><input id="limPenMin" class="num" type="number" min="0" step="256" inputmode="numeric" aria-label="小さい絵を編集する時の最小の細かさ（長辺。0＝絵の実解像度のまま）" style="width:96px"><span class="note" style="margin:0">px（長辺）。既定 1024。これより小さい絵は、ペン・修整などを使い始める時に、この細かさまで引き上げて細い線をきれいに描けるようにします（絵は少しなめらかになり、メモリ・保存サイズ・元に戻すの量が増えます）。0＝引き上げない（絵の実解像度のまま）</span></div>
     <div class="row"><span class="lab">白紙の総画素の上限</span><input id="limBlk" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="白紙の総画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 8000000。0＝制限なし</span></div>
     <div class="row"><span class="lab">質感・統合を計算する画素の上限</span><input id="limTex" class="num" type="number" min="0" step="1000000" inputmode="numeric" aria-label="質感・統合を計算する画素の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">画素。既定 12000000。超えると質感を省きます。0＝制限なし</span></div>
     <div class="row"><span class="lab">動く歪み（ピン）の注意を出す数</span><input id="limPins" class="num" type="number" min="0" step="1" inputmode="numeric" aria-label="動く歪み（ピン）の注意を出す数（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個。既定 24。超えても足せます（注意だけ）。0＝出さない</span></div>
     <div class="row"><span class="lab">操作の履歴（元に戻す）の上限</span><input id="limUndo" class="num" type="number" min="0" step="16" inputmode="numeric" aria-label="操作の履歴（元に戻す）の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">MB。既定 256。超えると古い履歴から消えます。0＝制限なし</span></div>
     <div class="row"><span class="lab">液体の粒の数の上限</span><input id="limLiq" class="num" type="number" min="0" step="100" inputmode="numeric" aria-label="液体の粒の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（1つの液体の絵ごと）。既定 1500。超えると古い水から消えます。0＝制限なし</span></div>
+    <div class="row"><span class="lab">GIF録画のコマ数の上限</span><input id="limGif" class="num" type="number" min="0" step="12" inputmode="numeric" aria-label="GIF録画のコマ数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">コマ（1秒に12コマ）。既定 120（約10秒）。超えると録画が止まり、そこまでをGIFにします。大きくするほどメモリを使います。0＝制限なし</span></div>
+    <div class="row"><span class="lab">GIFの幅（今までどおりの時）</span><input id="limGifW" class="num" type="number" min="0" step="60" inputmode="numeric" aria-label="GIFの幅（出力の大きさが今までどおりの時。0＝画面の大きさのまま）" style="width:96px"><span class="note" style="margin:0">px。既定 360。「出力の大きさ」が今までどおりの時、GIFはこの幅まで縮めて作ります（縮める時は知らせます）。0＝縮めない。「出力の大きさ」を選んだ時は、この設定によらず、選んだ大きさで作ります。大きいほど、メモリを使います</span></div>
+    <div class="row"><span class="lab">録画の長さの上限</span><input id="limRec" class="num" type="number" min="0" step="30" inputmode="numeric" aria-label="録画の長さの上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">秒。既定 60。超えると録画が止まり、そこまでを保存します（止めた時は知らせます）。長くするほど、メモリを使います。0＝制限なし</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングのソースの文字数</span><input id="limVps" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングのソースの文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（読み込むHTML・編集して反映するソース）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングの保存する1つの値</span><input id="limVpv" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存する1つの値の文字数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">字（枠の中のページが覚える1つの値の長さ）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
+    <div class="row"><span class="lab">ビジュアルプログラミングの保存先の数</span><input id="limVpk" class="num" type="number" min="0" step="1000" inputmode="numeric" aria-label="ビジュアルプログラミングの保存先の数の上限（0＝制限なし）" style="width:96px"><span class="note" style="margin:0">個（枠の中のページが覚える名前の数）。 既定は制限なし（0）。数を入れると、超えた時に止めて知らせます</span></div>
     <div class="row"><button id="limReset" type="button">上限の設定を初めの値に戻す</button></div>
     </details>
   </div>

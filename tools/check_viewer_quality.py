@@ -95,7 +95,7 @@ with sync_playwright() as p:
         h = hint(mode, 50)
         chk('H3 %s（大きさでない調整）：輪は出ない' % label, h is None, h)
     # ブラシの太さは今までどおり
-    h = pg.evaluate("()=>{const e=$('rtS');e.value=20;e.dispatchEvent(new Event('input',{bubbles:true}));return szhState(performance.now())}")
+    h = pg.evaluate("()=>{const e=$('rtS');brSet('rtS',20);e.value=brPos('rtS',20);e.dispatchEvent(new Event('input',{bubbles:true}));return szhState(performance.now())}")
     chk('H4 ブラシの太さのバーは今までどおり（輪1つ。ref=0）', bool(h) and h['id'] == 'rtS' and h['d'] > 0 and h['ref'] == 0, h)
     # 描画が例外なく通る（点線を含む）
     pg.evaluate("()=>{RT.mode='blur';rtUi();const e=$('rtP');e.value=50;e.dispatchEvent(new Event('input',{bubbles:true}));paintFrame()}")

@@ -163,9 +163,12 @@ function magPath(M,a,b){
   return lw.path(e).map(i=>[i%W,(i/W)|0]);
 }
 const magPix=(M,q,l)=>{const a=penXY(l,q,M.P.W,M.P.H);return{x:Math.max(0,Math.min(M.P.W-1,Math.floor(a.x))),y:Math.max(0,Math.min(M.P.H-1,Math.floor(a.y))),in:a.x>=0&&a.y>=0&&a.x<M.P.W&&a.y<M.P.H}};
+/* 経路の行き先＝カーソルの画素を、先に輪郭（半径5画素以内でいちばん輪郭らしい所）へ吸着した点（ライブワイヤーの標準。台帳Z-153）。
+   以前は、カーソルの画素まで経路を探し、離した後で点だけを吸着していたので、経路の終点と置いた点が最大5画素ずれ、閉じた時にその間が直線でつながっていた。
+   今は経路の終点＝置く点＝次の経路の始点（同じ画素）。 */
 function magLive(M,l,q){
   if(!M.anchors.length){M.live=null;M.want=null;M.pending=false;return}
-  const b=magPix(M,q,l),w=M.want;
+  const c=magPix(M,q,l),b=magSnapPt(M,c.x+.5,c.y+.5),w=M.want;
   if(w&&w.x===b.x&&w.y===b.y)return;
   M.want={x:b.x,y:b.y};M.pending=true;
 }
@@ -244,7 +247,7 @@ function selEnd(ok){
     let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;for(const a of M.anchors){const s2=selB2S(l,M.P,a.x+.5,a.y+.5);bx0=Math.min(bx0,s2.x);by0=Math.min(by0,s2.y);bx1=Math.max(bx1,s2.x);by1=Math.max(by1,s2.y)}
     const cr=Math.max(6,Math.min(16,.2*Math.hypot(bx1-bx0,by1-by0)));
     if(M.anchors.length>=3&&Math.hypot(M.cur.q.x-fs.x,M.cur.q.y-fs.y)<cr){M.live=null;magClose(l);return}
-    const s=magSnapPt(M,end[0]+.5,end[1]+.5);
+    const s={x:end[0],y:end[1]};  /* 経路の終点（すでに吸着済み）をそのまま点にする。もう一度吸着すると、別の画素へ動いて経路と離れる（台帳Z-153） */
     M.segs.push(M.live);M.anchors.push(s);M.live=null;M.want=null;M.pending=false;return;
   }
   if(ppoly){const T=SEL.pl;if(T&&T.drag){T.drag=null;polyRaster()}}

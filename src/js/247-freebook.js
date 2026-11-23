@@ -17,9 +17,9 @@ function paSet(L,C){PA.L=L;PA.C=C;$('paL').value=L;$('paC').value=C}
 /* 起動直後の状態を作る。pushUndo・dirtyProjには触れない（Undoは空のまま・前回の自動保存を上書きしない） */
 function startFree(){
   AC.length=0;uid=0;sel=null;
-  const d=blankDims();DOC.w=d.w;DOC.h=d.h;fit(true);canvasUi();
-  const a=addBlank();BLK.a=null;a.name='自由帳';
-  a.size=Math.min(6,Math.max(W,H)/S0);   /* 紙いっぱい（白紙は紙と同じ縦横比。絵の長辺＝S0×size。A4なら約5.4） */
+  const d=blankDims(true);DOC.w=d.w;DOC.h=d.h;fit(true);canvasUi();   /* 紙＝画面の形（Z-306。A4縦だと、PCでは細い帯・スマホでは上下に余白になっていた） */
+  const a=addBlank(true);BLK.a=null;a.name='自由帳';
+  a.size=Math.min(12,Math.max(W,H)/S0);   /* 紙いっぱい（白紙は紙と同じ縦横比。絵の長辺＝S0×size。横長の画面では6を超える＝つまみの上限は選んだ時に広がる） */
   setSel(a);setTab('dr');setTool('pen');paSet(START.PA,START.PA);
   layUi();dirtyProj=false;
 }

@@ -26,19 +26,26 @@ function gifBlob(fr,w,h,dl){
 let gf=null;
 $('gif').onclick=()=>{
   if(gf){gf.stop();return}
-  const tw=Math.min(360,cv.width),th=Math.round(cv.height*tw/cv.width),t=document.createElement('canvas');t.width=tw;t.height=th;
-  const g=t.getContext('2d',{willReadFrequently:true}),fr=[];
-  const iv=setInterval(()=>{g.drawImage(cv,0,0,tw,th);fr.push(quant(g.getImageData(0,0,tw,th).data,tw,th));$('rtx').textContent=fr.length+'コマ';if(fr.length>=120&&gf)gf.stop()},1000/12);
-  gf={stop(){clearInterval(iv);gf=null;$('gif').textContent='🎞 GIF';$('gif').classList.remove('on');$('rtx').textContent='変換中…';
-    setTimeout(()=>{if(fr.length){showOut(URL.createObjectURL(gifBlob(fr,tw,th,8)),'img','gif')}$('rtx').textContent=''},30)}};
+  /* 出力の大きさ（台帳Z-112）：選んだ大きさにしてから、コマを取る。今までどおりの時は、幅 LIM.gifw（既定360。0＝画面の大きさのまま）まで縮めて取る。GIFの形式の上限（1辺65535）は超えない */
+  const po=outPlan('gif'),o=outBegin('gif'),lw=OUT.m==='auto'?limOr('gifw'):Infinity;
+  if(o&&po.cut)note('GIF：'+outCutText(po),9000);
+  const tw=Math.max(1,Math.min(lw,cv.width,65535)),th=Math.max(1,Math.min(65535,Math.round(cv.height*tw/cv.width))),t=document.createElement('canvas');t.width=tw;t.height=th;
+  if(tw<cv.width&&OUT.m==='auto'&&LIM.gifw>0&&!gifwNoted){gifwNoted=true;note('GIFは、幅'+tw+'pxに縮めて作ります（⚙ 動作の「GIFの幅」で変えられます。0＝画面の大きさのまま。背景・出力タブの「出力の大きさ」を選ぶと、その大きさで作ります）',9000)}
+  const g=t.getContext('2d',{willReadFrequently:true}),fr=[],t0=performance.now();
+  const iv=setInterval(()=>{g.drawImage(cv,0,0,tw,th);fr.push(quant(g.getImageData(0,0,tw,th).data,tw,th));$('rtx').textContent=fr.length+'コマ';const gm=limOr('gif');if(fr.length>=gm&&gf){note('GIF録画は、上限の'+gm+'コマ（約'+Math.round(gm/12*10)/10+'秒）で止めて、そこまでをGIFにしました。⚙ 動作の「GIF録画のコマ数の上限」で変えられます（0＝制限なし）',6000);gf.stop()}},1000/12);   /* 上限は設定にできる（台帳Z-260・Z-253の4点セット） */
+  gf={stop(){clearInterval(iv);gf=null;outEnd(o);$('gif').textContent='🎞 GIF';$('gif').classList.remove('on');$('rtx').textContent='変換中…';
+    /* コマの間隔（1/100秒）：大きい画面で取るのが追いつかない時も、実際の速さで再生されるよう、取れた時間÷コマ数にする（ふつうは8＝1秒に12コマ） */
+    const dl=fr.length?Math.min(100,Math.max(2,Math.round((performance.now()-t0)/fr.length/10))):8;
+    setTimeout(()=>{if(fr.length){showOut(URL.createObjectURL(gifBlob(fr,tw,th,dl)),'img','gif')}$('rtx').textContent=''},30)}};
   $('gif').textContent='⏹ 停止';$('gif').classList.add('on');
 };
+let gifwNoted=false;
 document.querySelectorAll('#tabs [data-t]').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 $('addt').onclick=()=>addSpecial('t');$('addd').onclick=()=>addBlank();
 /* 白紙の大きさのスロット（台帳Z-117・Z-126）：選んだ紙の大きさが、「＋白紙」「＋白紙レイヤー」の両方で使われる */
 function blUi(){
   const d=blankDims(),px=BLS.p==='px';
-  $('blcu').hidden=!px;$('bldpi').hidden=px||BLS.p==='sq';$('blor').hidden=px||BLS.p==='sq';
+  $('blcu').hidden=!px;$('bldpi').hidden=px||BLS.p==='sq';$('blor').hidden=px||BLS.p==='sq'||BLS.p==='scr';
   $('blor').textContent=BLS.land?'横':'縦';$('blor').setAttribute('aria-pressed',BLS.land?'true':'false');
   $('blnote').textContent='足す白紙：'+d.w+'×'+d.h+' px（'+(d.w*d.h/1e6).toFixed(1)+'百万画素）'+(d.cut?'。大きすぎるので縮めています':'')+'。透明な紙です。';
 }
